@@ -40,8 +40,8 @@ Names follow shadcn's and Tailwind 4's variables: kebab-case, without `--`.
   `accent`, each with its `-foreground`, `destructive`, `border`, `input`, `ring`, `chart-1..5`, `sidebar-*`), and
   this library's additions: `destructive-foreground`, `success` / `warning` / `info` with their `-foreground`,
   `overlay` (behind a modal) and `shadow` (the color of drop shadows).
-- **Radii**: `radius-sm` = radius − 4, `radius-md` = radius − 2, `radius-lg` = radius, `radius-xl` = radius + 4
-  (shadcn v4's).
+- **Radii**: `radius-xs` = max(radius − 8, 0), `radius-sm` = radius − 4, `radius-md` = radius − 2, `radius-lg` =
+  radius, `radius-xl` = radius + 4 (shadcn v4's; `radius-xs` is Tailwind's `rounded-xs` for the smallest parts).
 - **Control heights**: `control-height-xs/sm/md/lg` = control-height − 8 / − 4 / ± 0 / + 4 (24 / 28 / 32 / 36);
   `control-height-touch-xs/sm/md/lg` = control-height-touch − 8 / − 4 / ± 0 / + 8 (32 / 36 / 40 / 48).
   `touch-target` (44) is the smallest target on a touch screen: a smaller control gets a hit slop, not a larger look.
@@ -95,9 +95,14 @@ card-radius                = radius-xl
 card-shadow                = 2 (sm)
 ```
 
+Families share one set of tokens instead of each declaring its own: fields read `input-*` (`foundation::field`),
+popup surfaces read `popover-*` (`foundation::popup`), menu-like lists read `menu-*` (`foundation::menu`). The
+family's owner declares them; a member adds tokens only for what it alone has (`select-trigger-hover`).
+
 Each component's tokens are listed in its spec (`docs/components/<component>.md`) in a block generated from its
 `tokens!` (`<!-- tokens:<component> -->`), with the columns `| Token | Type | Derived default | Value |`: the derived
-default as an expression (`light_dark(a, b)`, `pointer_touch(a, b)`, `a × 90%`, `spacing × 2`), the value as it
+default as an expression (`light_dark(a, b)`, `pointer_touch(a, b)`, `a × 90%`, `spacing × 2`, `max(a, b)`,
+`min(a, b)`), the value as it
 resolves on `nsh-base`'s default theme, with its touch value. Notes go in a paragraph under the table. A test keeps
 the block and the code the same.
 

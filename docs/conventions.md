@@ -78,6 +78,34 @@ mobile-first single column.
 - Both appearances must look right; dark follows shadcn's dark treatment (an outline button in dark: an `input`
   edge on `input` at 30%).
 
+## Overlays
+
+Every overlay follows these rules; [dialog.md](components/dialog.md) has the full version.
+
+- **Two kinds of layers.** A modal layer (`Dialog`, `AlertDialog`, later `Sheet`, `Drawer`) is `nsh/base`'s
+  `Dialog` with the library's own motion and closing: it dims and blocks the page, traps the focus and gives it back.
+  A popup layer (`Popover`, `Tooltip`, `DropdownMenu`, `Select`'s list, later `Combobox`, `ContextMenu`) is the
+  `nsh/base` component's overlay: it does not trap the focus, and on the desktops a press outside closes it and goes
+  on.
+- **The trigger is a `trigger` slot** of the component, not a `…Trigger` part (an NSH child component cannot fill
+  its parent's slot). A trigger shows that its layer is open (`Button`'s `expanded:` look, a field's focus edge).
+- **Stacking**: the page and its popups; each modal, the newest on top; the popups opened inside a modal; toasts,
+  drawn in the topmost modal of this library.
+- **Dismissal**: Escape and back go to the topmost layer; a popup closes on a press outside, a modal on its overlay
+  (never an `AlertDialog`). Every request is reported once as `onOpenChange({ open, reason })` with `nsh/base`'s
+  reasons, before the state changes; a controlled layer waits for the app's `open`.
+- **The theme scope** of an overlay's content is where the app put the component: a `ThemeScope` around a
+  `Dialog`, `Popover` or trigger reaches its layer.
+- **Text styles**: each surface resets the inherited ones (as `Tooltip`'s bubble does) and sets its own.
+- **Surfaces**: modal panels take `radius-lg` and shadow tier 4; popup surfaces take `foundation::popup::surface`
+  (`popover` fill, the `popover-*` tokens: `radius-md`, shadow tier 3), which every popup shares; menu-like lists
+  (`DropdownMenu`, `Select`, later `Combobox`, `ContextMenu`, `Command`) share `foundation::menu` and the `menu-*`
+  tokens for their rows. A surface is built when it opens, so a theme change while it is open shows at the next open.
+- **Motion**: popups fade and zoom from 95% and slide 8 from the trigger's side over `duration`; modals fade (and
+  zoom their panel) over `dialog-duration`; nothing moves with reduced motion; `<component>-animate` 0 turns it off.
+- **Touch screens**: a layer keeps its form unless the platform's habit differs and `nsh/base` already does it
+  (menus and `Select`'s list become bottom sheets; dialogs stay centered panels; toasts span a narrow window).
+
 ## What each component delivers
 
 1. `docs/components/<name>.md`, starting with a Status line, with these sections as needed, in this order: Usage, When not to use, Built on, API
