@@ -1,0 +1,8 @@
+{
+  "name": "nsh-longbridge compact",
+  "cssVars": {
+    "theme": {
+      "control-height": "28px"
+    }
+  }
+}

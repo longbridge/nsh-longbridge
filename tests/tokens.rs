@@ -290,3 +290,16 @@ fn scope_values_take_css_forms() {
         resolve_color_in(&app, &[], true, PRIMARY)
     ));
 }
+
+/// The presets in `themes/` are theme files NSH reads whole (`setTheme`
+/// refuses a file with a value it leaves out).
+#[test]
+fn nsh_reads_every_preset_whole() {
+    for entry in std::fs::read_dir(root().join("themes")).unwrap() {
+        let path = entry.unwrap().path();
+        let json = std::fs::read_to_string(&path).unwrap();
+        let (_, ignored) = nsh_base::Theme::from_json_lenient(&json)
+            .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        assert!(ignored.is_empty(), "{}: NSH left out {ignored:?}", path.display());
+    }
+}
