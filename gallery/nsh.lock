@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "packages": [
+    {
+      "name": "nsh-longbridge",
+      "version": "0.1.0",
+      "path": "..",
+      "module": "nsh-longbridge"
+    }
+  ]
+}

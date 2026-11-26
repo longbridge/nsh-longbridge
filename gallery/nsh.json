@@ -1,0 +1,25 @@
+{
+  "name": "nsh-longbridge Gallery",
+  "id": "com.longbridge.nshlongbridge.gallery",
+  "version": "0.1.0",
+  "appearance": "system",
+  "dependencies": {
+    "nsh-longbridge": {
+      "path": ".."
+    }
+  },
+  "window": {
+    "title": "nsh-longbridge",
+    "defaultSize": {
+      "width": 1200,
+      "height": 820
+    },
+    "minSize": {
+      "width": 720,
+      "height": 480
+    }
+  },
+  "capabilities": {
+    "clipboard": true
+  }
+}
