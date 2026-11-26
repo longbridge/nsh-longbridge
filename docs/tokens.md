@@ -56,6 +56,8 @@
 命名：`<组件>[-<变体>][-<部件>]-<属性>[-<状态>]`。颜色沿用 shadcn 的写法：底色用裸名，文字加 `-foreground`，
 描边加 `-border`；状态后缀只用 `-hover`、`-active`、`-focus`、`-invalid`、`-disabled`。
 
+- 控件的形态（选中 `checked`、半选 `indeterminate`、打开 `open`）放在变体位，不当状态后缀：
+  `checkbox-checked-border`、`switch-checked-thumb`。
 - 控件本体（框、轨道、圆圈）用裸名；次要部件带部件名（`switch-thumb`、`radio-group-item-dot`）。
 - 裸名撞上语义 token 时：意思相同就直接用语义 token，不再声明（`card`、`card-foreground`，否则会循环引用）；
   意思不同就加 `-background`（`input` 是语义的输入框边色，输入框的底色叫 `input-background`）。
