@@ -85,19 +85,6 @@ fn num_css_top(expr: &NumExpr, pointer: bool) -> String {
     }
 }
 
-/// A number token's default on touch screens, when it differs from the
-/// pointer's.
-fn touch_css(decl: &TokenDecl) -> Option<String> {
-    match decl.default {
-        DeclDefault::Length(Some(f)) | DeclDefault::Number(Some(f)) => {
-            let expr = f(&Derive(()));
-            let touch = num_css_top(&expr, false);
-            (touch != num_css_top(&expr, true)).then_some(touch)
-        }
-        _ => None,
-    }
-}
-
 fn num_css(expr: &NumExpr, pointer: bool) -> String {
     match expr {
         NumExpr::Token { name, .. } => format!("var(--{name})"),
