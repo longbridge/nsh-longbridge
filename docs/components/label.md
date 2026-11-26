@@ -1,8 +1,8 @@
 # Label
 
-> Status: API spec (P1, reviewed; revised after the 2026-11-26 review). Used in forms with [Input](input.md) /
-> [Textarea](textarea.md); a Label draws no frame and follows only its field's `disabled`. The `label-*` tokens are also
-> read by the `label` parts of Checkbox, Switch and RadioGroup ([Tokens](#tokens)).
+Status: implemented (P1). Used in forms with [Input](input.md) / [Textarea](textarea.md); a Label draws no frame and
+follows only its field's `disabled`. The `label-*` tokens are also read by the `label` parts of Checkbox, Switch and
+RadioGroup ([Tokens](#tokens)).
 
 ## Usage
 
@@ -25,7 +25,8 @@ No `nsh/base` component and no host element: a Label is a `view` in a row around
 library. shadcn's is Radix's `Label.Root` (a `<label>`): pressing it focuses the control its `for` names, and a double
 click selects no text. This library does those two things only:
 
-- With `htmlFor` naming a field, pressing the Label calls the field's `focus()`; not while `disabled`.
+- With `htmlFor` naming a field, pressing the Label focuses the field (as its ref's `focus()`); not while the Label or
+  the field is disabled.
 - Its text is not selectable (`select-none`), so a double click selects nothing.
 
 ## API
@@ -35,10 +36,23 @@ click selects no text. This library does those two things only:
 | TSX | Rust | Type | Default | Notes |
 |---|---|---|---|---|
 | `children` | `.child(..)` / `.children(..)` | elements / text | — | The label: text, possibly with an icon or a Badge (spaced by `gap`) |
-| `htmlFor` | `html_for` | TSX: `InputRef \| TextareaRef` (the same ref variable); Rust: `ComponentRef` | — | What a press focuses. Named as shadcn's / React's `htmlFor`. Depends on G2 |
+| `htmlFor` | `html_for` | TSX: `InputRef \| TextareaRef`; Rust: `FieldRef`, from a `ComponentRef<Input>` or `ComponentRef<Textarea>` | — | What a press focuses. Named as shadcn's / React's `htmlFor`. A Label before its field gets the ref through a signal (below) |
 | `disabled` | `disabled` | `boolean` | `false` | Dimmed (`opacity-disabled`), presses do nothing. shadcn follows the field through `peer-disabled` / `group-data-[disabled]`; NSH has no `peer-*`, so the app passes it (G3) |
 | `class` | `class` | `string` | — | The root's classes, merged last |
 | `style` | `style` | `StyleProp<ViewStyle>` / `Style` | — | The root's style; a text `color` or `fontSize` here reaches the text inside |
+
+**A ref made after the Label.** TSX makes elements in order, and reads a plain variable once: `htmlFor={field}` on a
+Label above `<Input ref={field}>` reads it before the Input sets it, and stays empty. Keep the ref in a signal, which
+`ref` fills and `htmlFor={field()}` follows:
+
+```tsx
+const field = signal<InputRef>();
+<Label htmlFor={field()}>Email</Label>
+<Input ref={field} accessibilityLabel="Email" />
+```
+
+A Label after its field may take a plain variable. Rust has no such order: a `ComponentRef` is found when the Label is
+pressed.
 
 No `size`, `variant`, `required` or `invalid`: shadcn's Label has none. A required mark and red text on errors belong to
 Field (P3; shadcn's `FieldLabel` has `data-[invalid=true]:text-destructive`).
@@ -97,12 +111,17 @@ use that function: the one exception to "components set no line heights of their
 
 ## Tokens
 
-| Token | Type | Derived default | Light / dark |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:label -->
+| Token | Type | Derived default | Value |
 |---|---|---|---|
-| `label-font-size` | length | `font-size-md` (14) | — |
-| `label-font-weight` | number | `font-weight-medium` (500) | — |
-| `label-foreground` | color | `foreground` | as `foreground` |
-| `label-gap` | length | `spacing` × 2 (8) | — |
+| `label-font-size` | length | `font-size-md` | 14 |
+| `label-font-weight` | number | `font-weight-medium` | 500 |
+| `label-foreground` | color | `foreground` |  |
+| `label-gap` | length | `spacing × 2` | 8 |
+<!-- /tokens -->
 
 `label-font-size` follows `font-size-md` rather than Tailwind's fixed `text-sm` (14), so a theme that sets the
 `font-size` seed to 13 for a compact density shrinks labels with their fields. Both default to 14, so nothing differs
@@ -114,41 +133,28 @@ not). Changing `label-foreground` therefore changes those controls' label text t
 
 Disabled uses the semantic `opacity-disabled`, with no token of its own.
 
-```rust
-tokens! {
-    /// The label's text size.
-    LABEL_FONT_SIZE: Length = "label-font-size" => |t| t.length(FONT_SIZE_MD),
-    /// The label's text weight.
-    LABEL_FONT_WEIGHT: Number = "label-font-weight" => |t| t.number(FONT_WEIGHT_MEDIUM),
-    /// The label's text color.
-    LABEL_FOREGROUND: Color = "label-foreground" => |t| t.color(FOREGROUND),
-    /// The space between the label's children (an icon and its text).
-    LABEL_GAP: Length = "label-gap" => |t| t.length(SPACING) * 2.0,
-}
-```
-
 ## Examples
 
 TSX:
 
 ```tsx
-import { Text, View } from "nsh";
+import { signal, Text, View } from "nsh";
 import { Badge, Checkbox, Input, type InputRef, Label } from "nsh-longbridge";
 
-let name: InputRef | undefined;
+const name = signal<InputRef>();
 
 <View class="gap-2">
-  <Label htmlFor={name}>Display name</Label>
+  <Label htmlFor={name()}>Display name</Label>
   <Input ref={name} placeholder="Ada" accessibilityLabel="Display name" />
 </View>
 
 // With another element (Badge's API is its own spec's)
-<Label htmlFor={name}>
+<Label htmlFor={name()}>
   API key <Badge variant="secondary">Beta</Badge>
 </Label>
 
 // Following the field's disabled state
-<Label htmlFor={name} disabled={locked()}>Display name</Label>
+<Label htmlFor={name()} disabled={locked()}>Display name</Label>
 <Input ref={name} disabled={locked()} accessibilityLabel="Display name" />
 
 // No Label beside a Checkbox: the words are its children
@@ -160,17 +166,17 @@ let name: InputRef | undefined;
 Rust:
 
 ```rust
-use nsh::prelude::*;
-use nsh_longbridge::{input, label};
+use nsh_core::prelude::*;
+use nsh_longbridge::{Input, input, label};
 
 fn display_name(locked: Signal<bool>) -> impl IntoElement {
-    let name = ComponentRef::new();
+    let name = component_ref::<Input>();
     view()
         .gap_2()
         .child(label().html_for(name).disabled(locked).child("Display name"))
         .child(
             input()
-                .component_ref(name)
+                .component_ref(&name)
                 .placeholder("Ada")
                 .disabled(locked)
                 .accessibility_label("Display name"),
@@ -178,18 +184,19 @@ fn display_name(locked: Signal<bool>) -> impl IntoElement {
 }
 ```
 
+With NSH 0.7.0, write a string child inside `<Text>` for now ([Button's G0](button.md#nsh-gaps)).
+
 (The Checkbox follows [checkbox.md](checkbox.md): its label is its children, its event NSH's `onChange({ checked })`.)
 
 ## NSH gaps
 
 - **G1 No labelledby**: [Input's NSH gaps](input.md#nsh-gaps). To screen readers a Label is text.
-- **G2 Whether a component prop takes another component's ref.** The `nsh/base` props that take a ref (`Scrollbar`'s
-  `scroll`) take a host node's (JS's `NodeRef`, Rust's `ElementRef`); `htmlFor` takes the ref of this library's
-  `Input` / `Textarea`, a Rust component's (its methods). Whether NSH props take a component ref, and can call its
-  `focus()`, is checked first when building. Workarounds, in order: (1) the Input / Textarea ref carries its `input()`
-  node beside its methods, `htmlFor` takes it as a `NodeRef`, and the Label calls the node's own `focus()`; (2) failing
-  that, the Label reports `onPress` and the app calls `ref.focus()`, which departs from shadcn's API and goes back to
-  review.
+- **G2 A component prop taking another component's ref** (verified when building). A TSX ref of a Rust component is
+  an object carrying its host node as `node`; `htmlFor` takes it (`FieldRef`) and keeps the node. Rust cannot reach a
+  component's methods from its node, so each field registers itself under its host while it is mounted, and a press
+  focuses the field found there ([Input's G2](input.md#nsh-gaps)). Rust converts a `ComponentRef<Input>` /
+  `ComponentRef<Textarea>`, resolved on each press, so a ref put on the field after the Label is made works. In TSX a
+  ref read before the field sets it is empty: the API above passes it through a signal.
 - **G3 No `peer-*`.** NSH does not support `peer-*` variants, so a Label cannot learn its field's `disabled` by itself.
   Workaround: `disabled` is passed explicitly; later, Field (P3) hands `disabled` to both the label and the control, so
   the app writes it once (shadcn's `group-data-[disabled=true]` serves that use).

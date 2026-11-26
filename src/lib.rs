@@ -21,9 +21,16 @@ pub mod theme;
 use nsh_core::prelude::*;
 
 pub use crate::{
-    components::button::{Button, ButtonElement, ButtonEvent, ButtonProps, ButtonVariant, button},
+    components::{
+        button::{Button, ButtonElement, ButtonEvent, ButtonProps, ButtonVariant, button},
+        input::{AutoComplete, Input, InputApi, InputElement, InputEvent, InputProps, input},
+        label::{Label, LabelElement, LabelProps, label},
+        textarea::{
+            Textarea, TextareaApi, TextareaElement, TextareaEvent, TextareaProps, textarea,
+        },
+    },
     foundation::{
-        Icon, IconElement, IconName, IconProps, Size, icon,
+        FieldRef, Icon, IconElement, IconName, IconProps, Size, icon,
         labels::{self, set_translator},
     },
     theme::{
@@ -38,6 +45,9 @@ fn native(registry: &mut Registry) {
     registry
         .register::<Button>()
         .register::<Icon>()
+        .register::<Input>()
+        .register::<Label>()
+        .register::<Textarea>()
         .register::<ThemeScope>()
         .module::<foundation::labels::Labels>();
 }

@@ -66,7 +66,12 @@
       "button-padding-x-sm": "calc(var(--spacing) * 3)",
       "button-padding-x-md": "calc(var(--spacing) * 4)",
       "button-padding-x-lg": "calc(var(--spacing) * 6)",
-      "button-outline-shadow": "1"
+      "button-outline-shadow": "1",
+      "label-font-size": "calc(var(--font-size-md))",
+      "label-font-weight": "calc(var(--font-weight-medium))",
+      "label-gap": "calc(var(--spacing) * 2)",
+      "textarea-min-height": "calc(var(--spacing) * 16)",
+      "textarea-padding-y": "calc(var(--spacing) * 2)"
     },
     "light": {
       "background": "oklch(1 0 0)",
@@ -140,7 +145,8 @@
       "button-border-focus": "var(--ring)",
       "button-border-invalid": "var(--destructive)",
       "button-ring": "color-mix(in oklab, var(--ring) 50%, transparent)",
-      "button-ring-invalid": "var(--ring-invalid)"
+      "button-ring-invalid": "var(--ring-invalid)",
+      "label-foreground": "var(--foreground)"
     },
     "dark": {
       "background": "oklch(0.145 0 0)",
@@ -214,7 +220,8 @@
       "button-border-focus": "var(--ring)",
       "button-border-invalid": "var(--destructive)",
       "button-ring": "color-mix(in oklab, var(--ring) 50%, transparent)",
-      "button-ring-invalid": "var(--ring-invalid)"
+      "button-ring-invalid": "var(--ring-invalid)",
+      "label-foreground": "var(--foreground)"
     }
   }
 }

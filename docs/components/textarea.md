@@ -1,7 +1,7 @@
 # Textarea
 
-> Status: API spec (P1, reviewed; revised after the 2026-11-26 review). Drawn by foundation's **field look** with
-> [Input](input.md)'s `input-*` tokens; this spec covers only what is particular to several lines.
+Status: implemented (P1). Drawn by foundation's **field look** with [Input](input.md)'s `input-*` tokens; this spec
+covers only what is particular to several lines.
 
 ## Usage
 
@@ -24,8 +24,9 @@ As Input: NSH's host element `Input`, with `multiline` on (natively UITextView, 
 [Input's Built on](input.md#built-on); with several lines, also:
 
 - Content taller than the box scrolls inside it (natively), and the wheel goes to the field first.
-- `onContentSizeChange` reports the content's size after each change of the text or the width; this library grows the
-  field with it ([States](#states)).
+- The host element is measured by its text as it is laid out: without a height of its own it is as tall as its text,
+  in the same layout as the edit. This library grows the field that way ([States](#states)), not through
+  `onContentSizeChange`, which comes after the layout.
 
 ## API
 
@@ -97,9 +98,10 @@ dark:bg-input/30`).
 
 Particular to several lines:
 
-- **Height**: `max(textarea-min-height, content height + 2 × textarea-padding-y + 2 × input-border-width)`. The content
-  height is the host's `onContentSizeChange` (one line while empty). The app's `max-h-*` / `maxHeight` caps it, past
-  which the field scrolls inside; the app's `h-*` / `height` overrides the whole rule.
+- **Height**: `max(textarea-min-height, text height + 2 × textarea-padding-y + 2 × input-border-width)`. The text
+  height is what the host measures as it lays the field out (the placeholder's while empty, at least one line); the
+  component sets a least height and the paddings, no height. The app's `max-h-*` / `maxHeight` caps it, past which the
+  field scrolls inside; the app's `h-*` / `height` overrides the whole rule.
 - **Text starts at the top left** (not centered vertically), as shadcn.
 - A height change is **not animated** (shadcn's `field-sizing-content` is instant too), so reduced motion changes nothing.
 - Scroll bars: the host's default (overlay bars that show while scrolling on most platforms); this library sets none.
@@ -127,19 +129,16 @@ Every field look token is Input's (`input-radius`, `input-border*`, `input-backg
 `input-placeholder-foreground`, `input-ring*`, `input-shadow`, `input-font-size-*`, `input-padding-x-*`):
 [Input's Tokens](input.md#tokens) (decided in review: shared, no `textarea-*` copies). Textarea's own:
 
-| Token | Type | Derived default | Light / dark |
-|---|---|---|---|
-| `textarea-min-height` | length | `spacing` × 16 (64, shadcn's `min-h-16`) | — |
-| `textarea-padding-y` | length | `spacing` × 2 (8, shadcn's `py-2`) | — |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
 
-```rust
-tokens! {
-    /// The textarea's least height; it grows with its content from there.
-    TEXTAREA_MIN_HEIGHT: Length = "textarea-min-height" => |t| t.length(SPACING) * 16.0,
-    /// The space above and below the text.
-    TEXTAREA_PADDING_Y: Length = "textarea-padding-y" => |t| t.length(SPACING) * 2.0,
-}
-```
+<!-- tokens:textarea -->
+| Token | Type | Derived default | Value |
+|---|---|---|---|
+| `textarea-min-height` | length | `spacing × 16` | 64 |
+| `textarea-padding-y` | length | `spacing × 2` | 8 |
+<!-- /tokens -->
+
+`textarea-min-height` is shadcn's `min-h-16`, `textarea-padding-y` its `py-2`.
 
 ## Examples
 
@@ -151,10 +150,10 @@ import { Label, Textarea, type TextareaRef } from "nsh-longbridge";
 
 function Feedback() {
   const text = signal("");
-  let field: TextareaRef | undefined;
+  const field = signal<TextareaRef>();
   return (
     <View class="gap-2">
-      <Label htmlFor={field}>Your message</Label>
+      <Label htmlFor={field()}>Your message</Label>
       <Textarea
         ref={field}
         class="max-h-40"
@@ -177,20 +176,20 @@ function Feedback() {
 Rust:
 
 ```rust
-use nsh::prelude::*;
-use nsh_longbridge::{label, textarea};
+use nsh_core::prelude::*;
+use nsh_longbridge::{Textarea, label, textarea};
 
 fn feedback() -> impl IntoElement {
     let text = signal(String::new());
-    let field = ComponentRef::new();
+    let field = component_ref::<Textarea>();
     view()
         .gap_2()
         .child(label().html_for(field).child("Your message"))
         .child(
             textarea()
-                .component_ref(field)
+                .component_ref(&field)
                 .max_h(px(160.0))
-                .value(move || text.get())
+                .value(move || Some(text.get().into()))
                 .on_change(move |value: &String| text.set(value.clone()))
                 .placeholder("Type your message here.")
                 .max_length(500)
@@ -204,14 +203,12 @@ fn feedback() -> impl IntoElement {
 G1 (the app names the field for screen readers) and G4 (the selection) are [Input's](input.md#nsh-gaps); a ring clipped
 at a container's edge is handled as under [Input's States](input.md#states). With several lines, also:
 
-- **G8 Growing lags a frame.** `onContentSizeChange` is reported after layout, and the component's new height takes
-  another layout, so on a line break the text may scroll in the old height before the field grows. Workaround: check it
-  first in headless tests and on macOS; if it shows, keep one line in reserve (content height + one line, up to the cap),
-  which needs a decision on whether a blank line below the content is acceptable. The gallery has a repeated-Return case
-  to check it.
-- **G9 Growing on the web (to verify).** Growing always goes through `onContentSizeChange`, never CSS's `field-sizing`
-  (no other platform has it); screenshots on the web confirm that the content height NSH reports matches the browser's
-  layout.
+- **G8 Growing lags a frame** (checked when building: it does not). `onContentSizeChange` is reported after layout, so
+  growing with it would take a second layout. The host input is measured by its text in the core's layout, so the
+  component sets no height and the field grows in the layout of the edit; a headless test types line breaks and
+  checks the height right after each. No line is kept in reserve.
+- **G9 Growing on the web.** The web's `<textarea>` is laid out by the core's measurement too; the web screenshots
+  check that the browser's text fits the height the core gives it.
 
 ## Decisions
 

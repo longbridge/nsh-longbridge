@@ -2,14 +2,25 @@ import { mount, Scroll, signal, Text, View } from "nsh";
 import { Window } from "nsh/desktop";
 import { Button } from "nsh-longbridge";
 import { ButtonPage } from "./pages/button";
+import { InputPage } from "./pages/input";
+import { LabelPage } from "./pages/label";
+import { TextareaPage } from "./pages/textarea";
 import { ThemePage } from "./pages/theme";
 import { appearance, Appearance, colorPreset, colorPresets, densityPreset, densityPresets, followTheme } from "./theme";
 import { Segmented } from "./ui";
 
-type PageId = "button" | "theme";
+type PageId = "button" | "input" | "label" | "textarea" | "theme";
 
 const catalog: { group: string; pages: { id: PageId; label: string }[] }[] = [
-  { group: "Components", pages: [{ id: "button", label: "Button" }] },
+  {
+    group: "Components",
+    pages: [
+      { id: "button", label: "Button" },
+      { id: "input", label: "Input" },
+      { id: "label", label: "Label" },
+      { id: "textarea", label: "Textarea" },
+    ],
+  },
   { group: "Foundation", pages: [{ id: "theme", label: "Theme" }] },
 ];
 
@@ -74,8 +85,20 @@ function App() {
       <View class="flex-1 flex-row">
         <Sidebar page={page} onSelect={(id) => page.set(id)} />
         <Scroll class="flex-1" contentClass="px-12 py-10 max-w-[1040px]">
-          <If when={page() === "button"} else={<ThemePage />}>
+          <If when={page() === "button"}>
             <ButtonPage />
+          </If>
+          <If when={page() === "input"}>
+            <InputPage />
+          </If>
+          <If when={page() === "label"}>
+            <LabelPage />
+          </If>
+          <If when={page() === "textarea"}>
+            <TextareaPage />
+          </If>
+          <If when={page() === "theme"}>
+            <ThemePage />
           </If>
         </Scroll>
       </View>

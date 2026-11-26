@@ -1,8 +1,8 @@
 # Input
 
-> Status: API spec (P1, reviewed; revised after the 2026-11-26 review). Drawn by foundation's **field look** (built in P0:
-> edge, fill, shadow, focus, invalid, readonly, disabled), which reads the `input-*` tokens under [Tokens](#tokens).
-> [Textarea](textarea.md) and the later Select trigger, NumberInput and Combobox share it.
+Status: implemented (P1). Drawn by foundation's **field look** (edge, fill, shadow, focus, invalid, readonly,
+disabled), which reads the `input-*` tokens under [Tokens](#tokens). [Textarea](textarea.md) and the later Select
+trigger, NumberInput and Combobox share it.
 
 ## Usage
 
@@ -48,8 +48,8 @@ This library adds only the look (tokens), `size`, `invalid`'s look and accessibi
 
 | TSX | Rust (field / setter) | Type | Default | Notes |
 |---|---|---|---|---|
-| `value` | `value` | `string` / `Prop<Option<SharedString>>` | — | The controlled value: when set, the app owns it, `onChange` reports edits and the app sets them back. Unset, the field is uncontrolled and starts from `defaultValue` |
-| `defaultValue` | `default_value` | `string` | `""` | The first value of an uncontrolled field |
+| `value` | `value` | `string` / `Prop<Option<SharedString>>` | — | The controlled value: when set, the app owns it, `onChange` reports edits and the app sets them back. Unset, the field is uncontrolled and starts from `defaultValue`. Which of the two a field is is decided when it is made (as `nsh/base`'s `NumberInput`) |
+| `defaultValue` | `default_value` | `string` / `SharedString` | `""` | The first value of an uncontrolled field |
 | `placeholder` | `placeholder` | `string` | — | Shown while empty (the app's words) |
 | `size` | `size` | `"xs" \| "sm" \| "md" \| "lg"` / `Size` | `"md"` | [Variants and sizes](#variants-and-sizes) |
 | `disabled` | `disabled` | `boolean` | `false` | No editing, no focus, out of the Tab order; look under [States](#states) |
@@ -57,11 +57,11 @@ This library adds only the look (tokens), `size`, `invalid`'s look and accessibi
 | `invalid` | `invalid` | `boolean` | `false` | The app's checks reject the value: a red edge, a red ring while focused; screen readers say invalid (`accessibilityState.invalid`, so `aria-invalid:` classes apply) |
 | `masked` | `masked` | `boolean` | `false` | A password field (shadcn's `type="password"`) |
 | `keyboardType` | `keyboard_type` | NSH's `KeyboardType` | `"default"` | The software keyboard (`email-address`, `url`, `phone-pad`, ...), passed through |
-| `returnKeyType` | `return_key_type` | NSH's `ReturnKeyType` | the platform's | Passed through |
-| `autoCapitalize` | `auto_capitalize` | NSH's `AutoCapitalize` | the platform's | Passed through |
-| `autoCorrect` | `auto_correct` | `boolean` | the platform's | Passed through |
-| `autoComplete` | `auto_complete` | NSH's `AutoFill` | — | What autofill offers (a user name, a password, an email, ...), passed through (the host's Rust setter is `auto_fill`) |
-| `maxLength` | `max_length` | `number` | — | Passed through |
+| `returnKeyType` | `return_key_type` | NSH's `ReturnKeyType` | the platform's (`"default"`) | Passed through |
+| `autoCapitalize` | `auto_capitalize` | NSH's `AutoCapitalize` (Rust: `Option<AutoCapitalize>`) | the platform's | Passed through; set only when given when the field is made |
+| `autoCorrect` | `auto_correct` | `boolean` (Rust: `Option<bool>`) | the platform's | Passed through; set only when given when the field is made |
+| `autoComplete` | `auto_complete` | NSH's `AutoComplete` names (Rust: `AutoComplete`, wrapping NSH's `AutoFill`; `.auto_complete(AutoFill::Email)`) | the platform's | What autofill offers (a user name, a password, an email, ...), passed through as the host's `auto_fill` |
+| `maxLength` | `max_length` | `number` (Rust: `Option<u32>`) | — | Passed through; set only when given when the field is made |
 | `autoFocus` | `auto_focus` | `boolean` | `false` | Passed through; ignored while `disabled` |
 | `selectTextOnFocus` | `select_text_on_focus` | `boolean` | `false` | Passed through |
 | `accessibilityLabel` | `accessibility_label` | `string` | — | The name screen readers say. **Set it even with a visible label**: NSH has no labelledby between elements (G1 under [NSH gaps](#nsh-gaps)) |
@@ -86,8 +86,10 @@ directly for now (end of [Examples](#examples)). They are added later under thei
 
 ### Ref
 
-TSX: `let email: InputRef | undefined;` and `ref={email}` (NSH's ref form) give an `InputRef`; Rust: a
-`ComponentRef<InputApi>`.
+TSX: `ref={email}` (NSH's ref form) gives an `InputRef`, into a variable (`let email: InputRef | undefined`) or a
+signal (`const email = signal<InputRef>()`); Rust: a `ComponentRef<Input>` (`component_ref::<Input>()`), whose
+`api::<InputApi>()` has the methods. A [Label](label.md) placed before its field reads the ref before the field sets
+it, so it takes a signal (`htmlFor={email()}`): see Label's API.
 
 | Method | Notes |
 |---|---|
@@ -164,7 +166,7 @@ Notes for this component:
 |---|---|---|
 | Height | `control-height-*`: 24 / 28 / 32 / 36 | `control-height-touch-*`: 32 / 36 / 40 / 48 |
 | Text | 12 / 13 / 14 / 14 | 14 / 14 / 16 / 16 |
-| Hit area | The field's box | Below `touch-target` (44) the field gets a vertical hit slop (`hitSlop` = (44 − height) / 2); the look is unchanged |
+| Hit area | The field's box | Below `touch-target` (44) the field gets a vertical hit slop (`hitSlop` = (44 − height) / 2 above and below, none at the sides, so fields side by side keep their own presses); the look is unchanged |
 | Focus | The edge in `ring` and a 3pt ring | The edge color only, no ring (as iOS's and Android's system fields; an iPad with a hardware keyboard too) |
 | Cursor | The I-beam (native); the arrow while disabled | — |
 
@@ -190,54 +192,45 @@ Named per tokens.md. These are every knob of the field look; Textarea reads the 
 like), so changing `input-border` in a theme changes both; to change one, use a `ThemeScope` or `class`. For a token
 whose pointer and touch values differ, an app changes the touch value alone with `<name>-touch`.
 
-| Token | Type | Derived default | Light / dark, pointer / touch |
+Generated from the code's declarations (`foundation::field`; `NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a
+test keeps it current. Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:input -->
+| Token | Type | Derived default | Value |
 |---|---|---|---|
-| `input-radius` | length | `radius-md` (8) | — |
-| `input-height-xs` / `-sm` / `-md` / `-lg` | length | `pointer_touch(control-height-xs, control-height-touch-xs)` and so on (24 / 28 / 32 / 36; touch 32 / 36 / 40 / 48) | per pointer / touch |
-| `input-padding-x-xs` / `-sm` / `-md` / `-lg` | length | `spacing` × 2 / × 2.5 / × 3 / × 3 (8 / 10 / 12 / 12) | — |
-| `input-font-size-xs` / `-sm` / `-md` / `-lg` | length | pointer `font-size-xs/sm/md/lg` (12 / 13 / 14 / 14); touch 14 / 14 / 16 / 16 | per pointer / touch |
-| `input-border-width` | length | `border-width` (1) | — |
-| `input-border` | color | `input` | as `input` |
-| `input-border-focus` | color | `ring` | as `ring` |
-| `input-border-invalid` | color | `destructive` | as `destructive` |
-| `input-background` | color | `light_dark(transparent, input at 30%)` | per light / dark |
-| `input-foreground` | color | `foreground` | as `foreground` |
-| `input-placeholder-foreground` | color | `muted-foreground` | as `muted-foreground` |
-| `input-ring` | color | `ring` × `ring-opacity` (50%) | as `ring` |
-| `input-ring-invalid` | color | `ring-invalid` (`destructive` at 20%, 40% in dark) | as `ring-invalid` |
-| `input-ring-width` | length | `ring-width` (3) | — |
-| `input-shadow` | number | 1 (`xs`) | — |
+| `input-radius` | length | `radius-md` | 8 |
+| `input-height-xs` | length | `pointer_touch(control-height-xs, control-height-touch-xs)` | 24 (touch 32) |
+| `input-height-sm` | length | `pointer_touch(control-height-sm, control-height-touch-sm)` | 28 (touch 36) |
+| `input-height-md` | length | `pointer_touch(control-height-md, control-height-touch-md)` | 32 (touch 40) |
+| `input-height-lg` | length | `pointer_touch(control-height-lg, control-height-touch-lg)` | 36 (touch 48) |
+| `input-padding-x-xs` | length | `spacing × 2` | 8 |
+| `input-padding-x-sm` | length | `spacing × 2.5` | 10 |
+| `input-padding-x-md` | length | `spacing × 3` | 12 |
+| `input-padding-x-lg` | length | `spacing × 3` | 12 |
+| `input-font-size-xs` | length | `pointer_touch(font-size-xs, 14)` | 12 (touch 14) |
+| `input-font-size-sm` | length | `pointer_touch(font-size-sm, 14)` | 13 (touch 14) |
+| `input-font-size-md` | length | `pointer_touch(font-size-md, 16)` | 14 (touch 16) |
+| `input-font-size-lg` | length | `pointer_touch(font-size-lg, 16)` | 14 (touch 16) |
+| `input-border-width` | length | `border-width` | 1 |
+| `input-border` | color | `input` |  |
+| `input-border-focus` | color | `ring` |  |
+| `input-border-invalid` | color | `destructive` |  |
+| `input-background` | color | `light_dark(transparent, input × 30%)` |  |
+| `input-foreground` | color | `foreground` |  |
+| `input-placeholder-foreground` | color | `muted-foreground` |  |
+| `input-ring` | color | `ring × ring-opacity` |  |
+| `input-ring-invalid` | color | `ring-invalid` |  |
+| `input-ring-width` | length | `ring-width` | 3 |
+| `input-shadow` | number | `1` | 1 |
+<!-- /tokens -->
 
 The touch text sizes 14 / 16 are fixed values outside the `font-size` seed: tokens.md has no semantic token for touch
 text sizes, so they live in these derivations; a theme changes them as `input-font-size-md-touch` and so on. Disabled
-uses the semantic `opacity-disabled` directly, with no component token (as Button).
+uses the semantic `opacity-disabled` directly, with no component token (as Button). `input-background` is transparent
+in light and `input` at 30% in dark; `input-ring` is `ring` at `ring-opacity` (50%); `input-ring-invalid` is
+`ring-invalid` (`destructive` at 20%, 40% in dark).
 
-The Rust declarations (a sketch; names match the table one to one):
-
-```rust
-tokens! {
-    /// The field's corner radius.
-    INPUT_RADIUS: Length = "input-radius" => |t| t.length(RADIUS_MD),
-    /// The field's height at `Size::Md`.
-    INPUT_HEIGHT_MD: Length = "input-height-md" =>
-        |t| t.pointer_touch(t.length(CONTROL_HEIGHT_MD), t.length(CONTROL_HEIGHT_TOUCH_MD)),
-    /// The text size at `Size::Md`: 16 on touch screens, where smaller fields get zoomed.
-    INPUT_FONT_SIZE_MD: Length = "input-font-size-md" => |t| t.pointer_touch(t.length(FONT_SIZE_MD), px(16.0)),
-    /// The field's edge at rest.
-    INPUT_BORDER: Color = "input-border" => |t| t.color(INPUT),
-    /// The field's fill: none in light, `input` at 30% in dark.
-    INPUT_BACKGROUND: Color = "input-background" => |t| t.light_dark(TRANSPARENT, t.color(INPUT).opacity(0.3)),
-    /// The edge while the field has the keyboard focus.
-    INPUT_BORDER_FOCUS: Color = "input-border-focus" => |t| t.color(RING),
-    /// The edge while the app's checks reject the value; wins over the focus edge.
-    INPUT_BORDER_INVALID: Color = "input-border-invalid" => |t| t.color(DESTRUCTIVE),
-    /// The focus ring around the field.
-    INPUT_RING: Color = "input-ring" => |t| t.color(RING).opacity(t.number(RING_OPACITY)),
-    /// The focus ring while the value is invalid.
-    INPUT_RING_INVALID: Color = "input-ring-invalid" => |t| t.color(RING_INVALID),
-    // ...the rest as in the table
-}
-```
+Other tokens it reads: `touch-target` (the hit slop) and `shadow`.
 
 ## Examples
 
@@ -250,10 +243,10 @@ import { Input, type InputRef, Label } from "nsh-longbridge";
 function EmailField() {
   const email = signal("");
   const invalid = () => email().length > 0 && !email().includes("@");
-  let field: InputRef | undefined;
+  const field = signal<InputRef>();
   return (
     <View class="gap-2">
-      <Label htmlFor={field}>Email</Label>
+      <Label htmlFor={field()}>Email</Label>
       <Input
         ref={field}
         value={email()}
@@ -276,23 +269,25 @@ function EmailField() {
 <Input disabled value="Read from server" />
 ```
 
+With NSH 0.7.0, a `Label`'s string child is written inside `<Text>` for now ([Button's G0](button.md#nsh-gaps)).
+
 Rust:
 
 ```rust
-use nsh::prelude::*;
-use nsh_longbridge::{input, label, Size};
+use nsh_core::prelude::*;
+use nsh_longbridge::{Input, Size, input, label};
 
 fn email_field() -> impl IntoElement {
     let email = signal(String::new());
     let invalid = move || email.with(|e| !e.is_empty() && !e.contains('@'));
-    let field = ComponentRef::new();
+    let field = component_ref::<Input>();
     view()
         .gap_2()
         .child(label().html_for(field).child("Email"))
         .child(
             input()
-                .component_ref(field)
-                .value(move || email.get())
+                .component_ref(&field)
+                .value(move || Some(email.get().into()))
                 .on_change(move |value: &String| email.set(value.clone()))
                 .placeholder("name@example.com")
                 .keyboard_type(KeyboardType::EmailAddress)
@@ -317,6 +312,11 @@ This library's `Input` and `nsh/base`'s `Input` share a name; an app using both 
 - **G1 No labelledby between elements.** NSH has no relation by which one element names another for screen readers (its
   own API naming doc says so). Workaround: the app sets the Input's `accessibilityLabel` to the visible Label's text;
   the docs and the gallery examples all do. How Label handles it: [label.md](label.md).
+- **G2 A ref reaches a component's methods only through JS.** A TSX ref is `{ node, focus, … }`; Rust reaches the
+  methods of a `ComponentRef` (`api::<InputApi>()`), but not those of a component from its host node, which a TSX ref
+  passed as a prop gives. So each field registers itself under its host while mounted (`foundation::field_ref`, keyed
+  by `Scope::__host()`, which NSH marks hidden), and `Label`'s `htmlFor` finds the field there. If NSH let Rust reach a
+  component's API from its node, the registry could go.
 - **G4 The selection takes only a fill.** The selected text's color cannot be set, the selection's alpha differs per
   platform, and iOS tints the selection and the caret with one color. Workaround: `selectionColor` is left unset (the
   platform's); an app that wants its brand color sets it in `style`.

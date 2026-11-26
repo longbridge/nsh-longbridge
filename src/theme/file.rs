@@ -18,6 +18,8 @@ pub fn registry() -> Vec<TokenDecl> {
         super::semantic::TOKENS,
         crate::foundation::field::TOKENS,
         crate::components::button::TOKENS,
+        crate::components::label::TOKENS,
+        crate::components::textarea::TOKENS,
     ]
     .concat()
 }

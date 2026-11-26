@@ -4,6 +4,7 @@
 //! own.
 
 pub mod field;
+pub mod field_ref;
 pub mod focus;
 pub mod icon;
 pub mod labels;
@@ -14,6 +15,7 @@ pub mod size;
 pub mod typography;
 
 pub use field::field_look;
+pub use field_ref::FieldRef;
 pub use focus::focus_ring;
 pub use icon::{Icon, IconElement, IconName, IconProps, icon, provide_icon_size};
 pub use press::press;

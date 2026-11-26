@@ -46,6 +46,8 @@ pub fn semibold(t: Theme) -> FontWeight {
     weight(t.number(FONT_WEIGHT_SEMIBOLD))
 }
 
-fn weight(n: f32) -> FontWeight {
+/// A weight token's value as a font weight (`label-font-weight`'s 500).
+/// Read when the view is made.
+pub fn weight(n: f32) -> FontWeight {
     FontWeight(n.round().clamp(1.0, 1000.0) as u16)
 }

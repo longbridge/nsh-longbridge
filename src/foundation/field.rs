@@ -41,14 +41,15 @@ tokens! {
     INPUT_PADDING_X_MD: Length = "input-padding-x-md" => |t| t.length(SPACING) * 3.0,
     /// A large field's horizontal padding.
     INPUT_PADDING_X_LG: Length = "input-padding-x-lg" => |t| t.length(SPACING) * 3.0,
-    /// An extra small field's text size.
-    INPUT_FONT_SIZE_XS: Length = "input-font-size-xs" => |t| t.length(FONT_SIZE_XS),
-    /// A small field's text size.
-    INPUT_FONT_SIZE_SM: Length = "input-font-size-sm" => |t| t.length(FONT_SIZE_SM),
-    /// A medium field's text size.
-    INPUT_FONT_SIZE_MD: Length = "input-font-size-md" => |t| t.length(FONT_SIZE_MD),
-    /// A large field's text size.
-    INPUT_FONT_SIZE_LG: Length = "input-font-size-lg" => |t| t.length(FONT_SIZE_LG),
+    /// An extra small field's text size: 14 on touch screens.
+    INPUT_FONT_SIZE_XS: Length = "input-font-size-xs" => |t| t.pointer_touch(t.length(FONT_SIZE_XS), t.px(14.0)),
+    /// A small field's text size: 14 on touch screens.
+    INPUT_FONT_SIZE_SM: Length = "input-font-size-sm" => |t| t.pointer_touch(t.length(FONT_SIZE_SM), t.px(14.0)),
+    /// A medium field's text size: 16 on touch screens, where a browser
+    /// zooms into a field with smaller text.
+    INPUT_FONT_SIZE_MD: Length = "input-font-size-md" => |t| t.pointer_touch(t.length(FONT_SIZE_MD), t.px(16.0)),
+    /// A large field's text size: 16 on touch screens.
+    INPUT_FONT_SIZE_LG: Length = "input-font-size-lg" => |t| t.pointer_touch(t.length(FONT_SIZE_LG), t.px(16.0)),
     /// The width of the field's edge.
     INPUT_BORDER_WIDTH: Length = "input-border-width" => |t| t.length(BORDER_WIDTH),
     /// The field's edge at rest.

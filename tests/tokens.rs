@@ -100,6 +100,33 @@ fn the_button_token_table_is_current() {
 }
 
 #[test]
+fn the_input_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/input.md"),
+        "input",
+        &token_table(nsh_longbridge::foundation::field::TOKENS),
+    );
+}
+
+#[test]
+fn the_label_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/label.md"),
+        "label",
+        &token_table(nsh_longbridge::components::label::TOKENS),
+    );
+}
+
+#[test]
+fn the_textarea_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/textarea.md"),
+        "textarea",
+        &token_table(nsh_longbridge::components::textarea::TOKENS),
+    );
+}
+
+#[test]
 fn names_are_unique_and_kebab_case() {
     let decls = registry();
     let mut seen = std::collections::HashSet::new();
