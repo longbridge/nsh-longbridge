@@ -15,6 +15,30 @@ and a look apps customize tier by tier, from a few seed tokens down to a single 
   Sizes have pointer and touch values from the start; phones are reviewed later. In a terminal, NSH's own terminal
   look applies.
 
+## Install
+
+The library is an nshm. Until the first release is on crates.io, add it from GitHub by version tag:
+
+```sh
+nsh add github:longbridge/nsh-longbridge@0.1
+```
+
+```tsx
+import { Button } from "nsh-longbridge";
+```
+
+A Rust app depends on the crate in Cargo (`nsh-longbridge = { git = "https://github.com/longbridge/nsh-longbridge",
+tag = "v0.1.0" }`) and uses `nsh_longbridge::*`.
+
+## Versions and hosts
+
+- The library requires a minor version of NSH (`nsh-core = "0.7"`), so any patch release of the NSH CLI works with it.
+  A new minor version of NSH gets a new release of the library.
+- Within a minor version of the library (`0.1.x`), the public API (components, props, events, parts, token names) is
+  not broken: additions only. Breaking changes wait for the next minor version and are listed in its release notes.
+- A TSX module delivered at run time (a plugin in a host app) can use only the Rust components its host links. A host
+  that runs modules built with this library links it, at a version at least as new as the modules were built with.
+
 ## Layers
 
 ```
