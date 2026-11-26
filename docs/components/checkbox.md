@@ -1,183 +1,210 @@
 # Checkbox
 
-状态：API 单，评审已过（2026-11-26），待实现。外观照 shadcn/ui new-york v4 `checkbox.tsx`，行为包 `nsh/base` 的 `Checkbox`。
+Status: API spec, reviewed 2026-11-26, not yet implemented. The look follows shadcn/ui new-york v4 `checkbox.tsx`; the
+behavior is `nsh/base`'s `Checkbox`.
 
-`Checkbox`、[`Switch`](switch.md)、[`RadioGroup`](radio-group.md) 是一组选择控件，焦点、禁用、invalid、标签、
-命中区的处理三份单写法一致；改其中一份的这些规则，三份一起改。
+`Checkbox`, [`Switch`](switch.md) and [`RadioGroup`](radio-group.md) are one family of choice controls: they handle
+focus, disabled, invalid, the label and the hit area the same way. A change to one of those rules in one spec is made
+in all three.
 
-## 1. 用途
+## Usage
 
-勾选框：表单里的同意条款、多选列表的一项、「全选」行（半选）。值在提交或确认时才生效。
+A checkbox: accepting terms in a form, an item of a multiple selection, a "select all" row (indeterminate). The value
+takes effect when the form is submitted or confirmed.
 
-何时不用：
+## When not to use
 
-| 场景 | 改用 |
+| Case | Use instead |
 |---|---|
-| 改了立即生效的设置（开 / 关） | `Switch` |
-| 一组里必须且只能选一个 | `RadioGroup`；选项多时用 `Select`（P2） |
-| 工具栏里的开关按钮、格式按钮 | `Toggle` / `ToggleGroup`（以后） |
-| 菜单里的勾选项 | `DropdownMenu` 的勾选项（P2），不在菜单里放 `Checkbox` |
-| 整张卡片可点的选项、带说明和错误行的表单项 | `Checkbox` 放进 `Field`（P3）；本组件不加卡片变体 |
+| A setting that takes effect at once (on / off) | `Switch` |
+| Exactly one of a set | `RadioGroup`; `Select` (P2) for a long set |
+| A toggle or formatting button in a toolbar | `Toggle` / `ToggleGroup` (later) |
+| A checkable menu item | `DropdownMenu`'s checkbox item (P2); never a `Checkbox` inside a menu |
+| A whole card that is the option, a form item with a description and an error line | `Checkbox` inside `Field` (P3); this component has no card variant |
 
-## 2. 基于 `nsh/base` 的 `Checkbox`
+## Built on
 
-根元素就是 `nsh/base` 的 `Checkbox`（`crates/nsh-base/src/checkbox.rs`），本库只给外观，下面这些它已经做了，本库不重写：
+The root is `nsh/base`'s `Checkbox` (`crates/nsh-base/src/checkbox.rs`). This library adds the look only; what
+`nsh/base` already does is not rewritten:
 
-- 按压：点框、点标签（`children` 在按压目标里）、聚焦后 Space / Return，都报一次 `Change(next)`：未选中或半选时要
-  `true`，选中时要 `false`。值由应用持有，组件只显示应用传回来的值。
-- 焦点：可按的视图是键盘焦点的一站（macOS、Web）；`disabled` 时不接按压、无按下反馈。
-- 读屏：角色 `checkbox`；状态 checked / unchecked / mixed（`indeterminate` 盖过 `checked`）；`disabled` 念「变暗」；
-  `invalid` 每次走到都念「无效」；名字取 `children` 里的文字，没有文字时用 `accessibilityLabel`；
-  `accessibilityHint`、`accessibilityDescribedBy`（错误或说明行，念完名字接着念）原样转给它。
-- `hitSlop`：命中区外扩，不改布局和外观。
-- 终端：`nsh/base` 用 `[x]` / `[ ]` / `[-]` 代替指示器，本库画的框和勾在终端不出现，标签照常。
+- Presses: a press on the box or on the label (`children` are inside the press target), or Space / Return while
+  focused, reports `Change(next)`: `true` from unchecked or indeterminate, `false` from checked. The app owns the value
+  and the checkbox shows the value passed back.
+- Focus and screen readers: see Accessibility.
+- `hitSlop`: widens where presses count, with no change to layout or look.
+- Terminal: `nsh/base` shows `[x]` / `[ ]` / `[-]` in place of the indicator. The box and mark drawn here do not
+  appear there; the label does.
 
-本库加的：框、勾 / 横杠、标签的排版、各状态的颜色、尺寸、触屏命中区、按下反馈。
+This library adds the box, the check / dash mark, the label's layout, each state's colors, sizes, the touch hit area
+and the press feedback.
 
-## 3. API
+## API
 
 ### Props
 
-| TSX | Rust | 类型 | 默认 | 说明 |
+| TSX | Rust | Type | Default | Notes |
 |---|---|---|---|---|
-| `checked` | `checked` | `boolean` / `Prop<bool>` | `false` | 受控值 |
-| `indeterminate` | `indeterminate` | `boolean` / `Prop<bool>` | `false` | 半选，盖过 `checked`；按一下要的是 `true` |
+| `checked` | `checked` | `boolean` / `Prop<bool>` | `false` | Controlled value |
+| `indeterminate` | `indeterminate` | `boolean` / `Prop<bool>` | `false` | Wins over `checked`; a press asks for `true` |
 | `disabled` | `disabled` | `boolean` / `Prop<bool>` | `false` | |
-| `invalid` | `invalid` | `boolean` / `Prop<bool>` | `false` | 外观见「状态」，读屏念「无效」 |
+| `invalid` | `invalid` | `boolean` / `Prop<bool>` | `false` | Look in States; announced as invalid |
 | `size` | `size` | `Size` | `"md"` | `xs` / `sm` / `md` / `lg` |
-| `accessibilityLabel` | `accessibility_label` | `string?` / `Prop<Option<SharedString>>` | — | 没有 `children` 文字时必填 |
-| `accessibilityHint` | `accessibility_hint` | `string?` | — | 转给 `nsh/base` |
-| `accessibilityDescribedBy` | `accessibility_described_by` | `ElementTarget?` | — | 错误 / 说明行，转给 `nsh/base` |
-| `hitSlop` | `hit_slop` | `EdgeInsets?` | 自动（见 §6） | 给了就用给的，不再自动算 |
-| `children` | `children` | 字符串或子元素 | — | 标签，放进 `label` 部件；字符串自动包成文字 |
-| `class` / `style` | `class` / `style` | | | 根（整行：框 + 标签），最后合并 |
-| `indicatorClass` / `indicatorStyle` | `indicator_class` / `indicator_style` | | | 框 |
-| `markClass` / `markStyle` | `mark_class` / `mark_style` | | | 框里的勾 / 横杠图标 |
-| `labelClass` / `labelStyle` | `label_class` / `label_style` | | | 包 `children` 的那层；没有 `children` 时不建 |
+| `accessibilityLabel` | `accessibility_label` | `string?` / `Prop<Option<SharedString>>` | — | Required when `children` have no text |
+| `accessibilityHint` | `accessibility_hint` | `string?` | — | Passed to `nsh/base` |
+| `accessibilityDescribedBy` | `accessibility_described_by` | `ElementTarget?` | — | Error / help line, passed to `nsh/base` |
+| `hitSlop` | `hit_slop` | `EdgeInsets?` | automatic (Pointer and touch) | When given, used as is |
+| `children` | `children` | string or elements | — | The label, inside the `label` part; a string is wrapped in a text |
+| `class` / `style` | `class` / `style` | | | The root (the row: box and label), merged last |
+| `indicatorClass` / `indicatorStyle` | `indicator_class` / `indicator_style` | | | The box |
+| `markClass` / `markStyle` | `mark_class` / `mark_style` | | | The check / dash icon inside the box |
+| `labelClass` / `labelStyle` | `label_class` / `label_style` | | | The view around `children`; not made without `children` |
 
-只受控，不提供 `defaultChecked`（约定：值由应用持有）。不转出 `nsh/base` 的 `role`、`indicator` 槽、`checkedStyle`、
-`indeterminateStyle`：菜单勾选项走 `DropdownMenu`；勾的图形由本库画，颜色和大小用 `markClass` / `markStyle` 调，
-状态的颜色用 §7 的 token。
+Controlled only: no `defaultChecked` (the app owns the value). `nsh/base`'s `role`, `indicator` slot, `checkedStyle`
+and `indeterminateStyle` are not exposed: checkable menu items are `DropdownMenu`'s; the mark is drawn here, sized and
+colored with `markClass` / `markStyle`, and the state colors are the tokens in Tokens.
 
-### 事件
+### Events
 
-| TSX | Rust | 何时 |
+| TSX | Rust | When |
 |---|---|---|
-| `onChange({ checked })` | `CheckboxEvent::Change(bool)`（`#[args(checked)]`），builder `.on_change(\|checked: &bool\| ..)` | `nsh/base` 报 `Change(next)` 时原样转出 |
+| `onChange({ checked })` | `CheckboxEvent::Change(bool)` (`#[args(checked)]`); builder `.on_change(\|checked: &bool\| ..)` | `nsh/base` reports `Change(next)`, forwarded as is |
 
-名字和载荷照 NSH（约定「受控」一条），和 `nsh/base` 的 `Checkbox` 相同。
+The name and payload are NSH's (conventions, "Controlled"), the same as `nsh/base`'s `Checkbox`.
 
-### 部件结构
+### Parts
 
 ```
-Checkbox 根（nsh/base Checkbox，flex-row items-start，group/nlb-checkbox）
-├─ indicator（nsh/base 的指示器视图：框）
-│   └─ mark（勾 check / 横杠 minus 图标，只在选中或半选时建）
-└─ label（本库包的一层，里面是 children）
+Checkbox root (nsh/base Checkbox, flex-row items-start, group/nlb-checkbox)
+├─ indicator (nsh/base's indicator view: the box)
+│   └─ mark (check or minus icon, made only while checked or indeterminate)
+└─ label (a view of this library's, holding children)
 ```
 
-## 4. 变体与尺寸
+## Variants and sizes
 
-没有变体（shadcn 也没有）。`size` 四档都支持，框边长取组件 token `checkbox-size-<size>`，其余随它定：
+No variants (shadcn has none). All four sizes. The box's side is the token `checkbox-size-<size>`; the rest follows it:
 
-| size | 框（指针） | 框（触屏） | 勾 / 横杠图标 | 标签字号 |
+| size | Box (pointer) | Box (touch) | Check / dash icon | Label font size |
 |---|---|---|---|---|
-| `xs` | 12 | 16 | 框 − 2 | `font-size-xs` 12 |
-| `sm` | 14 | 18 | 框 − 2 | `font-size-sm` 13 |
-| `md` | 16 | 20 | 框 − 2（14，shadcn 的 `size-3.5`） | `font-size-md` 14 |
-| `lg` | 18 | 24 | 框 − 2 | `font-size-lg` 14 |
+| `xs` | 12 | 16 | box − 2 | `font-size-xs` 12 |
+| `sm` | 14 | 18 | box − 2 | `font-size-sm` 13 |
+| `md` | 16 | 20 | box − 2 (14, shadcn's `size-3.5`) | `font-size-md` 14 |
+| `lg` | 18 | 24 | box − 2 | `font-size-lg` 14 |
 
-框边长 = 对应控件高度的一半（指针 `control-height-<size>`，触屏 `control-height-touch-<size>`），所以改
-`control-height` 种子，框跟着按比例变。`md` 指针 16 = shadcn 的 `size-4`。
+The box's side is half the control height of the size (`control-height-<size>` with a pointer,
+`control-height-touch-<size>` on touch), so it scales with the `control-height` seed. `md` with a pointer is 16,
+shadcn's `size-4`.
 
-固定几何（写在组件里，不是 token）：
+Fixed geometry, in the component, not tokens:
 
-- 勾和横杠用 foundation 的图标，显式给边长 = 框 − 2（不取 `Size` 的默认图标边长 12 / 14 / 16 / 20，那是按钮里的尺寸），
-  笔画用图标的默认粗细，居中。图标颜色跟随文字：框的文字色设成 `checkbox-checked-foreground`，勾跟着它。
-- 圆角 `checkbox-radius`，并且不超过框边长的 1/4（大圆角主题下框不变成圆，免得和 radio 混淆）。
-- 根是 `flex-row items-start`，框和标签之间 `checkbox-gap`。
-- `label` 部件：`min-height` = 框边长、`justify-center`，单行标签和框垂直居中；多行时第一行贴着框的上沿。
-  文字字号 `font-size-<size>`、字重 `label-font-weight`、颜色 `label-foreground`（和 Label 组件同一组 token），
-  行高用 foundation 的「字号 → 行高」；文字子节点继承。
-- 框 `flex-shrink: 0`。
+- The check and the dash are foundation icons sized explicitly to box − 2 (not `Size`'s default icon sizes
+  12 / 14 / 16 / 20, which are a button's), at the icon's default stroke, centered. Icons take the text color: the box's
+  text color is `checkbox-checked-foreground`, and the mark follows it.
+- Corners `checkbox-radius`, at most a quarter of the box's side, so a theme with large radii does not turn the box
+  into a circle that reads as a radio.
+- The root is `flex-row items-start`, with `checkbox-gap` between the box and the label.
+- The `label` part: `min-height` = the box's side and `justify-center`, so a one-line label is centered on the box and
+  a longer one starts at its top. Font size `font-size-<size>`, weight `label-font-weight`, color `label-foreground`
+  (Label's tokens); line height from foundation's font size → line height. Text children inherit them.
+- The box is `flex-shrink: 0`.
 
-和 shadcn 的不同：shadcn 的勾选框只有 16 一档，标签是另一个 `Label` 组件；本库按约定四档，标签放在 `children` 里，
-因为 `nsh/base` 把 `children` 放进按压目标和读屏名，点标签就是点框，不需要 `htmlFor`。框和标签间距 8（shadcn 示例
-`gap-3` 12，Label 内部 `gap-2` 8）：取桌面的中等密度。
+Differences from shadcn: shadcn's checkbox has one size, 16, and its label is a separate `Label`. Here there are four
+sizes (conventions), and the label is `children`, since `nsh/base` puts `children` in the press target and the
+accessible name: a press on the label is a press on the box, with no `htmlFor`. Box-to-label gap 8 (shadcn's examples
+use `gap-3`, 12; `Label` itself uses `gap-2`, 8): the desktop's medium density.
 
-## 5. 状态
+## States
 
-颜色全部走 §7 的 token；下面括号里是 shadcn 对应的类。只做 shadcn 有的状态（约定「状态」一条）。
+Every color is a token in Tokens; shadcn's classes are in parentheses. Only the states shadcn has (conventions, "States").
 
-| 状态 | 框底 | 框边 | 勾 | 其他 |
+| State | Box fill | Box border | Mark | Other |
 |---|---|---|---|---|
-| 未选中 | `checkbox`（亮：透明；暗：`input` 30%，`dark:bg-input/30`） | `checkbox-border`（`border-input`） | 无 | 阴影 `checkbox-shadow`（1，`shadow-xs`） |
-| 选中 | `checkbox-checked`（`bg-primary`） | `checkbox-checked-border`（`border-primary`） | `check`，`checkbox-checked-foreground`（`text-primary-foreground`） | |
-| 半选 | 同选中 | 同选中 | `minus`，同色 | shadcn v4 没画半选，`nsh/base` 有这一态，本库补横杠 |
-| hover | 不做 | | | shadcn 没有 |
-| active（按下） | | | | foundation `press(0.9)` 作用在框上；减弱动态效果时不缩 |
-| focus-visible（指针） | | 未选中时 `checkbox-border-focus`（`focus-visible:border-ring`）；选中 / 半选保持选中的边 | | 框外焦点环：宽 `ring-width` 3，色 `checkbox-ring`（`ring-[3px] ring-ring/50`），不占布局 |
-| focus-visible（触屏） | | 所有状态都换成 `checkbox-border-focus`（invalid 时保持 `checkbox-border-invalid`） | | 不画外环 |
-| invalid | | 未选中时 `checkbox-border-invalid`（`aria-invalid:border-destructive`）；选中 / 半选保持选中的边 | | 指针聚焦时外环换成 `checkbox-ring-invalid`（`aria-invalid:ring-destructive/20 dark:…/40`） |
-| disabled | | | | 根整体 `opacity-disabled`（框和标签一起淡，等于 shadcn 的 `disabled:opacity-50` 加 Label 的 `peer-disabled:opacity-50`）；无按下反馈 |
-| readonly、loading | 不支持 | | | shadcn 和 `nsh/base` 都没有 |
+| Unchecked | `checkbox` (light: transparent; dark: `input` 30%, `dark:bg-input/30`) | `checkbox-border` (`border-input`) | none | Shadow `checkbox-shadow` (1, `shadow-xs`) |
+| Checked | `checkbox-checked` (`bg-primary`) | `checkbox-checked-border` (`border-primary`) | `check` in `checkbox-checked-foreground` (`text-primary-foreground`) | |
+| Indeterminate | as checked | as checked | `minus`, same color | shadcn v4 draws none; `nsh/base` has the state, so the dash is added |
+| hover | none | | | shadcn has none |
+| active (pressed) | | | | foundation `press(0.9)` on the box; no scaling with reduced motion |
+| focus-visible (pointer) | | `checkbox-border-focus` while unchecked (`focus-visible:border-ring`); checked / indeterminate keep their border | | A ring outside the box: `ring-width` 3, color `checkbox-ring` (`ring-[3px] ring-ring/50`), outside layout |
+| focus-visible (touch) | | `checkbox-border-focus` in every state (`checkbox-border-invalid` while invalid) | | No ring |
+| invalid | | `checkbox-border-invalid` while unchecked (`aria-invalid:border-destructive`); checked / indeterminate keep their border | | With a pointer, the focus ring is `checkbox-ring-invalid` (`aria-invalid:ring-destructive/20 dark:…/40`) |
+| disabled | | | | The whole root at `opacity-disabled` (box and label together, as shadcn's `disabled:opacity-50` with Label's `peer-disabled:opacity-50`); no press feedback |
+| readonly, loading | not supported | | | Neither shadcn nor `nsh/base` has them |
 
-指针上框边的优先级（shadcn 类在 Tailwind 4 里的先后）：选中 / 半选 > invalid > focus-visible > 默认。触屏上焦点没有外环，
-所以 focus-visible 的边压过选中的边，只让给 invalid。
+The border's precedence with a pointer (the order of shadcn's classes in Tailwind 4): checked / indeterminate > invalid
+> focus-visible > rest. On touch there is no ring, so the focus border wins over the checked one and yields only to
+invalid.
 
-过渡：只有焦点环过渡（shadcn `transition-shadow`，`duration`）；底色、边、勾随值立即换（shadcn 指示器 `transition-none`）。
+Transitions: only the ring transitions (shadcn's `transition-shadow`, over `duration`); fill, border and mark change
+with the value at once (shadcn's indicator is `transition-none`).
 
-光标：一直是默认箭头，禁用时也是。
+Cursor: always the default arrow, disabled too.
 
-实现要点：
+Implementation notes:
 
-- 选中 / 半选的颜色用绑定读 `checked` / `indeterminate` 来算，不用 `nsh/base` 投到指示器上的 `checked:` 变体：
-  它的 `checked:` 只在「选中且未禁用」时生效，禁用的已选框会画成未选中。
-- 焦点环和按下要画在框上，但 `nsh/base` 只把 checked / indeterminate / disabled 投到指示器。本库在根上加
-  `group/nlb-checkbox`，框用 `group-focus-visible/nlb-checkbox`、`group-active/nlb-checkbox`
-  （nsh-core 有 `group_focus_visible_named` / `group_active_named`）。**实现的第一件事是验证这条**（§9 缺口 1）。
+- The checked / indeterminate colors are bindings that read `checked` / `indeterminate`, not the `checked:` variant
+  `nsh/base` projects onto the indicator: that variant holds only while checked and not disabled, so a disabled checked
+  box would draw as unchecked.
+- The ring and the press go on the box, but `nsh/base` projects only checked / indeterminate / disabled onto the
+  indicator. The root gets `group/nlb-checkbox` and the box `group-focus-visible/nlb-checkbox` and
+  `group-active/nlb-checkbox` (nsh-core has `group_focus_visible_named` / `group_active_named`). **Verify this first when
+  implementing** (NSH gaps, 1).
 
-## 6. 指针与触屏
+## Pointer and touch
 
-| | 指针 | 触屏 |
+| | Pointer | Touch |
 |---|---|---|
-| 框边长 | `control-height-<size>` / 2（12 / 14 / 16 / 18） | `control-height-touch-<size>` / 2（16 / 18 / 20 / 24） |
-| 命中区 | 不补 | 没有 `children` 时，各边补 `max(0, (touch-target − 框) / 2)`，到 44 见方，外观不变；有标签时标签就是命中区，不补（补出去会伸进相邻行） |
-| 焦点 | 框外环 + 边换色 | 只换边色 |
-| 悬停 | 无 | 无 |
+| Box side | `control-height-<size>` / 2 (12 / 14 / 16 / 18) | `control-height-touch-<size>` / 2 (16 / 18 / 20 / 24) |
+| Hit area | none added | Without `children`, `max(0, (touch-target − box) / 2)` on each side, 44 square, look unchanged; with a label the label is the target and nothing is added (slop would reach into the next row) |
+| Focus | Ring outside plus border color | Border color only |
+| Hover | none | none |
 
-指针 / 触屏的判断和推导用 foundation 的 `pointer_touch`。应用给了 `hitSlop` 就用应用的。
+Pointer / touch is foundation's `pointer_touch`. A `hitSlop` the app gives is used as is.
 
-## 7. 组件 token
+## Accessibility
 
-| token | 类型 | 推导默认 | 值 |
+All of it is `nsh/base`'s:
+
+- Focus: a stop of the keyboard focus where pressable views are (macOS, the web); Space / Return toggles. While
+  `disabled`, no presses and no press feedback.
+- Screen readers: role `checkbox`; checked / unchecked / mixed (`indeterminate` wins over `checked`); `disabled` reads
+  as dimmed; `invalid` is announced each time it is reached; the name is the text of `children`, else
+  `accessibilityLabel`. `accessibilityHint` and `accessibilityDescribedBy` (an error or help line, read after the name)
+  are passed through.
+- The focus ring is drawn on the box (States); with a pointer only when the keyboard moved the focus there
+  (`focus-visible`).
+
+## Tokens
+
+| Token | Type | Derived default | Value |
 |---|---|---|---|
-| `checkbox-size-xs` | 长度 | `pointer_touch(control-height-xs × 0.5, control-height-touch-xs × 0.5)` | 12（触屏 16） |
-| `checkbox-size-sm` | 长度 | `pointer_touch(control-height-sm × 0.5, control-height-touch-sm × 0.5)` | 14（触屏 18） |
-| `checkbox-size-md` | 长度 | `pointer_touch(control-height-md × 0.5, control-height-touch-md × 0.5)` | 16（触屏 20） |
-| `checkbox-size-lg` | 长度 | `pointer_touch(control-height-lg × 0.5, control-height-touch-lg × 0.5)` | 18（触屏 24） |
-| `checkbox-radius` | 长度 | `max(radius-sm − 2, 0)` | 4（shadcn `rounded-[4px]`） |
-| `checkbox-gap` | 长度 | `spacing` × 2 | 8 |
-| `checkbox` | 颜色 | `light_dark(transparent, input × 30%)` | 亮透明，暗 `dark:bg-input/30` |
-| `checkbox-border` | 颜色 | `input` | |
-| `checkbox-checked` | 颜色 | `primary` | |
-| `checkbox-checked-border` | 颜色 | `checkbox-checked` | 跟着填色 |
-| `checkbox-checked-foreground` | 颜色 | `primary-foreground` | |
-| `checkbox-border-focus` | 颜色 | `ring` | |
-| `checkbox-border-invalid` | 颜色 | `destructive` | |
-| `checkbox-ring` | 颜色 | `ring` × `ring-opacity`（50%） | |
-| `checkbox-ring-invalid` | 颜色 | `ring-invalid` | 亮 `destructive` 20%，暗 40% |
-| `checkbox-shadow` | 数字 | 1（`xs`） | 0 关掉阴影 |
+| `checkbox-size-xs` | length | `pointer_touch(control-height-xs × 0.5, control-height-touch-xs × 0.5)` | 12 (touch 16) |
+| `checkbox-size-sm` | length | `pointer_touch(control-height-sm × 0.5, control-height-touch-sm × 0.5)` | 14 (touch 18) |
+| `checkbox-size-md` | length | `pointer_touch(control-height-md × 0.5, control-height-touch-md × 0.5)` | 16 (touch 20) |
+| `checkbox-size-lg` | length | `pointer_touch(control-height-lg × 0.5, control-height-touch-lg × 0.5)` | 18 (touch 24) |
+| `checkbox-radius` | length | `max(radius-sm − 2, 0)` | 4 (shadcn's `rounded-[4px]`) |
+| `checkbox-gap` | length | `spacing` × 2 | 8 |
+| `checkbox` | color | `light_dark(transparent, input × 30%)` | transparent; dark `dark:bg-input/30` |
+| `checkbox-border` | color | `input` | |
+| `checkbox-checked` | color | `primary` | |
+| `checkbox-checked-border` | color | `checkbox-checked` | follows the fill |
+| `checkbox-checked-foreground` | color | `primary-foreground` | |
+| `checkbox-border-focus` | color | `ring` | |
+| `checkbox-border-invalid` | color | `destructive` | |
+| `checkbox-ring` | color | `ring` × `ring-opacity` (50%) | |
+| `checkbox-ring-invalid` | color | `ring-invalid` | `destructive` 20%, dark 40% |
+| `checkbox-shadow` | number | 1 (`xs`) | 0 for none |
 
-- 应用要单独改触屏的边长，写 `checkbox-size-<size>-touch`（tokens.md 的通用规则）。
-- `checked` 放在变体的位置（`checkbox-checked-border`），因为状态后缀只用 `-hover` / `-active` / `-focus` / `-invalid` /
-  `-disabled`；选中是值，不是交互状态。
-- 标签文字用 Label 的 `label-font-weight`、`label-foreground` 和语义 `font-size-<size>`，不另设。焦点环的几何用 foundation 的。
-- 改 `primary`，选中的填色、边跟着变；改 `checkbox-checked`，边也跟着变（`checkbox-checked-border` 引用它）。
+- An app that changes the touch size alone writes `checkbox-size-<size>-touch` (tokens.md's general rule).
+- `checked` takes the variant's place (`checkbox-checked-border`): state suffixes are only `-hover`, `-active`, `-focus`,
+  `-invalid` and `-disabled`, and checked is a value, not an interaction state.
+- The label uses Label's `label-font-weight` and `label-foreground` and the semantic `font-size-<size>`; no tokens of its
+  own. The ring's geometry is foundation's.
+- Changing `primary` changes the checked fill and border; changing `checkbox-checked` changes the border too
+  (`checkbox-checked-border` refers to it).
 
-## 8. 示例
+## Examples
 
-TSX：
+TSX:
 
 ```tsx
 import { signal, View } from "nsh";
@@ -192,7 +219,7 @@ const all = ["mentions", "approvals", "summary"];
     Accept terms and conditions
   </Checkbox>
 
-  {/* 全选行：只选了一部分时半选 */}
+  {/* Select all: indeterminate while only some are selected */}
   <Checkbox
     checked={items().length === all.length}
     indeterminate={items().length > 0 && items().length < all.length}
@@ -201,14 +228,14 @@ const all = ["mentions", "approvals", "summary"];
     All notifications
   </Checkbox>
 
-  {/* 只有框：要读屏名 */}
+  {/* A box alone needs a name */}
   <Checkbox size="sm" checked={agreed()} onChange={({ checked }) => agreed.set(checked)} accessibilityLabel="Select row" />
 
   <Checkbox disabled checked>Locked option</Checkbox>
 </View>
 ```
 
-Rust：
+Rust:
 
 ```rust
 use nsh_core::prelude::*;
@@ -234,12 +261,14 @@ view()
     )
 ```
 
-## 9. NSH 能力缺口
+## NSH gaps
 
-1. **指示器不跟随根的 focus-visible、hover、active。** `nsh/base` 的 `Checkbox` 只把 checked / indeterminate /
-   disabled 投到指示器（`checkbox.rs` 的 `project_*`），`Switch` 多投了 active，都没有 focus-visible。
-   绕法：根上挂 `group/nlb-checkbox`，框用 named group 变体（§5）。实现时第一件事验证：`nsh/base` 组件元素上加的
-   `group` 声明能合并到它的根上、`indicatorStyle` 里能带 group 变体。任一不行，退到焦点环画在整行根上
-   （gpui-kit 的做法），并回报。
-2. **`checked:` 投影在禁用时不生效。** 「选中且未禁用」才算 checked，禁用的已选框用变体画会变成未选中。绕法：
-   颜色用绑定读值（§5）。不算 bug，记下免得实现时踩。
+1. **The indicator does not follow the root's focus-visible, hover or active.** `nsh/base`'s `Checkbox` projects only
+   checked / indeterminate / disabled onto the indicator (`project_*` in `checkbox.rs`); `Switch` adds active; neither
+   projects focus-visible. Workaround: `group/nlb-checkbox` on the root and named group variants on the box (States).
+   Verify first, when implementing, that a `group` declaration given to an `nsh/base` component's element merges into
+   its root, and that `indicatorStyle` carries group variants. If either fails, draw the ring around the whole root
+   (as gpui-kit does) and report it.
+2. **The projected `checked:` does not hold while disabled.** It means checked and not disabled, so a disabled checked
+   box drawn with the variant would look unchecked. Workaround: bindings that read the value (States). Not a bug; noted so
+   the implementation does not trip on it.

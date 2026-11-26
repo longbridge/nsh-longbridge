@@ -1,75 +1,76 @@
 # Separator
 
-一条把内容分开的细线，横的或竖的。对照 shadcn/ui new-york v4 `separator.tsx`。
+A thin line that divides content, horizontal or vertical. Reference: shadcn/ui new-york v4 `separator.tsx`.
 
-## 用途
+## Usage
 
-- 卡片、面板、表单里的段落之间（横线）；工具条、一行文字链接之间（竖线）。
-- 搜：分隔线、分割线、横线、竖线；separator, divider, hr, rule。
+- Between sections of a card, panel or form (horizontal); between the items of a toolbar or a row of text links
+  (vertical).
+- Search terms: separator, divider, hr, rule.
 
-何时不用：
+## When not to use
 
-- 菜单里的分隔用 P2 的 `DropdownMenu` 自带的分隔项（`nsh/base` 的 `MenuSeparator`），工具条里用 `nsh/base` 的
-  `ToolbarSeparator`：它们在读屏、键盘移动里有自己的含义。
-- 只是想给一块加个边：用那一块的 `class`（`border-b`），不要在它下面再放一根 `Separator`。
-- 「线 · 字 · 线」的带字分隔（"或"）：shadcn 没有，本库不做；用两根 `Separator` 夹一个 `text` 自己排。
+- In a menu, use the separator item of P2's `DropdownMenu` (`nsh/base`'s `MenuSeparator`); in a toolbar, `nsh/base`'s
+  `ToolbarSeparator`. Those mean something to screen readers and keyboard movement.
+- To give a block an edge, use that block's `class` (`border-b`) rather than a `Separator` under it.
+- A labelled divider ("line · or · line"): shadcn has none and neither does this library; put a `text` between two
+  `Separator`s.
 
-## 基于
+## Built on
 
-`nsh/base` 没有 Separator（只有 `MenuSeparator`、`ToolbarSeparator`），本库用一个 `view` 画。没有行为：不可聚焦、
-不接指针（`pointer-events-none`）。
-
-读屏：一律当装饰，不进读屏树（shadcn 的默认 `decorative`）。NSH 的读屏角色里没有 `separator`，所以不提供
-shadcn 的 `decorative={false}`，见文末「缺口」。
+`nsh/base` has no separator component (only `MenuSeparator` and `ToolbarSeparator`); this library draws a `view`. It has
+no behavior: not focusable, no pointer events (`pointer-events-none`).
 
 ## API
 
-| TSX | Rust | 类型 | 默认 | 说明 |
+| TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `orientation` | `orientation` | `"horizontal"` \| `"vertical"`（`nsh_core::geometry::Axis`） | `"horizontal"` | 方向 |
-| `class` / `style` | `class` / `style` | | | 根，就是线本身 |
+| `orientation` | `orientation` | `"horizontal"` \| `"vertical"` (`nsh_core::geometry::Axis`) | `"horizontal"` | Direction |
+| `class` / `style` | `class` / `style` | | | The root, which is the line itself |
 
-没有事件，没有子元素，没有部件（`*Class` / `*Style`）。
+No events, no children, no parts (`*Class` / `*Style`).
 
-## 变体和尺寸
+## Variants and sizes
 
-- 无 `variant`。
-- 无 `size`（`xs` / `sm` / `md` / `lg` 都不支持）：线的粗细是 token，长短由布局给。
+- No `variant`.
+- No `size` (none of `xs` / `sm` / `md` / `lg`): the thickness is a token, the length comes from layout.
 
-## 外观
+### Look
 
-| | 横 | 竖 |
+| | Horizontal | Vertical |
 |---|---|---|
 | shadcn | `shrink-0 bg-border h-px w-full` | `shrink-0 bg-border h-full w-px` |
-| 本库 | `shrink-0`，高 `separator-thickness`，`self-stretch`（撑满父的宽） | `shrink-0`，宽 `separator-thickness`，`self-stretch`（撑满父的高） |
-| 颜色 | `separator` | `separator` |
+| This library | `shrink-0`, height `separator-thickness`, `self-stretch` (spans the parent's width) | `shrink-0`, width `separator-thickness`, `self-stretch` (spans the parent's height) |
+| Color | `separator` | `separator` |
 
-和 shadcn 的差别：用 `self-stretch` 而不是 `w-full` / `h-full`。竖线放在横排里时，shadcn 的 `h-full` 要父元素有确定的
-高才生效（常见的坑是竖线高为 0，要应用补 `h-4`）；NSH 是 flex 布局，`self-stretch` 直接撑满这一行的高。要短一点的竖线
-照 shadcn 的写法给 `class="h-4"`（`self-stretch` 被 `class` 里的高盖掉，因为 `class` 最后合并）——实现时要确认
-显式高度生效时 `self-stretch` 不再拉伸（Taffy 的 `align-self: stretch` 遇到确定的高就不拉，和 CSS 一致）。
+Difference from shadcn: `self-stretch` instead of `w-full` / `h-full`. In a row, shadcn's vertical `h-full` needs a
+parent with a definite height (a common pitfall: the line ends up 0 high and the app adds `h-4`); NSH lays out with flex,
+so `self-stretch` fills the row's height. For a shorter vertical line, give `class="h-4"` as in shadcn (`class` is merged
+last and wins over `self-stretch`). Verify in the implementation that an explicit height stops the stretch (Taffy's
+`align-self: stretch` leaves a definite size alone, as CSS does).
 
-## 状态
+## States
 
-无 hover / active / focus / disabled：不可交互。
+No hover / active / focus / disabled: not interactive.
 
-## 指针与触屏
+## Pointer and touch
 
-没有差别。触屏不放大，不补命中区（不可点）。
+No difference. Not enlarged on touch screens and no hit slop (nothing to press).
 
-## 键盘与读屏
+## Accessibility
 
-- 不是 Tab 站，不接指针。
-- 不进读屏树（`accessible(false)` / TSX `accessible={false}`）。
+- No Tab stop, no pointer events.
+- Always decorative: out of the accessibility tree (`accessible(false)` / TSX `accessible={false}`), as shadcn's default
+  `decorative`. NSH has no `separator` role, so shadcn's `decorative={false}` is not offered; see "NSH gaps".
 
-## Token
+## Tokens
 
-| token | 类型 | 推导默认 | 亮 / 暗 |
+| Token | Type | Derived default | Light / dark |
 |---|---|---|---|
-| `separator` | 颜色 | `border` | 跟着 `border` 变（shadcn 暗色 `border` 是白 10%） |
-| `separator-thickness` | 长度 | `border-width`（1） | 同 |
+| `separator` | color | `border` | Follows `border` (shadcn's dark `border` is white at 10%) |
+| `separator-thickness` | length | `border-width` (1) | Same |
 
-## 示例
+## Examples
 
 ```tsx
 import { Separator } from "nsh-longbridge";
@@ -100,12 +101,13 @@ view().gap_4()
     )
 ```
 
-## NSH 缺口
+## NSH gaps
 
-- **没有 `separator` 读屏角色**（`nsh_core::props` 的角色表里没有）。shadcn 的 `decorative={false}`（读屏念"分隔符"）
-  做不到。绕过：本库只做装饰线，不提供 `decorative`。真需要读屏知道"这里分了段"的，用标题（`accessibilityRole="header"`）
-  分段，这本来也是更好的做法。
+- **No `separator` accessibility role** (absent from `nsh_core::props`' roles), so shadcn's `decorative={false}` (read as
+  "separator") cannot be done. Workaround: the separator is always decorative and has no `decorative` prop. Where a
+  screen reader must know that a new section starts, mark the section with a heading (`accessibilityRole="header"`),
+  which is the better practice anyway.
 
-## 需要拍板
+## Decisions
 
-无。
+None.

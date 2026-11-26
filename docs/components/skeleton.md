@@ -1,74 +1,78 @@
 # Skeleton
 
-加载占位块：内容还没到时，用一块缓慢呼吸的灰块占住它将来的位置和形状。对照 shadcn/ui new-york v4 `skeleton.tsx`。
+A loading placeholder: while content has not arrived, a slowly pulsing block holds its future place and shape.
+Reference: shadcn/ui new-york v4 `skeleton.tsx`.
 
-## 用途
+## Usage
 
-- 列表、卡片、头像、正文在首次加载时的占位，让版面不跳。
-- 搜：骨架屏、加载占位、占位块；skeleton, loading placeholder, shimmer placeholder。
+- Placeholders for lists, cards, avatars and text on first load, so the layout does not jump.
+- Search terms: skeleton, loading placeholder, shimmer placeholder.
 
-何时不用：
+## When not to use
 
-- 一个按钮、一小块区域在等：用 `Spinner`（按钮自己的 `loading` 已经带）。
-- 不知道内容长什么样、或者加载很快（< 300 ms）：什么都不放，或者放 `Spinner`；骨架的形状和真实内容差太远反而更跳。
-- 文字扫光效果：shadcn 没有，本库不做。
+- A button or a small area is waiting: use `Spinner` (a button's own `loading` already has one).
+- The shape of the content is unknown, or loading is fast (< 300 ms): show nothing, or a `Spinner`; a skeleton far from
+  the real shape makes the layout jump more, not less.
+- Shimmering text: shadcn has none and neither does this library.
 
-## 基于
+## Built on
 
-`nsh/base` 没有对应组件，本库用一个 `view` 画。没有行为。
+`nsh/base` has no counterpart; this library draws a `view`. It has no behavior.
 
-宽、高、圆角形状由应用用 `class` / `style` 给，和 shadcn 一样（`<Skeleton className="h-4 w-[250px]" />`）。组件不给默认
-宽高：没给尺寸时它是 0 × 0，看不见。
+Width, height and corner shape are the app's, given with `class` / `style` as in shadcn
+(`<Skeleton className="h-4 w-[250px]" />`). There is no default size: without one it is 0 × 0 and invisible.
 
 ## API
 
-| TSX | Rust | 类型 | 默认 | 说明 |
+| TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `class` / `style` | `class` / `style` | | | 根，即占位块；宽高、`rounded-full` 在这里给 |
+| `class` / `style` | `class` / `style` | | | The root, which is the block; size and `rounded-full` go here |
 
-没有事件，没有 children，没有部件。
+No events, no children, no parts.
 
-## 变体和尺寸
+## Variants and sizes
 
-- 无 `variant`。
-- 无 `size`（`xs` / `sm` / `md` / `lg` 都不支持）：尺寸就是占位的形状，由应用定。
+- No `variant`.
+- No `size` (none of `xs` / `sm` / `md` / `lg`): its size is the placeholder's shape, set by the app.
 
-## 外观
+### Look
 
-shadcn：`animate-pulse rounded-md bg-accent`。
+shadcn: `animate-pulse rounded-md bg-accent`.
 
-| | 值 |
+| | Value |
 |---|---|
-| 底 | `skeleton` |
-| 圆角 | `skeleton-radius`；圆形头像占位给 `class="rounded-full"`（`class` 最后合并，盖过 token） |
-| 动画 | Tailwind 的 `animate-pulse`：2 s 一轮，`cubic-bezier(0.4, 0, 0.6, 1)`，透明度 1 → 0.5 → 1，无限循环。NSH 支持 `animate-pulse` |
+| Fill | `skeleton` |
+| Corners | `skeleton-radius`; a round avatar placeholder takes `class="rounded-full"` (`class` is merged last and wins over the token) |
+| Animation | Tailwind's `animate-pulse`: 2 s per cycle, `cubic-bezier(0.4, 0, 0.6, 1)`, opacity 1 → 0.5 → 1, endless. NSH supports `animate-pulse` |
 
-动画不做成 token：周期和曲线是 Tailwind 的固定值，NSH 的 token 也存不了曲线。
+The animation is not a token: its period and curve are Tailwind's fixed values, and NSH tokens cannot hold a curve.
 
-## 状态
+## States
 
-- **减弱动态效果**：不呼吸，停在不透明（`motion-reduce:animate-none`）。和 conventions.md "减弱动态效果时过渡归零"
-  一致；骨架的呼吸只是装饰，停了不丢信息。shadcn 没处理这一点。
-- 无 hover / active / focus / disabled。
+- **Reduced motion**: no pulse, it stays opaque (`motion-reduce:animate-none`), in line with conventions.md (transitions
+  go to zero under reduced motion). The pulse is decoration only, so stopping it loses nothing. shadcn does not handle
+  this.
+- No hover / active / focus / disabled.
 
-## 指针与触屏
+## Pointer and touch
 
-没有差别。
+No difference.
 
-## 键盘与读屏
+## Accessibility
 
-- 不是 Tab 站，不接指针。
-- 不进读屏树（`accessible={false}`）。"正在加载"要由外层容器说：给外层容器设 `accessibilityState={{ busy: true }}`
-  或一个读屏名（例："Loading comments"）。组件不自己念，因为一屏常有十几块骨架，各念一遍没法用。
+- No Tab stop, no pointer events.
+- Out of the accessibility tree (`accessible={false}`). The container says "loading": give it
+  `accessibilityState={{ busy: true }}` or a label ("Loading comments"). The skeleton itself says nothing, since a screen
+  often has a dozen of them and hearing each one is useless.
 
-## Token
+## Tokens
 
-| token | 类型 | 推导默认 | 亮 / 暗 |
+| Token | Type | Derived default | Light / dark |
 |---|---|---|---|
-| `skeleton` | 颜色 | `accent` | 跟着 `accent`（shadcn neutral 亮 `oklch(0.97 0 0)`，暗 `oklch(0.269 0 0)`） |
-| `skeleton-radius` | 长度 | `radius-md`（8） | 同 |
+| `skeleton` | color | `accent` | Follows `accent` (shadcn neutral: light `oklch(0.97 0 0)`, dark `oklch(0.269 0 0)`) |
+| `skeleton-radius` | length | `radius-md` (8) | Same |
 
-## 示例
+## Examples
 
 ```tsx
 import { Skeleton } from "nsh-longbridge";
@@ -94,13 +98,15 @@ view().flex_row().items_center().gap_4()
     )
 ```
 
-Rust 里 `skeleton()` 实现 `Styled`，宽高、圆角直接链在上面（盖过组件的默认圆角，同 TSX 的 `class`）。
+In Rust `skeleton()` implements `Styled`: size and corners chain on it and win over the default corners, as TSX's
+`class` does.
 
-## NSH 缺口
+## NSH gaps
 
-无。`animate-pulse` 和 `motion-reduce:` 都是 NSH 支持的类（`docs/dev/styles.md`）。实现时确认：窗口不可见、
-滚出视口时平台是否停掉循环动画；不停的话是 NSH 的性能问题，不在本库绕。
+None. `animate-pulse` and `motion-reduce:` are classes NSH supports (`docs/dev/styles.md`). To verify in the
+implementation: whether the platforms stop endless animations in a hidden window or off screen. If they do not, that is
+an NSH performance issue, not worked around here.
 
-## 需要拍板
+## Decisions
 
-无。
+None.

@@ -1,114 +1,126 @@
 # Badge
 
-小标记：一个状态、一个类别、一个数。对照 shadcn/ui new-york v4 `badge.tsx`。
+A small mark: a status, a category, a count. Reference: shadcn/ui new-york v4 `badge.tsx`.
 
-## 用途
+## Usage
 
-- 列表行、卡片标题旁的状态（"已成交"、"草稿"）、类别、版本号、计数。
-- 搜：徽标、状态标记、小标签、计数、胶囊标签；badge, status badge, pill, label, count。
+- A status next to a list row or a card title ("Published", "Draft"), a category, a version, a count.
+- Search terms: badge, status badge, pill, label, count.
 
-何时不用：
+## When not to use
 
-- 能点、能删、能选中的标签（筛选条件、输入的关键词）：Badge 不可交互，那是以后的 Tag / Toggle，现在用 `Button`
-  的 `size="xs"`。
-- 快捷键字样用 `Kbd`。
-- 只有一个圆点（在线、未读）：用一个 `view` 的圆点，不用空 Badge。
-- 涨跌、盈亏这类行情颜色：业务组件，不进本库；不要为它给 Badge 加变体（用作用域 token 或 `class`）。
+- Tags that can be pressed, removed or selected (filters, entered keywords): a badge is not interactive. Those are a
+  later Tag / Toggle; for now use a `Button` with `size="xs"`.
+- Shortcut keys: use `Kbd`.
+- A lone dot (online, unread): a round `view`, not an empty badge.
+- Market colors such as gains and losses: business components, not in this library. Do not add badge variants for them
+  (use scoped tokens or `class`).
 
-## 基于
+## Built on
 
-`nsh/base` 没有对应组件，本库用 `view` + `text` 画。没有行为：不可聚焦、不可点。
+`nsh/base` has no counterpart; this library draws a `view` and a `text`. It has no behavior: not focusable, not
+pressable.
 
-shadcn 的 `asChild`（把 Badge 渲染成 `<a>`，于是有 `[a&]:hover` 的悬停色和焦点环）本库**不做**：NSH 没有 `asChild`
-这种把样式套到别的元素上的机制，要可点的就不该是 Badge。所以 shadcn 只对链接生效的悬停、焦点外观本库都没有，
-只为链接存在的 `ghost`、`link` 两个变体也不加（见「变体」）。
+shadcn's `asChild` (rendering the badge as an `<a>`, which brings the `[a&]:hover` colors and the focus ring) is not
+done: NSH has no `asChild`-style mechanism that puts one element's look on another, and something pressable should not be
+a badge. So the hover and focus looks shadcn gives link badges are absent, and so are the `ghost` and `link` variants,
+which exist only for links (see "Variants and sizes").
+
+### Implementation
+
+- Icon edge: the badge sets the foundation's icon size context to `xs`, so the library's `Icon` without a size is 12
+  (shadcn's `[&>svg]:size-3`). No `badge-icon-size` token.
+- String children: a TSX string child reaches Rust as a text node, Rust's `.child("…")` as a `&str`. Both become the
+  `label` part.
 
 ## API
 
-| TSX | Rust | 类型 | 默认 | 说明 |
+| TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `variant` | `variant` | `"default"` \| `"secondary"` \| `"destructive"` \| `"outline"`（`BadgeVariant`） | `"default"` | 配色 |
-| `children` | `.child(..)` | 文字、图标 | | 内容。文字可以是字符串；图标是本库的 `Icon`，放在字前或字后都行 |
-| `class` / `style` | `class` / `style` | | | 根 |
-| `labelClass` / `labelStyle` | `label_class` / `label_style` | | | 字符串 children 生成的那段文字 |
+| `variant` | `variant` | `"default"` \| `"secondary"` \| `"destructive"` \| `"outline"` (`BadgeVariant`) | `"default"` | Colors |
+| `children` | `.child(..)` | Text, icons | | Content: strings, and the library's `Icon` before or after the text |
+| `class` / `style` | `class` / `style` | | | The root |
+| `labelClass` / `labelStyle` | `label_class` / `label_style` | | | The text made from string children |
 
-没有事件。
+No events.
 
-children 是字符串时，Badge 自己包一个 `text`（单行、不折、超长截断），这段文字就是 `label` 部件；children 是元素时
-原样放，`labelClass` 不起作用。
+String children are wrapped in a `text` (one line, no wrapping, truncated when too long): the `label` part. Element
+children are placed as they are, and `labelClass` does not apply to them.
 
-## 变体和尺寸
+## Variants and sizes
 
-| `variant` | 底 | 字 | 边 | shadcn |
+| `variant` | Fill | Text | Border | shadcn |
 |---|---|---|---|---|
-| `default` | `badge-default` | `badge-default-foreground` | 透明 | `bg-primary text-primary-foreground` |
-| `secondary` | `badge-secondary` | `badge-secondary-foreground` | 透明 | `bg-secondary text-secondary-foreground` |
-| `destructive` | `badge-destructive` | `badge-destructive-foreground` | 透明 | `bg-destructive text-white dark:bg-destructive/60` |
-| `outline` | 透明 | `badge-outline-foreground` | `badge-outline-border` | `border-border text-foreground` |
+| `default` | `badge-default` | `badge-default-foreground` | Transparent | `bg-primary text-primary-foreground` |
+| `secondary` | `badge-secondary` | `badge-secondary-foreground` | Transparent | `bg-secondary text-secondary-foreground` |
+| `destructive` | `badge-destructive` | `badge-destructive-foreground` | Transparent | `bg-destructive text-white dark:bg-destructive/60` |
+| `outline` | Transparent | `badge-outline-foreground` | `badge-outline-border` | `border-border text-foreground` |
 
-- 不加 shadcn 的 `ghost`、`link`：它们和别的变体的差别只在 `[a&]:hover`（作为链接时的悬停），本库 Badge 不可交互，
-  这两个变体剩下的就是"透明底 + 正文色"和"透明底 + `primary` 字"，用 `outline` + `class="border-transparent"`、
-  或 `class` 改字色就能得到，不值得各占一个变体。
-- `success` / `warning` / `info` 不加：shadcn 没有。本库语义 token 里有 `success` 等，需要时用作用域 token 或
-  `class="bg-success text-success-foreground"`。评审已定：不加，P2 做 Alert 时再一起看状态色。
-- **无 `size`**（`xs` / `sm` / `md` / `lg` 都不支持）：shadcn 只有一档。它是标在内容旁的字样，不和控件对齐高度。
+- No `ghost` or `link`: they differ from the others only in `[a&]:hover` (hovered as a link). Without interaction what is
+  left is "transparent fill, foreground text" and "transparent fill, `primary` text", which `outline` with
+  `class="border-transparent"` or a text color `class` gives. Not worth a variant each.
+- No `success` / `warning` / `info`: shadcn has none. The semantic `success` tokens and their kin are there for scoped
+  tokens or `class="bg-success text-success-foreground"`. Decided in review: not added; status colors are revisited with
+  Alert in P2.
+- **No `size`** (none of `xs` / `sm` / `md` / `lg`): shadcn has one. A badge marks content and does not line up with
+  control heights.
 
-## 外观
+### Look
 
-shadcn：`inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border
-border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`，图标 `size-3`。
+shadcn: `inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border
+border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `size-3`.
 
-| | 值 |
+| | Value |
 |---|---|
-| 布局 | 横排、竖向居中、水平居中、宽随内容（`self-start`，不被父的 stretch 拉宽）、`shrink-0` |
-| 边 | `border-width`（1），颜色按变体（非 outline 透明：保留这 1 的位置，四个变体一样高） |
-| 内边距 | 左右 `badge-padding-x`（8），上下 `badge-padding-y`（2） |
-| 圆角 | `badge-radius` |
-| 字 | `badge-font-size`（12）、`font-weight-medium`、行高由 foundation 的「字号 → 行高」给（12 → 16，同 Tailwind `text-xs`）、单行不折 |
-| 图标 | 12：Badge 给图标的上下文尺寸是 `xs`（foundation 的图标边长随 `Size`），颜色跟随文字；图标与字间隔 `badge-gap`（4） |
-| 总高 | 12 号字行高 16 + 上下 2 + 边 2 = 22，和 shadcn 一致 |
+| Layout | A row, centered both ways, as wide as its content (`self-start`, so a stretching parent does not widen it), `shrink-0` |
+| Border | `border-width` (1), colored per variant (transparent except `outline`: it keeps its room, so all variants are the same height) |
+| Padding | `badge-padding-x` (8) horizontally, `badge-padding-y` (2) vertically |
+| Corners | `badge-radius` |
+| Text | `badge-font-size` (12), `font-weight-medium`, line height from the foundation's font size → line height (12 → 16, Tailwind's `text-xs`), one line |
+| Icons | 12 (the `xs` icon size the badge gives as context), colored as the text; `badge-gap` (4) between icon and text |
+| Height | 16 line height + 2 × 2 padding + 2 × 1 border = 22, as shadcn |
 
-超长文字：截断加省略号（`numberOfLines={1}`），shadcn 是 `overflow-hidden whitespace-nowrap` 直接裁掉；截断加省略号
-在桌面更常见，读屏仍念全文。
+Long text is truncated with an ellipsis (`numberOfLines={1}`); shadcn clips it (`overflow-hidden whitespace-nowrap`).
+An ellipsis is the desktop norm, and screen readers still read the full text.
 
-## 状态
+## States
 
-无 hover / active / focus-visible / disabled：不可交互。
+No hover / active / focus-visible / disabled: not interactive.
 
-shadcn 的 `aria-invalid:border-destructive aria-invalid:ring-destructive/20` 是给链接 Badge 在表单里用的，本库不做。
+shadcn's `aria-invalid:border-destructive aria-invalid:ring-destructive/20` is for link badges in forms; not done here.
 
-## 指针与触屏
+## Pointer and touch
 
-外观没有差别，不补命中区（不可点）。
+Same look; no hit slop (nothing to press).
 
-## 键盘与读屏
+## Accessibility
 
-- 不是 Tab 站。
-- 读屏念它的文字（`text`）。只有图标、没有字的 Badge，应用要给 `accessibilityLabel`。
+- No Tab stop.
+- Read as its text (`text`). A badge with an icon and no text needs the app's `accessibilityLabel`.
 
-## Token
+## Tokens
 
-| token | 类型 | 推导默认 | 亮 / 暗 |
+| Token | Type | Derived default | Light / dark |
 |---|---|---|---|
-| `badge-default` | 颜色 | `primary` | 跟着 `primary` |
-| `badge-default-foreground` | 颜色 | `primary-foreground` | 同 |
-| `badge-secondary` | 颜色 | `secondary` | 同 |
-| `badge-secondary-foreground` | 颜色 | `secondary-foreground` | 同 |
-| `badge-destructive` | 颜色 | `light_dark(destructive, destructive 的 60%)` | shadcn `dark:bg-destructive/60` |
-| `badge-destructive-foreground` | 颜色 | `destructive-foreground` | shadcn 写死 `text-white`；本库用补的语义 token，默认白 |
-| `badge-outline-border` | 颜色 | `border` | 同 |
-| `badge-outline-foreground` | 颜色 | `foreground` | 同 |
-| `badge-radius` | 长度 | 9999（全圆，shadcn `rounded-full`） | 同 |
-| `badge-padding-x` | 长度 | `spacing` × 2（8） | 同 |
-| `badge-padding-y` | 长度 | `spacing` × 0.5（2） | 同 |
-| `badge-gap` | 长度 | `spacing`（4） | 同 |
-| `badge-font-size` | 长度 | `font-size-xs`（12） | 同 |
+| `badge-default` | color | `primary` | Follows `primary` |
+| `badge-default-foreground` | color | `primary-foreground` | Same |
+| `badge-secondary` | color | `secondary` | Same |
+| `badge-secondary-foreground` | color | `secondary-foreground` | Same |
+| `badge-destructive` | color | `light_dark(destructive, destructive at 60%)` | shadcn's `dark:bg-destructive/60` |
+| `badge-destructive-foreground` | color | `destructive-foreground` | shadcn hard-codes `text-white`; this library uses its added semantic token, white by default |
+| `badge-outline-border` | color | `border` | Same |
+| `badge-outline-foreground` | color | `foreground` | Same |
+| `badge-radius` | length | 9999 (a pill, shadcn's `rounded-full`) | Same |
+| `badge-padding-x` | length | `spacing` × 2 (8) | Same |
+| `badge-padding-y` | length | `spacing` × 0.5 (2) | Same |
+| `badge-gap` | length | `spacing` (4) | Same |
+| `badge-font-size` | length | `font-size-xs` (12) | Same |
 
-`badge-radius` 不引用 `radius-*`：shadcn v4 的 Badge 是胶囊（`rounded-full`），不随 `radius` 种子变。应用想要
-随种子变的方角标签，主题里写 `"badge-radius": "var(--radius-sm)"`。注意 `radius: 0` 整套变直角时 Badge 仍是胶囊，
-这和 shadcn 的行为一致。
+`badge-radius` does not refer to `radius-*`: shadcn v4's badge is a pill (`rounded-full`) and ignores the `radius` seed.
+An app that wants squarer badges following the seed sets `"badge-radius": "var(--radius-sm)"` in its theme. With
+`radius: 0` everything else turns square while badges stay pills, as in shadcn.
 
-## 示例
+## Examples
 
 ```tsx
 import { Badge, Icon } from "nsh-longbridge";
@@ -141,20 +153,14 @@ view().flex_row().gap_2()
     )
 ```
 
-计数 Badge（`min-w-5 px-1 tabular-nums`）是 shadcn 文档里的写法，用 `class`，不另加变体。
+The count badge (`min-w-5 px-1 tabular-nums`) is how shadcn's docs write it: a `class`, not a variant.
 
-## 实现备注
+## NSH gaps
 
-- Badge 里的图标边长：Badge 用 foundation 的图标尺寸上下文给 `xs`，本库的 `Icon` 没给尺寸时取 12（相当于 shadcn 的
-  `[&>svg]:size-3`）。不另起 `badge-icon-size` token。
-- 字符串 children 的识别：TSX 的字符串 children 到 Rust 是文字节点；Rust 的 `.child("…")` 是 `&str`。两条路都要
-  包成 `label` 部件。
+- **No `asChild` and no selector by element type** (shadcn's `[a&]:hover`). Workaround: the badge is not interactive;
+  there are no link badges.
 
-## NSH 缺口
+## Decisions
 
-- **没有 `asChild` / 按标签名匹配的选择器**（shadcn 的 `[a&]:hover`）。绕过：本库 Badge 不可交互，不做链接 Badge。
-
-## 已定（评审结论）
-
-1. 不加 `href`（链接 Badge）。
-2. 不加 `success` / `warning` / `info` 变体，P2 做 Alert 时一起看。
+1. No `href` (link badges).
+2. No `success` / `warning` / `info` variants; revisited with Alert in P2.

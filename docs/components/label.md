@@ -1,105 +1,118 @@
 # Label
 
-> 状态：API 单（P1，已评审，按 2026-11-26 结论修订）。表单里和 [Input](input.md) / [Textarea](textarea.md) 一起用；
-> Label 不画框，只跟随字段的 disabled。`label-*` token 也被 Checkbox / Switch / RadioGroup 的 `label` 部件读（见 §7）。
+> Status: API spec (P1, reviewed; revised after the 2026-11-26 review). Used in forms with [Input](input.md) /
+> [Textarea](textarea.md); a Label draws no frame and follows only its field's `disabled`. The `label-*` tokens are also
+> read by the `label` parts of Checkbox, Switch and RadioGroup ([Tokens](#tokens)).
 
-## 1. 用途
+## Usage
 
-控件旁边的标签文字：表单字段的名字、Checkbox / Switch 旁边的说明。外观是 shadcn/ui new-york v4 的 `Label`
-（14 号、中等字重、行高 1、可以和图标或控件横排）。按下 Label 会把焦点交给它标的输入框（`htmlFor`）。
+The text naming a control: a form field's name, the words beside a Checkbox or a Switch. The look is shadcn/ui
+new-york v4's `Label` (14, medium weight, a line height of 1, in a row with icons or controls). Pressing a Label moves
+the focus to the field it names (`htmlFor`).
 
-何时不用：
+## When not to use
 
-| 需要 | 改用 |
+| Need | Use instead |
 |---|---|
-| Checkbox、Switch、RadioGroup 项旁边的文字 | 直接写成它们的 children（本库这几个组件的 `label` 部件，见各自的 API 单）：按文字也切换、读屏名也对；不要在旁边另放一个 Label |
-| 字段的说明、错误提示、必填标记、字数 | Form / Field（P3：FieldLabel、FieldDescription、FieldError）；P1 先用 `Text` |
-| 普通正文、标题、分组标题 | `Text` 加 Tailwind 类（`text-sm`、`font-semibold`…） |
-| 状态、计数这种小块 | Badge |
+| The words beside a Checkbox, a Switch or a RadioGroup item | Their children (the `label` part of those components, in their specs): pressing the words toggles them and screen readers get the name; no separate Label beside them |
+| A field's description, error, required mark, count | Form / Field (P3: FieldLabel, FieldDescription, FieldError); `Text` in P1 |
+| Body text, headings, group titles | `Text` with Tailwind classes (`text-sm`, `font-semibold`, ...) |
+| A small status or count | Badge |
 
-## 2. 基于什么
+## Built on
 
-没有对应的 `nsh/base` 组件，也没有宿主元素：Label 就是一个横排的 `view` 加上应用的 children，本库自己写。
-shadcn 背后是 Radix `Label.Root`（一个 `<label>`）：按它就聚焦 `for` 指向的控件、双击不选中文字。本库只做这两件事：
+No `nsh/base` component and no host element: a Label is a `view` in a row around the app's children, written in this
+library. shadcn's is Radix's `Label.Root` (a `<label>`): pressing it focuses the control its `for` names, and a double
+click selects no text. This library does those two things only:
 
-- `htmlFor` 指着一个输入框时，按下 Label 调它的 `focus()`；`disabled` 时不调。
-- 文字不可选中（`select-none`），双击不会选中标签文字。
+- With `htmlFor` naming a field, pressing the Label calls the field's `focus()`; not while `disabled`.
+- Its text is not selectable (`select-none`), so a double click selects nothing.
 
-不做的：
-
-- **不做读屏关联。** NSH 没有 labelledby（[Input §9 G1](input.md#缺口)），Label 不能成为输入框的读屏名。Label 照常作为普通文字被读到，
-  输入框的名字由输入框的 `accessibilityLabel` 给。Label 也不对读屏隐藏（评审已定，见 §9）。
-- 不是 Tab 停靠点，不是按钮：没有 `button` 角色，键盘到不了它（它要聚焦的输入框自己在 Tab 顺序里）。
-
-## 3. API
+## API
 
 ### Props
 
-| TSX | Rust | 类型 | 默认 | 说明 |
+| TSX | Rust | Type | Default | Notes |
 |---|---|---|---|---|
-| `children` | `.child(..)` / `.children(..)` | 元素 / 文字 | — | 标签内容：文字，可以带图标、Badge（`gap` 隔开） |
-| `htmlFor` | `html_for` | TSX：`InputRef \| TextareaRef`（同一个 ref 变量）；Rust：`ComponentRef` | — | 按下时聚焦的目标。名字照 shadcn / React 的 `htmlFor`。实现依赖 G2 |
-| `disabled` | `disabled` | `boolean` | `false` | 变暗（`opacity-disabled`），按下无效。shadcn 靠 `peer-disabled` / `group-data-[disabled]` 自动跟随，NSH 没有 `peer-*`，所以要应用显式传，见 G3 |
-| `class` | `class` | `string` | — | 根的类，最后合并 |
-| `style` | `style` | `StyleProp<ViewStyle>` / `Style` | — | 根的样式；文字的 `color`、`fontSize` 写在这里会传给里面的文字 |
+| `children` | `.child(..)` / `.children(..)` | elements / text | — | The label: text, possibly with an icon or a Badge (spaced by `gap`) |
+| `htmlFor` | `html_for` | TSX: `InputRef \| TextareaRef` (the same ref variable); Rust: `ComponentRef` | — | What a press focuses. Named as shadcn's / React's `htmlFor`. Depends on G2 |
+| `disabled` | `disabled` | `boolean` | `false` | Dimmed (`opacity-disabled`), presses do nothing. shadcn follows the field through `peer-disabled` / `group-data-[disabled]`; NSH has no `peer-*`, so the app passes it (G3) |
+| `class` | `class` | `string` | — | The root's classes, merged last |
+| `style` | `style` | `StyleProp<ViewStyle>` / `Style` | — | The root's style; a text `color` or `fontSize` here reaches the text inside |
 
-没有 `size`、`variant`、`required`、`invalid`：shadcn 的 Label 都没有。必填星号、出错变红属于 Field（P3，shadcn 的 `FieldLabel`
-是 `data-[invalid=true]:text-destructive`）。
+No `size`, `variant`, `required` or `invalid`: shadcn's Label has none. A required mark and red text on errors belong to
+Field (P3; shadcn's `FieldLabel` has `data-[invalid=true]:text-destructive`).
 
-### 事件
+### Events
 
-无。（按下聚焦是 `htmlFor` 的内建行为，不报事件；要别的行为的应用用自己的 `View` + `onPress`。）
+None. (Focusing on a press is `htmlFor`'s built-in behavior and reports nothing; an app that wants something else uses
+a `View` with `onPress`.)
 
-### 部件
+### Parts
 
-只有根（`view`，横排）。文字样式（字号、字重、颜色、行高）设在根上，由里面的 `Text` 继承，所以 `class` / `style` 改根就改了文字，
-不另设 `textClass`。
+The root alone (a `view`, a row). The text styles (size, weight, color, line height) are set on the root and inherited
+by the `Text` inside, so `class` / `style` on the root restyle the text; there is no `textClass`.
 
-## 4. 变体与尺寸
+## Variants and sizes
 
-无变体。**不支持 `size`**：shadcn 的 Label 只有 `text-sm` 一档，各种尺寸的字段上面都是它；小字段旁边要小标签的用 `class="text-xs"`。
+No variants. **No `size`**: shadcn's Label has one size, `text-sm`, over fields of every size; a small label beside a
+small field uses `class="text-xs"`.
 
-## 5. 状态
+## States
 
-| 状态 | 外观 | shadcn 原类 |
+| State | Look | shadcn's classes |
 |---|---|---|
-| 常态 | 字号 `label-font-size`（14），字重 `label-font-weight`（500），颜色 `label-foreground`（`foreground`），行高 = 字号（`leading-none`），横排居中、子项间距 `label-gap`（8），文字不可选 | `flex items-center gap-2 text-sm leading-none font-medium select-none` |
-| hover | 不变；光标箭头（不是手型：它不是链接，gpui-kit Design Guides） | 无 |
-| active（按下） | 不变，不做按下反馈（它不是按钮）；效果是目标输入框得到焦点、出现输入框的焦点环 | 无 |
-| focus-visible | 不适用：Label 不接焦点 | — |
-| disabled | 整体 `opacity-disabled`（0.5）；按下不聚焦 | `peer-disabled:opacity-50 group-data-[disabled=true]:opacity-50 group-data-[disabled=true]:pointer-events-none` |
-| invalid / loading | 不适用（见 §3） | — |
+| Rest | Text `label-font-size` (14), weight `label-font-weight` (500), color `label-foreground` (`foreground`), line height = text size (`leading-none`); a row, centered, children `label-gap` (8) apart; text not selectable | `flex items-center gap-2 text-sm leading-none font-medium select-none` |
+| hover | Unchanged; the arrow cursor (not the hand: it is no link; gpui-kit's Design Guides) | none |
+| active (pressed) | Unchanged, no press feedback (it is no button); the effect is the field taking the focus and showing its ring | none |
+| focus-visible | Does not apply: a Label takes no focus | — |
+| disabled | `opacity-disabled` (0.5) over all; a press focuses nothing | `peer-disabled:opacity-50 group-data-[disabled=true]:opacity-50 group-data-[disabled=true]:pointer-events-none` |
+| invalid / loading | Do not apply ([API](#api)) | — |
 
-`peer-disabled:cursor-not-allowed` 不照搬：桌面上禁用控件的标签保持箭头光标（同 Input 的 disabled）。
+`peer-disabled:cursor-not-allowed` is not copied: on desktops a disabled control's label keeps the arrow cursor (as a
+disabled Input).
 
-行高 1 对中文要验收：`leading-none` 下中日韩字形和带下行部的拉丁字母（g、y）在某些平台可能被裁。展示台放一个中文标签和一个 `gy` 标签，
-截图看亮暗两档；被裁的话改用 foundation「字号 → 行高」函数给的行高，并在这里写明偏离 shadcn。
-（行高 = 字号是 shadcn 的 `leading-none`，是 Label 有意为之，所以不走那个函数；这是全库「组件不各写行高」规则下唯一的例外。）
+A line height of 1 needs checking with CJK text: under `leading-none`, CJK glyphs and Latin descenders (g, y) may be
+clipped on some platforms. The gallery shows a Chinese label and a `gy` label, screenshotted in light and dark; if they
+clip, the Label takes the line height of foundation's text size → line height function, and this spec records the
+departure from shadcn. (A line height equal to the text size is shadcn's deliberate `leading-none`, so the Label does not
+use that function: the one exception to "components set no line heights of their own".)
 
-## 6. 指针与触屏
+## Pointer and touch
 
-| | 指针 | 触屏 |
+| | Pointer | Touch |
 |---|---|---|
-| 字号 | 14 | 14（不跟输入框的触屏 16 变：shadcn 的 Label 在窄屏也是 `text-sm`） |
-| 命中区 | 标签自己的框 | 标签自己的框，**不补到 44**：它不是独立控件，旁边的输入框已经满足命中区；补了反而会和上下相邻的字段抢点击 |
-| 按下 | 一次完整的点击（抬起时）聚焦目标，同浏览器 `<label>` 的 click | 同左（轻点抬起时），弹出软键盘；滑动滚动不触发 |
+| Text | 14 | 14 (not the fields' 16 on touch: shadcn's Label is `text-sm` on narrow screens too) |
+| Hit area | The label's box | The label's box, **not padded to 44**: it is no control of its own, its field already meets the target, and padding would take presses from the fields above and below |
+| Press | A full click (on release) focuses the field, as a browser's `<label>` click | The same (on a tap's release), showing the software keyboard; a scrolling drag does not trigger it |
 
-## 7. 组件 token
+## Accessibility
 
-| token | 类型 | 推导默认值 | 亮 / 暗 |
+- **No accessibility relation.** NSH has no labelledby ([Input's NSH gaps](input.md#nsh-gaps), G1), so a Label cannot be
+  its field's screen reader name. The Label is read as plain text, and the field's name is the field's
+  `accessibilityLabel`.
+- The Label is not hidden from screen readers (see [Decisions](#decisions)).
+- Not a Tab stop and not a button: no `button` role, never reached by the keyboard (the field it focuses is in the Tab
+  order itself).
+
+## Tokens
+
+| Token | Type | Derived default | Light / dark |
 |---|---|---|---|
-| `label-font-size` | 长度 | `font-size-md`（14） | — |
-| `label-font-weight` | 数字 | `font-weight-medium`（500） | — |
-| `label-foreground` | 颜色 | `foreground` | 同 `foreground` |
-| `label-gap` | 长度 | `spacing` × 2（8） | — |
+| `label-font-size` | length | `font-size-md` (14) | — |
+| `label-font-weight` | number | `font-weight-medium` (500) | — |
+| `label-foreground` | color | `foreground` | as `foreground` |
+| `label-gap` | length | `spacing` × 2 (8) | — |
 
-`label-font-size` 引用 `font-size-md` 而不是固定的 Tailwind `text-sm`（14）：这样主题把 `font-size` 种子调成 13 做紧凑密度时，标签和字段一起变小。
-默认值都是 14，所以和 shadcn 没有可见差别（评审已定）。
+`label-font-size` follows `font-size-md` rather than Tailwind's fixed `text-sm` (14), so a theme that sets the
+`font-size` seed to 13 for a compact density shrinks labels with their fields. Both default to 14, so nothing differs
+from shadcn visibly.
 
-勾选类控件（Checkbox、Switch、RadioGroup 的项）的 `label` 部件读 `label-foreground` 和 `label-font-weight`，字号用它们自己的
-`font-size-<size>`，不读 `label-font-size`（它们有 `size`，Label 没有）。所以改 `label-foreground` 会同时改这些控件的标签文字。
+The `label` parts of the choice controls (Checkbox, Switch, RadioGroup items) read `label-foreground` and
+`label-font-weight`, with their own `font-size-<size>` rather than `label-font-size` (they have `size`, a Label does
+not). Changing `label-foreground` therefore changes those controls' label text too.
 
-disabled 的透明度用语义 token `opacity-disabled`，不另设。
+Disabled uses the semantic `opacity-disabled`, with no token of its own.
 
 ```rust
 tokens! {
@@ -114,9 +127,9 @@ tokens! {
 }
 ```
 
-## 8. 示例
+## Examples
 
-TSX：
+TSX:
 
 ```tsx
 import { Text, View } from "nsh";
@@ -129,22 +142,22 @@ let name: InputRef | undefined;
   <Input ref={name} placeholder="Ada" accessibilityLabel="Display name" />
 </View>
 
-// 带别的元素（Badge 的 API 以它自己的 API 单为准）
+// With another element (Badge's API is its own spec's)
 <Label htmlFor={name}>
   API key <Badge variant="secondary">Beta</Badge>
 </Label>
 
-// 跟随字段的禁用
+// Following the field's disabled state
 <Label htmlFor={name} disabled={locked()}>Display name</Label>
 <Input ref={name} disabled={locked()} accessibilityLabel="Display name" />
 
-// Checkbox 旁边不用 Label，文字写进 Checkbox 的 children
+// No Label beside a Checkbox: the words are its children
 <Checkbox checked={terms()} onChange={({ checked }) => terms.set(checked)}>
   <Text>Accept terms and conditions</Text>
 </Checkbox>
 ```
 
-Rust：
+Rust:
 
 ```rust
 use nsh::prelude::*;
@@ -165,24 +178,27 @@ fn display_name(locked: Signal<bool>) -> impl IntoElement {
 }
 ```
 
-（Checkbox 的写法照 [checkbox.md](checkbox.md)：标签是它的 children，事件照 NSH 叫 `onChange({ checked })`。）
+(The Checkbox follows [checkbox.md](checkbox.md): its label is its children, its event NSH's `onChange({ checked })`.)
 
-## 9. NSH 能力缺口与已定的取舍
+## NSH gaps
 
-### 缺口
+- **G1 No labelledby**: [Input's NSH gaps](input.md#nsh-gaps). To screen readers a Label is text.
+- **G2 Whether a component prop takes another component's ref.** The `nsh/base` props that take a ref (`Scrollbar`'s
+  `scroll`) take a host node's (JS's `NodeRef`, Rust's `ElementRef`); `htmlFor` takes the ref of this library's
+  `Input` / `Textarea`, a Rust component's (its methods). Whether NSH props take a component ref, and can call its
+  `focus()`, is checked first when building. Workarounds, in order: (1) the Input / Textarea ref carries its `input()`
+  node beside its methods, `htmlFor` takes it as a `NodeRef`, and the Label calls the node's own `focus()`; (2) failing
+  that, the Label reports `onPress` and the app calls `ref.focus()`, which departs from shadcn's API and goes back to
+  review.
+- **G3 No `peer-*`.** NSH does not support `peer-*` variants, so a Label cannot learn its field's `disabled` by itself.
+  Workaround: `disabled` is passed explicitly; later, Field (P3) hands `disabled` to both the label and the control, so
+  the app writes it once (shadcn's `group-data-[disabled=true]` serves that use).
 
-- **G1 没有 labelledby**：见 [Input §9](input.md#缺口)。Label 对读屏只是文字。
-- **G2 组件 prop 能不能收另一个组件的 ref。** `nsh/base` 里收 ref 的 prop（`Scrollbar` 的 `scroll`）收的是宿主节点的 ref
-  （JS 的 `NodeRef`、Rust 的 `ElementRef`）；`htmlFor` 要收的是本库 `Input` / `Textarea` 这个 Rust 组件的 ref（它的方法对象）。
-  NSH 的 props 能否收组件 ref、收到后能否调它的 `focus()`，要在实现时确认。
-  绕过（按优先顺序）：① Input / Textarea 的 ref 对象除了方法，再带上里面那个 `input()` 节点，`htmlFor` 按 `NodeRef` 收，
-  Label 直接对节点 `focus()`（节点的 `focus()` 是宿主就有的）；② 都不行时 Label 改为报 `onPress`，由应用自己 `ref.focus()`——这会让
-  API 和 shadcn 不一样，要回到评审。
-- **G3 没有 `peer-*`。** NSH 明确不支持 `peer-*` 变体，Label 没法从旁边的输入框自动得知 disabled。绕过：`disabled` 显式传；
-  以后 Field（P3）把 disabled 同时下发给标签和控件，应用就不用写两遍（shadcn 的 `group-data-[disabled=true]` 就是这个用法）。
+## Decisions
 
-### 已定（2026-11-26 评审）
+Settled in the 2026-11-26 review:
 
-- Label 不对读屏隐藏：读屏会先念一遍标签文字、再念「Display name，文本框」，换来应用漏写 `accessibilityLabel` 时字段仍有名字可听。
-- `label-font-size` 引用 `font-size-md`，随密度种子变。
-- 勾选类控件的标签部件读 `label-foreground`、`label-font-weight`（§7）。
+- A Label is not hidden from screen readers: they read the label's text and then "Display name, text field", in exchange
+  for a field that still has a name when the app forgets `accessibilityLabel`.
+- `label-font-size` follows `font-size-md`, changing with the density seed.
+- The choice controls' label parts read `label-foreground` and `label-font-weight` ([Tokens](#tokens)).

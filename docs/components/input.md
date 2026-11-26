@@ -1,191 +1,218 @@
 # Input
 
-> 状态：API 单（P1，已评审，按 2026-11-26 结论修订）。外观用 foundation 的**字段外观**（P0 实现：边、底、阴影、焦点、
-> invalid、readonly、disabled），读本文件 §7 的 `input-*` token；[Textarea](textarea.md) 和以后的 Select 触发器、NumberInput、
-> Combobox 用同一份。
+> Status: API spec (P1, reviewed; revised after the 2026-11-26 review). Drawn by foundation's **field look** (built in P0:
+> edge, fill, shadow, focus, invalid, readonly, disabled), which reads the `input-*` tokens under [Tokens](#tokens).
+> [Textarea](textarea.md) and the later Select trigger, NumberInput and Combobox share it.
 
-## 1. 用途
+## Usage
 
-单行文本输入：姓名、邮箱、密码、搜索词、金额以外的短文本。外观是 shadcn/ui new-york v4 的 `Input`。
+Single-line text entry: a name, an email, a password, a search term, short text other than amounts. The look is
+shadcn/ui new-york v4's `Input`.
 
-何时不用：
+## When not to use
 
-| 需要 | 改用 |
+| Need | Use instead |
 |---|---|
-| 多行文本、备注、可换行的内容 | [Textarea](textarea.md) |
-| 数字，带步进、范围、键盘上下调 | `nsh/base` 的 `NumberInput`（本库以后包一层，P3），不用 `Input` + `keyboardType="numeric"` 自己校验 |
-| 从固定列表里选 | Select（P2）/ Combobox（P3） |
-| 输入框前后带图标、单位、按钮 | InputGroup（shadcn v4 的 `input-group`，以后做）；P1 不给 `Input` 加 prefix / suffix |
-| 验证码、一格一位 | `nsh/base` 的 `OtpInput` |
-| 字段的标签、说明、错误行 | 标签用 [Label](label.md)；说明和错误行等 Form / Field（P3） |
-| 文件选择（shadcn 的 `type="file"`） | 不支持：NSH 没有文件输入框，用系统的文件对话框 |
+| Several lines, notes, text with line breaks | [Textarea](textarea.md) |
+| A number with steps, a range, arrow-key nudges | `nsh/base`'s `NumberInput` (wrapped by this library later, P3), not `Input` + `keyboardType="numeric"` with checks of the app's own |
+| A choice from a fixed list | Select (P2) / Combobox (P3) |
+| Icons, units or buttons before or after the field | InputGroup (shadcn v4's `input-group`, later); P1 gives `Input` no prefix / suffix |
+| A verification code, one character per cell | `nsh/base`'s `OtpInput` |
+| A field's label, description, error line | The label is a [Label](label.md); descriptions and errors wait for Form / Field (P3) |
+| Picking a file (shadcn's `type="file"`) | Not supported: NSH has no file input; use the system's file dialog |
 
-## 2. 基于什么
+## Built on
 
-基于 NSH 的宿主元素 `Input`（TSX 从 `nsh/base` 导入，Rust 是 nsh-core element 模块的 `input()`；原生文本框：AppKit / UIKit / EditText / Win32 / GTK / 浏览器 `<input>`）。
-`nsh/base` 没有「输入框」组件，`NumberInput` 内部也是直接用这个元素，本库照它的做法包一层：组件的根就是这个
-`input()` 元素本身，不在外面套 view（`class` / `style` 直接落在输入框上，和 shadcn 一样只有一个元素）。
+NSH's host element `Input` (TSX imports it from `nsh/base`; Rust's is nsh-core's `element::input()`; natively AppKit,
+UIKit, EditText, Win32, GTK or the browser's `<input>`). `nsh/base` has no styled text field component, and its
+`NumberInput` uses this element directly; this library wraps it the same way. The component's root is the `input()`
+element itself, with no view around it, so `class` / `style` land on the field, one element as in shadcn.
 
-宿主元素已经提供、本库**不重写**的行为：
+What the host element already does, and this library does **not** reimplement:
 
-- 编辑本身：光标、选区、输入法组合（组合期间 `value` 由原生端暂存，结束后再应用）、撤销、复制粘贴、拖拽选择、
-  平台的编辑菜单、拼写检查、自动填充。
-- 受控：每次原生编辑带编辑计数，应用回写的 `value` 只在基于最新编辑时才应用，快速打字不会回跳。
-- 键盘：可编辑的输入框永远是 Tab 停靠点；Return 按 `submitBehavior` 触发 `onSubmit`；编辑键归输入框，祖先的快捷键截不走。
-- 焦点：`focus-visible:` 对**可编辑的输入框聚焦时总是成立**（NSH 的规则：输入框不管是点进来的还是 Tab 进来的都显示焦点），
-  所以本库的焦点环就挂在 `focus-visible:`，和 shadcn 一致，不用再区分键盘 / 指针。
-- 读屏：文本框角色、值、`accessibilityLabel`；`invalid` 状态各平台都映射（macOS `AXInvalid`、Windows `IsDataValidForForm`、
-  AT-SPI invalid entry、Android `setContentInvalid`、Web `aria-invalid`，iOS 读在值里）；`disabled` 读作变暗。
-- 软键盘：`keyboardType`、`returnKeyType`、`autoCapitalize`、`autoCorrect`；滚动区里的输入框被键盘挡住时原生自动让开。
+- Editing: the caret, the selection, input method composition (a `value` set during one is held natively and applied when
+  it ends), undo, copy and paste, drag selection, the platform's edit menu, spell checking, autofill.
+- Control: each native edit carries an edit count, and a `value` from the app applies only when based on the latest edit,
+  so fast typing never jumps back.
+- Keyboard, focus and screen readers: see [Accessibility](#accessibility).
+- Software keyboards: `keyboardType`, `returnKeyType`, `autoCapitalize`, `autoCorrect`; a field in a scroll view moves
+  clear of the keyboard natively.
 
-本库只加：外观（token）、`size`、`invalid` 的外观和读屏状态、`disabled` 的整套处理（照 `NumberInput`：
-`readonly` + `disabled` 一起设，不可编辑、不可聚焦、`disabled:` 生效）。
+This library adds only the look (tokens), `size`, `invalid`'s look and accessibility state, and `disabled` as a whole
+(as `NumberInput` does: `readonly` and `disabled` set together, so the field neither edits nor takes focus, and
+`disabled:` applies).
 
-## 3. API
+## API
 
 ### Props
 
-| TSX | Rust（字段 / setter） | 类型 | 默认 | 说明 |
+| TSX | Rust (field / setter) | Type | Default | Notes |
 |---|---|---|---|---|
-| `value` | `value` | `string` / `Prop<Option<SharedString>>` | — | 受控值。写了就受控：应用持有，`onChange` 报变化，应用回写。不写则非受控，从 `defaultValue` 起 |
-| `defaultValue` | `default_value` | `string` | `""` | 非受控时的初值 |
-| `placeholder` | `placeholder` | `string` | — | 空时显示的提示（应用的文案） |
-| `size` | `size` | `"xs" \| "sm" \| "md" \| "lg"` / `Size` | `"md"` | 见 §4 |
-| `disabled` | `disabled` | `boolean` | `false` | 不可编辑、不可聚焦、不在 Tab 顺序里；外观见 §5 |
-| `readonly` | `readonly` | `boolean` | `false` | 可聚焦、可选中复制，不可改；外观同常态 |
-| `invalid` | `invalid` | `boolean` | `false` | 应用的校验没通过：红边，聚焦时红环；读屏报「无效」（`accessibilityState.invalid`，`aria-invalid:` 类生效） |
-| `masked` | `masked` | `boolean` | `false` | 密码框（shadcn 的 `type="password"`） |
-| `keyboardType` | `keyboard_type` | NSH 的 `KeyboardType` | `"default"` | 软键盘类型（`email-address`、`url`、`phone-pad`…），原样透传 |
-| `returnKeyType` | `return_key_type` | NSH 的 `ReturnKeyType` | 平台默认 | 原样透传 |
-| `autoCapitalize` | `auto_capitalize` | NSH 的 `AutoCapitalize` | 平台默认 | 原样透传 |
-| `autoCorrect` | `auto_correct` | `boolean` | 平台默认 | 原样透传 |
-| `autoComplete` | `auto_complete` | NSH 的 `AutoFill` | — | 自动填充的种类（用户名、密码、邮箱…），原样透传（宿主 Rust 名 `auto_fill`） |
-| `maxLength` | `max_length` | `number` | — | 原样透传 |
-| `autoFocus` | `auto_focus` | `boolean` | `false` | 原样透传；`disabled` 时忽略 |
-| `selectTextOnFocus` | `select_text_on_focus` | `boolean` | `false` | 原样透传 |
-| `accessibilityLabel` | `accessibility_label` | `string` | — | 读屏名。**有可见标签时也要写**（NSH 没有元素间的 labelledby，见 §9 G1） |
-| `class` | `class` | `string` | — | 根（就是输入框）的 Tailwind 类，最后合并，盖过组件的 |
-| `style` | `style` | `StyleProp<InputStyle>` / `InputPartStyle` | — | 根的内联样式，盖过 `class`；可写 `placeholderColor`、`caretColor`、`selectionColor` |
+| `value` | `value` | `string` / `Prop<Option<SharedString>>` | — | The controlled value: when set, the app owns it, `onChange` reports edits and the app sets them back. Unset, the field is uncontrolled and starts from `defaultValue` |
+| `defaultValue` | `default_value` | `string` | `""` | The first value of an uncontrolled field |
+| `placeholder` | `placeholder` | `string` | — | Shown while empty (the app's words) |
+| `size` | `size` | `"xs" \| "sm" \| "md" \| "lg"` / `Size` | `"md"` | [Variants and sizes](#variants-and-sizes) |
+| `disabled` | `disabled` | `boolean` | `false` | No editing, no focus, out of the Tab order; look under [States](#states) |
+| `readonly` | `readonly` | `boolean` | `false` | Focusable, selectable and copyable, not editable; looks as at rest |
+| `invalid` | `invalid` | `boolean` | `false` | The app's checks reject the value: a red edge, a red ring while focused; screen readers say invalid (`accessibilityState.invalid`, so `aria-invalid:` classes apply) |
+| `masked` | `masked` | `boolean` | `false` | A password field (shadcn's `type="password"`) |
+| `keyboardType` | `keyboard_type` | NSH's `KeyboardType` | `"default"` | The software keyboard (`email-address`, `url`, `phone-pad`, ...), passed through |
+| `returnKeyType` | `return_key_type` | NSH's `ReturnKeyType` | the platform's | Passed through |
+| `autoCapitalize` | `auto_capitalize` | NSH's `AutoCapitalize` | the platform's | Passed through |
+| `autoCorrect` | `auto_correct` | `boolean` | the platform's | Passed through |
+| `autoComplete` | `auto_complete` | NSH's `AutoFill` | — | What autofill offers (a user name, a password, an email, ...), passed through (the host's Rust setter is `auto_fill`) |
+| `maxLength` | `max_length` | `number` | — | Passed through |
+| `autoFocus` | `auto_focus` | `boolean` | `false` | Passed through; ignored while `disabled` |
+| `selectTextOnFocus` | `select_text_on_focus` | `boolean` | `false` | Passed through |
+| `accessibilityLabel` | `accessibility_label` | `string` | — | The name screen readers say. **Set it even with a visible label**: NSH has no labelledby between elements (G1 under [NSH gaps](#nsh-gaps)) |
+| `class` | `class` | `string` | — | The root's (the field's) Tailwind classes, merged last, over the component's |
+| `style` | `style` | `StyleProp<InputStyle>` / `InputPartStyle` | — | The root's inline style, over `class`; takes `placeholderColor`, `caretColor`, `selectionColor` |
 
-没有 `type` 属性：shadcn 靠 HTML `type` 区分的东西在 NSH 里是独立的属性（`masked`、`keyboardType`、`autoComplete`），照 NSH 的名字。
-没有 `variant`：shadcn 的 Input 只有一种外观。
+No `type` prop: what shadcn tells apart with HTML's `type` is separate props in NSH (`masked`, `keyboardType`,
+`autoComplete`), under NSH's names. No `variant`: shadcn's Input has one look.
 
-### 事件
+### Events
 
-| TSX | Rust（`InputEvent` 变体 / setter） | 数据 | 说明 |
+| TSX | Rust (`InputEvent` variant / setter) | Data | Notes |
 |---|---|---|---|
-| `onChange` | `Change(String)` / `.on_change(move \|value: &String\| ..)` | `{ value }` | 每次编辑 |
-| `onSubmit` | `Submit(String)` / `.on_submit(..)` | `{ value }` | Return（按 `returnKeyType`），输入法提交组合的那次回车不算 |
-| `onFocus` | `Focus` / `.on_focus(..)` | — | 得到键盘焦点 |
-| `onBlur` | `Blur` / `.on_blur(..)` | — | 失去键盘焦点 |
+| `onChange` | `Change(String)` / `.on_change(move \|value: &String\| ..)` | `{ value }` | Every edit |
+| `onSubmit` | `Submit(String)` / `.on_submit(..)` | `{ value }` | Return (per `returnKeyType`); a Return that commits an input method's composition does not count |
+| `onFocus` | `Focus` / `.on_focus(..)` | — | The field took the keyboard focus |
+| `onBlur` | `Blur` / `.on_blur(..)` | — | The field lost the keyboard focus |
 
-宿主元素还有 `onSelectionChange`、`onCaretMove`、`onPaste`、`onKeyPress`、`onCompositionChange` 等，P1 不透传
-（不是 shadcn Input 的常用面）；需要它们的应用 P1 先直接用 `nsh/base` 的 `Input`，见 §8 末尾。
-以后有真实需要再按名字原样加，不改名。
+The host element also has `onSelectionChange`, `onCaretMove`, `onPaste`, `onKeyPress`, `onCompositionChange` and more.
+P1 does not pass them through (they are not part of shadcn's Input); an app that needs them uses `nsh/base`'s `Input`
+directly for now (end of [Examples](#examples)). They are added later under their own names when a real need comes up.
 
 ### Ref
 
-TSX `let email: InputRef | undefined;` 再 `ref={email}`（NSH 的 ref 写法）拿到 `InputRef`；Rust `ComponentRef<InputApi>`。
+TSX: `let email: InputRef | undefined;` and `ref={email}` (NSH's ref form) give an `InputRef`; Rust: a
+`ComponentRef<InputApi>`.
 
-| 方法 | 说明 |
+| Method | Notes |
 |---|---|
-| `focus()` | 聚焦（弹出软键盘）；`disabled` 时不动 |
-| `blur()` | 失焦 |
-| `setSelection(start, end)` | 选区，UTF-16 下标，同宿主 |
-| `insertText(text)` | 在光标处插入，同宿主 |
+| `focus()` | Takes the focus (showing the software keyboard); does nothing while `disabled` |
+| `blur()` | Gives up the focus |
+| `setSelection(start, end)` | The selection in UTF-16 indices, as the host's |
+| `insertText(text)` | Inserts at the caret, as the host's |
 
-### 部件
+### Parts
 
-只有根一个元素，没有 `<部件>Class` / `<部件>Style`。占位文字、光标、选区的颜色是输入框的样式键
-（`placeholderColor` / `caretColor` / `selectionColor`，或类 `placeholder:text-*` / `caret-*` / `selection:bg-*`），写在根的 `class` / `style` 里。
+The root alone, no `<part>Class` / `<part>Style`. The placeholder, caret and selection colors are the field's style keys
+(`placeholderColor` / `caretColor` / `selectionColor`, or the classes `placeholder:text-*` / `caret-*` / `selection:bg-*`),
+set in the root's `class` / `style`.
 
-## 4. 变体与尺寸
+## Variants and sizes
 
-无变体。尺寸四档都支持，高度、字号、左右内边距一起变：
+No variants. All four sizes; height, text size and horizontal padding change together:
 
-| `size` | 高（指针 / 触屏） | 字号（指针 / 触屏） | 左右内边距 | 对照 |
+| `size` | Height (pointer / touch) | Text (pointer / touch) | Horizontal padding | For |
 |---|---|---|---|---|
-| `xs` | 24 / 32（`control-height-xs` / `-touch-xs`） | 12 / 14 | 8（spacing × 2） | 表格内编辑、工具栏里的过滤框 |
-| `sm` | 28 / 36 | 13 / 14 | 10（spacing × 2.5） | 紧凑表单、侧栏 |
-| `md` | 32 / 40 | 14 / 16 | 12（spacing × 3） | 默认 |
-| `lg` | 36 / 48 | 14 / 16 | 12（spacing × 3） | 指针下 = shadcn 的 `h-9 px-3 md:text-sm` |
+| `xs` | 24 / 32 (`control-height-xs` / `-touch-xs`) | 12 / 14 | 8 (spacing × 2) | Editing in a table cell, a filter in a toolbar |
+| `sm` | 28 / 36 | 13 / 14 | 10 (spacing × 2.5) | Compact forms, sidebars |
+| `md` | 32 / 40 | 14 / 16 | 12 (spacing × 3) | The default |
+| `lg` | 36 / 48 | 14 / 16 | 12 (spacing × 3) | With a pointer, shadcn's `h-9 px-3 md:text-sm` |
 
-和 shadcn 的差别：shadcn 只有一档 `h-9`（36）。本库默认 `md` 是 32，和 Button 的 `md` 同高（桌面中等密度，gpui-kit
-Design Guides）；要 shadcn 原样的高度用 `size="lg"`，或主题里 `control-height: 36`。同一行里的 Input 和 Button 用同一个
-`size` 就对齐。触屏 md / lg 用 16 号字是 conventions.md 的规定（iOS Safari 对小于 16 的输入框会放大页面，也同 shadcn 窄屏的 `text-base`）。
+Unlike shadcn, which has one height (`h-9`, 36): the default `md` is 32, as tall as Button's `md` (medium desktop density,
+gpui-kit's Design Guides). For shadcn's height use `size="lg"`, or `control-height: 36` in the theme. An Input and a
+Button of the same `size` line up in a row. Text of 16 on touch screens at `md` / `lg` is conventions.md's rule (iOS
+Safari zooms the page into fields with smaller text; shadcn's `text-base` on narrow screens too).
 
-宽度：`w-full min-w-0`（占满父级、在 flex 里可以缩），同 shadcn；要固定宽用 `class`。
-圆角所有尺寸都是 `input-radius`（与 Button 同档；若 P0 的 Button 给 `xs` 用了更小的圆角，Input 跟随同一规则）。
-单行文字在固定高度里垂直居中，不设行高。
+Width: `w-full min-w-0` (fills its parent, shrinks in a flex row), as shadcn; a fixed width goes in `class`. Every size
+uses `input-radius` (Button's step; if P0's Button gives `xs` a smaller radius, Input follows the same rule). One line of
+text is centered vertically in the fixed height, with no line height set.
 
-## 5. 状态
+## States
 
-外观由 foundation 的**字段外观**画（P0 实现，conventions.md「外观实现」），本组件只把 `size`、`invalid`、`readonly`、`disabled`
-和焦点交给它。下表是用默认 token 时应得到的结果，也是展示台和截图验收的口径：
+Foundation's **field look** draws the states (built in P0, conventions.md "Appearance"); this component hands it `size`,
+`invalid`, `readonly`, `disabled` and the focus. The table is the result with the default tokens, and what the gallery
+and the screenshots are checked against:
 
-| 状态 | 边 | 背景 | 阴影 / 环 | 其他 | shadcn 原类 |
+| State | Edge | Fill | Shadow / ring | Other | shadcn's classes |
 |---|---|---|---|---|---|
-| 常态 | `input-border-width`（1）`input-border` | `input-background`（亮：透明；暗：`input` 30%） | `input-shadow` = 1（`xs`） | 文字 `input-foreground`，占位 `input-placeholder-foreground` | `border border-input bg-transparent shadow-xs dark:bg-input/30 placeholder:text-muted-foreground` |
-| hover | 不变（没有悬停态，同 shadcn） | 不变 | 不变 | 光标 I 形（原生） | 无 |
-| focus-visible | `input-border-focus`（`ring`） | 不变 | 外环 `input-ring-width`（3）`input-ring`（`ring` 50%），画在框外，叠在 `xs` 阴影上 | 触屏只换边色，不画外环 | `focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50` |
-| invalid | `input-border-invalid`（`destructive`） | 不变 | 不聚焦时无环 | 读屏「无效」 | `aria-invalid:border-destructive` |
-| invalid + focus-visible | `input-border-invalid`（红边压过 `ring` 边） | 不变 | 外环 3 `input-ring-invalid`（= `ring-invalid`：`destructive` 20%，暗 40%）；触屏无外环 | — | `aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40` |
-| readonly | 同常态 | 同常态 | 聚焦时同 focus-visible | 可聚焦、文字可选中复制，不可改 | 无（shadcn 不区分） |
-| disabled | 同常态 | 同常态 | 无环（不可聚焦） | 整体 `opacity-disabled`（0.5），光标箭头 | `disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50` |
+| Rest | `input-border-width` (1) in `input-border` | `input-background` (light: transparent; dark: `input` at 30%) | `input-shadow` = 1 (`xs`) | Text `input-foreground`, placeholder `input-placeholder-foreground` | `border border-input bg-transparent shadow-xs dark:bg-input/30 placeholder:text-muted-foreground` |
+| hover | Unchanged (no hover state, as shadcn) | Unchanged | Unchanged | The I-beam cursor (native) | none |
+| focus-visible | `input-border-focus` (`ring`) | Unchanged | A ring of `input-ring-width` (3) in `input-ring` (`ring` at 50%), outside the box, over the `xs` shadow | Touch: the edge color only, no ring | `focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50` |
+| invalid | `input-border-invalid` (`destructive`) | Unchanged | No ring while unfocused | Screen readers say invalid | `aria-invalid:border-destructive` |
+| invalid + focus-visible | `input-border-invalid` (the red edge wins over `ring`'s) | Unchanged | A ring of 3 in `input-ring-invalid` (= `ring-invalid`: `destructive` at 20%, 40% in dark); none on touch | — | `aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40` |
+| readonly | As at rest | As at rest | As focus-visible while focused | Focusable, its text selectable and copyable, not editable | none (shadcn has no such state) |
+| disabled | As at rest | As at rest | No ring (no focus) | `opacity-disabled` (0.5) over all, the arrow cursor | `disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50` |
 
-本组件这边要注意的：
+Notes for this component:
 
-- 优先级（后者胜）：常态 < focus-visible < invalid < disabled。invalid 只换边和环的颜色，环仍然只在聚焦时出现。
-- NSH 的输入框只要聚焦就是 `focus-visible`（点进来的也算），所以指针设备上点进输入框也出外环，同浏览器。
-- 外环画在框外、不占布局。贴着滚动区、对话框正文、`overflow-hidden` 容器边缘的输入框，环会被裁掉一截（实际应用里出现过）：
-  由容器留出 `ring-width` 的内边距，展示台放一个「贴边」的例子验收。
-- 过渡：边色、背景、阴影 / 环在 `duration` 内过渡，减弱动态效果时归零。shadcn 只过渡 `color, box-shadow`、边色瞬变；
-  NSH 的过渡按「颜色 / 阴影」分组拆不开，边色和环一起过渡。
-- 选区：shadcn Input 写了 `selection:bg-primary selection:text-primary-foreground`。NSH 只能设选区底色、不能设选中文字的颜色，
-  各平台还各自加透明度（Android 55%、Linux 30%、iOS 用 tint），照抄会在亮色下出现深底深字。所以**默认不设 `selectionColor`，用平台的**，
-  见 §9 G4。Textarea 在 shadcn 里本来就没设。
-- 光标：shadcn 不设，本库也不设（平台默认）。
-- 加载中：输入框没有 loading 态（shadcn 没有）；异步校验的转圈放在 InputGroup 里（以后）。
+- Precedence, later wins: rest < focus-visible < invalid < disabled. Invalid changes only the colors of the edge and the
+  ring; the ring still shows only while focused.
+- An NSH field is `focus-visible` whenever it is focused (a click included), so clicking into a field with a pointer shows
+  the ring, as in a browser.
+- The ring is drawn outside the box and takes no layout. A field against the edge of a scroll view, a dialog's body or an
+  `overflow-hidden` container gets its ring clipped (seen in real apps): the container leaves `ring-width` of padding,
+  and the gallery has an edge case to check it.
+- Transitions: the edge color, the fill and the shadow / ring transition over `duration`, none with reduced motion.
+  shadcn transitions only `color, box-shadow` and switches the edge color at once; NSH groups transitions by colors and
+  shadows, which cannot be split, so the edge and the ring transition together.
+- Selection: shadcn's Input sets `selection:bg-primary selection:text-primary-foreground`. NSH sets only the selection's
+  fill, not the selected text's color, and each platform adds its own alpha (Android 55%, Linux 30%, iOS a tint), so
+  copying it would put dark text on a dark fill in light mode. **`selectionColor` is left unset: the platform's
+  selection** (G4 under [NSH gaps](#nsh-gaps)). shadcn's Textarea sets none either.
+- Caret: shadcn sets none; neither does this library (the platform's).
+- Loading: a field has no loading state (shadcn has none); an asynchronous check's spinner belongs in an InputGroup
+  (later).
 
-## 6. 指针与触屏
+## Pointer and touch
 
-| | 指针（桌面、Web 桌面） | 触屏 |
+| | Pointer (desktops, the desktop web) | Touch |
 |---|---|---|
-| 高 | `control-height-*`：24 / 28 / 32 / 36 | `control-height-touch-*`：32 / 36 / 40 / 48 |
-| 字号 | 12 / 13 / 14 / 14 | 14 / 14 / 16 / 16 |
-| 命中区 | 外观即命中区 | 高小于 `touch-target`（44）时上下补命中区（`hitSlop` = (44 − 高) / 2），外观不变 |
-| 焦点 | 边换 `ring` + 3pt 外环 | 只换边色，不画外环（照 iOS / Android 系统文本框；iPad 接实体键盘也一样） |
-| 光标 | I 形（原生）；disabled 箭头 | — |
+| Height | `control-height-*`: 24 / 28 / 32 / 36 | `control-height-touch-*`: 32 / 36 / 40 / 48 |
+| Text | 12 / 13 / 14 / 14 | 14 / 14 / 16 / 16 |
+| Hit area | The field's box | Below `touch-target` (44) the field gets a vertical hit slop (`hitSlop` = (44 − height) / 2); the look is unchanged |
+| Focus | The edge in `ring` and a 3pt ring | The edge color only, no ring (as iOS's and Android's system fields; an iPad with a hardware keyboard too) |
+| Cursor | The I-beam (native); the arrow while disabled | — |
 
-指针 / 触屏的取值用 foundation 的 `pointer_touch` 推导。软键盘、键盘让位、编辑菜单都是原生的，本库不管。
+The pointer / touch values come from foundation's `pointer_touch` derivation. The software keyboard, moving clear of it
+and the edit menu are native; this library does not touch them.
 
-## 7. 组件 token
+## Accessibility
 
-命名照 tokens.md。这些是字段外观的全部旋钮，Textarea 读同一组（不另起 `textarea-border` 这类名字），主题里改 `input-border`
-两者一起变；只想改其中一个时用 `ThemeScope` 或 `class`。指针 / 触屏取值不同的 token，应用要单独改触屏的值时写 `<名字>-touch`。
+All from the host element; this library adds only the `invalid` state and the `disabled` handling.
 
-| token | 类型 | 推导默认值 | 亮 / 暗、指针 / 触屏 |
+- Keyboard: an editable field is always a Tab stop; Return raises `onSubmit` per `submitBehavior`; editing keys belong to
+  the field, and an ancestor's shortcuts never take them. A disabled field is no Tab stop.
+- Focus: `focus-visible:` **always matches a focused editable field** (NSH's rule: a field shows its focus whether it was
+  clicked or tabbed into), so the focus ring hangs on `focus-visible:` as in shadcn, with no keyboard / pointer split.
+- Screen readers: the text field role, the value, `accessibilityLabel`; `invalid` maps on every platform (macOS
+  `AXInvalid`, Windows `IsDataValidForForm`, AT-SPI's invalid entry, Android `setContentInvalid`, the web's
+  `aria-invalid`, iOS in the value); `disabled` reads as dimmed.
+- Name: `accessibilityLabel`, which the app sets even when a visible [Label](label.md) names the field (G1).
+
+## Tokens
+
+Named per tokens.md. These are every knob of the field look; Textarea reads the same ones (no `textarea-border` and the
+like), so changing `input-border` in a theme changes both; to change one, use a `ThemeScope` or `class`. For a token
+whose pointer and touch values differ, an app changes the touch value alone with `<name>-touch`.
+
+| Token | Type | Derived default | Light / dark, pointer / touch |
 |---|---|---|---|
-| `input-radius` | 长度 | `radius-md`（8） | — |
-| `input-height-xs` / `-sm` / `-md` / `-lg` | 长度 | `pointer_touch(control-height-xs, control-height-touch-xs)` 等（24 / 28 / 32 / 36；触屏 32 / 36 / 40 / 48） | 分指针 / 触屏 |
-| `input-padding-x-xs` / `-sm` / `-md` / `-lg` | 长度 | `spacing` × 2 / × 2.5 / × 3 / × 3（8 / 10 / 12 / 12） | — |
-| `input-font-size-xs` / `-sm` / `-md` / `-lg` | 长度 | 指针 `font-size-xs/sm/md/lg`（12 / 13 / 14 / 14）；触屏 14 / 14 / 16 / 16 | 分指针 / 触屏 |
-| `input-border-width` | 长度 | `border-width`（1） | — |
-| `input-border` | 颜色 | `input` | 同 `input` |
-| `input-border-focus` | 颜色 | `ring` | 同 `ring` |
-| `input-border-invalid` | 颜色 | `destructive` | 同 `destructive` |
-| `input-background` | 颜色 | `light_dark(透明, input 的 30%)` | 分亮暗 |
-| `input-foreground` | 颜色 | `foreground` | 同 `foreground` |
-| `input-placeholder-foreground` | 颜色 | `muted-foreground` | 同 `muted-foreground` |
-| `input-ring` | 颜色 | `ring` × `ring-opacity`（50%） | 同 `ring` |
-| `input-ring-invalid` | 颜色 | `ring-invalid`（`destructive` 20%，暗 40%） | 同 `ring-invalid` |
-| `input-ring-width` | 长度 | `ring-width`（3） | — |
-| `input-shadow` | 数字 | 1（`xs`） | — |
+| `input-radius` | length | `radius-md` (8) | — |
+| `input-height-xs` / `-sm` / `-md` / `-lg` | length | `pointer_touch(control-height-xs, control-height-touch-xs)` and so on (24 / 28 / 32 / 36; touch 32 / 36 / 40 / 48) | per pointer / touch |
+| `input-padding-x-xs` / `-sm` / `-md` / `-lg` | length | `spacing` × 2 / × 2.5 / × 3 / × 3 (8 / 10 / 12 / 12) | — |
+| `input-font-size-xs` / `-sm` / `-md` / `-lg` | length | pointer `font-size-xs/sm/md/lg` (12 / 13 / 14 / 14); touch 14 / 14 / 16 / 16 | per pointer / touch |
+| `input-border-width` | length | `border-width` (1) | — |
+| `input-border` | color | `input` | as `input` |
+| `input-border-focus` | color | `ring` | as `ring` |
+| `input-border-invalid` | color | `destructive` | as `destructive` |
+| `input-background` | color | `light_dark(transparent, input at 30%)` | per light / dark |
+| `input-foreground` | color | `foreground` | as `foreground` |
+| `input-placeholder-foreground` | color | `muted-foreground` | as `muted-foreground` |
+| `input-ring` | color | `ring` × `ring-opacity` (50%) | as `ring` |
+| `input-ring-invalid` | color | `ring-invalid` (`destructive` at 20%, 40% in dark) | as `ring-invalid` |
+| `input-ring-width` | length | `ring-width` (3) | — |
+| `input-shadow` | number | 1 (`xs`) | — |
 
-触屏字号 14 / 16 是 `font-size` 种子之外的固定值：tokens.md 没有触屏字号的语义 token，所以写在这里的推导里；
-主题要改用 `input-font-size-md-touch` 这类名字。disabled 的透明度直接用语义 token `opacity-disabled`，不另设（和 Button 一致）。
+The touch text sizes 14 / 16 are fixed values outside the `font-size` seed: tokens.md has no semantic token for touch
+text sizes, so they live in these derivations; a theme changes them as `input-font-size-md-touch` and so on. Disabled
+uses the semantic `opacity-disabled` directly, with no component token (as Button).
 
-Rust 声明（示意，名字和上表一一对应）：
+The Rust declarations (a sketch; names match the table one to one):
 
 ```rust
 tokens! {
@@ -208,13 +235,13 @@ tokens! {
     INPUT_RING: Color = "input-ring" => |t| t.color(RING).opacity(t.number(RING_OPACITY)),
     /// The focus ring while the value is invalid.
     INPUT_RING_INVALID: Color = "input-ring-invalid" => |t| t.color(RING_INVALID),
-    // …其余同表
+    // ...the rest as in the table
 }
 ```
 
-## 8. 示例
+## Examples
 
-TSX：
+TSX:
 
 ```tsx
 import { signal, View } from "nsh";
@@ -242,14 +269,14 @@ function EmailField() {
   );
 }
 
-// 尺寸、密码、只读、禁用
+// Sizes, a password, read-only, disabled
 <Input size="sm" placeholder="Filter" />
 <Input masked autoComplete="password" accessibilityLabel="Password" />
 <Input readonly value={accountId()} accessibilityLabel="Account ID" />
 <Input disabled value="Read from server" />
 ```
 
-Rust：
+Rust:
 
 ```rust
 use nsh::prelude::*;
@@ -274,30 +301,33 @@ fn email_field() -> impl IntoElement {
         )
 }
 
-// 尺寸
+// A size
 input().size(Size::Sm).placeholder("Filter")
 ```
 
-需要宿主元素的全部能力（`onPaste`、`selectedRange`、`onCaretMove`…）的应用，P1 先直接用 `nsh/base` 的 `Input` 自己写样式；
-TSX 是否导出一份字段外观（`fieldLook`）等 P1 实现后再定。
+An app that needs all of the host element (`onPaste`, `selectedRange`, `onCaretMove`, ...) uses `nsh/base`'s `Input`
+with styles of its own for now; whether TSX exports the field look (`fieldLook`) is decided after P1 is built.
 
-TSX 里本库的 `Input` 和 `nsh/base` 的 `Input` 同名，两个都要用时照 conventions.md 起别名（`import { Input as BaseInput } from "nsh/base"`）。
-Rust 同理：`nsh_longbridge::input` 和 nsh-core 的 `element::input` 同名，不要两个都 glob 引入。
+This library's `Input` and `nsh/base`'s `Input` share a name; an app using both aliases one, per conventions.md
+(`import { Input as BaseInput } from "nsh/base"`). Likewise in Rust, `nsh_longbridge::input` and nsh-core's
+`element::input` share a name: do not glob-import both.
 
-## 9. NSH 能力缺口与已定的取舍
+## NSH gaps
 
-### 缺口
+- **G1 No labelledby between elements.** NSH has no relation by which one element names another for screen readers (its
+  own API naming doc says so). Workaround: the app sets the Input's `accessibilityLabel` to the visible Label's text;
+  the docs and the gallery examples all do. How Label handles it: [label.md](label.md).
+- **G4 The selection takes only a fill.** The selected text's color cannot be set, the selection's alpha differs per
+  platform, and iOS tints the selection and the caret with one color. Workaround: `selectionColor` is left unset (the
+  platform's); an app that wants its brand color sets it in `style`.
 
-- **G1 没有元素间的 labelledby。** NSH 没有一个元素引用另一个元素做读屏名的关系（NSH 自己的 API 命名文档也这么说）。
-  绕过：Input 的 `accessibilityLabel` 由应用写，和可见的 Label 同文；文档和展示台示例都这样写。Label 的处理见 [label.md](label.md)。
-- **G4 选区只能设底色。** 不能设选中文字颜色，选区透明度各平台不同，iOS 的选区和光标共用一个 tint。
-  绕过：默认不设 `selectionColor`，用平台默认；应用要品牌色自己在 `style` 里写。
+## Decisions
 
-### 已定（2026-11-26 评审）
+Settled in the 2026-11-26 review:
 
-- 触屏字号：md / lg 16，xs / sm 14。
-- 焦点环画在框外；触屏上只换边色，不画外环。
-- Textarea 共用 `input-*` token。
-- 输入框没有悬停态。
-- 字段外观的实现在 foundation（P0），本文件引用它并保留 token 表。
-- 有 `readonly` 状态。TSX 的 `fieldLook` 暂不做。
+- Text on touch screens: 16 at `md` / `lg`, 14 at `xs` / `sm`.
+- The focus ring is drawn outside the box; on touch screens only the edge color changes, with no ring.
+- Textarea shares the `input-*` tokens.
+- Fields have no hover state.
+- The field look is built in foundation (P0); this spec refers to it and keeps the token table.
+- `readonly` is a state. TSX's `fieldLook` is not exported yet.

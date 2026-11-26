@@ -1,89 +1,95 @@
 # Spinner
 
-转圈的加载指示：一件事正在进行、还不知道要多久。对照 shadcn/ui new-york v4 `spinner.tsx`。
+A spinning loading indicator: something is in progress and how long it takes is unknown. Reference: shadcn/ui
+new-york v4 `spinner.tsx`.
 
-## 用途
+## Usage
 
-- 一小块区域、一行、一个面板正在加载或提交。
-- 搜：转圈、加载中、菊花、加载指示器；spinner, loading indicator, activity indicator, loader。
+- A small area, a row or a panel is loading or submitting.
+- Search terms: spinner, loading indicator, activity indicator, loader.
 
-何时不用：
+## When not to use
 
-- 按钮在提交：用 `Button` 的 `loading`（它内部就是这个 Spinner，还管着不可点）。
-- 整块内容的首次加载、知道内容的形状：用 `Skeleton`。
-- 知道进度（百分比）：用进度条（`nsh/base` 的 `Progress`，本库以后做 `Progress`），不用 Spinner。
+- A button is submitting: use `Button`'s `loading` (it uses this spinner and also blocks presses).
+- First load of a block whose shape is known: use `Skeleton`.
+- The progress is known (a percentage): use a progress bar (`nsh/base`'s `Progress`; this library's `Progress` comes
+  later), not a spinner.
 
-## 基于
+## Built on
 
-`nsh/base` 没有对应组件，本库用 foundation 的图标画。图标是 lucide 的 `loader-circle`（shadcn 用的 `Loader2Icon`
-就是它），用 Tailwind 的 `animate-spin` 转（NSH 支持）。没有行为。
+`nsh/base` has no counterpart; this library draws a foundation icon, lucide's `loader-circle` (shadcn's `Loader2Icon`),
+turned by Tailwind's `animate-spin` (supported by NSH). It has no behavior.
 
 ## API
 
-| TSX | Rust | 类型 | 默认 | 说明 |
+| TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `size` | `size` | `Size`：`"xs"` \| `"sm"` \| `"md"` \| `"lg"` | 从上下文取，没有是 `"md"` | 图标边长，见下 |
-| `accessibilityLabel` | `accessibility_label` | `string` | `"Loading"`（经 `labels::set_translator` 翻译） | 读屏名 |
-| `class` / `style` | `class` / `style` | | | 根，即图标；`class="size-8"` 可以超出四档 |
+| `size` | `size` | `Size`: `"xs"` \| `"sm"` \| `"md"` \| `"lg"` | From context, else `"md"` | The icon's edge; see below |
+| `accessibilityLabel` | `accessibility_label` | `string` | `"Loading"` (translated through `labels::set_translator`) | Screen reader label |
+| `class` / `style` | `class` / `style` | | | The root, which is the icon; `class="size-8"` goes beyond the four sizes |
 
-没有事件，没有 children，没有部件。
+No events, no children, no parts.
 
-## 变体和尺寸
+## Variants and sizes
 
-- 无 `variant`。颜色跟字色（见下）。
-- `size`：
+- No `variant`. The color follows the text (see "Look").
+- `size`:
 
-| `size` | 边长 | shadcn 对照 |
+| `size` | Edge | shadcn |
 |---|---|---|
-| `xs` | 12 | `size-3`，xs 按钮里的图标 |
+| `xs` | 12 | `size-3`, the icon in an xs button |
 | `sm` | 14 | `size-3.5` |
-| `md` | 16 | `size-4`，shadcn 的默认 |
-| `lg` | 20 | `size-5` |
+| `md` | 16 | `size-4`, shadcn's default |
+| `lg` | 16 | `size-4`, same as `md`; for larger use `class="size-5"` or change the `icon-size-lg` token |
 
-边长就是 foundation 的图标边长（随 `Size`），Spinner 不另起 token。没给 `size` 时和图标一样从上下文取默认，
-所以放进 `size="sm"` 的按钮里自动是 14。
+The edge is the foundation's icon edge for that `Size`; the spinner declares no token of its own. Without `size` it takes
+the default from context as icons do, so in a `size="sm"` button it is 14.
 
-shadcn 只有 `size-4` 一档，其余靠 `className`。本库按约定给 `size` 四档，这样 Spinner 放进同 `size` 的按钮、输入框时
-和图标一样大。更大的（页面正中的 32）照 shadcn 用 `class="size-8"`。触屏不变大：它不是控件。
+shadcn has only `size-4` and leaves the rest to `className`. This library gives the four `size`s of the conventions, so a
+spinner in a control of the same `size` matches its icons. Larger ones (32 in the middle of a page) use `class="size-8"`
+as in shadcn. Not enlarged on touch screens: it is not a control.
 
-## 外观
+### Look
 
-shadcn：`size-4 animate-spin`，颜色 `currentColor`（跟所在文字）。
+shadcn: `size-4 animate-spin`, color `currentColor` (the surrounding text).
 
-| | 值 |
+| | Value |
 |---|---|
-| 形状 | `loader-circle` 图标，描边宽沿用图标集的（lucide 2） |
-| 颜色 | 跟随所在文字（foundation 图标的规则，同 shadcn 的 `currentColor`）：放在按钮里就是按钮的字色，放在 `text-muted-foreground` 的行里就是弱色。要别的颜色给 `class="text-…"` |
-| 动画 | `animate-spin`：1 s 一圈，线性，无限 |
+| Shape | The `loader-circle` icon, with the icon set's stroke width (lucide's 2) |
+| Color | Follows the surrounding text (the foundation's icon rule, shadcn's `currentColor`): the button's text color in a button, muted in a `text-muted-foreground` row. Another color: `class="text-…"` |
+| Animation | `animate-spin`: one turn per second, linear, endless |
 
-颜色不设 token：跟字色走才能在按钮各变体里自动对；要统一改颜色的，改所在位置的字色。
+No color token: following the text keeps it right in every button variant; to change it everywhere, change the text
+color where it sits.
 
-## 状态
+## States
 
-- **减弱动态效果**：照转（已定）。转圈本身就是"还在进行"的信息，停住的图标像卡死；macOS、iOS 系统的转圈在
-  减弱动态效果下也照转，WCAG 2.3.3 也豁免表达必要信息的动画。这是 conventions.md "减弱动态效果时过渡归零"的例外：
-  它不是过渡。
-- 无 hover / active / focus / disabled。
+- **Reduced motion**: keeps spinning (decided). The spin is the "still in progress" information; a still icon looks
+  frozen. macOS and iOS system spinners keep spinning under reduced motion, and WCAG 2.3.3 exempts animation that is
+  essential to the information. This is an exception to conventions.md's "transitions go to zero under reduced motion":
+  it is not a transition.
+- No hover / active / focus / disabled.
 
-## 指针与触屏
+## Pointer and touch
 
-没有差别。
+No difference.
 
-## 键盘与读屏
+## Accessibility
 
-- 不是 Tab 站，不接指针。
-- 读屏：角色 `progressbar`（不定进度），读屏名 `accessibilityLabel`（默认 "Loading"），状态 `busy`。
-  shadcn 用的是 `role="status"`；NSH 没有 `status` 角色，不定进度的 `progressbar` 也是 macOS / iOS 系统转圈
-  （`NSProgressIndicator`、`UIActivityIndicatorView`）给读屏的角色，所以取它。
-- 放进 `Button` 的 `loading` 时由 Button 去掉 Spinner 自己的读屏节点，只在按钮上报 busy，避免念两遍
-  （P0 Button 的事，这里记一笔）。
+- No Tab stop, no pointer events.
+- Role `progressbar` (indeterminate), label `accessibilityLabel` (default "Loading"), state `busy`. shadcn uses
+  `role="status"`; NSH has no `status` role, and an indeterminate `progressbar` is the role macOS and iOS give their own
+  spinners (`NSProgressIndicator`, `UIActivityIndicatorView`).
+- Inside `Button`'s `loading`, the button removes the spinner's own accessibility node and reports busy on itself, so it
+  is not read twice (P0 Button's job; noted here).
 
-## Token
+## Tokens
 
-无组件 token：边长用 foundation 的图标边长（随 `Size`，12 / 14 / 16 / 20），颜色跟随文字，动画是 Tailwind 的
-固定值（NSH 的 token 存不了曲线）。要统一改大小或颜色，改所在位置的 `size` 或字色。
+No component tokens: the edge is the foundation's icon edge (`icon-size-xs/sm/md/lg`, 12 / 14 / 16 / 16), the color
+follows the text, and the animation is Tailwind's fixed values (NSH tokens cannot hold a curve). To change size or color
+everywhere, change the `size` or the text color where it sits.
 
-## 示例
+## Examples
 
 ```tsx
 import { Spinner, Button } from "nsh-longbridge";
@@ -106,10 +112,10 @@ view().flex_row().items_center().gap_2()
 spinner().class("size-8 text-primary").accessibility_label("Loading orders")
 ```
 
-## NSH 缺口
+## NSH gaps
 
-- **没有 `status` 读屏角色**。绕过：用不定进度的 `progressbar` + `busy`（见上）。
+- **No `status` accessibility role.** Workaround: an indeterminate `progressbar` with `busy` (see "Accessibility").
 
-## 已定
+## Decisions
 
-- 减弱动态效果时照转（评审结论）。
+- Keeps spinning under reduced motion (review outcome).

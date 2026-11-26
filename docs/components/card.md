@@ -1,123 +1,132 @@
 # Card
 
-卡片：一块有边、有底、有轻投影的容器，里面按 头 / 内容 / 脚 排。对照 shadcn/ui new-york v4 `card.tsx`。
+A container with a border, a fill and a light shadow, laid out as header, content and footer. Reference: shadcn/ui
+new-york v4 `card.tsx`.
 
-## 用途
+## Usage
 
-- 设置分组、表单块、一个对象的摘要（一个账户、一个订单）、仪表盘上的一格。
-- 搜：卡片、面板、信息卡、内容块、分组框；card, panel, surface, tile, group box。
+- A group of settings, a block of a form, the summary of one object, a cell of a dashboard.
+- Search terms: card, panel, surface, tile, group box.
 
-何时不用：
+## When not to use
 
-- 只要一块有边框的区域、没有标题结构：直接给 `view` 写 `class="rounded-xl border bg-card"`，不用 Card。
-- 提示、警告、错误信息块：以后的 `Alert`（P2 之后），不用 Card 改颜色。
-- 整张卡可点、可选中：shadcn 的 Card 不可交互，本库也不做（评审已定）。可点的东西放进 `CardAction` 或
-  `CardFooter` 里的 `Button`。
-- 弹出来的面板：`Popover` / `Dialog`（P2）。
+- A bordered area without the title structure: give a `view` `class="rounded-xl border bg-card"`; no `Card` needed.
+- Notices, warnings and errors: the later `Alert` (after P2), not a recolored card.
+- A whole card that is pressed or selected: shadcn's card is not interactive and neither is this one (decided in
+  review). Put pressable things in a `Button` inside `CardAction` or `CardFooter`.
+- A panel that pops up: `Popover` / `Dialog` (P2).
 
-## 基于
+## Built on
 
-`nsh/base` 没有对应组件，本库用 `view` 和 `text` 拼。没有行为：不可聚焦、不接按压；里面的控件照常工作。
+`nsh/base` has no counterpart; this library composes `view`s and `text`s. No behavior: not focusable, no presses; the
+controls inside work as usual.
 
-照约定"组合优于开关"，结构由子组件拼，和 shadcn 一一对应：
+Following "composition over switches" in the conventions, the structure is made of child components, one for each of
+shadcn's:
 
 ```
 Card
 ├─ CardHeader
 │  ├─ CardTitle
 │  ├─ CardDescription
-│  └─ CardAction        （可选，占右上角，跨标题和说明两行）
+│  └─ CardAction        (optional: top right, spanning the title and description rows)
 ├─ CardContent
 └─ CardFooter
 ```
 
-每个部件是一个组件，各自接 `class` / `style`，所以 Card 本身不开 `headerClass` 这类部件属性（约定里的
-`<部件>Class` 是给"不是单独组件"的部件用的）。
+Each part is a component with its own `class` / `style`, so `Card` has no part props such as `headerClass` (the
+conventions' `<part>Class` is for parts that are not components of their own).
+
+### Implementation
+
+- **CardHeader's two columns**: shadcn uses `has-data-[slot=card-action]:grid-cols-[1fr_auto]`. NSH has no `:has()`,
+  so this library uses context: `CardHeader` provides a "has an action" signal that `CardAction` sets when it mounts
+  and clears in its `cleanup`, and the header's column template is bound to it. `1fr auto` is not used unconditionally:
+  without an action the second column is 0 wide, but the column gap `gap-2` remains and narrows the title by 8 for
+  nothing.
+- A `CardAction` outside a `CardHeader` (no context to read) renders as usual and logs a warning in development builds.
 
 ## API
 
-| 组件 | TSX | Rust | 接受 | 说明 |
+| Component | TSX | Rust | Takes | Description |
 |---|---|---|---|---|
-| `Card` | `<Card>` | `card()` | `children`、`class`、`style` | 根 |
-| `CardHeader` | `<CardHeader>` | `card_header()` | 同上 | 标题区 |
-| `CardTitle` | `<CardTitle>` | `card_title()` | 同上 | 标题；字符串 children 包成一段文字 |
-| `CardDescription` | `<CardDescription>` | `card_description()` | 同上 | 说明；字符串 children 包成一段文字 |
-| `CardAction` | `<CardAction>` | `card_action()` | 同上 | 右上角的操作（按钮、菜单触发器）；只能放在 `CardHeader` 里 |
-| `CardContent` | `<CardContent>` | `card_content()` | 同上 | 主体 |
-| `CardFooter` | `<CardFooter>` | `card_footer()` | 同上 | 底部一行（按钮、说明） |
+| `Card` | `<Card>` | `card()` | `children`, `class`, `style` | The root |
+| `CardHeader` | `<CardHeader>` | `card_header()` | Same | The title area |
+| `CardTitle` | `<CardTitle>` | `card_title()` | Same | The title; string children are wrapped in a text |
+| `CardDescription` | `<CardDescription>` | `card_description()` | Same | The description; string children are wrapped in a text |
+| `CardAction` | `<CardAction>` | `card_action()` | Same | The action at the top right (a button, a menu trigger); only inside `CardHeader` |
+| `CardContent` | `<CardContent>` | `card_content()` | Same | The body |
+| `CardFooter` | `<CardFooter>` | `card_footer()` | Same | The bottom row (buttons, notes) |
 
-没有事件，没有受控值。部件都可以省；顺序就是 children 的顺序。
+No events, no controlled values. Every part is optional; the order is the children's order.
 
-## 变体和尺寸
+## Variants and sizes
 
-- 无 `variant`：shadcn 只有一种。灰底卡、无投影卡用 `class` 或作用域 token（`card-shadow: 0`）。
-- 无 `size`（`xs` / `sm` / `md` / `lg` 都不支持）：卡片的内边距是 token，整体紧凑改 `card-padding` / `card-gap`
-  或 `spacing` 种子。
+- No `variant`: shadcn has one. A muted card or one without a shadow uses `class` or a scoped token (`card-shadow: 0`).
+- No `size` (none of `xs` / `sm` / `md` / `lg`): the padding is a token; for a denser layout change `card-padding` /
+  `card-gap` or the `spacing` seed.
 
-## 外观
+### Look
 
-| 部件 | shadcn 类 | 本库 |
+| Part | shadcn classes | This library |
 |---|---|---|
-| `Card` | `flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm` | 竖排；部件间隔 `card-gap`；上下内边距 `card-padding`；圆角 `card-radius`；边 `border-width` × `card-border`；底 `card`；字色 `card-foreground`（里面的文字继承）；投影档 `card-shadow` |
-| `CardHeader` | `grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6`，有 action 时 `grid-cols-[1fr_auto]`；`[.border-b]:pb-6` | grid：行 `auto auto`，`items-start`，间隔 `card-header-gap`；左右 `card-padding`。有 `CardAction` 时列 `1fr auto`（见下「实现」） |
-| `CardTitle` | `leading-none font-semibold` | 字号 `card-title-font-size`、行高 1（shadcn 的 `leading-none`，明确不走 foundation 的字号 → 行高）、`font-weight-semibold` |
-| `CardDescription` | `text-sm text-muted-foreground` | 字号 `card-description-font-size`、行高由 foundation 的「字号 → 行高」给（14 → 20，同 `text-sm`）、色 `card-description-foreground` |
-| `CardAction` | `col-start-2 row-span-2 row-start-1 self-start justify-self-end` | 同 |
-| `CardContent` | `px-6` | 左右 `card-padding` |
-| `CardFooter` | `flex items-center px-6 [.border-t]:pt-6` | 横排、竖向居中；左右 `card-padding` |
+| `Card` | `flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm` | A column; `card-gap` between parts; `card-padding` top and bottom; corners `card-radius`; border `border-width` × `card-border`; fill `card`; text color `card-foreground` (inherited by the text inside); shadow tier `card-shadow` |
+| `CardHeader` | `grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6`, `grid-cols-[1fr_auto]` with an action; `[.border-b]:pb-6` | A grid: rows `auto auto`, `items-start`, gap `card-header-gap`; `card-padding` left and right. Columns `1fr auto` when it has a `CardAction` (see "Implementation") |
+| `CardTitle` | `leading-none font-semibold` | Size `card-title-font-size`, line height 1 (shadcn's `leading-none`, deliberately not the foundation's font size → line height), `font-weight-semibold` |
+| `CardDescription` | `text-sm text-muted-foreground` | Size `card-description-font-size`, line height from the foundation's font size → line height (14 → 20, as `text-sm`), color `card-description-foreground` |
+| `CardAction` | `col-start-2 row-span-2 row-start-1 self-start justify-self-end` | Same |
+| `CardContent` | `px-6` | `card-padding` left and right |
+| `CardFooter` | `flex items-center px-6 [.border-t]:pt-6` | A row, centered vertically; `card-padding` left and right |
 
-**带分隔线的头 / 脚**：shadcn 的 `[.border-b]:pb-6` 是"应用给头加了 `border-b` 时自动补下内边距"。NSH 不能按"有没有
-某个类"匹配，所以由应用连着写：`<CardHeader class="border-b pb-6">`、`<CardFooter class="border-t pt-6">`。
-文档、展示台都这样写，示例见下。
+**Header and footer with a divider**: shadcn's `[.border-b]:pb-6` adds bottom padding when the app gives the header a
+`border-b`. NSH cannot match on whether an element has a class, so the app writes both:
+`<CardHeader class="border-b pb-6">`, `<CardFooter class="border-t pt-6">`. The docs and the gallery write it that way;
+see "Examples".
 
-和 shadcn 的差别：没有。桌面密度上 24 的内边距偏松，但约定是外观照 shadcn；本库的紧凑预设主题里把 `card-padding`、
-`card-gap` 调到 16（P0 的 `themes/` 预设，不在本单定）。
+No other differences from shadcn. The 24 padding is roomy for desktop density, but the conventions take the look from
+shadcn; the library's compact preset theme sets `card-padding` and `card-gap` to 16 (P0's `themes/` presets, not decided
+here).
 
-## 状态
+## States
 
-无 hover / active / focus / disabled：Card 不可交互。里面的控件各有各的状态。
+No hover / active / focus / disabled: the card is not interactive. The controls inside have their own states.
 
-## 指针与触屏
+## Pointer and touch
 
-外观没有差别。触屏上卡片里的按钮自己按 `control-height-touch-*` 变大，卡片不另管。
+Same look. On touch screens the buttons in a card grow to `control-height-touch-*` by themselves; the card does nothing
+extra.
 
-## 键盘与读屏
+## Accessibility
 
-- Card 和它的部件都不是 Tab 站；Tab 在卡内的控件之间照常走。
-- `CardTitle` 的读屏角色是 `header`（标题），读屏可以按标题跳到每张卡。shadcn 的 `CardTitle` 是 `div`，没有
-  标题语义；本库加上，因为 NSH 的读屏导航靠 `header` 角色，没有它卡片在读屏里是一堆散字。
-- 其余部件没有角色（`none`），文字照常念。
+- Neither the card nor its parts are Tab stops; Tab moves between the controls inside as usual.
+- `CardTitle` has the `header` role, so screen readers can jump from card to card by heading. shadcn's `CardTitle` is a
+  `div` without heading semantics; this library adds it because NSH's screen reader navigation relies on the `header`
+  role, and without it a card reads as loose text.
+- The other parts have no role (`none`); their text is read as usual.
 
-## Token
+## Tokens
 
-| token | 类型 | 推导默认 | 亮 / 暗 |
+| Token | Type | Derived default | Light / dark |
 |---|---|---|---|
-| `card` | 颜色 | 语义 `card`（同名同义，照 tokens.md 直接用语义 token，见下） | 跟着 `card` |
-| `card-foreground` | 颜色 | 语义 `card-foreground` | 同 |
-| `card-border` | 颜色 | `border` | 同 |
-| `card-description-foreground` | 颜色 | `muted-foreground` | 同 |
-| `card-radius` | 长度 | `radius-xl`（14） | 同 |
-| `card-shadow` | 数字 | 2（`sm`，同 shadcn `shadow-sm`；0 无、1 xs、2 sm、3 md、4 lg） | 投影色 `shadow` 亮暗各一 |
-| `card-padding` | 长度 | `spacing` × 6（24） | 同 |
-| `card-gap` | 长度 | `spacing` × 6（24） | 同 |
-| `card-header-gap` | 长度 | `spacing` × 2（8） | 同 |
-| `card-title-font-size` | 长度 | 16（Tailwind `text-base`） | 同 |
-| `card-description-font-size` | 长度 | 14（Tailwind `text-sm`） | 同 |
+| `card` | color | The semantic `card` (same name and meaning: used directly, as tokens.md says; see below) | Follows `card` |
+| `card-foreground` | color | The semantic `card-foreground` | Same |
+| `card-border` | color | `border` | Same |
+| `card-description-foreground` | color | `muted-foreground` | Same |
+| `card-radius` | length | `radius-xl` (14) | Same |
+| `card-shadow` | number | 2 (`sm`, shadcn's `shadow-sm`; 0 none, 1 xs, 2 sm, 3 md, 4 lg) | The shadow color `shadow` has a light and a dark value |
+| `card-padding` | length | `spacing` × 6 (24) | Same |
+| `card-gap` | length | `spacing` × 6 (24) | Same |
+| `card-header-gap` | length | `spacing` × 2 (8) | Same |
+| `card-title-font-size` | length | 16 (Tailwind's `text-base`) | Same |
+| `card-description-font-size` | length | 14 (Tailwind's `text-sm`) | Same |
 
-- `card` / `card-foreground` 本来就是 shadcn 的语义 token，组件就直接用它们，**不另声明**同名组件 token
-  （在 `tokens!` 里不出现这两行，表里列出来只是告诉读者底色从哪来）。想只改卡片的底，就是改语义 `card`，
-  这本来就只影响卡片类的表面。
-- `card-title-font-size` 用 Tailwind 的固定字号，不引用 `font-size-*`：tokens.md 规定正文和标题用 Tailwind 的值，
-  `font-size-*` 是控件字号。
+- `card` and `card-foreground` are shadcn's semantic tokens, so the component uses them directly and declares no
+  component tokens of the same name (they are absent from `tokens!`; the table lists them to show where the fill comes
+  from). To change only the cards' fill, change the semantic `card`, which only card-like surfaces use anyway.
+- `card-title-font-size` is Tailwind's fixed size, not a `font-size-*`: tokens.md gives body text and headings
+  Tailwind's values, and `font-size-*` is for controls.
 
-## 实现
-
-- **CardHeader 的两列**：shadcn 用 `has-data-[slot=card-action]:grid-cols-[1fr_auto]`。NSH 没有 `:has()`，本库用上下文：
-  `CardHeader` 提供一个"有 action"的信号，`CardAction` 挂上时置真、卸下时（`cleanup`）置假；`CardHeader` 的列定义
-  绑这个信号。不总是用 `1fr auto`：没有 action 时第二列虽然宽 0，列间隔 `gap-2` 仍在，标题会被白白挤窄 8。
-- `CardAction` 放在 `CardHeader` 之外（读不到上下文）：照常渲染，开发构建打一条警告。
-
-## 示例
+## Examples
 
 ```tsx
 import { Button, Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "nsh-longbridge";
@@ -153,16 +162,18 @@ card().w(px(360.0))
     .child(card_footer().class("border-t pt-6 gap-2").child(button().flex_1().child("Login")))
 ```
 
-## NSH 缺口
+## NSH gaps
 
-- **没有 `:has()`、没有"按自己有没有某个类"匹配**（shadcn 的 `has-data-[slot=card-action]:`、`[.border-b]:`）。
-  绕过：action 用上下文登记；分隔线的补白由应用连着写（见上）。
-- **文字颜色继承**：Card 根上的 `card-foreground` 要靠 NSH 的文字颜色继承传到 children 里应用自己的 `text`。实现时
-  确认 NSH 的 `text` 不写颜色时继承父 `view` 的字色（`docs/dev/styles.md` 里文字样式按 CSS 继承）；如果不继承，
-  `CardTitle` / `CardDescription` 自己设色不受影响，应用自己的 `text` 要自己写 `text-card-foreground`，记为缺口。
+- **No `:has()` and no matching on an element's own classes** (shadcn's `has-data-[slot=card-action]:` and
+  `[.border-b]:`). Workaround: the action registers through context; the app writes the divider's padding itself (see
+  "Look").
+- **Text color inheritance**: the root's `card-foreground` reaches the app's own `text`s inside only through NSH's text
+  color inheritance. To verify in the implementation: a `text` without a color inherits its parent `view`'s
+  (`docs/dev/styles.md`: text styles inherit as in CSS). If it does not, `CardTitle` and `CardDescription`, which set
+  their own colors, are unaffected, the app's own `text`s need `text-card-foreground`, and it is recorded as a gap.
 
-## 已定（评审结论）
+## Decisions
 
-1. 不加可点 / 可选中的整卡。
-2. `CardTitle` 加 `header` 读屏角色。
-3. `card-shadow` = 2（`sm`）。
+1. No pressable or selectable whole card.
+2. `CardTitle` has the `header` role.
+3. `card-shadow` = 2 (`sm`).
