@@ -1,0 +1,4 @@
+target/
+.nsh/
+.results/
+.DS_Store
