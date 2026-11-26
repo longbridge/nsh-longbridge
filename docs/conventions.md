@@ -1,67 +1,81 @@
-# 组件约定
+# Component conventions
 
-每个组件都守这些约定。改约定先改这份文档。
+Every component follows these conventions. Change this document before changing a convention.
 
-## 设计依据
+## What decides what
 
-| 方面 | 以谁为准 |
+| Aspect | Decided by |
 |---|---|
-| 外观（颜色、圆角、字号、阴影、间距） | shadcn/ui new-york v4，值走 token（[tokens.md](tokens.md)） |
-| 行为、键盘、焦点、无障碍 | `nsh/base`：有对应的 base 组件就包它，不自己重写行为 |
-| 交互形态 | 所在平台的惯例（桌面弹层、触屏底部面板），`nsh/base` 已按平台做的直接用 |
-| 桌面习惯 | gpui-kit 的 Design Guides：按钮用默认箭头光标，链接才用手型；中等密度为默认；同心圆角；状态都要看得见 |
+| The look (colors, radii, type, shadows, spacing) | shadcn/ui new-york v4, its values as tokens ([tokens.md](tokens.md)) |
+| Behavior, keys, focus, accessibility | `nsh/base`: a component wraps its `nsh/base` counterpart where there is one, never rewriting its behavior |
+| The form of an interaction | The platform's conventions (a popup on a desktop, a sheet on a touch screen); what `nsh/base` already does per platform is used as is |
+| Desktop conventions | gpui-kit's Design Guides: the arrow cursor on buttons, the pointing hand on links only; medium density by default; concentric radii; every state visible |
 
-不照抄 Web 习惯：悬停才出现的关键操作、处处手型光标、移动优先的单列布局。
+Web habits not to copy: critical actions that appear only under the pointer, a pointing hand everywhere, a
+mobile-first single column.
 
 ## API
 
-- **一个组件一个文件**，`src/components/<名字>.rs`；在根的 `#[native_module]` 里注册。JS 导出名就是类型名。
-- **props 是结构体**，事件是枚举，选项是 `PropEnum`。TS 声明从这里生成，所以每个字段写英文文档注释。
-- **受控**：值由应用持有，组件报变化。事件名照 NSH（`nsh/base`、`docs/dev/api-naming.md`），不照 Radix：
-  `onChange({ checked })`、`onChange({ value })`、`onOpenChange({ open })`、`onPress`。应用会同时用本库和 `nsh/base`，
-  同一件事一个名字。
-- **和 NSH 同名的导出**（`Input`、`Button`）照 shadcn 起名，应用两个都要用时自己起别名
-  （`import { Input as BaseInput } from "nsh/base"`）。
-- **`variant` + `size`**：变体名照 shadcn（`default` / `secondary` / `outline` / `ghost` / `destructive` / `link`，
-  组件用不到的不加）；`size` 只用 foundation 的 `Size`（`xs` / `sm` / `md` / `lg`，默认 `md`），高度、字号、图标、
-  内边距一起变，不加单独的高度属性。
-- **部件可定制**：根接受 `class` / `style`（最后合并，盖过组件自己的）；每个有意义的部件给一对 `<部件>Class` /
-  `<部件>Style`（`labelClass`、`iconStyle`），名字写进 API 单。字符串 children 自动包成的文字算一个部件，叫 `label`。
-- **组件内部的 group 名**一律加前缀 `nlb-`（`group/nlb-checkbox`），不占用应用和 `nsh/base` 的名字。
-- **组合优于开关**：结构由子组件拼（`Card` + `CardHeader` + `CardTitle` + `CardContent`），不用一堆布尔属性控制显隐。
-- **内容用 slot / children**，不把 markup 写死。
-- **组件自带的文案**（读屏名、"Loading"）：英文默认值，宿主用 `labels::set_translator` 注入翻译。
-- **新组件、新增或改动的公开 API 要评审**：先写 API 单再写代码。
+- **One component per file**, `src/components/<name>.rs`, registered in the root's `#[native_module]`. The JS export
+  is the type's name.
+- **Props are a struct**, events an enum, choices a `PropEnum`. The TypeScript declarations are generated from them,
+  so every field has an English doc comment.
+- **Controlled**: the app owns the value and the component reports changes. Events are named as NSH names them
+  (`nsh/base`, NSH's `docs/dev/api-naming.md`), not as Radix does: `onChange({ checked })`, `onChange({ value })`,
+  `onOpenChange({ open })`, `onPress`. Apps use this library beside `nsh/base`, so one thing has one name.
+- **Exports named like NSH's** (`Input`, `Button`) keep shadcn's names; an app using both renames one
+  (`import { Input as BaseInput } from "nsh/base"`).
+- **`variant` and `size`**: variants have shadcn's names (`default`, `secondary`, `outline`, `ghost`, `destructive`,
+  `link`; only those a component needs). `size` is `foundation`'s `Size` (`xs`, `sm`, `md`, `lg`; `md` by default),
+  which changes the height, type, icon and padding together; there is no separate height prop.
+- **Styled parts**: the root takes `class` and `style` (merged last, over the component's own). Each meaningful part
+  takes `<part>Class` and `<part>Style` (`labelClass`, `iconStyle`), named in the spec. The text a string child
+  becomes is a part named `label`.
+- **Group names** a component uses inside start with `nlb-` (`group/nlb-checkbox`), leaving other names to the app
+  and to `nsh/base`.
+- **Composition over switches**: structure is made of parts (`Card`, `CardHeader`, `CardTitle`, `CardContent`), not
+  of boolean props that show or hide pieces.
+- **Content is slots and children**, not fixed markup.
+- **A component's own text** (accessibility labels, "Loading") is English by default; a host translates it with
+  `labels::set_translator`.
+- **A new component, or a new or changed public API, is reviewed**: its spec is written before its code.
 
-## 外观实现
+## Drawing
 
-- 颜色、圆角、尺寸都从 `theme()` 句柄读 token；组件的 token 用 `tokens!` 就近声明，推导默认值引用语义 token。
-  `src/components/` 里出现颜色字面量，测试会挂。
-- 状态：shadcn 或平台有的状态都要做，没有的不加（例如输入框、勾选框照 shadcn 没有悬停）。可能的状态：hover、active（按下）、
-  focus-visible（焦点环 = `ring` 色、`ring-width`、`ring-opacity`，边换成 `ring` 色；画在控件外面）、
-  disabled（`opacity-disabled`，无悬停无按下，光标仍是箭头）、readonly（可聚焦可选中，外观同常态）、
-  invalid（`destructive` 的边；外环只在聚焦时出现，用 `ring-invalid`）、loading（不可点、不变暗）。
-- 触屏上的焦点只换边色，不画外环（照 iOS / Android 的系统控件）。
-- 按下反馈走 foundation 的 `press(scale)`：按钮 0.97，勾选框 / 单选这类小控件 0.9；减弱动态效果时不缩放；颜色过渡用 `duration`。
-- 表单字段（Input、Textarea，以后的 Select 触发器、NumberInput、Combobox）共用 foundation 的字段外观（边、底、阴影、焦点、
-  invalid、disabled），读 `input-*` token，不各画一份。
-- 图标：边长随 `Size`（12 / 14 / 16 / 20），没给尺寸时从上下文取；颜色跟随所在文字。
-- 字号配行高：foundation 给一个「字号 → 行高」函数，组件不各写行高。
-- 触屏：外观尺寸取 `control-height-touch-*`；小于 `touch-target` 的补命中区（hit slop），不放大外观。有标签的勾选类控件
-  标签本身就是命中区，不再补。触屏上输入框的 md / lg 字号用 16（iOS Safari 对小于 16 的输入框会放大页面）。
-- 亮暗两套都要好看，暗色照 shadcn 的暗色处理（例如 outline 在暗色下用 `input` 的边和 `input` 30% 的底）。
+- Colors, radii and sizes are read from the `theme()` handle. A component declares its tokens with `tokens!` in its
+  file, their defaults derived from semantic tokens. A color literal in `src/components/` fails a test.
+- States: a component has the states shadcn or the platform gives it, and no others (fields and checkboxes have no
+  hover, as in shadcn). The states are: hover; active (pressed); focus-visible (a ring in `ring` at `ring-width` and
+  `ring-opacity`, the edge turning `ring`, drawn outside the control); disabled (`opacity-disabled`, no hover or press,
+  the arrow cursor kept); read-only (focusable and selectable, drawn as at rest); invalid (a `destructive` edge, and
+  the `ring-invalid` ring only while focused); loading (not pressable, not dimmed).
+- On a touch screen focus changes only the edge color, without a ring (as iOS's and Android's own controls).
+- A press goes through `foundation`'s `press(scale)`: 0.97 for buttons, 0.9 for small controls such as checkboxes and
+  radios; no scale with reduced motion. Color transitions take `duration`.
+- Fields (`Input`, `Textarea`, and later a `Select`'s trigger, `NumberInput`, `Combobox`) share `foundation`'s field
+  look (edge, fill, shadow, focus, invalid, disabled) on the `input-*` tokens, rather than each drawing its own.
+- Icons: sized by `icon-size-*` with the control's `size`, from the context when not given; colored as their text.
+- Line heights come from `foundation`'s `line_height(size)`; components do not set their own.
+- Touch screens: controls take `control-height-touch-*`; one smaller than `touch-target` gets a hit slop, not a larger
+  look. A checkbox-like control with a label is hit through its label and gets none. A field's `md` and `lg` text is
+  16 on a touch screen (iOS Safari zooms the page into a field with smaller text).
+- Both appearances must look right; dark follows shadcn's dark treatment (an outline button in dark: an `input`
+  edge on `input` at 30%).
 
-## 每个组件的交付
+## What each component delivers
 
-1. `docs/components/<名字>.md`：用途、何时不用、props / 事件 / 部件、变体和尺寸、状态、键盘与读屏、token 表、TSX 和 Rust 示例。
-2. `src/components/<名字>.rs`：实现 + `tokens!` 声明。
-3. 展示台一页：变体 × 尺寸 × 状态的矩阵，亮 / 暗都看，能在页面里改该组件的 token。
-4. 测试：headless 测试行为（按下、禁用、受控值、键盘、无障碍角色与状态）；token 表和 `themes/default.json` 一致。
-5. 截图验收：Web 和 macOS，亮 / 暗，各一张，放进 PR 描述。
-6. README 组件索引加一行。
+1. `docs/components/<name>.md`, with these sections as needed, in this order: Usage, When not to use, Built on, API
+   (props, events, parts), Variants and sizes, States, Pointer and touch, Accessibility, Tokens, Examples (TSX and
+   Rust), NSH gaps, Decisions.
+2. `src/components/<name>.rs`: the component and its `tokens!`.
+3. A gallery page: variants × sizes × states, in light and dark, with the component's tokens editable on the page.
+4. Tests: headless tests of behavior (press, disabled, controlled values, keys, accessibility roles and states); the
+   token table and `themes/default.json` agree with the code.
+5. Screenshots for review: web and macOS, light and dark, in the pull request.
+6. A row in the README's component index.
 
-## 不做
+## Out of scope
 
-- 业务组件（行情、交易、账户）不进本库。
-- 不包一个组件只为了换个名字；不为一个页面加一个变体（用 `class` 或作用域 token）。
-- 不在组件里判断具体产品或品牌。
+- Domain components (quotes, trading, accounts) are not part of this library.
+- No wrapper that only renames a component; no variant for one screen (use `class` or scoped tokens).
+- No component checks for a particular product or brand.

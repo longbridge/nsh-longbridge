@@ -1,94 +1,113 @@
-# Token 规范
+# Tokens
 
-本库外观的唯一来源。组件里不写颜色字面量、不写散落的尺寸数字：颜色和会被人调的尺寸都是 token，
-固定的几何关系（比如图标和文字的间距随 `size` 变）写在 foundation 的函数里，函数也从 token 取值。
+Tokens are the one source of the library's look. Components hold no color literals and no scattered sizes: every
+color and every size someone may want to tune is a token. Fixed geometric relationships (the gap between an icon and
+its label growing with `size`) are functions in `foundation`, and those functions read tokens too.
 
-## NSH 给的底座（约束）
+## What NSH provides (the constraints)
 
-- NSH 的 token 只有三种值：颜色（亮 / 暗各一）、数字（点，或无单位）、字体族。阴影、渐变、缓动曲线不能做 token。
-- 主题文件是 shadcn 的 `cssVars` 格式（`theme` / `light` / `dark` 三段），`nsh.json` 的 `"theme"` 指向它，
-  盖在 `nsh-base` 的默认（shadcn neutral）之上。主题里新加的名字就是应用自己的 token。
-- token 是整个界面一份，读取会订阅：`setTheme` / `set_tokens` 换掉后，读过它的绑定会重跑。核心没有按子树覆盖，
-  作用域由本库自己做（见下「作用域」）。
-- Tailwind 类和 TSX 的 `token()` 只认主题文件里真有的 token；本库的推导默认值只在本库组件里生效。应用想在自己的
-  Tailwind 类里用 `bg-button-default` 这类名字，要把它写进主题文件（从 `themes/default.json` 复制）。
+- An NSH token is a color (a light and a dark value), a number (points, or unitless) or a font family. Shadows,
+  gradients and easing curves cannot be tokens.
+- A theme file is shadcn's `cssVars` (`theme`, `light` and `dark` sections). `nsh.json`'s `"theme"` names it, over
+  `nsh-base`'s default (shadcn's `neutral`). A name the theme adds is one of the app's own tokens.
+- A surface has one set of tokens, and reading one subscribes: after `setTheme` / `set_tokens`, the bindings that read
+  it run again. The core has no per-subtree tokens; this library scopes them itself ("Scopes" below).
+- Tailwind classes and TSX's `token()` see only the tokens a theme file has; this library's derived defaults apply in
+  its own components only. An app that wants `bg-button-default` in its own classes writes that token into its theme
+  file (copied from `themes/default.json`).
 
-## 三层
+## Three tiers
 
-命名照 shadcn / Tailwind 4 的变量名，kebab-case，不带 `--`。
+Names follow shadcn's and Tailwind 4's variables: kebab-case, without `--`.
 
-### 1. 种子：少数几个旋钮，牵动全部
+### 1. Seeds: a few knobs that move everything
 
-| token | 默认 | 推出什么 |
+| Token | Default | Derives |
 |---|---|---|
-| `radius` | 10（0.625rem，shadcn） | `radius-sm/md/lg/xl` |
-| `spacing` | 4 | 组件内边距、间距（Tailwind 4 的 `--spacing`） |
-| `font-size` | 14 | 控件字号 `font-size-xs/sm/md/lg` |
-| `control-height` | 32 | 指针设备上 `control-height-xs/sm/md/lg` |
-| `control-height-touch` | 40 | 触屏上的同一组 |
-| `duration` | 150（毫秒） | `duration-fast/slow` |
-| `font-sans` / `font-mono` | 系统字体 | 文字 |
+| `radius` | 10 (0.625rem, shadcn's) | `radius-sm/md/lg/xl` |
+| `spacing` | 4 | Paddings and gaps (Tailwind 4's `--spacing`) |
+| `font-size` | 14 | The controls' `font-size-xs/sm/md/lg` and `icon-size-*` |
+| `control-height` | 32 | `control-height-xs/sm/md/lg` with a pointer |
+| `control-height-touch` | 40 | The same on a touch screen |
+| `duration` | 150 (ms) | `duration-fast/slow` |
+| `font-sans` / `font-mono` | The system's | Text |
 
-改 `radius: 0` 整套变直角；改 `control-height: 28` 整套变紧凑。
+`radius: 0` squares the whole library; `control-height: 28` makes it compact.
 
-### 2. 语义：shadcn 的名字
+### 2. Semantic: shadcn's names
 
-- **颜色**：shadcn 全套（`background`、`foreground`、`card`、`popover`、`primary`、`secondary`、`muted`、`accent`、
-  各自的 `-foreground`，`destructive`、`border`、`input`、`ring`、`chart-1..5`、`sidebar-*`），加上本库补的：
-  `destructive-foreground`、`success` / `warning` / `info` 及其 `-foreground`、`overlay`（模态遮罩）、`shadow`（投影色）。
-- **圆角**：`radius-sm` = radius − 4，`radius-md` = radius − 2，`radius-lg` = radius，`radius-xl` = radius + 4（shadcn v4 的算法）。
-- **控件高度**：`control-height-xs/sm/md/lg` = control-height − 8 / − 4 / ± 0 / + 4（24 / 28 / 32 / 36）；
-  `control-height-touch-xs/sm/md/lg` = control-height-touch − 8 / − 4 / ± 0 / + 8（32 / 36 / 40 / 48）。
-  触屏另有 `touch-target` 44：控件比它小时补命中区，不放大外观。
-- **字号**：控件用 `font-size-xs/sm/md/lg` = font-size − 2 / − 1 / ± 0 / ± 0（12 / 13 / 14 / 14，随控件 `size`）；
-  正文和标题照 Tailwind 的值（`text-xs` 12、`text-sm` 14、`text-base` 16、`text-lg` 18，名字和值都不改，
-  免得和 NSH 的 Tailwind 类对不上）；`font-weight-medium` 500、`font-weight-semibold` 600。
-- **线与焦点**：`border-width` 1、`ring-width` 3、`ring-opacity` 0.5（shadcn 的 `focus-visible:ring-ring/50 ring-[3px]`）。
-- **状态**：`opacity-disabled` 0.5。
-- **动效**：`duration-fast` = duration × 2/3、`duration-slow` = duration × 5/3。缓动曲线固定在 foundation，
-  减弱动态效果时按下不缩放、过渡归零。
-- **阴影**：几何按档位固定在 foundation（`xs` / `sm` / `md` / `lg`，照 Tailwind），颜色用 `shadow` token；
-  组件用 `<组件>-shadow` 这个数字 token 选档：0 无、1 `xs`、2 `sm`、3 `md`、4 `lg`。
-- **无效**：`ring-invalid` = `destructive` 的 20%（暗色 40%），表单控件 invalid 且聚焦时的外环。
+- **Colors**: shadcn's full set (`background`, `foreground`, `card`, `popover`, `primary`, `secondary`, `muted`,
+  `accent`, each with its `-foreground`, `destructive`, `border`, `input`, `ring`, `chart-1..5`, `sidebar-*`), and
+  this library's additions: `destructive-foreground`, `success` / `warning` / `info` with their `-foreground`,
+  `overlay` (behind a modal) and `shadow` (the color of drop shadows).
+- **Radii**: `radius-sm` = radius − 4, `radius-md` = radius − 2, `radius-lg` = radius, `radius-xl` = radius + 4
+  (shadcn v4's).
+- **Control heights**: `control-height-xs/sm/md/lg` = control-height − 8 / − 4 / ± 0 / + 4 (24 / 28 / 32 / 36);
+  `control-height-touch-xs/sm/md/lg` = control-height-touch − 8 / − 4 / ± 0 / + 8 (32 / 36 / 40 / 48).
+  `touch-target` (44) is the smallest target on a touch screen: a smaller control gets a hit slop, not a larger look.
+- **Type**: controls use `font-size-xs/sm/md/lg` = font-size − 2 / − 1 / ± 0 / ± 0 (12 / 13 / 14 / 14, by the
+  control's `size`). Body text and headings keep Tailwind's names and values (`text-xs` 12, `text-sm` 14, `text-base`
+  16, `text-lg` 18), so they agree with NSH's Tailwind classes. `font-weight-medium` 500, `font-weight-semibold` 600.
+  Line heights are no tokens: `foundation`'s `line_height(size)` pairs them as Tailwind does (12→16, 13→18, 14→20,
+  16→24, 18→28).
+- **Icons**: an icon in a control is paired with its type, `icon-size-xs/sm/md/lg` = font-size − 2 / ± 0 / + 2 / + 2
+  (12 / 14 / 16 / 16, by the control's `size`; shadcn's buttons use `size-4` at every size but `xs`). An icon without
+  a size takes its control's; its color is its text's.
+- **Lines and focus**: `border-width` 1, `ring-width` 3, `ring-opacity` 0.5 (shadcn's `focus-visible:ring-ring/50
+  ring-[3px]`).
+- **Invalid**: `ring-invalid` = `destructive` at 20% (40% in dark): the ring of a focused invalid field.
+- **States**: `opacity-disabled` 0.5.
+- **Motion**: `duration-fast` = duration × 2/3, `duration-slow` = duration × 5/3. Easing curves are fixed in
+  `foundation`; with reduced motion a press does not scale and transitions take no time.
+- **Shadows**: the geometry of each tier is fixed in `foundation` (`xs`, `sm`, `md`, `lg`, as Tailwind's), colored
+  with the `shadow` token. A component picks a tier with its number token `<component>-shadow`: 0 none, 1 `xs`,
+  2 `sm`, 3 `md`, 4 `lg`.
 
-### 3. 组件：只影响一种组件
+### 3. Component tokens: one kind of component
 
-命名：`<组件>[-<变体>][-<部件>]-<属性>[-<状态>]`。颜色沿用 shadcn 的写法：底色用裸名，文字加 `-foreground`，
-描边加 `-border`；状态后缀只用 `-hover`、`-active`、`-focus`、`-invalid`、`-disabled`。
+Names: `<component>[-<variant>][-<part>]-<property>[-<state>]`. Colors follow shadcn: a fill is the bare name, the
+text on it `-foreground`, an edge `-border`. The only state suffixes are `-hover`, `-active`, `-focus`, `-invalid` and
+`-disabled`.
 
-- 控件的形态（选中 `checked`、半选 `indeterminate`、打开 `open`）放在变体位，不当状态后缀：
-  `checkbox-checked-border`、`switch-checked-thumb`。
-- 控件本体（框、轨道、圆圈）用裸名；次要部件带部件名（`switch-thumb`、`radio-group-item-dot`）。
-- 裸名撞上语义 token 时：意思相同就直接用语义 token，不再声明（`card`、`card-foreground`，否则会循环引用）；
-  意思不同就加 `-background`（`input` 是语义的输入框边色，输入框的底色叫 `input-background`）。
-- 焦点环统一叫 `<组件>-border-focus`（聚焦时的边）、`<组件>-ring`（外环）、`<组件>-ring-invalid`（默认引用 `ring-invalid`）。
-- 类型：颜色；长度（字号、圆角、尺寸、间距，单位点）；数字（毫秒、档位、透明度、缩放）。
+- A control's form (`checked`, `indeterminate`, `open`) goes where a variant goes, not in a state suffix:
+  `checkbox-checked-border`, `switch-checked-thumb`.
+- The control itself (a box, a track, a ring) has the bare name; a secondary part adds its name (`switch-thumb`,
+  `radio-group-item-dot`).
+- Where a bare name is a semantic token: if it means the same, the component uses the semantic token and declares
+  none (`card`, `card-foreground`; declaring it would refer to itself); if not, it adds `-background` (`input` is
+  the semantic edge color of fields, so a field's fill is `input-background`).
+- Focus tokens are `<component>-border-focus` (the edge while focused), `<component>-ring` (the ring) and
+  `<component>-ring-invalid` (`ring-invalid` by default).
+- Kinds: colors; lengths (type sizes, radii, sizes, gaps, in points); numbers (milliseconds, tiers, opacities,
+  scales).
 
-例：
+For example:
 
 ```
 button-radius              = radius-md
-button-height-sm           = control-height-sm（触屏取 control-height-touch-sm）
+button-height-sm           = control-height-sm (control-height-touch-sm on a touch screen)
 button-default             = primary
 button-default-foreground  = primary-foreground
-button-default-hover       = button-default 的 90%
-button-outline-border      = border（暗色 input）
+button-default-hover       = button-default at 90%
+button-outline-border      = border (input in dark)
 input-border               = input
 card-radius                = radius-xl
-card-shadow                = 2（sm）
+card-shadow                = 2 (sm)
 ```
 
-每个组件的 token 表写在它的 API 单里（`docs/components/<组件>.md`），和代码里的声明一一对应，测试守着。
+Each component's tokens are listed in its spec (`docs/components/<component>.md`), one row per declaration in its
+code; tests keep the two the same.
 
-## 解析顺序
+## Resolution
 
-组件读一个 token 时，从上往下，第一个有值的胜出：
+A component reading a token takes the first of these that has a value:
 
-1. 最近的 `ThemeScope` 给的值；
-2. 应用的 token（主题文件、`setTheme`、`set_tokens`，嵌入时宿主给的）；
-3. 本库声明的推导默认值（引用语义 / 种子 token，**走同一套解析**，所以作用域里改了 `primary`，`button-default` 也跟着变）。
+1. the nearest `ThemeScope`'s;
+2. the app's (its theme file, `setTheme`, `set_tokens`, an embedding host's);
+3. the default this library derives (from semantic and seed tokens, **resolved the same way**: a scope that changes
+   `primary` changes `button-default` too).
 
-推导默认值和 token 名一起在 Rust 里声明，就近写在组件文件里：
+Derived defaults are declared in Rust with their names, in the component's file:
 
 ```rust
 tokens! {
@@ -100,41 +119,43 @@ tokens! {
 }
 ```
 
-推导默认值可以分亮暗、分指针 / 触屏，这是通用规则，不是例外：
+A default may differ between appearances and between pointer and touch; that is a general rule, not an exception:
 
 ```rust
 INPUT_BACKGROUND: Color = "input-background" => |t| t.light_dark(TRANSPARENT, t.color(INPUT).opacity(0.3)),
 BUTTON_HEIGHT_SM: Length = "button-height-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM), t.length(CONTROL_HEIGHT_TOUCH_SM)),
 ```
 
-应用在主题文件里写的值，亮暗照主题文件的 `light` / `dark` 段；指针 / 触屏的不同取值，应用要分开改时另写
-`<名字>-touch`（有就用于触屏）。
+A value an app's theme file sets has its light and dark values from the file's `light` and `dark` sections. To set a
+different value for touch screens, the app also sets `<name>-touch`, which a touch screen uses when it has one.
 
-`tokens!` 生成名字常量、默认值和登记表；登记表用来生成 `themes/default.json`（全量、带 `var()` 引用，给应用复制）
-和文档里的 token 表，测试检查三者一致。
+`tokens!` makes the name constants, the defaults and a registry. The registry generates `themes/default.json` (every
+token, with `var()` references, for apps to copy) and the token tables of the docs; a test keeps the three the same.
 
-组件里这样读（在组件函数体里拿句柄，绑定里读值）：
+A component takes the handle in its body and reads values in its bindings:
 
 ```rust
-let t = nsh_longbridge::theme();           // 捕获当前作用域
+let t = nsh_longbridge::theme();           // captures the current scope
 view().bg(move || t.color(BUTTON_DEFAULT)).rounded(move || t.length(BUTTON_RADIUS))
 ```
 
-## 作用域
+## Scopes
 
 ```tsx
 <ThemeScope tokens={{ primary: "#2563eb", "button-radius": "0px" }} appearance="dark">
-  …这里面的本库组件用这套值，暗色…
+  {/* this library's components in here use these values, in dark */}
 </ThemeScope>
 ```
 
-- `tokens`：值写 CSS（颜色、`px` / `rem`、数字），解析失败的忽略并告警；可嵌套，内层盖外层。
-- `appearance`：`"light"` / `"dark"` / 不写（跟随）。强制时本库把颜色的亮暗两值都取成那一档；
-  不在本库里画的东西（应用自己的 Tailwind 类、NSH 原生控件）不受影响。
+- `tokens`: CSS values (colors, `px` / `rem`, numbers); one that does not parse is ignored with a warning. Scopes
+  nest, the inner one winning.
+- `appearance`: `"light"`, `"dark"`, or unset (the app's). When set, this library takes both values of a color from
+  that appearance. What this library does not draw (the app's own Tailwind classes, NSH's native controls) is not
+  affected.
 
-## 主题文件
+## Theme files
 
-- `themes/default.json`：全量 token，默认值，带引用。是文档也是起点。
-- `themes/*.json`：预设（例如 shadcn 的 zinc / blue / rose 配色、一份紧凑密度）。
-- 应用的做法：`nsh.json` 的 `"theme"` 指向自己的文件，只写要改的 token；要在 Tailwind 类里用本库 token 的，
-  把对应条目复制过去。
+- `themes/default.json`: every token at its default, with references. Both a reference and a starting point.
+- `themes/*.json`: presets (shadcn's zinc, blue or rose colors, a compact density).
+- An app points `nsh.json`'s `"theme"` at its own file and writes only the tokens it changes; to use this library's
+  tokens in its Tailwind classes, it copies their entries too.
