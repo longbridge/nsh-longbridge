@@ -38,5 +38,6 @@ fn native(registry: &mut Registry) {
     registry
         .register::<Button>()
         .register::<Icon>()
-        .register::<ThemeScope>();
+        .register::<ThemeScope>()
+        .module::<foundation::labels::Labels>();
 }

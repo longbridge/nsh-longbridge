@@ -139,7 +139,7 @@ A theme sets a touch-only value with `<name>-touch` (for example `button-height-
 
 - Role `button` (from `nsh/base`); the name is the content's text, or `accessibilityLabel`.
 - `loading` sets the busy state; an icon-only button that is loading and has no `accessibilityLabel` is named
-  "Loading" (`labels`, translatable with `set_translator`).
+  "Loading" (`labels`: `setTranslator` in TSX, `labels::set_translator` in Rust).
 - `disabled` is announced as dimmed and leaves the Tab order; `loading` keeps the button focusable.
 - Icons are hidden from screen readers.
 - `invalid` is not announced: the field that failed carries the error.
