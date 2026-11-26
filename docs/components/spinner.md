@@ -25,7 +25,7 @@ turned by Tailwind's `animate-spin` (supported by NSH). It has no behavior.
 | TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
 | `size` | `size` | `Size`: `"xs"` \| `"sm"` \| `"md"` \| `"lg"` | From context, else `"md"` | The icon's edge; see below |
-| `accessibilityLabel` | `accessibility_label` | `string` | `"Loading"` (translated through `labels::set_translator`) | Screen reader label |
+| `accessibilityLabel` | `accessibility_label` | `string` | `"Loading"` (translated with `setTranslator` in TSX, `labels::set_translator` in Rust) | Screen reader label |
 | `class` / `style` | `class` / `style` | | | The root, which is the icon; `class="size-8"` goes beyond the four sizes |
 
 No events, no children, no parts.

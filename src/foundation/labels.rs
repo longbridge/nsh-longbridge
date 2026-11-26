@@ -1,14 +1,13 @@
 //! The library's own words (what screen readers say for a spinner, a
-//! loading button): English by default; the host translates them with
-//! [`set_translator`] (TSX: `setTranslator`).
+//! loading button): English by default; the app translates them with
+//! [`set_translator`] (TSX: `setTranslator`). The translator is the
+//! surface's (a [`global`]): apps sharing a process (plugins in one host)
+//! keep their own, and the words shown follow a new one at once.
 
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, rc::Rc};
 
 use nsh_core::{
-    element::{Callback, module},
+    element::{Callback, global, module},
     prelude::*,
 };
 
@@ -40,27 +39,34 @@ impl Label {
     }
 }
 
-type Translator = Arc<dyn Fn(Label) -> Option<SharedString> + Send + Sync>;
+type Translator = Rc<dyn Fn(Label) -> Option<SharedString>>;
 
-static TRANSLATOR: RwLock<Option<Translator>> = RwLock::new(None);
+/// The surface's translator (`None`: English).
+#[derive(Clone, Default)]
+struct Translations(Option<Translator>);
 
-/// Translates the library's words from now on: `translate(label)` gives
-/// the text, `None` for English. Reading the locale inside it (`locale()`)
-/// makes the components that show a label follow its changes.
-pub fn set_translator(translate: impl Fn(Label) -> Option<SharedString> + Send + Sync + 'static) {
-    *TRANSLATOR.write().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(translate));
+/// Translates the library's words on this surface from now on:
+/// `translate(label)` gives the text, `None` for English. The words shown
+/// change at once, and so they do when what `translate` reads changes
+/// (`locale()`). Call it inside the app's runtime (a component, a
+/// listener, a task), as the surface's globals require: outside it, it
+/// panics.
+pub fn set_translator(translate: impl Fn(Label) -> Option<SharedString> + 'static) {
+    global::<Translations>().set(Translations(Some(Rc::new(translate))));
 }
 
-/// Back to English.
+/// Back to English on this surface (inside the app's runtime, as
+/// [`set_translator`]).
 pub fn clear_translator() {
-    *TRANSLATOR.write().unwrap_or_else(|e| e.into_inner()) = None;
+    global::<Translations>().set(Translations(None));
 }
 
-/// The text of `label` (read it in a binding).
+/// The text of `label` on this surface. Read in a binding, it follows the
+/// translator; outside a runtime, it is English.
 pub fn text(label: Label) -> SharedString {
-    let translator = TRANSLATOR.read().unwrap_or_else(|e| e.into_inner()).clone();
-    translator
-        .and_then(|t| t(label))
+    try_global::<Translations>()
+        .and_then(|translations| translations.get().0)
+        .and_then(|translate| translate(label))
         .unwrap_or_else(|| label.english().into())
 }
 
@@ -74,10 +80,10 @@ impl Labels {
     /// spinner or a loading button without a label), English by default.
     /// `translate(key)` is called for every key while `setTranslator`
     /// runs, and its answers are kept: a string is the text; `null`, or a
-    /// call that throws (logged), keeps the English one. Call it before
-    /// the screens that show the words are built, and again when the
-    /// language changes: a word already shown keeps its text until its
-    /// component is built again. `null` goes back to English.
+    /// call that throws (logged), keeps the English one. The words shown
+    /// change at once; call it again when the language changes. The
+    /// translation is this app's own: other apps in the same process keep
+    /// theirs. `null` goes back to English.
     pub(crate) fn set_translator(#[args(key)] translate: Option<Callback<Label, Option<String>>>) {
         match translate {
             // A JS function runs only inside a call from JS, never in the
@@ -109,11 +115,14 @@ fn set_table(mut ask: impl FnMut(Label) -> Result<Option<String>, String>) {
 
 #[cfg(test)]
 mod tests {
+    use nsh_core::element::Runtime;
+
     use super::*;
 
-    /// One test: the translator is the process's.
     #[test]
     fn a_table_answers_once_per_word_and_falls_back_to_english() {
+        let runtime = Runtime::default();
+        let _entered = runtime.enter();
         let mut asked = Vec::new();
         set_table(|label| {
             asked.push(label);
@@ -130,6 +139,11 @@ mod tests {
 
         set_table(|_| Ok(Some("Chargement".into())));
         clear_translator();
+        assert_eq!(text(Label::Loading), "Loading");
+    }
+
+    #[test]
+    fn outside_a_runtime_the_words_are_english() {
         assert_eq!(text(Label::Loading), "Loading");
     }
 }
