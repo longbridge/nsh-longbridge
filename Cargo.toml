@@ -9,24 +9,28 @@ publish = false
 [lib]
 path = "src/lib.rs"
 
-# nsh's crates come from crates.io at `=0.7.0`, the version of the local `nsh`
-# CLI. 0.7.0 on crates.io was published from Git commit 3f8ecd8b3 ("release:
-# Prepare version 0.7.0"; its `.cargo_vcs_info.json`), the commit the CLI was
-# built from, so this is that pin. A Git dependency does not work for an
-# nshm with a released CLI: the workspace nsh generates for an app that
-# installs this crate takes nsh from crates.io and does not patch Git
-# dependencies of nshm to it, so the app would link two `nsh-core`s. Move
-# the version together with the CLI.
+# nsh's crates are a caret requirement on the release line (`0.7`: any
+# 0.7.x), not a pin. This crate is installed into apps as an nshm, and the
+# workspace the `nsh` CLI generates for an app requires nsh's crates from
+# crates.io at exactly the CLI's version: with `0.7`, Cargo resolves one
+# `nsh-core` for the app and this crate, whichever 0.7.x CLI the app uses.
+# An exact version here fails as soon as the CLI moves (`=0.7.0` against a
+# 0.7.1 CLI): Cargo cannot select two 0.7.x of one crate, so the app does
+# not build. A Git dependency is no way out: the generated workspace does
+# not patch nshm's Git dependencies to crates.io, so the app would link two
+# `nsh-core`s. `Cargo.lock` keeps the version of the CLI this repository is
+# developed with. Raise the minimum when this crate needs a newer 0.7.x;
+# move to the next line (`0.8`) together with the CLI.
 [dependencies]
-nsh-core = { version = "=0.7.0" }
-nsh-base = { version = "=0.7.0" }
+nsh-core = { version = "0.7" }
+nsh-base = { version = "0.7" }
 log = "0.4"
 serde_json = "1"
 
 [dev-dependencies]
-nsh-core = { version = "=0.7.0", features = ["declarations"] }
-nsh-engine = { version = "=0.7.0", default-features = false }
-nsh-testing = { version = "=0.7.0", default-features = false }
+nsh-core = { version = "0.7", features = ["declarations"] }
+nsh-engine = { version = "0.7", default-features = false }
+nsh-testing = { version = "0.7", default-features = false }
 
 [lints.rust]
 unsafe_code = "forbid"
