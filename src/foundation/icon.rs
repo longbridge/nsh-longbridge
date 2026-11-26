@@ -109,8 +109,8 @@ pub(crate) fn icon_view(
     side: impl Fn() -> Points + Copy + 'static,
 ) -> Svg {
     svg(move || ImageSrc::svg_markup(name().markup()))
-        .w(move || side())
-        .h(move || side())
+        .w(side)
+        .h(side)
         .flex_shrink_0()
         .accessibility_elements_hidden(true)
 }
