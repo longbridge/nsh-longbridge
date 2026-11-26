@@ -17,12 +17,17 @@
 
 - **一个组件一个文件**，`src/components/<名字>.rs`；在根的 `#[native_module]` 里注册。JS 导出名就是类型名。
 - **props 是结构体**，事件是枚举，选项是 `PropEnum`。TS 声明从这里生成，所以每个字段写英文文档注释。
-- **受控**：值由应用持有，组件报变化（`onChange`、`onOpenChange`、`onCheckedChange`）。
+- **受控**：值由应用持有，组件报变化。事件名照 NSH（`nsh/base`、`docs/dev/api-naming.md`），不照 Radix：
+  `onChange({ checked })`、`onChange({ value })`、`onOpenChange({ open })`、`onPress`。应用会同时用本库和 `nsh/base`，
+  同一件事一个名字。
+- **和 NSH 同名的导出**（`Input`、`Button`）照 shadcn 起名，应用两个都要用时自己起别名
+  （`import { Input as BaseInput } from "nsh/base"`）。
 - **`variant` + `size`**：变体名照 shadcn（`default` / `secondary` / `outline` / `ghost` / `destructive` / `link`，
   组件用不到的不加）；`size` 只用 foundation 的 `Size`（`xs` / `sm` / `md` / `lg`，默认 `md`），高度、字号、图标、
   内边距一起变，不加单独的高度属性。
 - **部件可定制**：根接受 `class` / `style`（最后合并，盖过组件自己的）；每个有意义的部件给一对 `<部件>Class` /
-  `<部件>Style`（`labelClass`、`iconStyle`），名字写进 API 单。
+  `<部件>Style`（`labelClass`、`iconStyle`），名字写进 API 单。字符串 children 自动包成的文字算一个部件，叫 `label`。
+- **组件内部的 group 名**一律加前缀 `nlb-`（`group/nlb-checkbox`），不占用应用和 `nsh/base` 的名字。
 - **组合优于开关**：结构由子组件拼（`Card` + `CardHeader` + `CardTitle` + `CardContent`），不用一堆布尔属性控制显隐。
 - **内容用 slot / children**，不把 markup 写死。
 - **组件自带的文案**（读屏名、"Loading"）：英文默认值，宿主用 `labels::set_translator` 注入翻译。
@@ -32,10 +37,18 @@
 
 - 颜色、圆角、尺寸都从 `theme()` 句柄读 token；组件的 token 用 `tokens!` 就近声明，推导默认值引用语义 token。
   `src/components/` 里出现颜色字面量，测试会挂。
-- 状态都要做：hover、active（按下）、focus-visible（焦点环 = `ring` 色、`ring-width`、`ring-opacity`，加 `border` 换 `ring` 色）、
-  disabled（`opacity-disabled`，无悬停无按下）、invalid（`destructive` 的边和环）、loading（不可点、不变暗）。
-- 按下反馈走 foundation 的 `press`：轻微下沉，减弱动态效果时不缩放；颜色过渡用 `duration`。
-- 触屏：外观尺寸取 `control-height-touch-*`；小于 `touch-target` 的补命中区（hit slop），不放大外观。
+- 状态：shadcn 或平台有的状态都要做，没有的不加（例如输入框、勾选框照 shadcn 没有悬停）。可能的状态：hover、active（按下）、
+  focus-visible（焦点环 = `ring` 色、`ring-width`、`ring-opacity`，边换成 `ring` 色；画在控件外面）、
+  disabled（`opacity-disabled`，无悬停无按下，光标仍是箭头）、readonly（可聚焦可选中，外观同常态）、
+  invalid（`destructive` 的边；外环只在聚焦时出现，用 `ring-invalid`）、loading（不可点、不变暗）。
+- 触屏上的焦点只换边色，不画外环（照 iOS / Android 的系统控件）。
+- 按下反馈走 foundation 的 `press(scale)`：按钮 0.97，勾选框 / 单选这类小控件 0.9；减弱动态效果时不缩放；颜色过渡用 `duration`。
+- 表单字段（Input、Textarea，以后的 Select 触发器、NumberInput、Combobox）共用 foundation 的字段外观（边、底、阴影、焦点、
+  invalid、disabled），读 `input-*` token，不各画一份。
+- 图标：边长随 `Size`（12 / 14 / 16 / 20），没给尺寸时从上下文取；颜色跟随所在文字。
+- 字号配行高：foundation 给一个「字号 → 行高」函数，组件不各写行高。
+- 触屏：外观尺寸取 `control-height-touch-*`；小于 `touch-target` 的补命中区（hit slop），不放大外观。有标签的勾选类控件
+  标签本身就是命中区，不再补。触屏上输入框的 md / lg 字号用 16（iOS Safari 对小于 16 的输入框会放大页面）。
 - 亮暗两套都要好看，暗色照 shadcn 的暗色处理（例如 outline 在暗色下用 `input` 的边和 `input` 30% 的底）。
 
 ## 每个组件的交付

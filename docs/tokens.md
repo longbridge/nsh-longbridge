@@ -48,12 +48,21 @@
 - **动效**：`duration-fast` = duration × 2/3、`duration-slow` = duration × 5/3。缓动曲线固定在 foundation，
   减弱动态效果时按下不缩放、过渡归零。
 - **阴影**：几何按档位固定在 foundation（`xs` / `sm` / `md` / `lg`，照 Tailwind），颜色用 `shadow` token；
-  组件用 `<组件>-shadow` 这个数字 token 选档（0 表示无）。
+  组件用 `<组件>-shadow` 这个数字 token 选档：0 无、1 `xs`、2 `sm`、3 `md`、4 `lg`。
+- **无效**：`ring-invalid` = `destructive` 的 20%（暗色 40%），表单控件 invalid 且聚焦时的外环。
 
 ### 3. 组件：只影响一种组件
 
 命名：`<组件>[-<变体>][-<部件>]-<属性>[-<状态>]`。颜色沿用 shadcn 的写法：底色用裸名，文字加 `-foreground`，
-描边加 `-border`，状态加 `-hover` / `-active`。例：
+描边加 `-border`；状态后缀只用 `-hover`、`-active`、`-focus`、`-invalid`、`-disabled`。
+
+- 控件本体（框、轨道、圆圈）用裸名；次要部件带部件名（`switch-thumb`、`radio-group-item-dot`）。
+- 裸名撞上语义 token 时：意思相同就直接用语义 token，不再声明（`card`、`card-foreground`，否则会循环引用）；
+  意思不同就加 `-background`（`input` 是语义的输入框边色，输入框的底色叫 `input-background`）。
+- 焦点环统一叫 `<组件>-border-focus`（聚焦时的边）、`<组件>-ring`（外环）、`<组件>-ring-invalid`（默认引用 `ring-invalid`）。
+- 类型：颜色；长度（字号、圆角、尺寸、间距，单位点）；数字（毫秒、档位、透明度、缩放）。
+
+例：
 
 ```
 button-radius              = radius-md
@@ -64,7 +73,7 @@ button-default-hover       = button-default 的 90%
 button-outline-border      = border（暗色 input）
 input-border               = input
 card-radius                = radius-xl
-card-shadow                = 1
+card-shadow                = 2（sm）
 ```
 
 每个组件的 token 表写在它的 API 单里（`docs/components/<组件>.md`），和代码里的声明一一对应，测试守着。
@@ -88,6 +97,16 @@ tokens! {
     BUTTON_RADIUS: Length = "button-radius" => |t| t.length(RADIUS_MD),
 }
 ```
+
+推导默认值可以分亮暗、分指针 / 触屏，这是通用规则，不是例外：
+
+```rust
+INPUT_BACKGROUND: Color = "input-background" => |t| t.light_dark(TRANSPARENT, t.color(INPUT).opacity(0.3)),
+BUTTON_HEIGHT_SM: Length = "button-height-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM), t.length(CONTROL_HEIGHT_TOUCH_SM)),
+```
+
+应用在主题文件里写的值，亮暗照主题文件的 `light` / `dark` 段；指针 / 触屏的不同取值，应用要分开改时另写
+`<名字>-touch`（有就用于触屏）。
 
 `tokens!` 生成名字常量、默认值和登记表；登记表用来生成 `themes/default.json`（全量、带 `var()` 引用，给应用复制）
 和文档里的 token 表，测试检查三者一致。
