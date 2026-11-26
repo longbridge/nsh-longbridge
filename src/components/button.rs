@@ -217,9 +217,9 @@ pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
     provide_icon_size(size);
 
     let icon_part = move |name: IconName, spin: bool| {
-        icon_view(t, move || name, icon_side)
-            .style_when(spin, |s| s.animate_spin())
-            .app_class(props.icon_class)
+        let icon = icon_view(t, move || name, icon_side);
+        let icon = if spin { motion::spin(icon) } else { icon };
+        icon.app_class(props.icon_class)
             .inline_style(move || props.icon_style.get())
     };
     let leading = move || {
