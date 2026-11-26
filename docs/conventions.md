@@ -34,6 +34,9 @@ mobile-first single column.
   from an element).
 - **Group names** a component uses inside start with `nlb-` (`group/nlb-checkbox`), leaving other names to the app
   and to `nsh/base`.
+- **Context instead of ancestor selectors**: a part that looks different inside a container (a `Kbd` inside a
+  `Tooltip`) asks the container's context (`in_tooltip()`), which the container provides; NSH has no ancestor or
+  `:has()` selectors.
 - **Composition over switches**: structure is made of parts (`Card`, `CardHeader`, `CardTitle`, `CardContent`), not
   of boolean props that show or hide pieces.
 - **Content is slots and children**, not fixed markup.
@@ -41,6 +44,9 @@ mobile-first single column.
   `labels::set_translator` in Rust or `setTranslator` in TSX.
 - **Examples** write a string child as a string (`<Button>Save</Button>`). Until NSH releases its fix for string
   children of Rust components (NSH 0.7.0 shows none), the gallery wraps them in `<Text>` and each spec says so once.
+- **In TSX examples**, an element that refers to an element after it keeps the ref in a signal (JSX reads a plain
+  variable once, before the later element sets it), and text is cut with `class="truncate"` (the `numberOfLines`
+  prop is not read on a Rust component).
 - **A new component, or a new or changed public API, is reviewed**: its spec is written before its code.
 
 ## Drawing
@@ -65,6 +71,10 @@ mobile-first single column.
 - Touch screens: controls take `control-height-touch-*`; one smaller than `touch-target` gets a hit slop, not a larger
   look. A checkbox-like control with a label is hit through its label and gets none. A field's `md` and `lg` text is
   16 on a touch screen (iOS Safari zooms the page into a field with smaller text).
+- A part of an `nsh/base` component that the app must be able to restyle (`<part>Style` from Rust takes only fixed
+  styles there) is drawn by the library, on `nsh/base`'s behavior, rather than styled through `nsh/base`'s part.
+- Decorative components (`Separator`, `Skeleton`) are hidden from accessibility: `accessible(false)` and
+  `accessibility_elements_hidden(true)`.
 - Both appearances must look right; dark follows shadcn's dark treatment (an outline button in dark: an `input`
   edge on `input` at 30%).
 
