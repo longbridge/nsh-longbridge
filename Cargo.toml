@@ -1,0 +1,37 @@
+[package]
+name = "nsh-longbridge"
+description = "Longbridge's shared NSH component library: shadcn/ui's look on nsh/base's behavior, for TSX and Rust apps."
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+# nsh's crates come from crates.io at `=0.7.0`, the version of the local `nsh`
+# CLI. 0.7.0 on crates.io was published from Git commit 3f8ecd8b3 ("release:
+# Prepare version 0.7.0"; its `.cargo_vcs_info.json`), the commit the CLI was
+# built from, so this is that pin. A Git dependency does not work for an
+# nshm with a released CLI: the workspace nsh generates for an app that
+# installs this crate takes nsh from crates.io and does not patch Git
+# dependencies of nshm to it, so the app would link two `nsh-core`s. Move
+# the version together with the CLI.
+[dependencies]
+nsh-core = { version = "=0.7.0" }
+nsh-base = { version = "=0.7.0" }
+log = "0.4"
+serde_json = "1"
+
+[dev-dependencies]
+nsh-core = { version = "=0.7.0", features = ["declarations"] }
+nsh-engine = { version = "=0.7.0", default-features = false }
+nsh-testing = { version = "=0.7.0", default-features = false }
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[lints.clippy]
+dbg_macro = "warn"
