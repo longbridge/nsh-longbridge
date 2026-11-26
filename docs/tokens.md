@@ -95,8 +95,11 @@ card-radius                = radius-xl
 card-shadow                = 2 (sm)
 ```
 
-Each component's tokens are listed in its spec (`docs/components/<component>.md`), one row per declaration in its
-code; tests keep the two the same.
+Each component's tokens are listed in its spec (`docs/components/<component>.md`) in a block generated from its
+`tokens!` (`<!-- tokens:<component> -->`), with the columns `| Token | Type | Derived default | Value |`: the derived
+default as an expression (`light_dark(a, b)`, `pointer_touch(a, b)`, `a × 90%`, `spacing × 2`), the value as it
+resolves on `nsh-base`'s default theme, with its touch value. Notes go in a paragraph under the table. A test keeps
+the block and the code the same.
 
 ## Resolution
 
@@ -126,6 +129,10 @@ INPUT_BACKGROUND: Color = "input-background" => |t| t.light_dark(TRANSPARENT, t.
 BUTTON_HEIGHT_SM: Length = "button-height-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM), t.length(CONTROL_HEIGHT_TOUCH_SM)),
 ```
 
+An app value equal to a token's derived default without a scope is taken as copied from `themes/default.json`, not as
+an override: inside a scope it follows the scope (a scope that changes `primary` still changes `button-default` in an
+app that copied the whole file). An app that sets a token to exactly its default on purpose sees it follow scopes too.
+
 A value an app's theme file sets has its light and dark values from the file's `light` and `dark` sections. To set a
 different value for touch screens, the app also sets `<name>-touch`, which a touch screen uses when it has one.
 
@@ -149,6 +156,8 @@ view().bg(move || t.color(BUTTON_DEFAULT)).rounded(move || t.length(BUTTON_RADIU
 
 - `tokens`: CSS values (colors, `px` / `rem`, numbers); one that does not parse is ignored with a warning. Scopes
   nest, the inner one winning.
+- `surface`: paints the scope with `background` and its text with `foreground`, so a part forced to dark is not left
+  on the app's light page.
 - `appearance`: `"light"`, `"dark"`, or unset (the app's). When set, this library takes both values of a color from
   that appearance. What this library does not draw (the app's own Tailwind classes, NSH's native controls) is not
   affected.
@@ -156,6 +165,9 @@ view().bg(move || t.color(BUTTON_DEFAULT)).rounded(move || t.length(BUTTON_RADIU
 ## Theme files
 
 - `themes/default.json`: every token at its default, with references. Both a reference and a starting point.
+  Derived lengths are written as `calc(...)`, even a single reference (`calc(var(--x))`): NSH skips `calc()`, so
+  this library derives them, and NSH would read a bare `var()` as a color. Derived colors are written as `var()` and
+  `color-mix()`, which NSH reads. So an app's Tailwind classes see the derived colors, not the derived lengths.
 - `themes/*.json`: presets (shadcn's zinc, blue or rose colors, a compact density).
 - An app points `nsh.json`'s `"theme"` at its own file and writes only the tokens it changes; to use this library's
   tokens in its Tailwind classes, it copies their entries too.

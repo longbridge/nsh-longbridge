@@ -29,15 +29,18 @@ mobile-first single column.
   `link`; only those a component needs). `size` is `foundation`'s `Size` (`xs`, `sm`, `md`, `lg`; `md` by default),
   which changes the height, type, icon and padding together; there is no separate height prop.
 - **Styled parts**: the root takes `class` and `style` (merged last, over the component's own). Each meaningful part
-  takes `<part>Class` and `<part>Style` (`labelClass`, `iconStyle`), named in the spec. The text a string child
-  becomes is a part named `label`.
+  takes `<part>Class` and `<part>Style` (`labelClass`, `iconStyle`), named in the spec. Every child is wrapped
+  in a text part named `label`, which gives a string child its text style (a component cannot tell a string child
+  from an element).
 - **Group names** a component uses inside start with `nlb-` (`group/nlb-checkbox`), leaving other names to the app
   and to `nsh/base`.
 - **Composition over switches**: structure is made of parts (`Card`, `CardHeader`, `CardTitle`, `CardContent`), not
   of boolean props that show or hide pieces.
 - **Content is slots and children**, not fixed markup.
-- **A component's own text** (accessibility labels, "Loading") is English by default; a host translates it with
-  `labels::set_translator`.
+- **A component's own text** (accessibility labels, "Loading") is English by default; an app translates it with
+  `labels::set_translator` in Rust or `setTranslator` in TSX.
+- **Examples** write a string child as a string (`<Button>Save</Button>`). Until NSH releases its fix for string
+  children of Rust components (NSH 0.7.0 shows none), the gallery wraps them in `<Text>` and each spec says so once.
 - **A new component, or a new or changed public API, is reviewed**: its spec is written before its code.
 
 ## Drawing
@@ -55,6 +58,9 @@ mobile-first single column.
 - Fields (`Input`, `Textarea`, and later a `Select`'s trigger, `NumberInput`, `Combobox`) share `foundation`'s field
   look (edge, fill, shadow, focus, invalid, disabled) on the `input-*` tokens, rather than each drawing its own.
 - Icons: sized by `icon-size-*` with the control's `size`, from the context when not given; colored as their text.
+- Styles NSH cannot bind (font weight, underline, cursor) are read once when the component is made; the spec's NSH
+  gaps section names them.
+- Shadows come from `foundation`'s `shadow()` as the root's inline style; the app's `style` is merged after it.
 - Line heights come from `foundation`'s `line_height(size)`; components do not set their own.
 - Touch screens: controls take `control-height-touch-*`; one smaller than `touch-target` gets a hit slop, not a larger
   look. A checkbox-like control with a label is hit through its label and gets none. A field's `md` and `lg` text is
@@ -64,12 +70,13 @@ mobile-first single column.
 
 ## What each component delivers
 
-1. `docs/components/<name>.md`, with these sections as needed, in this order: Usage, When not to use, Built on, API
+1. `docs/components/<name>.md`, starting with a Status line, with these sections as needed, in this order: Usage, When not to use, Built on, API
    (props, events, parts), Variants and sizes, States, Pointer and touch, Accessibility, Tokens, Examples (TSX and
    Rust), NSH gaps, Decisions.
 2. `src/components/<name>.rs`: the component and its `tokens!`.
 3. A gallery page: variants × sizes × states, in light and dark, with the component's tokens editable on the page.
-4. Tests: headless tests of behavior (press, disabled, controlled values, keys, accessibility roles and states); the
+4. Tests, in `tests/<component>.rs`: headless tests of behavior (press, disabled, controlled values, keys, accessibility roles and states, pointer and touch sizes, a scoped token
+   reaching the look); the
    token table and `themes/default.json` agree with the code.
 5. Screenshots for review: web and macOS, light and dark, in the pull request.
 6. A row in the README's component index.
