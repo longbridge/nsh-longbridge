@@ -1,34 +1,50 @@
 import { mount, Scroll, signal, Text, View } from "nsh";
 import { Window } from "nsh/desktop";
 import { Button } from "nsh-longbridge";
+import { BadgePage } from "./pages/badge";
 import { ButtonPage } from "./pages/button";
-import { InputPage } from "./pages/input";
-import { LabelPage } from "./pages/label";
-import { TextareaPage } from "./pages/textarea";
+import { CardPage } from "./pages/card";
 import { CheckboxPage } from "./pages/checkbox";
+import { InputPage } from "./pages/input";
+import { KbdPage } from "./pages/kbd";
+import { LabelPage } from "./pages/label";
 import { RadioGroupPage } from "./pages/radio-group";
+import { SeparatorPage } from "./pages/separator";
+import { SkeletonPage } from "./pages/skeleton";
+import { SpinnerPage } from "./pages/spinner";
 import { SwitchPage } from "./pages/switch";
+import { TextareaPage } from "./pages/textarea";
 import { ThemePage } from "./pages/theme";
+import { TooltipPage } from "./pages/tooltip";
 import { appearance, Appearance, colorPreset, colorPresets, densityPreset, densityPresets, followTheme } from "./theme";
 import { Segmented } from "./ui";
 
-type PageId = "button" | "checkbox" | "input" | "label" | "radio-group" | "switch" | "textarea" | "theme";
+type PageId = "badge" | "button" | "card" | "checkbox" | "input" | "kbd" | "label" | "radio-group" | "separator" | "skeleton" | "spinner" | "switch" | "textarea" | "tooltip" | "theme";
 
-const catalog: { group: string; pages: { id: PageId; label: string }[] }[] = [
+const catalog: { group: string; pages: { id: PageId; label: string; page: () => JSX.Element }[] }[] = [
   {
     group: "Components",
     pages: [
-      { id: "button", label: "Button" },
-      { id: "checkbox", label: "Checkbox" },
-      { id: "input", label: "Input" },
-      { id: "label", label: "Label" },
-      { id: "radio-group", label: "RadioGroup" },
-      { id: "switch", label: "Switch" },
-      { id: "textarea", label: "Textarea" },
+      { id: "badge", label: "Badge", page: BadgePage },
+      { id: "button", label: "Button", page: ButtonPage },
+      { id: "card", label: "Card", page: CardPage },
+      { id: "checkbox", label: "Checkbox", page: CheckboxPage },
+      { id: "input", label: "Input", page: InputPage },
+      { id: "kbd", label: "Kbd", page: KbdPage },
+      { id: "label", label: "Label", page: LabelPage },
+      { id: "radio-group", label: "RadioGroup", page: RadioGroupPage },
+      { id: "separator", label: "Separator", page: SeparatorPage },
+      { id: "skeleton", label: "Skeleton", page: SkeletonPage },
+      { id: "spinner", label: "Spinner", page: SpinnerPage },
+      { id: "switch", label: "Switch", page: SwitchPage },
+      { id: "textarea", label: "Textarea", page: TextareaPage },
+      { id: "tooltip", label: "Tooltip", page: TooltipPage },
     ],
   },
-  { group: "Foundation", pages: [{ id: "theme", label: "Theme" }] },
+  { group: "Foundation", pages: [{ id: "theme", label: "Theme", page: ThemePage }] },
 ];
+
+const pageOf = (id: PageId) => catalog.flatMap((g) => g.pages).find((p) => p.id === id)!.page;
 
 function TopBar() {
   return (
@@ -91,30 +107,10 @@ function App() {
       <View class="flex-1 flex-row">
         <Sidebar page={page} onSelect={(id) => page.set(id)} />
         <Scroll class="flex-1" contentClass="px-12 py-10 max-w-[1040px]">
-          <If when={page() === "button"}>
-            <ButtonPage />
-          </If>
-          <If when={page() === "input"}>
-            <InputPage />
-          </If>
-          <If when={page() === "label"}>
-            <LabelPage />
-          </If>
-          <If when={page() === "textarea"}>
-            <TextareaPage />
-          </If>
-          <If when={page() === "checkbox"}>
-            <CheckboxPage />
-          </If>
-          <If when={page() === "radio-group"}>
-            <RadioGroupPage />
-          </If>
-          <If when={page() === "switch"}>
-            <SwitchPage />
-          </If>
-          <If when={page() === "theme"}>
-            <ThemePage />
-          </If>
+          {(() => {
+            const Current = pageOf(page());
+            return <Current />;
+          })()}
         </Scroll>
       </View>
     </View>

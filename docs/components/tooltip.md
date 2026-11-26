@@ -1,6 +1,6 @@
 # Tooltip
 
-A hint bubble: a line of explanation beside an element while the pointer rests on it or the keyboard focus is on it.
+Status: implemented (P1). A hint bubble: a line of explanation beside an element while the pointer rests on it or the keyboard focus is on it.
 The library's first popup. Reference: shadcn/ui new-york v4 `tooltip.tsx` (Radix Tooltip).
 
 ## Usage
@@ -58,35 +58,43 @@ element); a tooltip placed among children would not follow hover and focus.
 - **Whether the core recognizes the TSX wrapper as a hint layer**: the core takes "an element in a `tooltip` prop whose
   root is an overlay with a `hint`" (`Core::adopt_hint_tooltips`). This library's `Tooltip` is a component around
   `nsh/base`'s, and the host node takes its root's kind (`Core::retag`; nested components share one node), so it should
-  be recognized. **The first headless test of the P1 implementation checks this**: `<View tooltip={<Tooltip>…</Tooltip>}>`
-  shows after 500 ms of hover, above the element, with `delay` honored. If it is not recognized, the fallback is a
-  function instead of a component, returning `nsh/base`'s `Tooltip` with the look preset (TSX: a `tooltipLook()` giving
-  the `class`), and the issue is reported as an NSH gap.
+  is recognized. **Verified by the first headless tests** (`tests/tooltip.rs`, from Rust and from a TSX app): the
+  library's bubble shows after its own `delay` (300 shows before the core's 500), above the element, `tooltip-offset`
+  away, with its look; a `Kbd` among its children reads the "inside a tooltip" context; `tooltip` on the library's
+  `Button` works from TSX. The fallback (a function returning `nsh/base`'s `Tooltip` with the look preset) is not
+  needed.
 - **Rust's `IntoTooltip`**: the blanket implementation for `ComponentElement<C>` treats it as a plain element and wraps
   it in a hint layer of the core's own (core defaults for position and delay; every prop of this library ignored). So
   the library implements `IntoTooltip` for its own `TooltipElement`, calling `nsh_core::element::__hint_tooltip` as
   `nsh/base` does. That function is `#[doc(hidden)]`; see "NSH gaps" 1.
 - **Scope**: the hint layer lives in the trigger (the core places it among the element's children), so it reads the
   `ThemeScope` the trigger is in: a button in a dark scope gets a dark tooltip. Guarded by tests.
+- **Text styles from the trigger**: for the same reason it inherits the trigger's text styles: a button's medium weight,
+  a truncated label's no-wrap (the hint then stays one line, cut at the maximum width). shadcn's, in a portal,
+  inherits none. So the root resets them: normal wrapping, regular weight, no underline, no case change, no letter
+  spacing. Italics and alignment have no reset setter and still pass through (see "NSH gaps" 7). Guarded by tests.
 
 ## API
 
 ### Attaching
 
 ```tsx
-<Button variant="ghost" size="sm" accessibilityLabel="Refresh" tooltip={<Tooltip>Refresh</Tooltip>}>
-  <Icon name="refresh-cw" />
-</Button>
+<Button variant="ghost" size="sm" iconOnly icon="plus" accessibilityLabel="Add" tooltip={<Tooltip>Add</Tooltip>} />
 ```
 
 ```rust
-button().variant(ButtonVariant::Ghost).accessibility_label("Refresh")
-    .tooltip(tooltip().child("Refresh"))
-    .child(icon("refresh-cw"))
+view()
+    .tooltip(tooltip().child("Add"))
+    .child(
+        button().variant(ButtonVariant::Ghost).size(Size::Sm).icon_only(true).icon(IconName::Plus)
+            .accessibility_label("Add"),
+    )
 ```
 
-In TSX `tooltip` is a host prop every component and every `View` has (`ComponentHostProps`); in Rust it is
-`Interactive::tooltip`, and the library's `TooltipElement` implements `IntoTooltip` (see "Implementation").
+In TSX `tooltip` is a host prop every component and every `View` has (`ComponentHostProps`). In Rust it is
+`Interactive::tooltip`, and the library's `TooltipElement` implements `IntoTooltip` (see "Implementation"); a Rust
+component's element (`button()`) is not `Interactive` in NSH 0.7.0, so a Rust app attaches the tooltip to a `view()`
+around the component (see "NSH gaps" 6).
 
 **Attach it to the focusable layer**: the tooltip follows the focus being on the element or inside it. On a `View`
 around a button that works; on the icon **inside** a button it does not show when the button gets the keyboard focus
@@ -96,7 +104,7 @@ around a button that works; on the icon **inside** a button it does not show whe
 
 | TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `children` | `.child(..)` | Text, `Kbd`, elements | | What it says; strings become the `label` part |
+| `children` | `.child(..)` | Text, `Kbd`, elements | | What it says; each child sits in a `label` part |
 | `placement` | `placement` | `"top"` \| `"bottom"` \| `"left"` \| `"right"` (`nsh_core::overlay::Placement`) | `"top"` | The side it goes on; flipped when it does not fit |
 | `align` | `align` | `"start"` \| `"center"` \| `"end"` (`Align`) | `"center"` | Alignment along that side; `start` / `end` follow the layout direction (reversed in RTL) |
 | `delay` | `delay` | `number` (ms) | `tooltip-delay` (500) | How long the pointer rests before it shows; `0` at once; `Infinity`: neither the pointer nor the focus shows it, only the app's `open`. The keyboard focus always shows it at once regardless (except with `Infinity`) |
@@ -117,7 +125,7 @@ the motion off, set `tooltip-animate: 0` in a scope (see "Tokens").
 
 | TSX | Rust (`TooltipEvent`) | Payload | When |
 |---|---|---|---|
-| `onOpenChange` | `OpenChange(open, reason)` | `{ open: boolean, reason: "hover" \| "focus" \| "cancel" }` | The user asks to open or close: the pointer rested long enough, left or pressed (`"hover"`); the keyboard focus came or went (`"focus"`); Escape (`"cancel"`). The app changing `open` itself is not reported |
+| `onOpenChange` | `OpenChange(open, reason)` | `{ open: boolean, reason: "hover" \| "focus" \| "cancel" }` (the type is `nsh/base`'s `OpenChangeReason`, which names every popup's reasons; a tooltip reports these three) | The user asks to open or close: the pointer rested long enough, left or pressed (`"hover"`); the keyboard focus came or went (`"focus"`); Escape (`"cancel"`). The app changing `open` itself is not reported |
 | `onOpen` | `Open` | | It is shown |
 | `onClose` | `Close` | | It is entirely gone (after its exit), whoever closed it |
 
@@ -128,7 +136,7 @@ All are `nsh/base` `Tooltip`'s events, passed through.
 | Part | Props | What it is |
 |---|---|---|
 | Bubble | `class` / `style` | The root: fill, corners, padding |
-| Label | `labelClass` / `labelStyle` | The `text` made from string children; not made for element children, where these props do nothing |
+| Label | `labelClass` / `labelStyle` | The `text` each child is wrapped in (as `Button`'s, its NSH gap G1): a string child's text takes these; an element child sits in it unchanged |
 
 No arrow part (decided in review; see "Decisions" 1).
 
@@ -159,8 +167,8 @@ Differences from shadcn:
 - **No arrow**, so `offset` is 4 instead of 0. See "Decisions" 1.
 - **A maximum width**: shadcn has none (it relies on `text-balance` for even lines). Without one a long hint spreads to
   the window's edge (seen in a real app: a long description running out of the window). 320 at 12 points is about 24
-  CJK or 50 Latin characters per line. Whether NSH has `text-balance` is checked in the implementation; without it the
-  text wraps normally.
+  CJK or 50 Latin characters per line. NSH reads `text-balance` as ordinary wrapping (no balanced lines), so the text
+  wraps normally.
 - Regular weight, as shadcn (gpui-kit uses medium; not followed).
 
 ### Motion
@@ -214,19 +222,23 @@ again. Use `Popover` (P2) for that.
 
 ## Tokens
 
-| Token | Type | Derived default | Light / dark |
-|---|---|---|---|
-| `tooltip` | color | `foreground` | Near black in light, near white in dark (follows `foreground`: shadcn's inverted bubble) |
-| `tooltip-foreground` | color | `background` | The reverse |
-| `tooltip-radius` | length | `radius-md` (8) | Same |
-| `tooltip-padding-x` | length | `spacing` × 3 (12) | Same |
-| `tooltip-padding-y` | length | `spacing` × 1.5 (6) | Same |
-| `tooltip-font-size` | length | 12 (Tailwind's `text-xs`) | Same |
-| `tooltip-max-width` | length | 320 | Same |
-| `tooltip-offset` | length | `spacing` (4) | Same |
-| `tooltip-delay` | number | 500 (ms) | Same |
-| `tooltip-animate` | number | 1 (1: entrance and exit, 0: none) | Same |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
 
+<!-- tokens:tooltip -->
+| Token | Type | Derived default | Value |
+|---|---|---|---|
+| `tooltip` | color | `foreground` |  |
+| `tooltip-foreground` | color | `background` |  |
+| `tooltip-radius` | length | `radius-md` | 8 |
+| `tooltip-padding-x` | length | `spacing × 3` | 12 |
+| `tooltip-padding-y` | length | `spacing × 1.5` | 6 |
+| `tooltip-font-size` | length | `12` | 12 |
+| `tooltip-max-width` | length | `320` | 320 |
+| `tooltip-offset` | length | `spacing` | 4 |
+| `tooltip-delay` | number | `500` | 500 |
+| `tooltip-animate` | number | `1` | 1 |
+<!-- /tokens -->
 - `tooltip-font-size` is Tailwind's fixed 12, not `font-size-xs`: a tooltip is explanatory text, not a control, and
   tokens.md gives such text Tailwind's values.
 - For a light tooltip in the style of gpui-kit and the system (`popover` fill, `border` edge), set
@@ -259,7 +271,7 @@ import { Button, Icon, Kbd, Tooltip } from "nsh-longbridge";
 </Button>
 
 // The full text of a truncated label, at once
-<Text numberOfLines={1} tooltip={<Tooltip delay={0}>{fullName}</Tooltip>}>{fullName}</Text>
+<Text class="truncate" tooltip={<Tooltip delay={0}>{fullName}</Tooltip>}>{fullName}</Text>
 
 // Controlled
 const [open, setOpen] = useState(false);
@@ -270,13 +282,14 @@ const [open, setOpen] = useState(false);
 use nsh_core::{element::key_label, overlay::Placement};
 use nsh_longbridge::{button, kbd, tooltip, ButtonVariant, TooltipEvent};
 
-button().variant(ButtonVariant::Outline)
+// A Rust component takes no `tooltip`: a view around it does (gap 6).
+view()
     .tooltip(
         tooltip().placement(Placement::Bottom)
             .child("Save")
             .child(kbd().child(key_label("mod+s"))),
     )
-    .child("Save")
+    .child(button().variant(ButtonVariant::Outline).child("Save"))
 
 let open = signal(false);
 view().tooltip(
@@ -298,8 +311,9 @@ view().tooltip(
    (for example, a component whose root is a hint layer being recognized as a tooltip).
 2. **Unconfirmed whether screen readers read the tooltip**: Radix uses `aria-describedby` so that the tooltip is read as
    the trigger's description. NSH's docs do not say whether a tooltip becomes the trigger's accessibility description.
-   Workaround: triggers carry their own name / `accessibilityHint` (see "Accessibility"); tested with VoiceOver on macOS
-   during the implementation, with the result reported.
+   Workaround: triggers carry their own name / `accessibilityHint` (see "Accessibility"). In NSH 0.7.0's accessibility
+   model a shown tooltip is neither the trigger's description nor its `describedBy` (a headless test pins this, so a
+   change in NSH is noticed); VoiceOver on macOS was not tried yet.
 3. **`Tooltip` has no `onPosition`**: the side it ends up on after a flip is unknown, so there is no arrow pointing at the
    element, no slide by side and no scale origin toward the element. Workaround: no arrow, no slide, a centered origin.
    `Tooltip` reporting `onPosition` (as `Popover` and `HoverCard` do) would lift this.
@@ -309,6 +323,15 @@ view().tooltip(
    whether NSH fixes it or this library works around it.
 5. **No hover tooltips on an iPad with a pointer**: `nsh/base` treats every tablet as a touch screen, while iPadOS shows
    pointer hints with a trackpad. Low priority; noted.
+6. **A Rust component takes no `tooltip`**: `ComponentElement` is deliberately not `Interactive`, so `button().tooltip(..)`
+   does not compile (nor does it for `nsh/base`'s own components); TSX's `tooltip` host prop works on any component.
+   Workaround: a `view()` around the component carries the tooltip (it shows for hover and for focus inside it). A
+   `tooltip` on component elements in Rust, as TSX has, would lift this.
+7. **The hint layer inherits its trigger's text styles**: it sits among the trigger's children, so wrapping, weight,
+   decoration, case, letter spacing, italics and alignment flow into it (a button's tooltip was medium, a truncated
+   label's did not wrap). The library resets what `Styled` can set; italics (`fontStyle: normal`) and start alignment
+   have no setter and still pass through. The hint layer starting from the root's text styles, as a portal does,
+   would lift this.
 
 ## Decisions
 
@@ -320,5 +343,5 @@ view().tooltip(
    immediate. Where the user is there to read it (the full text of a truncation), set `delay={0}` there.
 3. **shadcn's inverted colors** (`foreground` fill). The light style (`popover` fill and border) is the two-token theme
    change described under "Tokens".
-4. **The API follows NSH's `tooltip` prop**, not shadcn's four pieces. Whether the core recognizes the TSX wrapper as a
-   hint layer is the first headless test of the implementation.
+4. **The API follows NSH's `tooltip` prop**, not shadcn's four pieces. The core recognizes the TSX wrapper as a hint
+   layer (verified by headless tests).

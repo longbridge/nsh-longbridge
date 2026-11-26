@@ -1,6 +1,6 @@
 # Skeleton
 
-A loading placeholder: while content has not arrived, a slowly pulsing block holds its future place and shape.
+Status: implemented (P1). A loading placeholder: while content has not arrived, a slowly pulsing block holds its future place and shape.
 Reference: shadcn/ui new-york v4 `skeleton.tsx`.
 
 ## Usage
@@ -50,7 +50,8 @@ The animation is not a token: its period and curve are Tailwind's fixed values, 
 ## States
 
 - **Reduced motion**: no pulse, it stays opaque (`motion-reduce:animate-none`), in line with conventions.md (transitions
-  go to zero under reduced motion). The pulse is decoration only, so stopping it loses nothing. shadcn does not handle
+  go to zero under reduced motion). NSH's core starts no keyframe animation under reduced motion, so the component needs
+  nothing of its own for it. The pulse is decoration only, so stopping it loses nothing. shadcn does not handle
   this.
 - No hover / active / focus / disabled.
 
@@ -67,11 +68,17 @@ No difference.
 
 ## Tokens
 
-| Token | Type | Derived default | Light / dark |
-|---|---|---|---|
-| `skeleton` | color | `accent` | Follows `accent` (shadcn neutral: light `oklch(0.97 0 0)`, dark `oklch(0.269 0 0)`) |
-| `skeleton-radius` | length | `radius-md` (8) | Same |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
 
+<!-- tokens:skeleton -->
+| Token | Type | Derived default | Value |
+|---|---|---|---|
+| `skeleton` | color | `accent` |  |
+| `skeleton-radius` | length | `radius-md` | 8 |
+<!-- /tokens -->
+
+`skeleton` follows `accent` (shadcn neutral: light `oklch(0.97 0 0)`, dark `oklch(0.269 0 0)`).
 ## Examples
 
 ```tsx

@@ -1,6 +1,6 @@
 # Badge
 
-A small mark: a status, a category, a count. Reference: shadcn/ui new-york v4 `badge.tsx`.
+Status: implemented (P1). A small mark: a status, a category, a count. Reference: shadcn/ui new-york v4 `badge.tsx`.
 
 ## Usage
 
@@ -30,8 +30,8 @@ which exist only for links (see "Variants and sizes").
 
 - Icon edge: the badge sets the foundation's icon size context to `xs`, so the library's `Icon` without a size is 12
   (shadcn's `[&>svg]:size-3`). No `badge-icon-size` token.
-- String children: a TSX string child reaches Rust as a text node, Rust's `.child("…")` as a `&str`. Both become the
-  `label` part.
+- Children: as `Button` does (its NSH gap G1), every child is wrapped in a `label` text, since a component cannot tell a
+  string child from an element. A string's text takes the label's styles; an element sits in its label unchanged.
 
 ## API
 
@@ -44,8 +44,10 @@ which exist only for links (see "Variants and sizes").
 
 No events.
 
-String children are wrapped in a `text` (one line, no wrapping, truncated when too long): the `label` part. Element
-children are placed as they are, and `labelClass` does not apply to them.
+Each child is wrapped in a `text` (one line, no wrapping, truncated when too long): the `label` part. A string child's
+text takes `labelClass` / `labelStyle`; an element child sits in its label, its own classes winning.
+
+With NSH 0.7.0, write a string child inside `<Text>` for now (`Button`'s G0).
 
 ## Variants and sizes
 
@@ -72,7 +74,7 @@ border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `si
 
 | | Value |
 |---|---|
-| Layout | A row, centered both ways, as wide as its content (`self-start`, so a stretching parent does not widen it), `shrink-0` |
+| Layout | A row, centered both ways, as wide as its content (`self-start`, so a stretching parent does not widen it), `shrink-0`, at most as wide as its parent (`max-w-full`) |
 | Border | `border-width` (1), colored per variant (transparent except `outline`: it keeps its room, so all variants are the same height) |
 | Padding | `badge-padding-x` (8) horizontally, `badge-padding-y` (2) vertically |
 | Corners | `badge-radius` |
@@ -80,8 +82,9 @@ border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `si
 | Icons | 12 (the `xs` icon size the badge gives as context), colored as the text; `badge-gap` (4) between icon and text |
 | Height | 16 line height + 2 × 2 padding + 2 × 1 border = 22, as shadcn |
 
-Long text is truncated with an ellipsis (`numberOfLines={1}`); shadcn clips it (`overflow-hidden whitespace-nowrap`).
-An ellipsis is the desktop norm, and screen readers still read the full text.
+Long text is truncated with an ellipsis (one line, as Rust's `number_of_lines(1)`) at the parent's width; shadcn clips it
+(`overflow-hidden whitespace-nowrap`) and lets the badge overflow a narrower parent. An ellipsis is the desktop norm, and
+screen readers still read the full text.
 
 ## States
 
@@ -100,21 +103,29 @@ Same look; no hit slop (nothing to press).
 
 ## Tokens
 
-| Token | Type | Derived default | Light / dark |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:badge -->
+| Token | Type | Derived default | Value |
 |---|---|---|---|
-| `badge-default` | color | `primary` | Follows `primary` |
-| `badge-default-foreground` | color | `primary-foreground` | Same |
-| `badge-secondary` | color | `secondary` | Same |
-| `badge-secondary-foreground` | color | `secondary-foreground` | Same |
-| `badge-destructive` | color | `light_dark(destructive, destructive at 60%)` | shadcn's `dark:bg-destructive/60` |
-| `badge-destructive-foreground` | color | `destructive-foreground` | shadcn hard-codes `text-white`; this library uses its added semantic token, white by default |
-| `badge-outline-border` | color | `border` | Same |
-| `badge-outline-foreground` | color | `foreground` | Same |
-| `badge-radius` | length | 9999 (a pill, shadcn's `rounded-full`) | Same |
-| `badge-padding-x` | length | `spacing` × 2 (8) | Same |
-| `badge-padding-y` | length | `spacing` × 0.5 (2) | Same |
-| `badge-gap` | length | `spacing` (4) | Same |
-| `badge-font-size` | length | `font-size-xs` (12) | Same |
+| `badge-default` | color | `primary` |  |
+| `badge-default-foreground` | color | `primary-foreground` |  |
+| `badge-secondary` | color | `secondary` |  |
+| `badge-secondary-foreground` | color | `secondary-foreground` |  |
+| `badge-destructive` | color | `light_dark(destructive, destructive × 60%)` |  |
+| `badge-destructive-foreground` | color | `destructive-foreground` |  |
+| `badge-outline-border` | color | `border` |  |
+| `badge-outline-foreground` | color | `foreground` |  |
+| `badge-radius` | length | `9999` | 9999 |
+| `badge-padding-x` | length | `spacing × 2` | 8 |
+| `badge-padding-y` | length | `spacing × 0.5` | 2 |
+| `badge-gap` | length | `spacing` | 4 |
+| `badge-font-size` | length | `font-size-xs` | 12 |
+<!-- /tokens -->
+
+`badge-destructive` is shadcn's `dark:bg-destructive/60`. `badge-destructive-foreground` follows the library's semantic
+`destructive-foreground` (white by default) where shadcn hard-codes `text-white`.
 
 `badge-radius` does not refer to `radius-*`: shadcn v4's badge is a pill (`rounded-full`) and ignores the `radius` seed.
 An app that wants squarer badges following the seed sets `"badge-radius": "var(--radius-sm)"` in its theme. With
@@ -131,15 +142,15 @@ import { Badge, Icon } from "nsh-longbridge";
   <Badge variant="destructive">Destructive</Badge>
   <Badge variant="outline">Outline</Badge>
   <Badge variant="secondary">
-    <Icon name="badge-check" />
-    Verified
+    <Icon name="plus" />
+    New
   </Badge>
   <Badge class="min-w-5 px-1 tabular-nums">8</Badge>
 </View>
 ```
 
 ```rust
-use nsh_longbridge::{badge, icon, BadgeVariant};
+use nsh_longbridge::{badge, icon, BadgeVariant, IconName};
 
 view().flex_row().gap_2()
     .child(badge().child("Badge"))
@@ -148,8 +159,8 @@ view().flex_row().gap_2()
     .child(badge().variant(BadgeVariant::Outline).child("Outline"))
     .child(
         badge().variant(BadgeVariant::Secondary)
-            .child(icon("badge-check"))
-            .child("Verified"),
+            .child(icon().name(IconName::Plus))
+            .child("New"),
     )
 ```
 

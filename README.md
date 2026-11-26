@@ -89,10 +89,17 @@ Find a component by what it is for. A change that adds or removes a public compo
 
 | Component | For (search terms) | Not for |
 |---|---|---|
+| `Badge` | Status marks, pills, categories, versions, counts | Pressable or removable tags (a `Button size="xs"`), shortcut keys (`Kbd`), a lone dot |
 | `Button` | Buttons: primary, secondary, outline, ghost, destructive, link-styled, icon-only, loading | Opening a URL: use a link, not a `variant="link"` button |
+| `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, `CardFooter` | Cards, panels, tiles, group boxes: a bordered surface with a title area, a body and a footer | A whole pressable card; notices (`Alert`, later); popups (`Popover`, `Dialog`) |
 | `Checkbox` | Checkboxes: accept terms, multiple selection, select all (indeterminate), a box alone in a table row | A setting that applies at once: `Switch`; one of a set: `RadioGroup`; a checkable menu item |
 | `Input` | Single-line text fields: name, email, password, search term, filter; sizes, invalid, read-only, disabled | Several lines (`Textarea`), numbers with steps (`nsh/base`'s `NumberInput`), a choice from a list (Select, later) |
+| `Kbd`, `KbdGroup` | Keyboard shortcuts, hotkeys, key hints, in menus, buttons and tooltips | Status marks (`Badge`), monospaced code |
 | `Label` | A form field's name; pressing it focuses the field (`htmlFor`) | The words beside a Checkbox, Switch or RadioGroup item (their children); descriptions and errors (Field, later) |
 | `RadioGroup`, `RadioGroupItem` | Radio buttons: one of a small set, all visible (a plan, a sort order), in a column or a row | Many options: `Select`; switching views: `Tabs`; a segmented control |
+| `Separator` | Dividers, rules, `hr`: between sections (horizontal) or the items of a row (vertical) | Menus and toolbars (`nsh/base`'s `MenuSeparator`, `ToolbarSeparator`); a block's own edge (`border-b`) |
+| `Skeleton` | Loading placeholders in the shape of the content to come | Unknown shapes or quick loads (`Spinner`, or nothing) |
+| `Spinner` | Loading or activity indicators of unknown length | A button's own wait (`Button`'s `loading`), known progress (a progress bar) |
 | `Switch` | Switches, toggles: a setting on or off that takes effect at once (notifications, dark mode) | An option applied on submit or a required item: `Checkbox`; a toolbar toggle button |
 | `Textarea` | Multi-line text fields: notes, descriptions, feedback, a message draft; grows with its text | One line (`Input`), rich text or code (`nsh/base`'s editors) |
+| `Tooltip` | Hints, hover hints: an icon button's name, a truncated label's full text, a shortcut | What the user must see (it hardly shows on touch screens), pressable content (`Popover`, later) |

@@ -1,6 +1,6 @@
 # Spinner
 
-A spinning loading indicator: something is in progress and how long it takes is unknown. Reference: shadcn/ui
+Status: implemented (P1). A spinning loading indicator: something is in progress and how long it takes is unknown. Reference: shadcn/ui
 new-york v4 `spinner.tsx`.
 
 ## Usage
@@ -18,7 +18,8 @@ new-york v4 `spinner.tsx`.
 ## Built on
 
 `nsh/base` has no counterpart; this library draws a foundation icon, lucide's `loader-circle` (shadcn's `Loader2Icon`),
-turned by Tailwind's `animate-spin` (supported by NSH). It has no behavior.
+turned by `foundation`'s `motion::spin`: one turn a second, linear, endless, as Tailwind's `animate-spin`, but played as
+an NSH motion that ignores reduced motion (see "States" and "NSH gaps"). It has no behavior.
 
 ## API
 
@@ -57,7 +58,7 @@ shadcn: `size-4 animate-spin`, color `currentColor` (the surrounding text).
 |---|---|
 | Shape | The `loader-circle` icon, with the icon set's stroke width (lucide's 2) |
 | Color | Follows the surrounding text (the foundation's icon rule, shadcn's `currentColor`): the button's text color in a button, muted in a `text-muted-foreground` row. Another color: `class="text-…"` |
-| Animation | `animate-spin`: one turn per second, linear, endless |
+| Animation | One turn per second, linear, endless (`animate-spin`'s timing; `foundation`'s `motion::spin`) |
 
 No color token: following the text keeps it right in every button variant; to change it everywhere, change the text
 color where it sits.
@@ -67,7 +68,8 @@ color where it sits.
 - **Reduced motion**: keeps spinning (decided). The spin is the "still in progress" information; a still icon looks
   frozen. macOS and iOS system spinners keep spinning under reduced motion, and WCAG 2.3.3 exempts animation that is
   essential to the information. This is an exception to conventions.md's "transitions go to zero under reduced motion":
-  it is not a transition.
+  it is not a transition. NSH's core starts no keyframe animation (`animate-spin` included) under reduced motion, so the
+  spinner turns through an NSH motion played with `play_ignoring_reduce_motion` instead.
 - No hover / active / focus / disabled.
 
 ## Pointer and touch
@@ -86,7 +88,7 @@ No difference.
 ## Tokens
 
 No component tokens: the edge is the foundation's icon edge (`icon-size-xs/sm/md/lg`, 12 / 14 / 16 / 16), the color
-follows the text, and the animation is Tailwind's fixed values (NSH tokens cannot hold a curve). To change size or color
+follows the text, and the animation is `animate-spin`'s fixed timing (NSH tokens cannot hold a curve). To change size or color
 everywhere, change the `size` or the text color where it sits.
 
 ## Examples
@@ -107,14 +109,17 @@ use nsh_longbridge::{spinner, Size};
 
 view().flex_row().items_center().gap_2()
     .child(spinner().size(Size::Sm))
-    .child(text("Syncing…").class("text-sm text-muted-foreground"))
+    .child(text("Syncing…").app_class(Some("text-sm text-muted-foreground".into())))
 
-spinner().class("size-8 text-primary").accessibility_label("Loading orders")
+spinner().app_class(Some("size-8 text-primary".into())).accessibility_label("Loading orders")
 ```
 
 ## NSH gaps
 
 - **No `status` accessibility role.** Workaround: an indeterminate `progressbar` with `busy` (see "Accessibility").
+- **`animate-spin` stops under reduced motion.** NSH's core drops every keyframe animation then, with no way for a view
+  to opt out. Workaround: `foundation`'s `motion::spin` (a `motion()` bound to the icon, played ignoring reduced motion).
+  A per-animation opt-out (or `animate-spin` exempted, as the platforms' spinners are) would let this be a class again.
 
 ## Decisions
 

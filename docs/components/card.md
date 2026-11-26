@@ -1,6 +1,6 @@
 # Card
 
-A container with a border, a fill and a light shadow, laid out as header, content and footer. Reference: shadcn/ui
+Status: implemented (P1). A container with a border, a fill and a light shadow, laid out as header, content and footer. Reference: shadcn/ui
 new-york v4 `card.tsx`.
 
 ## Usage
@@ -45,6 +45,12 @@ conventions' `<part>Class` is for parts that are not components of their own).
   without an action the second column is 0 wide, but the column gap `gap-2` remains and narrows the title by 8 for
   nothing.
 - A `CardAction` outside a `CardHeader` (no context to read) renders as usual and logs a warning in development builds.
+- `CardAction`'s grid placement is set span first (`row_span(2)`, then `row_start(1)`, then `col_start(2)`): in NSH a
+  span sets the start line too, so a span set after the start would undo it.
+- `justify-self-end` is not set: the action's column is `auto`, as wide as the action, so it already ends at the
+  header's right padding.
+- `CardTitle` and `CardDescription` are a `text` each; their children are its content (a string child's text takes
+  their styles).
 
 ## API
 
@@ -106,23 +112,25 @@ extra.
 
 ## Tokens
 
-| Token | Type | Derived default | Light / dark |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:card -->
+| Token | Type | Derived default | Value |
 |---|---|---|---|
-| `card` | color | The semantic `card` (same name and meaning: used directly, as tokens.md says; see below) | Follows `card` |
-| `card-foreground` | color | The semantic `card-foreground` | Same |
-| `card-border` | color | `border` | Same |
-| `card-description-foreground` | color | `muted-foreground` | Same |
-| `card-radius` | length | `radius-xl` (14) | Same |
-| `card-shadow` | number | 2 (`sm`, shadcn's `shadow-sm`; 0 none, 1 xs, 2 sm, 3 md, 4 lg) | The shadow color `shadow` has a light and a dark value |
-| `card-padding` | length | `spacing` × 6 (24) | Same |
-| `card-gap` | length | `spacing` × 6 (24) | Same |
-| `card-header-gap` | length | `spacing` × 2 (8) | Same |
-| `card-title-font-size` | length | 16 (Tailwind's `text-base`) | Same |
-| `card-description-font-size` | length | 14 (Tailwind's `text-sm`) | Same |
+| `card-border` | color | `border` |  |
+| `card-description-foreground` | color | `muted-foreground` |  |
+| `card-radius` | length | `radius-xl` | 14 |
+| `card-shadow` | number | `2` | 2 |
+| `card-padding` | length | `spacing × 6` | 24 |
+| `card-gap` | length | `spacing × 6` | 24 |
+| `card-header-gap` | length | `spacing × 2` | 8 |
+| `card-title-font-size` | length | `16` | 16 |
+| `card-description-font-size` | length | `14` | 14 |
+<!-- /tokens -->
 
 - `card` and `card-foreground` are shadcn's semantic tokens, so the component uses them directly and declares no
-  component tokens of the same name (they are absent from `tokens!`; the table lists them to show where the fill comes
-  from). To change only the cards' fill, change the semantic `card`, which only card-like surfaces use anyway.
+  component tokens of the same name (they are absent from `tokens!` and so from the table above). To change only the cards' fill, change the semantic `card`, which only card-like surfaces use anyway.
 - `card-title-font-size` is Tailwind's fixed size, not a `font-size-*`: tokens.md gives body text and headings
   Tailwind's values, and `font-size-*` is for controls.
 
@@ -159,7 +167,7 @@ card().w(px(360.0))
             .child(card_action().child(button().variant(ButtonVariant::Link).child("Sign Up"))),
     )
     .child(card_content().child(/* fields */))
-    .child(card_footer().class("border-t pt-6 gap-2").child(button().flex_1().child("Login")))
+    .child(card_footer().app_class(Some("border-t pt-6 gap-2".into())).child(button().flex_1().child("Login")))
 ```
 
 ## NSH gaps
@@ -167,10 +175,8 @@ card().w(px(360.0))
 - **No `:has()` and no matching on an element's own classes** (shadcn's `has-data-[slot=card-action]:` and
   `[.border-b]:`). Workaround: the action registers through context; the app writes the divider's padding itself (see
   "Look").
-- **Text color inheritance**: the root's `card-foreground` reaches the app's own `text`s inside only through NSH's text
-  color inheritance. To verify in the implementation: a `text` without a color inherits its parent `view`'s
-  (`docs/dev/styles.md`: text styles inherit as in CSS). If it does not, `CardTitle` and `CardDescription`, which set
-  their own colors, are unaffected, the app's own `text`s need `text-card-foreground`, and it is recorded as a gap.
+- **Text color inheritance**: the root's `card-foreground` reaches the app's own `text`s inside through NSH's text
+  style inheritance. Verified by a headless test; not a gap.
 
 ## Decisions
 

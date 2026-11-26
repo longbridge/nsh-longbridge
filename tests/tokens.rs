@@ -114,11 +114,29 @@ fn the_input_token_table_is_current() {
 }
 
 #[test]
+fn the_badge_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/badge.md"),
+        "badge",
+        &token_table(nsh_longbridge::components::badge::TOKENS),
+    );
+}
+
+#[test]
 fn the_checkbox_token_table_is_current() {
     check_block(
         &root().join("docs/components/checkbox.md"),
         "checkbox",
         &token_table(CHECKBOX_TOKENS),
+    );
+}
+
+#[test]
+fn the_card_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/card.md"),
+        "card",
+        &token_table(nsh_longbridge::components::card::TOKENS),
     );
 }
 
@@ -132,11 +150,29 @@ fn the_label_token_table_is_current() {
 }
 
 #[test]
+fn the_kbd_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/kbd.md"),
+        "kbd",
+        &token_table(nsh_longbridge::components::kbd::TOKENS),
+    );
+}
+
+#[test]
 fn the_switch_token_table_is_current() {
     check_block(
         &root().join("docs/components/switch.md"),
         "switch",
         &token_table(SWITCH_TOKENS),
+    );
+}
+
+#[test]
+fn the_separator_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/separator.md"),
+        "separator",
+        &token_table(nsh_longbridge::components::separator::TOKENS),
     );
 }
 
@@ -150,11 +186,29 @@ fn the_textarea_token_table_is_current() {
 }
 
 #[test]
+fn the_skeleton_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/skeleton.md"),
+        "skeleton",
+        &token_table(nsh_longbridge::components::skeleton::TOKENS),
+    );
+}
+
+#[test]
 fn the_radio_group_token_table_is_current() {
     check_block(
         &root().join("docs/components/radio-group.md"),
         "radio-group",
         &token_table(RADIO_GROUP_TOKENS),
+    );
+}
+
+#[test]
+fn the_tooltip_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/tooltip.md"),
+        "tooltip",
+        &token_table(nsh_longbridge::components::tooltip::TOKENS),
     );
 }
 

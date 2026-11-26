@@ -1,6 +1,6 @@
 # Separator
 
-A thin line that divides content, horizontal or vertical. Reference: shadcn/ui new-york v4 `separator.tsx`.
+Status: implemented (P1). A thin line that divides content, horizontal or vertical. Reference: shadcn/ui new-york v4 `separator.tsx`.
 
 ## Usage
 
@@ -46,8 +46,8 @@ No events, no children, no parts (`*Class` / `*Style`).
 Difference from shadcn: `self-stretch` instead of `w-full` / `h-full`. In a row, shadcn's vertical `h-full` needs a
 parent with a definite height (a common pitfall: the line ends up 0 high and the app adds `h-4`); NSH lays out with flex,
 so `self-stretch` fills the row's height. For a shorter vertical line, give `class="h-4"` as in shadcn (`class` is merged
-last and wins over `self-stretch`). Verify in the implementation that an explicit height stops the stretch (Taffy's
-`align-self: stretch` leaves a definite size alone, as CSS does).
+last and wins over `self-stretch`). An explicit height stops the stretch (Taffy's `align-self: stretch` leaves a definite
+size alone, as CSS does): verified by a headless test.
 
 ## States
 
@@ -65,11 +65,17 @@ No difference. Not enlarged on touch screens and no hit slop (nothing to press).
 
 ## Tokens
 
-| Token | Type | Derived default | Light / dark |
-|---|---|---|---|
-| `separator` | color | `border` | Follows `border` (shadcn's dark `border` is white at 10%) |
-| `separator-thickness` | length | `border-width` (1) | Same |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
 
+<!-- tokens:separator -->
+| Token | Type | Derived default | Value |
+|---|---|---|---|
+| `separator` | color | `border` |  |
+| `separator-thickness` | length | `border-width` | 1 |
+<!-- /tokens -->
+
+`separator` follows `border` (shadcn's dark `border` is white at 10%).
 ## Examples
 
 ```tsx

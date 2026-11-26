@@ -30,7 +30,7 @@ serde_json = "1"
 [dev-dependencies]
 nsh-core = { version = "0.7", features = ["declarations"] }
 nsh-engine = { version = "0.7", default-features = false }
-nsh-testing = { version = "0.7", default-features = false }
+nsh-testing = { version = "0.7", default-features = false, features = ["bundle"] }
 
 [lints.rust]
 unsafe_code = "forbid"

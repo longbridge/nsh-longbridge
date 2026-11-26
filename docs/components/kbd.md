@@ -1,6 +1,6 @@
 # Kbd
 
-Key caps: a key or a key combination drawn as small caps. Reference: shadcn/ui new-york v4 `kbd.tsx` (`Kbd`,
+Status: implemented (P1). Key caps: a key or a key combination drawn as small caps. Reference: shadcn/ui new-york v4 `kbd.tsx` (`Kbd`,
 `KbdGroup`).
 
 ## Usage
@@ -60,7 +60,7 @@ font-medium text-muted-foreground select-none`, icons `size-3`.
 | Padding | `kbd-padding-x` (4) horizontally, centered vertically |
 | Corners | `kbd-radius` |
 | Fill / text | `kbd` / `kbd-foreground` |
-| Text | `kbd-font-size` (12), `font-weight-medium`, `font-sans`, line height from the foundation's font size → line height, one line |
+| Text | `kbd-font-size` (12), `font-weight-medium`, line height from the foundation's font size → line height, one line. The family is inherited: the library has no `font-sans` token, so a cap inside `font-mono` text is monospaced (add `class="font-sans"`) |
 | Icons | 12 (the `xs` icon size the cap gives as context), colored as the text; `gap-1` (4) between icon and text |
 
 ### In a `Tooltip`
@@ -89,17 +89,25 @@ the app's call (for example only when `platform.desktop`); the component does no
 
 ## Tokens
 
-| Token | Type | Derived default | Light / dark |
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:kbd -->
+| Token | Type | Derived default | Value |
 |---|---|---|---|
-| `kbd` | color | `muted` | Follows `muted` |
-| `kbd-foreground` | color | `muted-foreground` | Follows `muted-foreground` |
-| `kbd-tooltip` | color | `light_dark(tooltip-foreground at 20%, tooltip-foreground at 10%)` | shadcn's `bg-background/20` and `dark:bg-background/10`, based on the tooltip's text color rather than `background`, so the caps follow a recolored tooltip |
-| `kbd-tooltip-foreground` | color | `tooltip-foreground` | Same |
-| `kbd-radius` | length | `radius-sm` (6) | Same |
-| `kbd-height` | length | 20 (`spacing` × 5) | Same |
-| `kbd-padding-x` | length | `spacing` (4) | Same |
-| `kbd-font-size` | length | `font-size-xs` (12) | Same |
-| `kbd-group-gap` | length | `spacing` (4) | Same |
+| `kbd` | color | `muted` |  |
+| `kbd-foreground` | color | `muted-foreground` |  |
+| `kbd-tooltip` | color | `light_dark(tooltip-foreground × 20%, tooltip-foreground × 10%)` |  |
+| `kbd-tooltip-foreground` | color | `tooltip-foreground` |  |
+| `kbd-radius` | length | `radius-sm` | 6 |
+| `kbd-height` | length | `spacing × 5` | 20 |
+| `kbd-padding-x` | length | `spacing` | 4 |
+| `kbd-font-size` | length | `font-size-xs` | 12 |
+| `kbd-group-gap` | length | `spacing` | 4 |
+<!-- /tokens -->
+
+`kbd-tooltip` is shadcn's `bg-background/20` (`dark:bg-background/10`) inside a tooltip, based on the tooltip's text
+color rather than `background`, so the caps follow a recolored tooltip.
 
 `kbd-height` does not follow `control-height`: it is a small label inside controls, and shadcn fixes it at `h-5`. A
 denser `spacing` shrinks it along with everything else.
@@ -124,6 +132,9 @@ import { Kbd, KbdGroup } from "nsh-longbridge";
 <Button tooltip={<Tooltip>Save <Kbd>{keymap.label("mod+s")}</Kbd></Tooltip>}>Save</Button>
 ```
 
+Each child of a cap sits in a text that takes the cap's text styles. With NSH 0.7.0, write a string child inside
+`<Text>` for now (`Button`'s G0).
+
 ```rust
 use nsh_core::element::key_label;
 use nsh_longbridge::{kbd, kbd_group};
@@ -137,8 +148,8 @@ kbd_group()
 
 - **No ancestor selectors** (shadcn's `[[data-slot=tooltip-content]_&]`). Workaround: `Tooltip` provides a context that
   `Kbd` reads. A `Kbd` a TSX app passes as a `Tooltip`'s child is adopted where the tooltip places its children, so it
-  reads that context (NSH's `docs/dev/components.md`, "The host node and ids"). Headless tests guard both the TSX and the
-  Rust path.
+  reads that context (NSH's `docs/dev/components.md`, "The host node and ids"). Verified: headless tests guard both the
+  TSX and the Rust path (`tests/tooltip.rs`).
 
 ## Decisions
 
