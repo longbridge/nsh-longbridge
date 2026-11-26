@@ -19,7 +19,13 @@ pub fn duration(t: Theme) -> f32 {
 /// [`duration`], with Tailwind's default easing (`cubic-bezier(0.4, 0,
 /// 0.2, 1)`, shadcn's `transition-all`).
 pub fn transition_all<E: Styled>(el: E, t: Theme) -> E {
-    el.transition_all()
-        .duration(move || duration(t))
+    timing(el.transition_all(), t)
+}
+
+/// The duration ([`duration`]) and easing of the transitions `el` already
+/// names (`el.transition_shadow()`, `el.transition_transform()`): for a
+/// control that animates only some of what changes.
+pub fn timing<E: Styled>(el: E, t: Theme) -> E {
+    el.duration(move || duration(t))
         .ease_bezier(0.4, 0.0, 0.2, 1.0)
 }

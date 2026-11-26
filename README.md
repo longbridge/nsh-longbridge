@@ -90,6 +90,9 @@ Find a component by what it is for. A change that adds or removes a public compo
 | Component | For (search terms) | Not for |
 |---|---|---|
 | `Button` | Buttons: primary, secondary, outline, ghost, destructive, link-styled, icon-only, loading | Opening a URL: use a link, not a `variant="link"` button |
+| `Checkbox` | Checkboxes: accept terms, multiple selection, select all (indeterminate), a box alone in a table row | A setting that applies at once: `Switch`; one of a set: `RadioGroup`; a checkable menu item |
 | `Input` | Single-line text fields: name, email, password, search term, filter; sizes, invalid, read-only, disabled | Several lines (`Textarea`), numbers with steps (`nsh/base`'s `NumberInput`), a choice from a list (Select, later) |
 | `Label` | A form field's name; pressing it focuses the field (`htmlFor`) | The words beside a Checkbox, Switch or RadioGroup item (their children); descriptions and errors (Field, later) |
+| `RadioGroup`, `RadioGroupItem` | Radio buttons: one of a small set, all visible (a plan, a sort order), in a column or a row | Many options: `Select`; switching views: `Tabs`; a segmented control |
+| `Switch` | Switches, toggles: a setting on or off that takes effect at once (notifications, dark mode) | An option applied on submit or a required item: `Checkbox`; a toolbar toggle button |
 | `Textarea` | Multi-line text fields: notes, descriptions, feedback, a message draft; grows with its text | One line (`Input`), rich text or code (`nsh/base`'s editors) |

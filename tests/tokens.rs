@@ -9,9 +9,14 @@ use std::path::{Path, PathBuf};
 use nsh_core::{Color, element::AdaptiveColor, prelude::*};
 use nsh_longbridge::{
     ScopeTokens, ThemeAppearance,
-    components::button::{
-        BUTTON_DEFAULT, BUTTON_DEFAULT_HOVER, BUTTON_HEIGHT_MD, BUTTON_OUTLINE_BORDER,
-        BUTTON_RADIUS, TOKENS as BUTTON_TOKENS,
+    components::{
+        button::{
+            BUTTON_DEFAULT, BUTTON_DEFAULT_HOVER, BUTTON_HEIGHT_MD, BUTTON_OUTLINE_BORDER,
+            BUTTON_RADIUS, TOKENS as BUTTON_TOKENS,
+        },
+        checkbox::TOKENS as CHECKBOX_TOKENS,
+        radio_group::TOKENS as RADIO_GROUP_TOKENS,
+        switch::TOKENS as SWITCH_TOKENS,
     },
     theme::{
         default_theme_json, registry, resolve_color_in, resolve_number_in,
@@ -109,6 +114,15 @@ fn the_input_token_table_is_current() {
 }
 
 #[test]
+fn the_checkbox_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/checkbox.md"),
+        "checkbox",
+        &token_table(CHECKBOX_TOKENS),
+    );
+}
+
+#[test]
 fn the_label_token_table_is_current() {
     check_block(
         &root().join("docs/components/label.md"),
@@ -118,11 +132,29 @@ fn the_label_token_table_is_current() {
 }
 
 #[test]
+fn the_switch_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/switch.md"),
+        "switch",
+        &token_table(SWITCH_TOKENS),
+    );
+}
+
+#[test]
 fn the_textarea_token_table_is_current() {
     check_block(
         &root().join("docs/components/textarea.md"),
         "textarea",
         &token_table(nsh_longbridge::components::textarea::TOKENS),
+    );
+}
+
+#[test]
+fn the_radio_group_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/radio-group.md"),
+        "radio-group",
+        &token_table(RADIO_GROUP_TOKENS),
     );
 }
 

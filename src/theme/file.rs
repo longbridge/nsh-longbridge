@@ -20,6 +20,9 @@ pub fn registry() -> Vec<TokenDecl> {
         crate::components::button::TOKENS,
         crate::components::label::TOKENS,
         crate::components::textarea::TOKENS,
+        crate::components::checkbox::TOKENS,
+        crate::components::switch::TOKENS,
+        crate::components::radio_group::TOKENS,
     ]
     .concat()
 }

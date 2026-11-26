@@ -1,6 +1,6 @@
 # Checkbox
 
-Status: API spec, reviewed 2026-11-26, not yet implemented. The look follows shadcn/ui new-york v4 `checkbox.tsx`; the
+Status: implemented (P1). The look follows shadcn/ui new-york v4 `checkbox.tsx`; the
 behavior is `nsh/base`'s `Checkbox`.
 
 `Checkbox`, [`Switch`](switch.md) and [`RadioGroup`](radio-group.md) are one family of choice controls: they handle
@@ -75,10 +75,15 @@ The name and payload are NSH's (conventions, "Controlled"), the same as `nsh/bas
 
 ```
 Checkbox root (nsh/base Checkbox, flex-row items-start, group/nlb-checkbox)
-├─ indicator (nsh/base's indicator view: the box)
-│   └─ mark (check or minus icon, made only while checked or indeterminate)
+├─ nsh/base's indicator view (unstyled, flex-shrink 0)
+│   └─ indicator (the box: a view of this library's, in nsh/base's `indicator` slot)
+│       └─ mark (check or minus icon, made only while checked or indeterminate)
 └─ label (a view of this library's, holding children)
 ```
+
+The box is a view of this library's placed in `nsh/base`'s `indicator` slot, not `nsh/base`'s indicator view itself:
+`nsh/base`'s `indicatorStyle` setter takes a fixed style in Rust, so it could not carry the app's `indicatorStyle` (a
+prop that changes) after the library's own (NSH gaps, 3). `indicatorClass` and `indicatorStyle` go on the box.
 
 ## Variants and sizes
 
@@ -100,13 +105,14 @@ Fixed geometry, in the component, not tokens:
 - The check and the dash are foundation icons sized explicitly to box − 2 (not `Size`'s default icon sizes
   12 / 14 / 16 / 20, which are a button's), at the icon's default stroke, centered. Icons take the text color: the box's
   text color is `checkbox-checked-foreground`, and the mark follows it.
-- Corners `checkbox-radius`, at most a quarter of the box's side, so a theme with large radii does not turn the box
-  into a circle that reads as a radio.
+- Corners `checkbox-radius`, drawn between 0 and a quarter of the box's side, so a theme with large radii does not turn
+  the box into a circle that reads as a radio, and `radius: 0` does not give a negative radius.
 - The root is `flex-row items-start`, with `checkbox-gap` between the box and the label.
 - The `label` part: `min-height` = the box's side and `justify-center`, so a one-line label is centered on the box and
   a longer one starts at its top. Font size `font-size-<size>`, weight `label-font-weight`, color `label-foreground`
   (Label's tokens); line height from foundation's font size → line height. Text children inherit them.
-- The box is `flex-shrink: 0`.
+- The box is `flex-shrink: 0`. With a label whose line height is taller than the box, the box takes a top margin of
+  half the difference, so it stays centered on the label's first line however many lines follow.
 
 Differences from shadcn: shadcn's checkbox has one size, 16, and its label is a separate `Label`. Here there are four
 sizes (conventions), and the label is `children`, since `nsh/base` puts `children` in the press target and the
@@ -135,7 +141,9 @@ The border's precedence with a pointer (the order of shadcn's classes in Tailwin
 invalid.
 
 Transitions: only the ring transitions (shadcn's `transition-shadow`, over `duration`); fill, border and mark change
-with the value at once (shadcn's indicator is `transition-none`).
+with the value at once (shadcn's indicator is `transition-none`). The press's sink changes at once too: NSH takes one
+set of transitioned properties per view (the last `transition-*` wins), and shadow and transform together come only
+with colors (`transition`).
 
 Cursor: always the default arrow, disabled too.
 
@@ -146,8 +154,8 @@ Implementation notes:
   box would draw as unchecked.
 - The ring and the press go on the box, but `nsh/base` projects only checked / indeterminate / disabled onto the
   indicator. The root gets `group/nlb-checkbox` and the box `group-focus-visible/nlb-checkbox` and
-  `group-active/nlb-checkbox` (nsh-core has `group_focus_visible_named` / `group_active_named`). **Verify this first when
-  implementing** (NSH gaps, 1).
+  `group-active/nlb-checkbox` (nsh-core's `group_focus_visible_named` / `group_active_named`). A `group` given to the
+  `nsh/base` component's element lands on its root; a test keeps the box following the keyboard focus (NSH gaps, 1).
 
 ## Pointer and touch
 
@@ -175,25 +183,34 @@ All of it is `nsh/base`'s:
 
 ## Tokens
 
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:checkbox -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `checkbox-size-xs` | length | `pointer_touch(control-height-xs × 0.5, control-height-touch-xs × 0.5)` | 12 (touch 16) |
 | `checkbox-size-sm` | length | `pointer_touch(control-height-sm × 0.5, control-height-touch-sm × 0.5)` | 14 (touch 18) |
 | `checkbox-size-md` | length | `pointer_touch(control-height-md × 0.5, control-height-touch-md × 0.5)` | 16 (touch 20) |
 | `checkbox-size-lg` | length | `pointer_touch(control-height-lg × 0.5, control-height-touch-lg × 0.5)` | 18 (touch 24) |
-| `checkbox-radius` | length | `max(radius-sm − 2, 0)` | 4 (shadcn's `rounded-[4px]`) |
-| `checkbox-gap` | length | `spacing` × 2 | 8 |
-| `checkbox` | color | `light_dark(transparent, input × 30%)` | transparent; dark `dark:bg-input/30` |
-| `checkbox-border` | color | `input` | |
-| `checkbox-checked` | color | `primary` | |
-| `checkbox-checked-border` | color | `checkbox-checked` | follows the fill |
-| `checkbox-checked-foreground` | color | `primary-foreground` | |
-| `checkbox-border-focus` | color | `ring` | |
-| `checkbox-border-invalid` | color | `destructive` | |
-| `checkbox-ring` | color | `ring` × `ring-opacity` (50%) | |
-| `checkbox-ring-invalid` | color | `ring-invalid` | `destructive` 20%, dark 40% |
-| `checkbox-shadow` | number | 1 (`xs`) | 0 for none |
+| `checkbox-radius` | length | `radius-sm − 2` | 4 |
+| `checkbox-gap` | length | `spacing × 2` | 8 |
+| `checkbox` | color | `light_dark(transparent, input × 30%)` |  |
+| `checkbox-border` | color | `input` |  |
+| `checkbox-checked` | color | `primary` |  |
+| `checkbox-checked-border` | color | `checkbox-checked` |  |
+| `checkbox-checked-foreground` | color | `primary-foreground` |  |
+| `checkbox-border-focus` | color | `ring` |  |
+| `checkbox-border-invalid` | color | `destructive` |  |
+| `checkbox-ring` | color | `ring × ring-opacity` |  |
+| `checkbox-ring-invalid` | color | `ring-invalid` |  |
+| `checkbox-shadow` | number | `1` | 1 |
+<!-- /tokens -->
 
+- `checkbox` is transparent in light and `input` at 30% in dark (`dark:bg-input/30`); `checkbox-ring-invalid` is
+  `destructive` at 20%, 40% in dark; `checkbox-shadow` 0 draws none.
+- `checkbox-radius` is drawn between 0 and a quarter of the box's side (4 at `md`, shadcn's `rounded-[4px]`); the clamp
+  is the component's, as a token default has no `max()`.
 - An app that changes the touch size alone writes `checkbox-size-<size>-touch` (tokens.md's general rule).
 - `checked` takes the variant's place (`checkbox-checked-border`): state suffixes are only `-hover`, `-active`, `-focus`,
   `-invalid` and `-disabled`, and checked is a value, not an interaction state.
@@ -235,6 +252,8 @@ const all = ["mentions", "approvals", "summary"];
 </View>
 ```
 
+With NSH 0.7.0, write a string child inside `<Text>` for now (see [button.md, NSH gaps](button.md#nsh-gaps), G0).
+
 Rust:
 
 ```rust
@@ -266,9 +285,14 @@ view()
 1. **The indicator does not follow the root's focus-visible, hover or active.** `nsh/base`'s `Checkbox` projects only
    checked / indeterminate / disabled onto the indicator (`project_*` in `checkbox.rs`); `Switch` adds active; neither
    projects focus-visible. Workaround: `group/nlb-checkbox` on the root and named group variants on the box (States).
-   Verify first, when implementing, that a `group` declaration given to an `nsh/base` component's element merges into
-   its root, and that `indicatorStyle` carries group variants. If either fails, draw the ring around the whole root
-   (as gpui-kit does) and report it.
+   Verified: a `group` given to an `nsh/base` component's element merges into its root, and the box, a view of this
+   library's in the indicator slot, follows it (`tests/checkbox.rs`). The fallback (the ring around the whole row, as
+   gpui-kit does) is not needed.
 2. **The projected `checked:` does not hold while disabled.** It means checked and not disabled, so a disabled checked
    box drawn with the variant would look unchecked. Workaround: bindings that read the value (States). Not a bug; noted so
    the implementation does not trip on it.
+3. **`nsh/base`'s part styles take a fixed style in Rust.** A `Style` prop's Rust setter (`indicator_style(|s| ..)`)
+   takes a closure building a style once; it cannot take a style that changes, nor the app's `indicatorStyle` passed
+   through. So this library draws its parts as views of its own (the box in the `indicator` slot), where its look and
+   the app's `<part>Class` / `<part>Style` merge in order. A setter taking `impl IntoReactive<Style>` would let the
+   parts be `nsh/base`'s own.

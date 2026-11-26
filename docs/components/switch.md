@@ -1,6 +1,6 @@
 # Switch
 
-Status: API spec, reviewed 2026-11-26, not yet implemented. The look follows shadcn/ui new-york v4 `switch.tsx`; the
+Status: implemented (P1). The look follows shadcn/ui new-york v4 `switch.tsx`; the
 behavior is `nsh/base`'s `Switch`.
 
 Focus, disabled, invalid, the label and the hit area are handled as in [`Checkbox`](checkbox.md) and
@@ -27,8 +27,8 @@ already does is not rewritten:
 - Presses: a press on the track or on the label (`children` are inside the press target), or Space / Return while
   focused, reports `Change(!checked)`. The app owns the value and the switch shows the value passed back.
 - Focus and screen readers: see Accessibility.
-- Parts: a track and a thumb inside it. Both follow checked / disabled, and active while the switch is held, wherever
-  the press went down, the label included (`project_group_active`).
+- Parts: a track and a thumb inside it, following checked / disabled / active. This library hides them and draws its
+  own track and thumb (see Parts and NSH gaps, 4).
 - `hitSlop`: widens where presses count, with no change to layout or look.
 - Terminal: `nsh/base` shows a checkbox's mark in place of the track and thumb. The track drawn here does not appear
   there; the label does.
@@ -70,10 +70,16 @@ The name and payload are NSH's, the same as `nsh/base`'s `Switch` and this libra
 
 ```
 Switch root (nsh/base Switch, flex-row items-start, group/nlb-switch)
-├─ track
+├─ nsh/base's track and thumb (hidden: display none)
+├─ track (a view of this library's)
 │   └─ thumb
 └─ label (a view of this library's, holding children)
 ```
+
+The track and thumb are views of this library's, placed first among `nsh/base`'s children (in its press target), and
+`nsh/base`'s own are hidden: `nsh/base`'s `trackStyle` / `thumbStyle` setters take a fixed style in Rust, so they could
+not carry the app's `trackStyle` / `thumbStyle` after the library's own (NSH gaps, 4). In a terminal the library's
+track is not made and `nsh/base`'s terminal switch shows.
 
 ## Variants and sizes
 
@@ -102,7 +108,7 @@ while on.
 The label part is `Checkbox`'s: the root is `flex-row items-start`, with `switch-gap` between the track and the label;
 `label` has `min-height` = the track's height and `justify-center`; font size `font-size-<size>`, weight
 `label-font-weight`, color `label-foreground`, line height from foundation's font size → line height. The track is
-`flex-shrink: 0`. shadcn's examples put 8 (`space-x-2`) between a switch and its `Label`; so does this library.
+`flex-shrink: 0` and takes `Checkbox`'s top margin, so it stays centered on the label's first line. shadcn's examples put 8 (`space-x-2`) between a switch and its `Label`; so does this library.
 
 The corners do not follow the `radius` seed (shadcn's `rounded-full`), but an app can change `switch-radius` (decided
 in review).
@@ -116,7 +122,7 @@ Every color is a token in Tokens; shadcn's classes are in parentheses. Only the 
 | Off | `switch` (light `input`; dark `input` 80%, `data-[state=unchecked]:bg-input dark:…bg-input/80`) | `switch-thumb` (light `background`; dark `foreground`) | Track shadow `switch-shadow` (1, `shadow-xs`) |
 | On | `switch-checked` (`bg-primary`) | `switch-checked-thumb` (light `background`; dark `primary-foreground`) | |
 | hover | none | | shadcn has none |
-| active (held) | | Stretches to 1.25 times its width, from its left end while off and its right end while on (the `active:` `nsh/base` projects; as macOS and iOS switches do) | No stretch with reduced motion |
+| active (held) | | Stretches to 1.25 times its width, from its left end while off and its right end while on (`group-active/nlb-switch`; as macOS and iOS switches do) | No stretch with reduced motion |
 | focus-visible (pointer) | The border goes from transparent to `switch-border-focus` (`focus-visible:border-ring`) | | A ring outside the track: `ring-width` 3, color `switch-ring` (`ring-[3px] ring-ring/50`), outside layout |
 | focus-visible (touch) | Border `switch-border-focus` | | No ring |
 | invalid | not supported | | |
@@ -133,12 +139,11 @@ Implementation notes:
 
 - The colors are bindings that read `checked`, not the `checked:` variant: `nsh/base`'s `checked:` holds only while on
   and not disabled, so a disabled switch that is on would draw as off.
-- The stretch while held uses the `active:` `nsh/base` already projects onto the thumb, not foundation's
-  `press(scale)`, which shrinks evenly.
-- The ring goes on the track, but `nsh/base` does not project focus-visible onto the parts: the root gets
-  `group/nlb-switch` and the track `group-focus-visible/nlb-switch` (not `nsh/base`'s internal `nsh-switch` group).
-  **Verify this first when implementing**; if it fails, draw the ring around the whole root and report it
-  ([checkbox.md, NSH gaps](checkbox.md#nsh-gaps), 1).
+- The stretch while held is `group-active/nlb-switch` on the thumb (`scale-x` 1.25 from the end it rests at), not
+  foundation's `press(scale)`, which shrinks evenly. As the track is the library's, `nsh/base`'s projected `active:`
+  does not reach it; the named group holds while the switch is held, wherever the press went down, as that does.
+- The ring goes on the track: the root gets `group/nlb-switch` and the track `group-focus-visible/nlb-switch` (not
+  `nsh/base`'s internal `nsh-switch` group). A test keeps the track following the keyboard focus.
 
 ## Pointer and touch
 
@@ -161,22 +166,30 @@ All of it is `nsh/base`'s:
 
 ## Tokens
 
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:switch -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `switch-thumb-size-xs` | length | `pointer_touch(control-height-xs × 0.5, control-height-touch-xs × 0.5)` | 12 (touch 16) |
 | `switch-thumb-size-sm` | length | `pointer_touch(control-height-sm × 0.5, control-height-touch-sm × 0.5)` | 14 (touch 18) |
 | `switch-thumb-size-md` | length | `pointer_touch(control-height-md × 0.5, control-height-touch-md × 0.5)` | 16 (touch 20) |
 | `switch-thumb-size-lg` | length | `pointer_touch(control-height-lg × 0.5, control-height-touch-lg × 0.5)` | 18 (touch 24) |
-| `switch-radius` | length | 9999 (a pill; the corners are `min(it, track height / 2)`) | does not follow `radius` |
-| `switch-gap` | length | `spacing` × 2 | 8 |
-| `switch` | color | `light_dark(input, input × 80%)` | |
-| `switch-checked` | color | `primary` | |
-| `switch-thumb` | color | `light_dark(background, foreground)` | in dark, the thumb is light while off |
-| `switch-checked-thumb` | color | `light_dark(background, primary-foreground)` | |
-| `switch-border-focus` | color | `ring` | |
-| `switch-ring` | color | `ring` × `ring-opacity` (50%) | |
-| `switch-shadow` | number | 1 (`xs`) | 0 for none |
+| `switch-radius` | length | `9999` | 9999 |
+| `switch-gap` | length | `spacing × 2` | 8 |
+| `switch` | color | `light_dark(input, input × 80%)` |  |
+| `switch-checked` | color | `primary` |  |
+| `switch-thumb` | color | `light_dark(background, foreground)` |  |
+| `switch-checked-thumb` | color | `light_dark(background, primary-foreground)` |  |
+| `switch-border-focus` | color | `ring` |  |
+| `switch-ring` | color | `ring × ring-opacity` |  |
+| `switch-shadow` | number | `1` | 1 |
+<!-- /tokens -->
 
+- `switch-radius` 9999 is a pill: the track's corners are `min(switch-radius, track height / 2)`. It does not follow
+  `radius` (shadcn's `rounded-full`).
+- `switch-thumb` is light while off in dark (`foreground`); `switch-shadow` 0 draws none.
 - An app that changes the touch size alone writes `switch-thumb-size-<size>-touch`.
 - `checked` takes the variant's place (`switch-checked-thumb`): state suffixes are only `-hover`, `-active`, `-focus`,
   `-invalid` and `-disabled`, and checked is a value, not an interaction state.
@@ -203,6 +216,8 @@ const airplane = signal(false);
   <Switch disabled checked>Managed by your organization</Switch>
 </View>
 ```
+
+With NSH 0.7.0, write a string child inside `<Text>` for now (see [button.md, NSH gaps](button.md#nsh-gaps), G0).
 
 Rust:
 
@@ -232,8 +247,11 @@ view()
 ## NSH gaps
 
 1. **The parts do not follow focus-visible.** As [checkbox.md, NSH gaps](checkbox.md#nsh-gaps), 1; `Switch` projects
-   active already and lacks only focus-visible.
+   active already and lacks only focus-visible. Worked around with `group/nlb-switch`, verified.
 2. **The projected `checked:` does not hold while disabled.** As `Checkbox`; the colors are bindings.
 3. **No `invalid` / `accessibilityDescribedBy`.** `nsh/base`'s `Switch` has neither (`Checkbox` has both). This
    library has no invalid switch, so there is nothing to work around; one later would need them in `nsh/base` for
    screen readers.
+4. **`nsh/base`'s part styles take a fixed style in Rust.** As [checkbox.md, NSH gaps](checkbox.md#nsh-gaps), 3.
+   `Switch` has no slot for its track, so this library hides `nsh/base`'s track and thumb and draws its own as the
+   first child.

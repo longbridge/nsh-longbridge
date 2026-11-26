@@ -1,8 +1,10 @@
 //! What every component shares: sizes, text, focus, press feedback,
-//! motion, shadows, icons, the field look and the library's own words.
+//! motion, shadows, icons, the field look, the choice controls' label and
+//! hit area, and the library's own words.
 //! Each rule reads tokens; components use these instead of writing their
 //! own.
 
+pub mod choice;
 pub mod field;
 pub mod field_ref;
 pub mod focus;

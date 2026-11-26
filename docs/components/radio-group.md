@@ -1,6 +1,6 @@
 # RadioGroup
 
-Status: API spec, reviewed 2026-11-26, not yet implemented. The look follows shadcn/ui new-york v4 `radio-group.tsx`
+Status: implemented (P1). The look follows shadcn/ui new-york v4 `radio-group.tsx`
 (`RadioGroup` and `RadioGroupItem`); the behavior is `nsh/base`'s `RadioGroup` and `Radio`.
 
 Focus, disabled, invalid, the label and the hit area are handled as in [`Checkbox`](checkbox.md) and
@@ -119,7 +119,8 @@ Fixed geometry, in the component:
 - An item's root is `flex-row items-start`, with `radio-group-item-gap` between the circle and the label.
 - The `label` part is `Checkbox`'s: `min-height` = the circle's side and `justify-center`; font size
   `font-size-<size>`, weight `label-font-weight`, color `label-foreground`, line height from foundation's font size →
-  line height; text children inherit them.
+  line height; text children inherit them. The circle takes `Checkbox`'s top margin, so it stays centered on the
+  label's first line.
 - The group's root is `flex-col` with `radio-group-gap` between items (shadcn's `grid gap-3`, the same in one column).
 
 Differences from shadcn: shadcn's item is the circle alone and its label a separate `Label`. Here the label is the
@@ -154,8 +155,7 @@ Implementation notes:
 - An item's colors and dot are bindings that read the `checked` this library computes (the group's `value` equals the
   item's), not the `checked:` variant (`nsh/base`'s `checked:` holds only while checked and not disabled).
 - The ring and the press go on the circle: the item's root gets `group/nlb-radio` and the circle
-  `group-focus-visible/nlb-radio` and `group-active/nlb-radio`. **Verify this first when implementing**; if it fails,
-  draw the ring around the item's root and report it ([checkbox.md, NSH gaps](checkbox.md#nsh-gaps), 1).
+  `group-focus-visible/nlb-radio` and `group-active/nlb-radio`. A test keeps the circle following the keyboard focus.
 - The group's `disabled` goes to each `nsh/base` `Radio`'s `disabled` (or-ed), so `nsh/base`'s roving focus skips them.
 
 ## Pointer and touch
@@ -185,24 +185,31 @@ All of it is `nsh/base`'s, except the group's `disabled`, which this library pas
 
 ## Tokens
 
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
+
+<!-- tokens:radio-group -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
-| `radio-group-gap` | length | `spacing` × 3 | 12 (follows the `spacing` seed) |
+| `radio-group-gap` | length | `spacing × 3` | 12 |
 | `radio-group-item-size-xs` | length | `pointer_touch(control-height-xs × 0.5, control-height-touch-xs × 0.5)` | 12 (touch 16) |
 | `radio-group-item-size-sm` | length | `pointer_touch(control-height-sm × 0.5, control-height-touch-sm × 0.5)` | 14 (touch 18) |
 | `radio-group-item-size-md` | length | `pointer_touch(control-height-md × 0.5, control-height-touch-md × 0.5)` | 16 (touch 20) |
 | `radio-group-item-size-lg` | length | `pointer_touch(control-height-lg × 0.5, control-height-touch-lg × 0.5)` | 18 (touch 24) |
-| `radio-group-item-gap` | length | `spacing` × 2 | 8 |
-| `radio-group-item` | color | `light_dark(transparent, input × 30%)` | transparent in light |
-| `radio-group-item-border` | color | `input` | |
-| `radio-group-item-checked-border` | color | `radio-group-item-border` | |
-| `radio-group-item-border-focus` | color | `ring` | |
-| `radio-group-item-border-invalid` | color | `destructive` | |
-| `radio-group-item-ring` | color | `ring` × `ring-opacity` (50%) | |
-| `radio-group-item-ring-invalid` | color | `ring-invalid` | `destructive` 20%, dark 40% |
-| `radio-group-item-dot` | color | `primary` | |
-| `radio-group-item-shadow` | number | 1 (`xs`) | 0 for none |
+| `radio-group-item-gap` | length | `spacing × 2` | 8 |
+| `radio-group-item` | color | `light_dark(transparent, input × 30%)` |  |
+| `radio-group-item-border` | color | `input` |  |
+| `radio-group-item-checked-border` | color | `radio-group-item-border` |  |
+| `radio-group-item-border-focus` | color | `ring` |  |
+| `radio-group-item-border-invalid` | color | `destructive` |  |
+| `radio-group-item-ring` | color | `ring × ring-opacity` |  |
+| `radio-group-item-ring-invalid` | color | `ring-invalid` |  |
+| `radio-group-item-dot` | color | `primary` |  |
+| `radio-group-item-shadow` | number | `1` | 1 |
+<!-- /tokens -->
 
+- `radio-group-gap` follows the `spacing` seed. `radio-group-item` is transparent in light and `input` at 30% in dark;
+  `radio-group-item-ring-invalid` is `destructive` at 20%, 40% in dark; `radio-group-item-shadow` 0 draws none.
 - An app that changes the touch size alone writes `radio-group-item-size-<size>-touch`.
 - `checked` takes the variant's place (`radio-group-item-checked-border`): state suffixes are only `-hover`,
   `-active`, `-focus`, `-invalid` and `-disabled`, and checked is a value, not an interaction state.
@@ -237,6 +244,8 @@ const sort = signal("name");
   <RadioGroupItem value="date">Date</RadioGroupItem>
 </RadioGroup>
 ```
+
+With NSH 0.7.0, write a string child inside `<Text>` for now (see [button.md, NSH gaps](button.md#nsh-gaps), G0).
 
 Rust:
 

@@ -5,19 +5,25 @@ import { ButtonPage } from "./pages/button";
 import { InputPage } from "./pages/input";
 import { LabelPage } from "./pages/label";
 import { TextareaPage } from "./pages/textarea";
+import { CheckboxPage } from "./pages/checkbox";
+import { RadioGroupPage } from "./pages/radio-group";
+import { SwitchPage } from "./pages/switch";
 import { ThemePage } from "./pages/theme";
 import { appearance, Appearance, colorPreset, colorPresets, densityPreset, densityPresets, followTheme } from "./theme";
 import { Segmented } from "./ui";
 
-type PageId = "button" | "input" | "label" | "textarea" | "theme";
+type PageId = "button" | "checkbox" | "input" | "label" | "radio-group" | "switch" | "textarea" | "theme";
 
 const catalog: { group: string; pages: { id: PageId; label: string }[] }[] = [
   {
     group: "Components",
     pages: [
       { id: "button", label: "Button" },
+      { id: "checkbox", label: "Checkbox" },
       { id: "input", label: "Input" },
       { id: "label", label: "Label" },
+      { id: "radio-group", label: "RadioGroup" },
+      { id: "switch", label: "Switch" },
       { id: "textarea", label: "Textarea" },
     ],
   },
@@ -96,6 +102,15 @@ function App() {
           </If>
           <If when={page() === "textarea"}>
             <TextareaPage />
+          </If>
+          <If when={page() === "checkbox"}>
+            <CheckboxPage />
+          </If>
+          <If when={page() === "radio-group"}>
+            <RadioGroupPage />
+          </If>
+          <If when={page() === "switch"}>
+            <SwitchPage />
           </If>
           <If when={page() === "theme"}>
             <ThemePage />

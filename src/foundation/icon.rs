@@ -31,6 +31,12 @@ pub enum IconName {
     /// `chevron-down`.
     #[prop(rename = "chevron-down")]
     ChevronDown,
+    /// `check`: a checked checkbox's mark.
+    #[prop(rename = "check")]
+    Check,
+    /// `minus`: an indeterminate checkbox's mark.
+    #[prop(rename = "minus")]
+    Minus,
 }
 
 nsh_core::static_reactive!(IconName: IconName);
@@ -44,6 +50,8 @@ impl IconName {
             IconName::ArrowRight => include_str!("icons/arrow-right.svg"),
             IconName::Trash2 => include_str!("icons/trash-2.svg"),
             IconName::ChevronDown => include_str!("icons/chevron-down.svg"),
+            IconName::Check => include_str!("icons/check.svg"),
+            IconName::Minus => include_str!("icons/minus.svg"),
         }
     }
 }

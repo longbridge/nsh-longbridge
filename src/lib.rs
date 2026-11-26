@@ -23,8 +23,14 @@ use nsh_core::prelude::*;
 pub use crate::{
     components::{
         button::{Button, ButtonElement, ButtonEvent, ButtonProps, ButtonVariant, button},
+        checkbox::{Checkbox, CheckboxElement, CheckboxEvent, CheckboxProps, checkbox},
         input::{AutoComplete, Input, InputApi, InputElement, InputEvent, InputProps, input},
         label::{Label, LabelElement, LabelProps, label},
+        radio_group::{
+            RadioGroup, RadioGroupElement, RadioGroupEvent, RadioGroupItem, RadioGroupItemElement,
+            RadioGroupItemProps, RadioGroupProps, radio_group, radio_group_item,
+        },
+        switch::{Switch, SwitchElement, SwitchEvent, SwitchProps, switch},
         textarea::{
             Textarea, TextareaApi, TextareaElement, TextareaEvent, TextareaProps, textarea,
         },
@@ -44,9 +50,13 @@ pub use crate::{
 fn native(registry: &mut Registry) {
     registry
         .register::<Button>()
+        .register::<Checkbox>()
         .register::<Icon>()
         .register::<Input>()
         .register::<Label>()
+        .register::<RadioGroup>()
+        .register::<RadioGroupItem>()
+        .register::<Switch>()
         .register::<Textarea>()
         .register::<ThemeScope>()
         .module::<foundation::labels::Labels>();

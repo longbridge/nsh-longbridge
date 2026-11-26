@@ -46,6 +46,12 @@ pub fn semibold(t: Theme) -> FontWeight {
     weight(t.number(FONT_WEIGHT_SEMIBOLD))
 }
 
+/// The weight a number token holds (`label-font-weight`), rounded to a
+/// font weight. Read when the view is made, as [`medium`].
+pub fn font_weight(t: Theme, token: Token<kind::Number>) -> FontWeight {
+    weight(t.number(token))
+}
+
 /// A weight token's value as a font weight (`label-font-weight`'s 500).
 /// Read when the view is made.
 pub fn weight(n: f32) -> FontWeight {
