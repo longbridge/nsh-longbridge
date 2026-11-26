@@ -230,6 +230,7 @@ pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
         }
     };
 
+    let link = props.variant.get_untracked() == ButtonVariant::Link;
     let root = base_button()
         .disabled(props.disabled)
         .busy(props.loading)
@@ -283,6 +284,12 @@ pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
             shadow::shadow(t, level)
         })
         .hover(move |s| {
+            // Not bindable (as the cursor below): read when it is built.
+            let s = if link {
+                s.underline().underline_offset(px(4.0))
+            } else {
+                s
+            };
             s.bg(move || {
                 if idle() {
                     rest_fill(t, variant())
@@ -319,9 +326,12 @@ pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
                 Some(BUTTON_BORDER_FOCUS),
             )
         })
-        .disabled_style(move |s| s.opacity(move || t.number(OPACITY_DISABLED)));
+        .disabled_style(move |s| {
+            let s = s.opacity(move || t.number(OPACITY_DISABLED));
+            if link { s.no_underline() } else { s }
+        });
     let root = motion::transition_all(root, t);
-    let root = if props.variant.get_untracked() == ButtonVariant::Link {
+    let root = if link {
         root.cursor_pointer()
     } else {
         root.cursor(Cursor::Default)

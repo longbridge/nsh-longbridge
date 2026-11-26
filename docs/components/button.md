@@ -238,7 +238,9 @@ button().variant(ButtonVariant::Ghost).icon_only(true).icon(IconName::Plus).acce
   let a `Child` say whether it is text, only strings would be wrapped.
 - **G2: font weight is not bindable.** `font_weight` takes a static value, so `font-weight-medium` is read when the
   button is built; a `setTheme` that changes it applies once the button is built again. Every other token is a
-  binding and applies at once.
+  binding and applies at once. Likewise the underline (`underline()` takes no binding) and the cursor follow the
+  `variant` the button was built with; a `variant` changed later to or from `link` keeps them until it is built
+  again.
 - **G3: the shadow is an inline style.** A `BoxShadow`'s color is fixed and `.shadow()` is not bindable. The library
   computes the layers in a binding, from the current appearance and the `shadow` token, and sets them as the root's
   inline `Style`. The app's `style` still merges after it.

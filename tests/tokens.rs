@@ -300,6 +300,10 @@ fn nsh_reads_every_preset_whole() {
         let json = std::fs::read_to_string(&path).unwrap();
         let (_, ignored) = nsh_base::Theme::from_json_lenient(&json)
             .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-        assert!(ignored.is_empty(), "{}: NSH left out {ignored:?}", path.display());
+        assert!(
+            ignored.is_empty(),
+            "{}: NSH left out {ignored:?}",
+            path.display()
+        );
     }
 }
