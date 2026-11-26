@@ -20,6 +20,12 @@
     }
   },
   "capabilities": {
-    "clipboard": true
+    "clipboard": true,
+    "windows": {
+      "kinds": [
+        "normal"
+      ]
+    },
+    "application": true
   }
 }
