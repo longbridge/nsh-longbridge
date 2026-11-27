@@ -15,7 +15,7 @@ use nsh_core::{Checked, Command, prelude::*};
 use nsh_longbridge::{
     Checkbox, FieldRef, SelectItem, Switch, checkbox,
     foundation::field::{self, FieldState},
-    input, label, radio_group, radio_group_item, select, switch, textarea, toggle_group,
+    input, label, radio_group, radio_group_item, select, slider, switch, textarea, toggle_group,
     toggle_group_item,
 };
 use nsh_testing::Headless;
@@ -450,6 +450,7 @@ fn Set() -> impl IntoElement {
                 .accessibility_label("Wrap")
                 .child(toggle_group_item().value("box").accessibility_label("Box")),
         )
+        .child(slider().accessibility_label("Level"))
         .child(
             test_field()
                 .name("City")
@@ -464,6 +465,7 @@ fn a_sets_disabled_reaches_every_control() {
     assert!(!screen.enabled("label:Street box").unwrap());
     assert!(!screen.enabled("role:checkbox[Gift]").unwrap());
     assert!(!screen.enabled("role:button[Box]").unwrap());
+    assert!(!screen.enabled("role:adjustable[Level]").unwrap());
     assert!(!screen.enabled("label:City box").unwrap());
 }
 

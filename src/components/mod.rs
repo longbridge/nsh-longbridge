@@ -21,6 +21,7 @@ pub mod radio_group;
 pub mod select;
 pub mod separator;
 pub mod skeleton;
+pub mod slider;
 pub mod spinner;
 pub mod switch;
 pub mod table;

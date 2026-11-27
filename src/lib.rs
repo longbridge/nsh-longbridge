@@ -127,6 +127,9 @@ pub use crate::{
         },
         separator::{Separator, SeparatorElement, SeparatorProps, separator},
         skeleton::{Skeleton, SkeletonElement, SkeletonProps, skeleton},
+        slider::{
+            Slider, SliderElement, SliderEvent, SliderProps, SliderScale, SliderValue, slider,
+        },
         spinner::{Spinner, SpinnerElement, SpinnerProps, spinner},
         switch::{Switch, SwitchApi, SwitchElement, SwitchEvent, SwitchProps, switch},
         table::{
@@ -232,6 +235,7 @@ fn native(registry: &mut Registry) {
         .register::<Select>()
         .register::<Separator>()
         .register::<Skeleton>()
+        .register::<Slider>()
         .register::<Spinner>()
         .register::<Switch>()
         .register::<Table>()

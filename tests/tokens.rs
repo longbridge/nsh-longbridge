@@ -345,6 +345,15 @@ fn the_pagination_token_table_is_current() {
 }
 
 #[test]
+fn the_slider_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/slider.md"),
+        "slider",
+        &token_table(nsh_longbridge::components::slider::TOKENS),
+    );
+}
+
+#[test]
 fn names_are_unique_and_kebab_case() {
     let decls = registry();
     let mut seen = std::collections::HashSet::new();

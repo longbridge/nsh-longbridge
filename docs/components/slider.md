@@ -1,9 +1,9 @@
 # Slider
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
-A value, or a range of two, picked along a track: a volume, a brightness, an opacity, a price range. The look is
-shadcn/ui new-york v4's `slider.tsx` (Radix Slider); the behavior is `nsh/base`'s `Slider`.
+A value, or a range of two, picked along a track: a volume, a brightness, an opacity, a price range. The behavior is
+`nsh/base`'s `Slider`; this library draws it.
 
 ## Usage
 
@@ -37,31 +37,32 @@ already does, not rewritten:
 
 This library adds the look (tokens) and the press area's size. No `size`: see Decisions 1.
 
-### Differs from shadcn's structure
+### Parts and `nsh/base`'s
 
-The same parts, under the names this library exposes (shadcn's), drawn on `nsh/base`'s:
+This library's part names are the ones apps know from web sliders (`track` is the rail); `nsh/base`'s differ:
 
-| This library's part | shadcn | `nsh/base`'s part |
+| This library's part | What | `nsh/base`'s part |
 |---|---|---|
-| root | `Slider` root | the root view |
-| (the press area, not exposed) | — (the root) | `track`: the area taking presses and drags |
-| `track` | `SliderTrack`: the rail | `indicator` |
-| `range` | `SliderRange` | `range` |
-| `thumb` | `SliderThumb`, one per value | `thumb` |
+| root | The slider | the root view |
+| (the press area, not exposed) | The area taking presses and drags | `track` |
+| `track` | The rail | `indicator` |
+| `range` | The filled stretch | `range` |
+| `thumb` | One per value | `thumb` |
 
-The value is `nsh/base`'s `SliderValue` (`number | [number, number]`), not shadcn's `number[]`: one number for one
-thumb, a pair for two. `nsh/base` draws no more than two thumbs.
+The value is `nsh/base`'s `SliderValue` (`number | [number, number]`), not a list: one number for one thumb, a pair
+for two. `nsh/base` draws no more than two thumbs.
 
 ### Implementation
 
 - `#[component] fn Slider` whose root is `nsh_base::slider()`, the value, bounds, `step`, `scale`, `axis`,
   `disabled` and labels passed through, its events forwarded.
-- The parts' looks follow conventions.md's rule for `nsh/base` parts styled once ("Drawing"): each part (`nsh/base`'s
-  `track`, `indicator`, `range`, `thumb`) gets a class generated from the resolved tokens (geometry, fills, the edge,
-  the thumb's shadow and, on the thumb, the ring under `hover:`, `active:` and `focus-visible:`), placed before the
-  app's `<part>Class`; the app's `<part>Style` is merged last.
-- It joins an enclosing [Field](field.md) (`field::join`): `disabled` from the field; there is nothing for a label's
-  press to do (NSH gaps 3).
+- The parts' looks are style bindings on `nsh/base`'s part style props (set through the builder's props, as the
+  builder's setters take a style built once): the geometry, fills, the edge and the thumb's shadow follow the tokens,
+  a scope and the appearance, and the app's `<part>Style` is merged last. The thumb's ring under `hover:`, `active:`
+  and `focus-visible:` (states only `nsh/base` knows) is a class generated from the resolved tokens, placed before the
+  app's `thumbClass`; it is left out while disabled and on touch screens.
+- It joins an enclosing [Field](field.md) (`field::join`, as an inert control): `disabled` from the field (and a
+  `FieldSet`); there is nothing for a label's press to do (NSH gaps 3).
 - The root: as wide as its parent (`w-full`; vertical: as tall, at least `slider-vertical-min-height`),
   `opacity-disabled` while disabled, the arrow cursor.
 
@@ -76,7 +77,7 @@ thumb, a pair for two. `nsh/base` draws no more than two thumbs.
 | `min` / `max` | `min` / `max` | `number` | `0` / `100` | The bounds |
 | `step` | `step` | `number` | `1` | The step values snap to; `0`: any |
 | `scale` | `scale` | `"linear"` \| `"logarithmic"` (`SliderScale`) | `"linear"` | How values spread along the track |
-| `axis` | `axis` | `"horizontal"` \| `"vertical"` (`Axis`) | `"horizontal"` | shadcn's `orientation`; read when made |
+| `axis` | `axis` | `"horizontal"` \| `"vertical"` (`Axis`) | `"horizontal"` | The direction (an orientation); read when made |
 | `disabled` | `disabled` | `boolean` | `false` | No changes, dimmed |
 | `accessibilityLabel` | `accessibility_label` | `string` | — | What screen readers call the thumb (a range's end thumb). Set it even beside a label (Input's G1) |
 | `startAccessibilityLabel` | `start_accessibility_label` | `string` | `accessibilityLabel` | A range's start thumb ("Minimum price") |
@@ -86,17 +87,17 @@ thumb, a pair for two. `nsh/base` draws no more than two thumbs.
 | `thumbClass` / `thumbStyle` | `thumb_class` / `thumb_style` | | | Each thumb |
 
 A part's `<part>Class` follows the library's generated class and overrides it (`trackClass="bg-secondary"`); its
-`<part>Style` is merged last. `nsh/base`'s `children` (content after the track) is not exposed: shadcn's slider has none, and a value label is the
-app's, beside it.
+`<part>Style` is merged last. `nsh/base`'s `children` (content after the track) is not exposed: a value label is the
+app's, beside the slider, where it lines up with the form's other labels.
 
 ### Events
 
 | TSX | Rust (`SliderEvent`) | Payload | When |
 |---|---|---|---|
 | `onChange` | `Change(SliderValue)` | `{ value }` | The user changed the value (a press, a drag, a key, a screen reader), each time it changes |
-| `onChangeEnd` | `ChangeEnd(SliderValue)` | `{ value }` | The change ended (released, a key's step done): shadcn's `onValueCommit` |
+| `onChangeEnd` | `ChangeEnd(SliderValue)` | `{ value }` | The change ended (released, a key's step done): the time to save it |
 
-`nsh/base`'s events, forwarded; NSH's names (conventions), shadcn's `onValueChange` / `onValueCommit`.
+`nsh/base`'s events, forwarded, under NSH's names (conventions).
 
 ### Parts
 
@@ -109,16 +110,9 @@ app's, beside it.
 
 ## Variants and sizes
 
-No variants, no `size` (shadcn has one size). shadcn:
+No variants, no `size` (Decisions 1).
 
-- Root: `relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50`; vertical `h-full
-  min-h-44 w-auto flex-col`.
-- Track: `relative grow overflow-hidden rounded-full bg-muted h-1.5 w-full` (vertical `h-full w-1.5`).
-- Range: `absolute bg-primary h-full` (vertical `w-full`).
-- Thumb: `block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50
-  transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden`.
-
-| Part | This library |
+| Part | |
 |---|---|
 | Press area | Across the slider: `slider-thickness` (pointer 16, the thumb's size; touch 44), the rail centered in it; the whole length |
 | Track (rail) | `slider-track-thickness` (6) thick, the whole length, fully rounded, fill `slider-track` (`muted`) |
@@ -126,31 +120,31 @@ No variants, no `size` (shadcn has one size). shadcn:
 | Thumb | A circle `slider-thumb-size` (16; touch 20) across, fill `slider-thumb` (white: `background` in light, `foreground` in dark), edge `border-width` × `slider-thumb-border` (`primary`), shadow tier `slider-thumb-shadow` (2, `sm`), centered on its value |
 | Vertical | The same turned: the press area `slider-thickness` wide, at least `slider-vertical-min-height` (176) tall |
 
-Differences from shadcn:
+Decisions in the look:
 
-- **The slider is as tall as its press area (16), not as its rail (6).** Radix's thumbs overflow a 6-tall root; here
-  the thumbs fit inside the slider's box, so the rows around it do not overlap them and presses on a thumb's edge
-  reach the slider.
+- **The slider is as tall as its press area (16), not as its rail (6).** Thumbs overflowing a 6-tall slider would
+  overlap the rows around it, and presses on a thumb's edge would miss the slider; here the thumbs fit inside its box.
 - **The range is rounded itself** rather than clipped by the rail (`overflow-hidden` on the rail would clip
   `nsh/base`'s thumbs, which sit inside it); its end under a thumb is covered by the thumb.
-- **The thumb's white** is `light_dark(background, foreground)`: shadcn writes `bg-white` in both appearances, and a
-  component has no color literals. In shadcn's themes both resolve to white or near-white.
+- **The thumb is white in both appearances**, as `light_dark(background, foreground)`: a component has no color
+  literals, and in the default themes both resolve to white or near-white. A white thumb reads as the thing to grab
+  on both a light and a dark rail.
 
 ## States
 
-| State | Look | shadcn |
-|---|---|---|
-| Rest | As above | — |
-| Thumb hover (pointer) | A ring of `slider-thumb-ring-width` (4) in `slider-thumb-ring` (`ring` at 50%) outside the thumb, no layout | `hover:ring-4` |
-| Thumb dragged (pointer) | The same ring, kept while the pointer leaves the thumb during the drag | — (Radix keeps hover) |
-| Thumb focus-visible | The same ring | `focus-visible:ring-4` |
-| Touch: dragged, focused | No ring (no hover; focus changes nothing on touch, conventions) | — |
-| Disabled | The root at `opacity-disabled`, no ring, the arrow cursor | `data-[disabled]:opacity-50` |
-| Invalid | Not offered (shadcn has none); in a [Field](field.md) the error shows in `FieldError` | — |
+| State | Look |
+|---|---|
+| Rest | As above |
+| Thumb hover (pointer) | A ring of `slider-thumb-ring-width` (4) in `slider-thumb-ring` (`ring` at 50%) outside the thumb, no layout |
+| Thumb dragged (pointer) | The same ring, kept while the pointer leaves the thumb during the drag |
+| Thumb focus-visible | The same ring |
+| Touch: dragged, focused | No ring (no hover; focus changes nothing on touch, conventions) |
+| Disabled | The root at `opacity-disabled`, no ring, the arrow cursor |
+| Invalid | Not offered: a slider's value is always in range; in a [Field](field.md) the error shows in `FieldError` |
 
-The ring transitions over `duration` (shadcn's `transition-[color,box-shadow]`), none with reduced motion. The thumb
-and the range follow the value with no transition (pointer-driven motion, and Radix's keys move them at once). The
-cursor is the arrow (gpui-kit's Design Guides; Radix sets none).
+The ring transitions over `duration` (the thumb's shadows only), none with reduced motion. The thumb and the range
+follow the value with no transition (pointer-driven motion, and the keys move them at once). The cursor is the arrow
+(gpui-kit's Design Guides).
 
 ## Pointer and touch
 
@@ -161,8 +155,8 @@ cursor is the arrow (gpui-kit's Design Guides; Radix sets none).
 | Drag | From the thumb or anywhere on the press area | The same; a scroll view around it does not take the drag (`nsh/base`) |
 | Ring | Hover, drag, keyboard focus | None |
 
-iOS's slider is 31 tall and takes touches in 44, Android's is 48: the 44 press area follows them; the look stays
-shadcn's thin rail.
+iOS's slider is 31 tall and takes touches in 44, Android's is 48: the 44 press area follows them; the look stays a
+thin rail.
 
 ## Accessibility
 
@@ -196,10 +190,10 @@ Values are those of `nsh/base`'s default theme.
 
 - The rail is `slider-track` (the part is `track`); the slider has no bare-name token, having no one surface that is
   "the control".
-- `slider-thumb-border` follows `slider-range`: a theme that recolors the range recolors the thumb's edge, as shadcn's
-  both are `primary`.
-- `slider-thumb-ring-width` is shadcn's `ring-4`, one more than the fields' `ring-3`: the ring around a small circle
-  must read as wide as a field's.
+- `slider-thumb-border` follows `slider-range`: a theme that recolors the range recolors the thumb's edge, so the
+  two stay one color.
+- `slider-thumb-ring-width` is 4, one more than the fields' 3: the ring around a small circle must read as wide as a
+  field's.
 - The thumb is drawn between 0 and `slider-thickness` across (a theme's larger thumb never outgrows the press area);
   the clamp is the component's.
 - Other tokens it reads: `border-width`, `opacity-disabled`, `shadow`, `duration`.
@@ -259,17 +253,18 @@ too). `nsh/base` exports a `Slider` as well; an app using both renames one.
 ### The gallery's `Slider`
 
 The gallery's local `Slider` (`gallery/ui/controls.tsx`, the seed sliders of the Customize page) is `nsh/base`'s
-`Slider` with shadcn's classes: it becomes this component with the same props (`value`, `min`, `max`, `step`,
-`onChange`, `accessibilityLabel`, `class`), and its part classes go. Two visible changes: the thumb is white in dark
-(shadcn's), where the gallery's is `bg-background`; the slider is 16 tall, where the gallery's track is 20.
+`Slider` with part classes of its own: it becomes this component with the same props (`value`, `min`, `max`, `step`,
+`onChange`, `accessibilityLabel`, `class`), and its part classes go. Two visible changes: the thumb is white in dark,
+where the gallery's is `bg-background`; the slider is 16 tall, where the gallery's track is 20.
 
 The gallery's `Stepper` (the token editor's − value + row) is a number stepped by buttons: `nsh/base`'s `NumberInput`,
 which this library wraps later; it stays local until then.
 
 ## NSH gaps
 
-1. **Part styles built once** (`nsh/base`'s `*_style` setters in Rust): the look is a generated class, by
-   conventions.md's rule ("Drawing").
+1. **Part styles built once** (`nsh/base`'s `*_style` setters in Rust take a style built once): the look is set as
+   bindings on the part style props directly, and the thumb's state ring is a generated class. A setter taking a
+   binding would make this the public way.
 2. **No hit slop on `nsh/base`'s parts**: the press area takes layout on touch screens (44 across) rather than a slop
    around a thinner slider. A `hitSlop` on `nsh/base`'s track would let the touch slider stay 20 tall.
 3. **No focus method on a thumb and no described-by**: a `FieldLabel`'s press cannot focus the slider, and a field's
@@ -280,11 +275,10 @@ which this library wraps later; it stays local until then.
 
 Settled in the P3 review:
 
-1. **No `size`.** shadcn's slider has one size, and a slider's size is its length (the app's width); its thickness
-   follows the `control-height` seed through `slider-thumb-size`, as a checkbox's box. A dense toolbar slider uses the
-   tokens in a scope.
-2. **The press area is the thumb's size with a pointer, 44 on touch** (taking layout), rather than shadcn's 6-tall
-   root with overflowing thumbs.
-3. **shadcn's white thumb in both appearances**, through `light_dark(background, foreground)`.
-4. **Part names are shadcn's** (`track` is the rail), not `nsh/base`'s (`track` is its press area, `indicator` the
+1. **No `size`.** A slider's size is its length (the app's width); its thickness follows the `control-height` seed
+   through `slider-thumb-size`, as a checkbox's box. A dense toolbar slider uses the tokens in a scope.
+2. **The press area is the thumb's size with a pointer, 44 on touch** (taking layout), rather than a 6-tall slider
+   with overflowing thumbs.
+3. **A white thumb in both appearances**, through `light_dark(background, foreground)`.
+4. **Part names are the web's** (`track` is the rail), not `nsh/base`'s (`track` is its press area, `indicator` the
    rail); the press area is the library's geometry and not exposed.

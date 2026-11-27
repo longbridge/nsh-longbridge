@@ -246,7 +246,13 @@
       "toggle-padding-x-md": "calc(var(--spacing) * 2)",
       "toggle-padding-x-lg": "calc(var(--spacing) * 2.5)",
       "toggle-outline-shadow": "1",
-      "toggle-group-item-padding-x": "calc(var(--spacing) * 3)"
+      "toggle-group-item-padding-x": "calc(var(--spacing) * 3)",
+      "slider-thickness": "calc(var(--slider-thumb-size))",
+      "slider-vertical-min-height": "calc(var(--spacing) * 44)",
+      "slider-track-thickness": "calc(var(--spacing) * 1.5)",
+      "slider-thumb-size": "calc(var(--control-height-md) * 0.5)",
+      "slider-thumb-shadow": "2",
+      "slider-thumb-ring-width": "calc(var(--ring-width) + 1px)"
     },
     "light": {
       "background": "oklch(1 0 0)",
@@ -437,7 +443,12 @@
       "toggle-outline-hover": "var(--accent)",
       "toggle-outline-hover-foreground": "var(--accent-foreground)",
       "toggle-border-focus": "var(--ring)",
-      "toggle-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
+      "toggle-ring": "color-mix(in oklab, var(--ring) 50%, transparent)",
+      "slider-track": "var(--muted)",
+      "slider-range": "var(--primary)",
+      "slider-thumb": "var(--background)",
+      "slider-thumb-border": "var(--slider-range)",
+      "slider-thumb-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
     },
     "dark": {
       "background": "oklch(0.145 0 0)",
@@ -628,7 +639,12 @@
       "toggle-outline-hover": "var(--accent)",
       "toggle-outline-hover-foreground": "var(--accent-foreground)",
       "toggle-border-focus": "var(--ring)",
-      "toggle-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
+      "toggle-ring": "color-mix(in oklab, var(--ring) 50%, transparent)",
+      "slider-track": "var(--muted)",
+      "slider-range": "var(--primary)",
+      "slider-thumb": "var(--foreground)",
+      "slider-thumb-border": "var(--slider-range)",
+      "slider-thumb-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
     }
   }
 }
