@@ -19,7 +19,7 @@ use crate::{
         BUTTON_GHOST_HOVER_FOREGROUND, BUTTON_HEIGHT_LG, BUTTON_HEIGHT_MD, BUTTON_HEIGHT_SM,
         BUTTON_HEIGHT_XS, BUTTON_OUTLINE, BUTTON_OUTLINE_BORDER, BUTTON_OUTLINE_FOREGROUND,
         BUTTON_OUTLINE_HOVER, BUTTON_OUTLINE_HOVER_FOREGROUND, BUTTON_OUTLINE_SHADOW,
-        BUTTON_RADIUS, BUTTON_RING,
+        BUTTON_RADIUS, BUTTON_RING, content_gap, padding_x,
     },
     foundation::{
         class::Classes,
@@ -42,10 +42,6 @@ use crate::{
 tokens! {
     /// The space between the items.
     PAGINATION_GAP: Length = "pagination-gap" => |t| t.length(SPACING),
-    /// Previous's and Next's padding at the sides.
-    PAGINATION_STEP_PADDING_X: Length = "pagination-step-padding-x" => |t| t.length(SPACING) * 2.5,
-    /// The space between Previous's and Next's chevron and word.
-    PAGINATION_STEP_GAP: Length = "pagination-step-gap" => |t| t.length(SPACING),
 }
 
 fn height_token(size: Size) -> Token<kind::Length> {
@@ -251,11 +247,21 @@ fn content(
         let step = |icon: IconName, word: Label, before: bool| {
             let icon = icon_view(t, move || icon, side);
             let word = text(move || labels::text(word)).app_class(Some("max-sm:hidden".into()));
+            // A ghost Button with an icon of the pager's size: its padding
+            // and its gap between icon and word. Without its word (a narrow
+            // window) no padding: the item's least width makes it a square.
             let row = view()
                 .flex_row()
                 .items_center()
-                .gap(move || t.length(PAGINATION_STEP_GAP))
-                .px(move || t.length(PAGINATION_STEP_PADDING_X));
+                .gap(move || content_gap(t, size.get()))
+                .app_class(move || {
+                    Some(
+                        Classes::new()
+                            .length("", "px", padding_x(t, size.get(), true))
+                            .push("max-sm:px-0")
+                            .build(),
+                    )
+                });
             if before {
                 row.child(icon).child(word)
             } else {

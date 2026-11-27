@@ -243,12 +243,7 @@ pub(crate) fn draw_with(
         if props.icon_only.get() {
             return px(0.0);
         }
-        let base = t.length(padding_token(size()));
-        if has_icon() {
-            base - t.length(SPACING) * size().pick(0.5, 0.5, 1.0, 2.0)
-        } else {
-            base
-        }
+        padding_x(t, size(), has_icon())
     };
     let font_size = move || t.length(font_size_token(size()));
     let icon_side = move || t.length(icon_size_token(size()));
@@ -440,6 +435,18 @@ pub(crate) fn draw_with(
 /// Toggle, a tab and Pagination's steps share it.
 pub(crate) fn content_gap(t: Theme, size: Size) -> Points {
     t.length(SPACING) * size.pick(1.0, 1.0, 2.0, 2.0)
+}
+
+/// A button's horizontal padding at `size`: `button-padding-x-<size>`, less
+/// `spacing` × 0.5 / 0.5 / 1 / 2 on each side `with_icon`, so the icon and
+/// the label sit balanced (Pagination's Previous and Next take it too).
+pub(crate) fn padding_x(t: Theme, size: Size, with_icon: bool) -> Points {
+    let base = t.length(padding_token(size));
+    if with_icon {
+        base - t.length(SPACING) * size.pick(0.5, 0.5, 1.0, 2.0)
+    } else {
+        base
+    }
 }
 
 fn height_token(size: Size) -> Token<kind::Length> {

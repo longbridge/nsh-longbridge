@@ -238,8 +238,6 @@
       "progress-indeterminate-width": "0.4",
       "progress-indeterminate-duration": "calc(var(--duration) * 10)",
       "pagination-gap": "calc(var(--spacing))",
-      "pagination-step-padding-x": "calc(var(--spacing) * 2.5)",
-      "pagination-step-gap": "calc(var(--spacing))",
       "toggle-radius": "calc(var(--radius-md))",
       "toggle-height-xs": "calc(var(--control-height-xs))",
       "toggle-height-sm": "calc(var(--control-height-sm))",
