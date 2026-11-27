@@ -71,7 +71,7 @@ export function ButtonPage() {
       <Section title="Icons" description="An icon before or after the label, or alone in a square that names itself to screen readers.">
         <Demos>
           <Demo label="A toolbar of icon buttons, with their names on hover">
-            <View class="flex-row items-center gap-1 rounded-lg border border-border p-1">
+            <View class="flex-row items-center gap-1 rounded-lg border border-border p-0.5">
               {tools.map((t) => (
                 <Button
                   variant="ghost"
