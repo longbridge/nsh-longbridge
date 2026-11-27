@@ -152,7 +152,7 @@
       "toast-shadow": "3",
       "toast-width": "356px",
       "toast-padding": "calc(var(--spacing) * 4)",
-      "toast-gap": "calc(var(--spacing) * 1.5)",
+      "toast-gap": "calc(var(--spacing) * 3)",
       "toast-font-size": "13px",
       "toast-icon-size": "16px",
       "toast-close-size": "20px",
