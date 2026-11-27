@@ -45,7 +45,7 @@ export function SpinnerPage() {
                 </Badge>
               ) : u.state === "uploading" ? (
                 <View class="flex-row items-center gap-2">
-                  <Spinner size="sm" class="text-muted-foreground" />
+                  <Spinner size="xs" class="text-muted-foreground" />
                   <Text class="text-xs text-muted-foreground">Uploading</Text>
                 </View>
               ) : (
