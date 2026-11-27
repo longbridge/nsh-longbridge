@@ -38,7 +38,9 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # The organization's `public` runners, as nsh's workflows use them; a pull
+    # request from a fork runs on GitHub's own.
+    runs-on: ${{ (github.event.pull_request && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-24.04' || fromJSON('["public", "Linux", "X64"]') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -84,7 +86,7 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: [public, Linux, X64]
     permissions:
       pages: write
       id-token: write
