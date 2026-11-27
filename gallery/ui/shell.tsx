@@ -276,7 +276,7 @@ function Header(props: { onMenu: () => void }) {
   const fill = () => (own() ? site().ground : cssColor("background"));
   const edge = () => (own() ? site().line : cssColor("border"));
   const content = () => (
-    <View class="flex-1 flex-row items-center justify-between gap-2 pr-3 sm:pr-5" style={{ paddingLeft: macos ? 8 : narrow() ? 8 : 16 }}>
+    <View class="flex-1 flex-row items-center justify-between gap-2 pr-3 sm:pr-5" style={{ paddingLeft: macos ? 8 : narrow() ? 8 : compact() ? pagePadding() : 16 }}>
       <View class="flex-row items-center gap-1">
         <If when={compact()}>
           <Button variant="ghost" size="sm" class="px-0 w-8" accessibilityLabel="Pages" onPress={props.onMenu}>
