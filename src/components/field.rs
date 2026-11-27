@@ -16,12 +16,14 @@ use crate::{
         separator::separator,
     },
     foundation::{
+        class::Classes,
         field::{self, FieldState},
         field_ref::FieldRef,
         icon::provide_text_color,
         typography::{line_height, medium, weight},
     },
     theme::{
+        Theme,
         seeds::SPACING,
         semantic::{
             BACKGROUND, BORDER, BORDER_WIDTH, DESTRUCTIVE, FOREGROUND, MUTED_FOREGROUND,
@@ -33,20 +35,25 @@ use crate::{
 };
 
 tokens! {
-    /// The space between a field's parts.
-    FIELD_GAP: Length = "field-gap" => |t| t.length(SPACING) * 3.0,
-    /// The space between a `FieldContent`'s parts.
-    FIELD_CONTENT_GAP: Length = "field-content-gap" => |t| t.length(SPACING) * 1.5,
-    /// The space between a `FieldGroup`'s fields.
-    FIELD_GROUP_GAP: Length = "field-group-gap" => |t| t.length(SPACING) * 7.0,
+    /// The space between a field's parts: a label and its control
+    /// (closely related controls). A description or an error comes
+    /// `field-content-gap` under what is above it.
+    FIELD_GAP: Length = "field-gap" => |t| t.length(SPACING) * 2.0,
+    /// The space between the parts of one text: a label (or a title, a
+    /// legend) and its description, a control and its description or error.
+    FIELD_CONTENT_GAP: Length = "field-content-gap" => |t| t.length(SPACING),
+    /// The space between a `FieldGroup`'s fields (separate groups of a form).
+    FIELD_GROUP_GAP: Length = "field-group-gap" => |t| t.length(SPACING) * 4.0,
     /// The space between the fields of a `FieldGroup` directly in another.
-    FIELD_GROUP_NESTED_GAP: Length = "field-group-nested-gap" => |t| t.length(SPACING) * 4.0,
-    /// The space between a `FieldSet`'s parts.
-    FIELD_SET_GAP: Length = "field-set-gap" => |t| t.length(SPACING) * 6.0,
+    FIELD_GROUP_NESTED_GAP: Length = "field-group-nested-gap" => |t| t.length(SPACING) * 3.0,
+    /// The space between a `FieldSet`'s parts: its legend (with its
+    /// description) and its fields, closer than the fields to each other.
+    FIELD_SET_GAP: Length = "field-set-gap" => |t| t.length(SPACING) * 3.0,
     /// The `FieldGroup` width from which `responsive` fields are horizontal.
     FIELD_RESPONSIVE_WIDTH: Length = "field-responsive-width" => |t| t.px(448.0),
-    /// The space under a `FieldLegend`.
-    FIELD_LEGEND_MARGIN_BOTTOM: Length = "field-legend-margin-bottom" => |t| t.length(SPACING) * 3.0,
+    /// Extra space under a `FieldLegend`, over the set's gap (none: the
+    /// set's gap is the legend's space).
+    FIELD_LEGEND_MARGIN_BOTTOM: Length = "field-legend-margin-bottom" => |t| t.px(0.0),
     /// A `FieldLegend`'s text size (`variant="legend"`).
     FIELD_LEGEND_FONT_SIZE: Length = "field-legend-font-size" => |t| t.length(TEXT_BASE),
     /// A `FieldLegend`'s text.
@@ -439,22 +446,28 @@ pub fn FieldDescription(props: FieldDescriptionProps, _cx: Scope<NoEvent>) -> im
         .text_size(font_size)
         .line_height(move || line_height(font_size()))
         .text_color(move || t.color(FIELD_DESCRIPTION_FOREGROUND))
-        // Closer to what is above it: after a set's legend, or under a
-        // label (unless it ends its field).
-        .app_class(move || {
-            let pull = if in_set {
-                t.length(SPACING) * 1.5
-            } else {
-                t.length(SPACING)
-            };
-            let class = if in_set {
-                format!("-mt-[{}px]", pull.0)
-            } else {
-                format!("-mt-[{}px] last:mt-0", pull.0)
-            };
-            Some(SharedString::from(class))
-        })
+        // `field-content-gap` under what is above it (a label, a legend, a
+        // control): the parent's gap less the pull. First, nothing to pull
+        // to.
+        .app_class(move || Some(pull_class(t, in_set)))
         .child(props.children)
+}
+
+/// The class that pulls a description or an error up to
+/// `field-content-gap` under the part above it: its parent's gap (a
+/// field's, or a set's) less `field-content-gap`, as a negative top margin;
+/// none as its parent's first part.
+fn pull_class(t: Theme, in_set: bool) -> SharedString {
+    let gap = if in_set {
+        t.length(FIELD_SET_GAP)
+    } else {
+        t.length(FIELD_GAP)
+    };
+    let pull = (gap - t.length(FIELD_CONTENT_GAP)).max(px(0.0));
+    Classes::new()
+        .length("", "-mt", pull)
+        .length("first", "mt", px(0.0))
+        .build()
 }
 
 /// The props of [`FieldError`].
@@ -475,6 +488,7 @@ pub struct FieldErrorProps {
 pub fn FieldError(props: FieldErrorProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
     let field = field::current();
+    let in_set = use_context::<InSet>().is_some_and(|s| s.0);
     let font_size = move || t.length(FIELD_ERROR_FONT_SIZE);
     let own = move || !props.children.with(|c| c.is_empty());
     let messages = computed(move || props.errors.with(FieldErrors::messages));
@@ -508,6 +522,8 @@ pub fn FieldError(props: FieldErrorProps, _cx: Scope<NoEvent>) -> impl IntoEleme
             };
             view()
                 .element_ref(&element)
+                // `field-content-gap` under the control or the description.
+                .app_class(move || Some(pull_class(t, in_set)))
                 .role(AccessibilityRole::Alert)
                 .accessibility_live_region(|| LiveRegion::Assertive)
                 .text_size(font_size)
@@ -599,7 +615,7 @@ pub struct FieldGroupProps {
     pub children: Prop<Children>,
 }
 
-/// A column of fields, 28 apart (16 for a group directly in another). Its
+/// A column of fields, 16 apart (12 for a group directly in another). Its
 /// width is what `responsive` fields inside it switch on.
 #[component]
 pub fn FieldGroup(props: FieldGroupProps, _cx: Scope<NoEvent>) -> impl IntoElement {
@@ -643,7 +659,7 @@ pub struct FieldSetProps {
     pub children: Prop<Children>,
 }
 
-/// A set of related fields under a legend, 24 apart. Its `disabled`
+/// A set of related fields under a legend, 12 apart. Its `disabled`
 /// disables every control inside it.
 #[component]
 pub fn FieldSet(props: FieldSetProps, _cx: Scope<NoEvent>) -> impl IntoElement {

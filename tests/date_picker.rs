@@ -584,7 +584,7 @@ fn in_a_horizontal_field_it_shrinks_to_share_the_row() {
         "{picker:?}"
     );
     assert!(
-        label.origin.x + label.size.width + px(12.0) <= picker.origin.x + px(0.5),
+        label.origin.x + label.size.width + px(8.0) <= picker.origin.x + px(0.5),
         "{label:?} {picker:?}"
     );
 }
