@@ -22,6 +22,18 @@ use nsh_core::prelude::*;
 
 pub use crate::{
     components::{
+        alert_dialog::{
+            AlertDialog, AlertDialogAction, AlertDialogActionElement, AlertDialogCancel,
+            AlertDialogCancelElement, AlertDialogContent, AlertDialogContentElement,
+            AlertDialogContentProps, AlertDialogDescription, AlertDialogDescriptionElement,
+            AlertDialogDescriptionProps, AlertDialogElement, AlertDialogEvent, AlertDialogFooter,
+            AlertDialogFooterElement, AlertDialogFooterProps, AlertDialogHeader,
+            AlertDialogHeaderElement, AlertDialogHeaderProps, AlertDialogMedia,
+            AlertDialogMediaElement, AlertDialogMediaProps, AlertDialogProps, AlertDialogTitle,
+            AlertDialogTitleElement, AlertDialogTitleProps, alert_dialog, alert_dialog_action,
+            alert_dialog_cancel, alert_dialog_content, alert_dialog_description,
+            alert_dialog_footer, alert_dialog_header, alert_dialog_media, alert_dialog_title,
+        },
         badge::{Badge, BadgeElement, BadgeProps, BadgeVariant, badge},
         button::{Button, ButtonElement, ButtonEvent, ButtonProps, ButtonVariant, button},
         card::{
@@ -33,11 +45,25 @@ pub use crate::{
             card_header, card_title,
         },
         checkbox::{Checkbox, CheckboxElement, CheckboxEvent, CheckboxProps, checkbox},
+        dialog::{
+            Dialog, DialogClose, DialogCloseElement, DialogCloseProps, DialogContent,
+            DialogContentElement, DialogContentProps, DialogDescription, DialogDescriptionElement,
+            DialogDescriptionProps, DialogElement, DialogEvent, DialogFooter, DialogFooterElement,
+            DialogFooterProps, DialogHeader, DialogHeaderElement, DialogHeaderProps, DialogProps,
+            DialogTitle, DialogTitleElement, DialogTitleProps, dialog, dialog_close,
+            dialog_content, dialog_description, dialog_footer, dialog_header, dialog_title,
+        },
         input::{AutoComplete, Input, InputApi, InputElement, InputEvent, InputProps, input},
         kbd::{
             Kbd, KbdElement, KbdGroup, KbdGroupElement, KbdGroupProps, KbdProps, kbd, kbd_group,
         },
         label::{Label, LabelElement, LabelProps, label},
+        popover::{
+            Popover, PopoverDescription, PopoverDescriptionElement, PopoverDescriptionProps,
+            PopoverElement, PopoverEvent, PopoverHeader, PopoverHeaderElement, PopoverHeaderProps,
+            PopoverProps, PopoverTitle, PopoverTitleElement, PopoverTitleProps, popover,
+            popover_description, popover_header, popover_title,
+        },
         radio_group::{
             RadioGroup, RadioGroupElement, RadioGroupEvent, RadioGroupItem, RadioGroupItemElement,
             RadioGroupItemProps, RadioGroupProps, radio_group, radio_group_item,
@@ -48,6 +74,11 @@ pub use crate::{
         switch::{Switch, SwitchElement, SwitchEvent, SwitchProps, switch},
         textarea::{
             Textarea, TextareaApi, TextareaElement, TextareaEvent, TextareaProps, textarea,
+        },
+        toast::{
+            ToastAnswer, ToastAnswerFuture, ToastBuilder, ToastButton, ToastKind, ToastOptions,
+            ToastPlacement, ToastResult, Toaster, ToasterElement, ToasterProps, dismiss_toast,
+            toast, toaster,
         },
         tooltip::{Tooltip, TooltipElement, TooltipEvent, TooltipProps, tooltip},
     },
@@ -65,6 +96,15 @@ pub use crate::{
 #[native_module("nsh-longbridge")]
 fn native(registry: &mut Registry) {
     registry
+        .register::<AlertDialog>()
+        .register::<AlertDialogAction>()
+        .register::<AlertDialogCancel>()
+        .register::<AlertDialogContent>()
+        .register::<AlertDialogDescription>()
+        .register::<AlertDialogFooter>()
+        .register::<AlertDialogHeader>()
+        .register::<AlertDialogMedia>()
+        .register::<AlertDialogTitle>()
         .register::<Badge>()
         .register::<Button>()
         .register::<Card>()
@@ -75,11 +115,22 @@ fn native(registry: &mut Registry) {
         .register::<CardHeader>()
         .register::<CardTitle>()
         .register::<Checkbox>()
+        .register::<Dialog>()
+        .register::<DialogClose>()
+        .register::<DialogContent>()
+        .register::<DialogDescription>()
+        .register::<DialogFooter>()
+        .register::<DialogHeader>()
+        .register::<DialogTitle>()
         .register::<Icon>()
         .register::<Input>()
         .register::<Kbd>()
         .register::<KbdGroup>()
         .register::<Label>()
+        .register::<Popover>()
+        .register::<PopoverDescription>()
+        .register::<PopoverHeader>()
+        .register::<PopoverTitle>()
         .register::<RadioGroup>()
         .register::<RadioGroupItem>()
         .register::<Separator>()
@@ -89,5 +140,7 @@ fn native(registry: &mut Registry) {
         .register::<Textarea>()
         .register::<ThemeScope>()
         .register::<Tooltip>()
-        .module::<foundation::labels::Labels>();
+        .register::<Toaster>()
+        .module::<foundation::labels::Labels>()
+        .module::<components::toast::Toasts>();
 }

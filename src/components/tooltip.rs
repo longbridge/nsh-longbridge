@@ -9,7 +9,7 @@ use nsh_core::{
 };
 
 use crate::{
-    foundation::{motion, typography::line_height},
+    foundation::{motion, popup, typography::line_height},
     theme::{
         seeds::SPACING,
         semantic::{BACKGROUND, FOREGROUND, RADIUS_MD},
@@ -132,7 +132,9 @@ pub fn Tooltip(props: TooltipProps, cx: Scope<TooltipEvent>) -> impl IntoElement
         .offset(move || t.length(TOOLTIP_OFFSET))
         .open(props.open)
         .default_open(props.default_open)
-        .disabled(props.disabled)
+        // Hidden while a popup of the library is open, unless it is in one:
+        // a trigger's tooltip would show over the popup it opened.
+        .disabled(move || props.disabled.get() || popup::covered())
         .starting_class(move || animate().then(|| SharedString::from(HIDDEN_LOOK)))
         .ending_class(move || animate().then(|| SharedString::from(HIDDEN_LOOK)))
         .on_open_change(move |e: &BaseEvent| {

@@ -1,6 +1,6 @@
 # AlertDialog
 
-Status: spec (P2), not implemented. A modal dialog that interrupts the user with an important question and expects an
+Status: implemented (P2). A modal dialog that interrupts the user with an important question and expects an
 answer: a title, a sentence, and a Cancel and an action button. Reference: shadcn/ui new-york v4 `alert-dialog.tsx`
 (Radix AlertDialog).
 
@@ -40,7 +40,7 @@ and back, screen readers; see dialog.md "Built on"). What differs from `Dialog`:
 
 Focusing Cancel uses context: `AlertDialogCancel` and `AlertDialogAction` register their element refs with the
 nearest `AlertDialog`, which calls `focus()` on Cancel (else the first action) in its `onOpen` step, before the
-app's `onOpen`. On touch screens the focus moves too (screen readers start there), with no visible ring (the
+app's `onOpen` (a test checks that Return right after opening presses Cancel, else the action). On touch screens the focus moves too (screen readers start there), with no visible ring (the
 conventions' touch rule).
 
 ### Structure
@@ -76,7 +76,8 @@ While open, the trigger is `expanded`; a library `Button` keeps its hover fill t
 `AlertDialog` is `Dialog`'s root with the role and the overlay rule fixed; `AlertDialogContent` is
 `DialogContent` with `showCloseButton` false, the `size` and the narrower width; the other parts are their own
 components because their layout differs from `Dialog`'s (grid header, media, two-column footer at `sm`). They read
-the same `dialog-*` tokens, plus the few of their own below.
+the same `dialog-*` tokens, plus the few of their own below. `AlertDialogCancel` takes `DialogClose`'s props
+(`outline` by default) and `AlertDialogAction` `Button`'s; both draw the library's `Button` with a press of their own.
 
 ## API
 
@@ -121,7 +122,8 @@ No `closeOnBackdropPress`: an alert dialog is answered with a button (Radix prev
 
 - `AlertDialogHeader`, `AlertDialogMedia`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`:
   `children`, `class`, `style`. `AlertDialogMedia`'s child is usually an `Icon`, which takes the media's icon size
-  from context.
+  from context (`foundation::icon::provide_icon_side`; an `Icon` with its own `size` keeps it, and a control inside
+  the media gives its icons its own size).
 - `AlertDialogCancel`: `Button`'s props, `variant` defaulting to `"outline"`; a press requests `open: false` with
   `reason` `"cancel"`, then calls `onPress`.
 - `AlertDialogAction`: `Button`'s props, `variant` defaulting to `"default"` (`"destructive"` for a delete); a press
@@ -157,7 +159,7 @@ Panel, overlay and motion: `Dialog`'s (dialog.md "Look" and "Motion"), except:
 |---|---|---|
 | panel, `md` | `max-w-[calc(100%-2rem)] … sm:max-w-lg` | As `Dialog`: up to `dialog-max-width` (512) |
 | panel, `sm` | `data-[size=sm]:max-w-xs` | Up to `alert-dialog-max-width-sm` (320) at every window width |
-| `AlertDialogHeader` | `grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center`, from `sm` (size default) `place-items-start text-left`; with media `grid-rows-[auto_auto_1fr] gap-x-6`, from `sm` the media spans two rows on the left | A grid, gap `alert-dialog-header-gap` (6). Centered (items and text) while the window is narrower than 640 or the size is `sm`; otherwise start-aligned. With an `AlertDialogMedia`: centered, the media is a row above the title; start-aligned, the media is a column on the left spanning the title's and description's rows, `spacing × 6` (24) from them |
+| `AlertDialogHeader` | `grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center`, from `sm` (size default) `place-items-start text-left`; with media `grid-rows-[auto_auto_1fr] gap-x-6`, from `sm` the media spans two rows on the left | A grid of one column, row gap `alert-dialog-header-gap` (6). Centered (text, and the media by its auto margins) while the window is narrower than 640 or the size is `sm`; otherwise start-aligned. With an `AlertDialogMedia`: centered, the media is a row above the title; start-aligned, the columns are `auto minmax(0, 1fr)` and the rows `auto minmax(0, 1fr)` (see NSH gaps 2), the media spans both rows on the left and the title and description start at column 2, `spacing × 6` (24) from it |
 | `AlertDialogMedia` | `mb-2 inline-flex size-16 items-center justify-center rounded-md bg-muted *:[svg]:size-8` | A square `alert-dialog-media-size` (64), content centered, corners `radius-md`, fill `alert-dialog-media` (`muted`); bottom margin 8 while centered above the title; icons `alert-dialog-media-icon-size` (32) |
 | `AlertDialogTitle` | `text-lg font-semibold` | Size `dialog-title-font-size` (18), line height from foundation (28: no `leading-none`, unlike `DialogTitle`), `font-weight-semibold` |
 | `AlertDialogDescription` | `text-sm text-muted-foreground` | As `DialogDescription` |
@@ -190,8 +192,10 @@ action nearest the thumb; a `sm` alert keeps them side by side (iOS's two-button
 
 ## Tokens
 
-Proposed. It reads every `dialog-*` token (dialog.md "Tokens"); its own:
+It reads every `dialog-*` token (dialog.md "Tokens"). Its own, generated from the code's declarations
+(`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`; a test keeps it current), with `nsh/base`'s default theme:
 
+<!-- tokens:alert-dialog -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `alert-dialog-max-width-sm` | length | `spacing × 80` | 320 |
@@ -199,7 +203,7 @@ Proposed. It reads every `dialog-*` token (dialog.md "Tokens"); its own:
 | `alert-dialog-media` | color | `muted` |  |
 | `alert-dialog-media-size` | length | `spacing × 16` | 64 |
 | `alert-dialog-media-icon-size` | length | `spacing × 8` | 32 |
-
+<!-- /tokens -->
 - The panel, overlay, radius, shadow, padding, gaps, title and description of an alert dialog follow the `dialog-*`
   tokens: a theme that rounds dialogs rounds alerts too. A scope can still change them for alerts alone.
 - The media's corners are `radius-md` (shadcn's `rounded-md`), not a token of its own.
@@ -271,10 +275,15 @@ alert_dialog()
 
 ## NSH gaps
 
-Those of `Dialog` (dialog.md "NSH gaps": the ★ first tests, and focus not moved in a `Dialog`, which `AlertDialog`
-makes up for by focusing Cancel through context), and:
+Those of `Dialog` (dialog.md "NSH gaps", and focus not moved in a `Dialog`, which `AlertDialog` makes up for by
+focusing Cancel through context), and:
 
 1. **No `:has()`**: the header's layout with media is context (see "Look"), as `CardHeader`'s action.
+2. **An `auto` grid row next to a `1fr` one** (found on NSH 0.7.0): with `grid-template-rows: auto 1fr` and an item
+   spanning both rows (the 64-high media), the `auto` row (the title's) gets no height and its text is not shown.
+   The library writes `auto minmax(0, 1fr)`, which lays out as shadcn's does (a test guards it).
+3. **No `justify-items` setter in Rust** (the style property exists, for classes): the media is centered in its
+   column by auto margins, the title and description by their text alignment.
 
 ## Decisions
 

@@ -37,6 +37,21 @@ pub enum IconName {
     /// `minus`: an indeterminate checkbox's mark.
     #[prop(rename = "minus")]
     Minus,
+    /// `x`: a close button's mark.
+    #[prop(rename = "x")]
+    X,
+    /// `circle-check`: success.
+    #[prop(rename = "circle-check")]
+    CircleCheck,
+    /// `info`: information.
+    #[prop(rename = "info")]
+    Info,
+    /// `triangle-alert`: a warning.
+    #[prop(rename = "triangle-alert")]
+    TriangleAlert,
+    /// `octagon-x`: an error.
+    #[prop(rename = "octagon-x")]
+    OctagonX,
 }
 
 nsh_core::static_reactive!(IconName: IconName);
@@ -52,6 +67,11 @@ impl IconName {
             IconName::ChevronDown => include_str!("icons/chevron-down.svg"),
             IconName::Check => include_str!("icons/check.svg"),
             IconName::Minus => include_str!("icons/minus.svg"),
+            IconName::X => include_str!("icons/x.svg"),
+            IconName::CircleCheck => include_str!("icons/circle-check.svg"),
+            IconName::Info => include_str!("icons/info.svg"),
+            IconName::TriangleAlert => include_str!("icons/triangle-alert.svg"),
+            IconName::OctagonX => include_str!("icons/octagon-x.svg"),
         }
     }
 }
@@ -70,6 +90,8 @@ pub struct IconSizeContext(pub Memo<Size>);
 /// of their own (call it in the control's body, before its content).
 pub fn provide_icon_size(size: impl Fn() -> Size + 'static) {
     provide_context(IconSizeContext(computed(size)));
+    // The control's size wins over a part's side around it.
+    provide_context(IconSideContext(None));
 }
 
 /// The size an icon without its own takes here: the control's, else `md`.
@@ -80,6 +102,19 @@ pub fn icon_size_here() -> Memo<Size> {
     }
 }
 
+/// A length icons take inside a part that sizes them apart from the
+/// control sizes (an alert dialog's media: 32): provided by the part;
+/// `None` inside a control within it.
+#[derive(Debug, Clone, Copy)]
+pub struct IconSideContext(pub Option<Memo<Points>>);
+
+/// Gives the icons inside the current component `side` points when they
+/// have no size of their own; the nearest of it and [`provide_icon_size`]
+/// wins.
+pub fn provide_icon_side(side: impl Fn() -> Points + 'static) {
+    provide_context(IconSideContext(Some(computed(side))));
+}
+
 /// The props of [`Icon`].
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct IconProps {
@@ -87,7 +122,8 @@ pub struct IconProps {
     pub name: Prop<IconName>,
     /// Its size: 12 / 14 / 16 / 16 points for `xs` / `sm` / `md` / `lg`
     /// (`icon-size-*`).
-    /// Left out, the size of the control it is in (`md` elsewhere).
+    /// Left out, the size of the control or part it is in (`md`
+    /// elsewhere).
     pub size: Prop<Option<Size>>,
     /// Spin it (a spinner); it keeps spinning with reduced motion, as it
     /// says something is going on.
@@ -101,10 +137,11 @@ pub struct IconProps {
 pub fn Icon(props: IconProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
     let here = icon_size_here();
-    let side = move || {
-        t.length(icon_size_token(
-            props.size.get().unwrap_or_else(|| here.get()),
-        ))
+    let part = use_context::<IconSideContext>().and_then(|IconSideContext(side)| side);
+    let side = move || match (props.size.get(), part) {
+        (Some(size), _) => t.length(icon_size_token(size)),
+        (None, Some(side)) => side.get(),
+        (None, None) => t.length(icon_size_token(here.get())),
     };
     icon_view(t, move || props.name.get(), side).style_when(props.spin, |s| s.animate_spin())
 }

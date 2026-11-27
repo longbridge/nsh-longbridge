@@ -194,6 +194,19 @@ pub enum ButtonEvent {
 /// points around it.
 #[component]
 pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
+    draw(props, None, move || cx.emit(ButtonEvent::Press))
+}
+
+/// A `Button` with `props` whose presses run `on_press` (never while
+/// `disabled` or `loading`): the drawing of `Button` and of the buttons
+/// that are one with a role of their own (`DialogClose`,
+/// `AlertDialogAction`, a toast's action), its root named by `node` when
+/// one is given (to focus it).
+pub(crate) fn draw(
+    props: ButtonProps,
+    node: Option<ElementRef>,
+    on_press: impl Fn() + 'static,
+) -> impl IntoElement {
     let t = theme();
     let variant = move || props.variant.get();
     let size = move || props.size.get();
@@ -243,7 +256,7 @@ pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
         .hit_slop(move || hit_slop(t, height()))
         .on_press(move || {
             if !props.loading.get_untracked() {
-                cx.emit(ButtonEvent::Press);
+                on_press();
             }
         })
         .flex_row()
@@ -318,6 +331,12 @@ pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
                 idle,
             )
         })
+        // The popup it opens is open (a dialog's, a popover's, a menu's):
+        // lit as under the pointer, until it closes.
+        .expanded(move |s| {
+            s.bg(move || hover_fill(t, variant()))
+                .text_color(move || hover_foreground(t, variant()))
+        })
         .focus_visible(move |s| {
             focus_ring(
                 s,
@@ -331,6 +350,10 @@ pub fn Button(props: ButtonProps, cx: Scope<ButtonEvent>) -> impl IntoElement {
             if link { s.no_underline() } else { s }
         });
     let root = motion::transition_all(root, t);
+    let root = match node {
+        Some(node) => root.element_ref(&node),
+        None => root,
+    };
     let root = if link {
         root.cursor_pointer()
     } else {

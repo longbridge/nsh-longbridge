@@ -1,6 +1,6 @@
 # Dialog
 
-Status: spec (P2), not implemented. A modal window over the app: a panel in the middle of the window over a dimmed
+Status: implemented (P2). A modal window over the app: a panel in the middle of the window over a dimmed
 overlay, keeping the keyboard focus and screen readers inside it until it closes. Reference: shadcn/ui new-york v4
 `dialog.tsx` (Radix Dialog).
 
@@ -50,7 +50,7 @@ wired to the modal's name and description, the layout parts.
 ### Structure
 
 ```
-Dialog                        root: the open state, the trigger, the modal while open (draws no view of its own)
+Dialog                        root: the open state, a view holding the trigger (as `nsh/base`'s `Popover`), the modal while open
 ├─ trigger                    the app's element (a slot): pressing it opens the dialog
 └─ modal (nsh/base Dialog)    made while open or closing; animation none, closeOnEscape false, closeOnSwipe false
    └─ DialogContent           the overlay and the panel
@@ -58,6 +58,7 @@ Dialog                        root: the open state, the trigger, the modal while
       └─ layer                inset 0, centered, pointer-events box-none, bottom padded by the software keyboard
          └─ panel             the dialog's box: DialogHeader, content, DialogFooter, the close button
             └─ close          the "×" button at the top right (`showCloseButton`)
+   └─ toasts                  the toast stack, while this is the topmost library dialog (toast.md, "Above dialogs")
 ```
 
 `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter` and `DialogClose` are parts the app places in
@@ -257,12 +258,12 @@ The builder setters follow the props; `trigger` takes any element, as `nsh/base`
 | Part | shadcn classes | This library |
 |---|---|---|
 | overlay | `fixed inset-0 z-50 bg-black/50` | `inset-0`, fill `dialog-overlay` (`overlay`, black at 50%) |
-| layer | `fixed top-[50%] left-[50%] translate-…` | `inset-0`, centered both ways, `pointer-events: box-none`; bottom padding `env(keyboard-inset-height)` so the panel stays centered above a software keyboard |
+| layer | `fixed top-[50%] left-[50%] translate-…` | `inset-0`, centered both ways, `pointer-events: box-none`; bottom padding the software keyboard's height (`keyboard_height()`) so the panel stays centered above a software keyboard |
 | panel | `grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border bg-background p-6 shadow-lg sm:max-w-lg` | A column, gap `dialog-gap` (16), padding `dialog-padding` (24), width 100% of the layer up to `dialog-max-width` (512) with `dialog-margin` (16) kept on each side; corners `dialog-radius` (`radius-lg`, 10); border `border-width` × `dialog-border`; fill `dialog`; text `dialog-foreground`, 14 (`text-sm`, see Decisions 4); shadow tier `dialog-shadow` (4) |
 | close | `absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 … size-4` | An `nsh/base` `Button` with the `x` icon at `icon-size-md` (16), absolutely placed `dialog-close-offset` (16) from the panel's top and right; opacity `dialog-close-opacity` (0.7), 1 under the pointer and while focused; corners `radius-xs` (2, Tailwind's `rounded-xs`); focus ring: the library's (`ring-width` 3, `ring` at `ring-opacity`, outside), not shadcn's 2 + offset; named "Close" (`labels`) |
 | `DialogHeader` | `flex flex-col gap-2 text-center sm:text-left` | A column, gap `dialog-header-gap` (8); text centered while the window is narrower than 640 (Tailwind's `sm`), start-aligned from 640 |
-| `DialogTitle` | `text-lg leading-none font-semibold` | Size `dialog-title-font-size` (18), line height 1 (18, shadcn's `leading-none`), `font-weight-semibold` |
-| `DialogDescription` | `text-sm text-muted-foreground` | Size `dialog-description-font-size` (14), line height from foundation (20), color `dialog-description-foreground` (`muted-foreground`) |
+| `DialogTitle` | `text-lg leading-none font-semibold` | Size `dialog-title-font-size` (`text-lg`, 18), line height 1 (18, shadcn's `leading-none`), `font-weight-semibold` |
+| `DialogDescription` | `text-sm text-muted-foreground` | Size `dialog-description-font-size` (`text-sm`, 14), line height from foundation (20), color `dialog-description-foreground` (`muted-foreground`) |
 | `DialogFooter` | `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end` | Narrower than 640: a column in reverse order (the first button at the bottom, each as wide as the panel), gap `dialog-footer-gap` (8); from 640: a row at the end |
 
 - `sm:` is the window's width, as NSH's Tailwind breakpoints are (NSH supports `sm:` in classes; the library reads
@@ -305,7 +306,7 @@ The panel has no hover, focus or disabled state. The trigger is `expanded` while
 | Form | A centered panel, 512 wide at most | The same panel, as wide as the window less 16 on each side; header centered and footer stacked below 640 wide |
 | Close | Escape, the overlay, the "×", the app's buttons | Back (Android), the overlay, the "×", the app's buttons |
 | "×" hit area | Its 16 square | `max(0, (touch-target − 16) / 2)` on each side (44 square); the look unchanged |
-| Software keyboard | — | The panel stays centered in the room above it (`env(keyboard-inset-height)`) |
+| Software keyboard | — | The panel stays centered in the room above it (`keyboard_height()`) |
 | Swipe | — | None (a centered panel is not swiped away on either platform; `nsh/base`'s `Sheet` is) |
 
 The buttons in the footer take `control-height-touch-*` on touch screens by themselves.
@@ -313,7 +314,7 @@ The buttons in the footer take `control-height-touch-*` on touch screens by them
 ## Accessibility
 
 - The modal is a `dialog` for screen readers, named by `accessibilityLabel`, else by the text of its `DialogTitle`
-  (read with `ElementRef::text_content` once the content is made, and again when the title's text changes), and
+  (read with `ElementRef::text_content` once the content is made, on each opening; see NSH gaps 1), and
   described by its `DialogDescription` (`accessibilityDescribedBy` on the modal, the description's element). Radix
   links them with `aria-labelledby` / `aria-describedby`; see NSH gaps 1.
 - `DialogTitle` has the `header` role (as `CardTitle`).
@@ -325,8 +326,10 @@ The buttons in the footer take `control-height-touch-*` on touch screens by them
 
 ## Tokens
 
-Proposed; once implemented, the block is generated from `tokens!` (`<!-- tokens:dialog -->`) as in the other specs.
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
 
+<!-- tokens:dialog -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `dialog` | color | `background` |  |
@@ -341,20 +344,21 @@ Proposed; once implemented, the block is generated from `tokens!` (`<!-- tokens:
 | `dialog-max-width` | length | `spacing × 128` | 512 |
 | `dialog-header-gap` | length | `spacing × 2` | 8 |
 | `dialog-footer-gap` | length | `spacing × 2` | 8 |
-| `dialog-title-font-size` | length | `18` | 18 |
-| `dialog-description-font-size` | length | `14` | 14 |
+| `dialog-title-font-size` | length | `text-lg` | 18 |
+| `dialog-description-font-size` | length | `text-sm` | 14 |
 | `dialog-description-foreground` | color | `muted-foreground` |  |
 | `dialog-close-offset` | length | `spacing × 4` | 16 |
 | `dialog-close-opacity` | number | `0.7` | 0.7 |
-| `dialog-duration` | number | `duration × 4/3` | 200 |
+| `dialog-duration` | number | `duration × 1.3333` | 200 |
 | `dialog-animate` | number | `1` | 1 |
-
+<!-- /tokens -->
 - `dialog` is not a semantic token, so the panel's fill is the component's (`background`, shadcn's `bg-background`)
   and the text on it `dialog-foreground`. A dialog the color of cards sets `"dialog": "var(--card)"`.
 - `dialog-overlay` is the semantic `overlay` (black at 50%, shadcn's `bg-black/50`) unless a theme changes it for
   dialogs alone. `AlertDialog` uses the same tokens (it is drawn by the same parts).
-- `dialog-title-font-size` and `dialog-description-font-size` are Tailwind's fixed sizes (`text-lg`, `text-sm`): a
-  title and body text, not a control's (tokens.md).
+- `dialog-title-font-size` and `dialog-description-font-size` default to the semantic `text-lg` and `text-sm`
+  (Tailwind's fixed sizes): a title and body text, not a control's (tokens.md). A theme that changes `text-lg`
+  changes dialog titles too.
 - `dialog-duration` is a number of milliseconds derived from the `duration` seed (4/3 of 150), so a theme that
   slows everything slows dialogs too.
 - Other tokens it reads: `border-width`, `radius-xs` (the semantic `max(radius − 8, 0)`, 2, Tailwind's
@@ -436,11 +440,11 @@ dialog()
 
 ## NSH gaps
 
-The ★ items are the first headless tests of the implementation; each has its fallback.
-
 1. **No `accessibilityLabelledBy`.** A modal's name is a string (`label`); Radix names it by its title element.
-   Workaround: the library reads the title's text (`ElementRef::text_content`) once the content is made and when the
-   title changes, and sets the modal's `label`; `accessibilityLabel` wins. The description uses
+   Workaround: the library reads the title's text (`ElementRef::text_content`) once the content is made, on each
+   opening, and sets the modal's `label`; `accessibilityLabel` wins. A title whose text changes while the dialog is
+   open keeps the name it had as it opened (NSH has no change notice for a view's text; a dialog whose title changes
+   sets `accessibilityLabel`). The description uses
    `accessibilityDescribedBy`, which NSH has. A `labelledBy` would remove the read-back.
 2. **No "focus the first stop inside" (accepted).** Radix moves the focus to the first focusable element inside the
    content as the dialog opens; this library's `Dialog` does not: NSH's modal leaves the focus on its container, and
@@ -451,19 +455,13 @@ The ★ items are the first headless tests of the implementation; each has its f
 3. **`nsh/base`'s popup machinery is private.** `OpenState`, `lifecycle`, `PopupPresence`, `keyboard_lift` and
    `focus_back` (hidden) live in `nsh-base`'s private `popup` module. The library re-implements a small open state
    (controlled or not, `request` with the reason), the presence (mounted while open or exiting) and its lifecycle
-   events, following `popup.rs`'s rules, and pads by `env(keyboard-inset-height)` instead of `keyboard_lift`. Exposing
+   events, following `popup.rs`'s rules, and pads by the core's `keyboard_height()` instead of `keyboard_lift`. Exposing
    them (or a styled-modal building block) would remove the copy.
-4. ★ **Escape order with a popup inside the dialog.** NSH's overlay docs say a dialog's native Escape
-   handling comes before the overlays inside it. The library's modal closes nothing natively (`closeOnEscape(false)`)
-   but its `onCancel` may still hear Escape before an open `Select` list or `Popover` inside it, closing the dialog
-   instead of the list. The first headless test opens a `Popover` in a `Dialog` and presses Escape. If the dialog
-   hears it first, the workaround: the library's popups register in the nearest `Dialog`'s context while open, and the
-   dialog ignores a cancel while any is open; NSH routing Escape to the topmost overlay first would be the real fix.
-5. ★ **Does the modal keep the context of where the `Dialog` is placed?** NSH documents it for overlays (owner and
-   context stay the parent's), not in so many words for modals. First headless test: a `ThemeScope` with a forced
-   dark appearance around a `Dialog`; the panel must read the scope's tokens. Fallback: `Dialog` captures `theme()`'s
-   scope (and the other contexts the library reads: `Size`, the "in a dialog" registry) in its body and provides it
-   again inside the modal, before `DialogContent` is made.
+4. **Escape order with a popup inside the dialog**: verified headless on NSH 0.7.0, Escape reaches an open `Popover`
+   inside the dialog first, and the next Escape the dialog (a test guards it). No workaround is needed.
+5. **The modal keeps the context of where the `Dialog` is placed**: verified headless on NSH 0.7.0, a `ThemeScope`
+   with a forced dark appearance and its own `dialog` fill around a `Dialog` reaches the panel (a test guards it). No
+   fallback is needed.
 6. **Inherited text styles.** The modal's content inherits the text styles where the `Dialog` is placed (as the
    tooltip's hint layer does, Tooltip's gap 7); the panel resets them (see "Text styles" above). Italics and
    alignment have no reset setter and still pass through.

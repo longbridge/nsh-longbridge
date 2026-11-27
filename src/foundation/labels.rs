@@ -18,16 +18,19 @@ pub enum Label {
     /// "Loading": a spinner, a loading control without a label.
     #[default]
     Loading,
+    /// "Close": the button that closes a dialog or a toast.
+    Close,
 }
 
 impl Label {
     /// Every word, in a stable order.
-    pub const ALL: &'static [Label] = &[Label::Loading];
+    pub const ALL: &'static [Label] = &[Label::Loading, Label::Close];
 
     /// Its key, which a translator is given (`"loading"`).
     pub fn key(self) -> &'static str {
         match self {
             Label::Loading => "loading",
+            Label::Close => "close",
         }
     }
 
@@ -35,6 +38,7 @@ impl Label {
     pub fn english(self) -> &'static str {
         match self {
             Label::Loading => "Loading",
+            Label::Close => "Close",
         }
     }
 }

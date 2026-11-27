@@ -166,6 +166,30 @@ pub(crate) fn parse_number(s: &str) -> Option<f32> {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ScopeContext(pub(crate) Memo<Arc<Scoped>>);
 
+/// The theme scope where it was captured, to provide again under another
+/// parent: a toast stack drawn in a dialog's modal reads its `Toaster`'s
+/// scope, not the dialog's.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct CapturedScope(Option<ScopeContext>);
+
+/// The scope around the current component (none: the app's theme).
+pub(crate) fn capture_scope() -> CapturedScope {
+    CapturedScope(use_context::<ScopeContext>())
+}
+
+impl CapturedScope {
+    /// Provides it to what the current component makes, over any scope
+    /// around it.
+    pub(crate) fn provide(self) {
+        let scope = self.0.unwrap_or_else(|| {
+            ScopeContext(computed(|| {
+                Arc::new(Scoped::over(None, &ScopeTokens::new(), None))
+            }))
+        });
+        provide_context(scope);
+    }
+}
+
 /// The props of [`ThemeScope`].
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct ThemeScopeProps {

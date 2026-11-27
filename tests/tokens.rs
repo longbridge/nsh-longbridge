@@ -20,7 +20,7 @@ use nsh_longbridge::{
     },
     theme::{
         default_theme_json, registry, resolve_color_in, resolve_number_in,
-        semantic::{BORDER, INPUT, PRIMARY, RADIUS_MD},
+        semantic::{BORDER, INPUT, PRIMARY, RADIUS_MD, RADIUS_XS},
         token_table,
     },
 };
@@ -213,6 +213,48 @@ fn the_tooltip_token_table_is_current() {
 }
 
 #[test]
+fn the_popover_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/popover.md"),
+        "popover",
+        &token_table(
+            &[
+                nsh_longbridge::foundation::popup::TOKENS,
+                nsh_longbridge::components::popover::TOKENS,
+            ]
+            .concat(),
+        ),
+    );
+}
+
+#[test]
+fn the_dialog_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/dialog.md"),
+        "dialog",
+        &token_table(nsh_longbridge::components::dialog::TOKENS),
+    );
+}
+
+#[test]
+fn the_alert_dialog_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/alert-dialog.md"),
+        "alert-dialog",
+        &token_table(nsh_longbridge::components::alert_dialog::TOKENS),
+    );
+}
+
+#[test]
+fn the_toast_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/toast.md"),
+        "toast",
+        &token_table(nsh_longbridge::components::toast::TOKENS),
+    );
+}
+
+#[test]
 fn names_are_unique_and_kebab_case() {
     let decls = registry();
     let mut seen = std::collections::HashSet::new();
@@ -275,6 +317,19 @@ fn derived_defaults_follow_their_sources() {
     let outline = resolve_color_in(&app, &[], true, BUTTON_OUTLINE_BORDER);
     assert_eq!(rgba(outline.light), rgba(border.light));
     assert_eq!(rgba(outline.dark), rgba(input.dark));
+}
+
+/// `radius-xs` is `max(radius − 8, 0)`: 2 by default, never below 0, and
+/// written into the theme file with CSS's `max()`.
+#[test]
+fn radius_xs_never_goes_below_zero() {
+    let mut app = default_tokens();
+    assert_eq!(resolve_number_in(&app, &[], true, RADIUS_XS), 2.0);
+    app.set_number("radius", 4.0);
+    assert_eq!(resolve_number_in(&app, &[], true, RADIUS_XS), 0.0);
+    app.set_number("radius", 20.0);
+    assert_eq!(resolve_number_in(&app, &[], true, RADIUS_XS), 12.0);
+    assert!(default_theme_json().contains(r#""radius-xs": "calc(max(var(--radius) - 8px, 0px))""#));
 }
 
 #[test]

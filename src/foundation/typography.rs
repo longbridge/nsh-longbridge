@@ -57,3 +57,16 @@ pub fn font_weight(t: Theme, token: Token<kind::Number>) -> FontWeight {
 pub fn weight(n: f32) -> FontWeight {
     FontWeight(n.round().clamp(1.0, 1000.0) as u16)
 }
+
+/// Resets the text styles a layer's content would inherit from where its
+/// component is placed (an overlay or a modal keeps its parent's): normal
+/// wrapping, regular weight, no underline, no case change, no letter
+/// spacing. A surface calls it, then sets its own size, line height and
+/// color.
+pub fn reset_inherited<E: Styled>(el: E) -> E {
+    el.whitespace_normal()
+        .font_weight(FontWeight::NORMAL)
+        .no_underline()
+        .normal_case()
+        .letter_spacing(px(0.0))
+}

@@ -34,8 +34,15 @@ pub fn level(n: f32) -> u8 {
 /// style (read it in a binding: `.inline_style(move || shadow(t, ..))`; it
 /// follows the appearance, the scope and the tokens).
 pub fn shadow(t: Theme, level: u8) -> Style {
+    Style::from(StyleRefinement::default().shadow(box_shadows(t, level)))
+}
+
+/// The layers of the shadow of `level` in this theme's `shadow` color,
+/// for a style that sets them itself (a part's style built in a
+/// `style_with` binding). Read it in a binding.
+pub fn box_shadows(t: Theme, level: u8) -> Vec<BoxShadow> {
     let base = color(t.color(SHADOW));
-    let shadows: Vec<BoxShadow> = layers(level)
+    layers(level)
         .iter()
         .map(|l| BoxShadow {
             offset_x: px(0.0),
@@ -45,6 +52,5 @@ pub fn shadow(t: Theme, level: u8) -> Style {
             color: Color::from(base.opacity(l.3)),
             inset: false,
         })
-        .collect();
-    Style::from(StyleRefinement::default().shadow(shadows))
+        .collect()
 }

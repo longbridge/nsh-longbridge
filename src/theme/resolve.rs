@@ -246,6 +246,8 @@ impl<'a> Cx<'a> {
                     self.eval_num(t)
                 }
             }
+            NumExpr::Max(a, b) => self.eval_num(a).max(self.eval_num(b)),
+            NumExpr::Min(a, b) => self.eval_num(a).min(self.eval_num(b)),
         }
     }
 }

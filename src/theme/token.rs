@@ -209,6 +209,16 @@ impl Derive {
         NumExpr::Value { value, px: false }
     }
 
+    /// The larger of `a` and `b`.
+    pub fn max(&self, a: NumExpr, b: NumExpr) -> NumExpr {
+        NumExpr::Max(Box::new(a), Box::new(b))
+    }
+
+    /// The smaller of `a` and `b`.
+    pub fn min(&self, a: NumExpr, b: NumExpr) -> NumExpr {
+        NumExpr::Min(Box::new(a), Box::new(b))
+    }
+
     /// `pointer` where a pointer drives the UI (desktop and the desktop
     /// web), `touch` on touch screens.
     pub fn pointer_touch(&self, pointer: NumExpr, touch: NumExpr) -> NumExpr {
@@ -264,6 +274,10 @@ pub enum NumExpr {
     Mul(Box<NumExpr>, f32),
     /// One value with a pointer, another on touch screens.
     PointerTouch(Box<NumExpr>, Box<NumExpr>),
+    /// The larger of two.
+    Max(Box<NumExpr>, Box<NumExpr>),
+    /// The smaller of two.
+    Min(Box<NumExpr>, Box<NumExpr>),
 }
 
 impl From<f32> for NumExpr {

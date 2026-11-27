@@ -29,6 +29,11 @@ pub fn registry() -> Vec<TokenDecl> {
         crate::components::separator::TOKENS,
         crate::components::skeleton::TOKENS,
         crate::components::tooltip::TOKENS,
+        crate::foundation::popup::TOKENS,
+        crate::components::popover::TOKENS,
+        crate::components::dialog::TOKENS,
+        crate::components::alert_dialog::TOKENS,
+        crate::components::toast::TOKENS,
     ]
     .concat()
 }
@@ -111,13 +116,19 @@ fn num_css(expr: &NumExpr, pointer: bool) -> String {
         // A theme file is the same on every device: it writes the
         // pointer's value (`<name>-touch` sets the touch one).
         NumExpr::PointerTouch(p, t) => num_css(if pointer { p } else { t }, pointer),
+        NumExpr::Max(a, b) => format!("max({}, {})", num_css(a, pointer), num_css(b, pointer)),
+        NumExpr::Min(a, b) => format!("min({}, {})", num_css(a, pointer), num_css(b, pointer)),
     }
 }
 
 fn is_px(expr: &NumExpr) -> bool {
     match expr {
         NumExpr::Token { px, .. } | NumExpr::Value { px, .. } => *px,
-        NumExpr::Add(a, _) | NumExpr::Mul(a, _) | NumExpr::PointerTouch(a, _) => is_px(a),
+        NumExpr::Add(a, _)
+        | NumExpr::Mul(a, _)
+        | NumExpr::PointerTouch(a, _)
+        | NumExpr::Max(a, _)
+        | NumExpr::Min(a, _) => is_px(a),
     }
 }
 
@@ -261,5 +272,7 @@ fn num_expr(expr: &NumExpr, inner: bool) -> String {
                 num_expr(t, false)
             )
         }
+        NumExpr::Max(a, b) => format!("max({}, {})", num_expr(a, false), num_expr(b, false)),
+        NumExpr::Min(a, b) => format!("min({}, {})", num_expr(a, false), num_expr(b, false)),
     }
 }

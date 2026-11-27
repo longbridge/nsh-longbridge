@@ -1,6 +1,6 @@
 # Popover
 
-Status: spec (P2), not implemented. Rich content in a floating panel next to the element that opened it: a press on
+Status: implemented (P2). Rich content in a floating panel next to the element that opened it: a press on
 the trigger opens it, a press outside or Escape closes it. Reference: shadcn/ui new-york v4 `popover.tsx` (Radix
 Popover).
 
@@ -64,20 +64,23 @@ A child component cannot fill its parent's slot in NSH, so the trigger is a prop
 
 ### Implementation
 
-- `#[component] fn Popover` whose body is `nsh_base::popover()` with the props passed through. The surface
-  (`foundation::popup::surface(t)`: fill, edge, corners, shadow, width, padding, the text-style reset) is the
-  popup's inline style (`popupStyle`), with the app's `style` merged after it; the app's `class` goes to
-  `popupClass`. `popupStartingClass` / `popupEndingClass` are set by the library from the side (see "Motion") and
-  `popover-animate`.
-- `nsh/base`'s part styles take a style built once in Rust (Checkbox's NSH gap 3). The popup is made on each
-  opening, so its surface reads the tokens as it opens: a `setTheme` or scope change while it is open applies at the
-  next opening (accepted; NSH gaps 5).
-- The app's `class` cannot override what the surface sets inline (fill, edge, corners, shadow, width, padding):
-  inline styles win over classes. To change those, the app sets the tokens (in the theme or a `ThemeScope`) or
-  passes `style`, merged after the library's. Classes still add what the surface leaves alone (a `max-h`, a gap).
+- `#[component] fn Popover` whose body is `nsh_base::popover()` with the props passed through and the trigger slot
+  forwarded to it. The popup (the box the core places) carries the motion: its starting and ending looks
+  (`popupStartingClass` / `popupEndingClass`, set by the library from the side and `popover-animate`), its transitions
+  and its scale origin. Inside it, the library draws a **panel** of its own: the surface
+  (`foundation::popup::surface(el, t)`: fill, edge, corners, shadow, the text-style reset), the width and the padding,
+  then the app's `class` and `style`, merged last as on any root.
+- The panel, not `nsh/base`'s `popupStyle`, because a part style of `nsh/base` takes a style built once in Rust (Checkbox's
+  NSH gap 3): it cannot take the app's `style` passed through. With the panel, the app's `class` and `style` both
+  follow the library's look and override it (`class="w-80 p-0"`, `style={{ width: 320 }}`), as on every component.
+- The panel is made on each opening, so its look reads the tokens and the scope then; its bindings keep following
+  them while it is open.
 - The popup's content is made by `nsh/base`'s `Popover`, inside this component: it reads the `ThemeScope` around the
-  `Popover` (dialog.md, "The theme scope"). The popup resets inherited text styles (the overlay keeps its parent's).
+  `Popover` (dialog.md, "The theme scope"; a test guards it). The panel resets inherited text styles (the overlay keeps
+  its parent's).
 - The library keeps the side the popup went on in a signal, set from `onPosition` (and passes the event on).
+- While the panel is there it counts among the surface's open popups (`foundation::popup::hold_open`), which keeps a
+  library `Tooltip` outside every open popup hidden (NSH gaps 1).
 
 ## API
 
@@ -103,7 +106,7 @@ A child component cannot fill its parent's slot in NSH, so the trigger is a prop
 | `align` | `align` | `"start"` \| `"center"` \| `"end"` (`Align`) | `"center"` | Alignment along that side; start / end follow the layout direction |
 | `closeOnEscape` | `close_on_escape` | `boolean` | `true` | Escape and back close it; `onCancel` hears them either way |
 | `closeOnPressOutside` | `close_on_press_outside` | `boolean` | `true` | A press outside closes it; `onCancel` hears it either way |
-| `class` / `style` | `class` / `style` | | | The popup (the panel): `style` merged after the surface's inline look; `class` cannot override what the surface sets inline (see "Implementation") |
+| `class` / `style` | `class` / `style` | | | The panel (the popup's box), merged after its own look (see "Implementation") |
 | `children` | `.child(..)` | elements | — | The content, made on each opening |
 
 `offset` and `margin` are not props: they are the `popover-offset` (4, shadcn's `sideOffset`) and `popover-margin`
@@ -135,19 +138,20 @@ No `variant`, no `size`.
 | `PopoverTitle` | `font-medium` | `font-weight-medium`; the inherited size and color |
 | `PopoverDescription` | `text-muted-foreground` | Color `popover-description-foreground` (`muted-foreground`) |
 
-The width is fixed, as shadcn's `w-72`; a content-sized popover sets `style={{ width: "auto" }}`, a wider one
-`style={{ width: 360 }}` (or `popover-width` in a scope); a class cannot, as the width is inline (see
-"Implementation").
+The width is fixed, as shadcn's `w-72`; a content-sized popover sets `class="w-auto"`, a wider one `class="w-80"`,
+`style={{ width: 360 }}` or `popover-width` in a scope.
 The core lays an anchored popup out inside the safe area less the margin, so on a narrow screen it is never wider
 than the screen.
 
 ### The popup surface (shared)
 
 The look every popup of the library has; `Popover` owns its tokens, and `foundation` gets the function the popups
-call (`foundation::popup::surface(t)`, defined and implemented with `Popover`: fill, edge, corners, shadow and the
-text-style reset, as `foundation::field_look` is the fields'; `DropdownMenu`, `Select`'s list and later `Combobox`
-call it), so a theme that changes `popover-radius` changes popovers, menus and
-`Select`'s list together.
+call (`foundation::popup::surface(el, t)`, on a view or on a part's style: fill, edge, corners, shadow, the
+transitions and the text-style reset, as `foundation::field_look` is the fields'; `DropdownMenu`, `Select`'s list and
+later `Combobox` call it), so a theme that changes `popover-radius` changes popovers, menus and `Select`'s list
+together. The surface's tokens are declared in `foundation::popup` (as the field look's in `foundation::field`);
+`foundation::popup` also has the entrance and exit looks by side (`starting_class`, `ending_class`, `origin`) and the
+count of open popups (`hold_open`).
 
 | | Value | Tokens | Used by |
 |---|---|---|---|
@@ -171,9 +175,8 @@ separators, check and chevron icons, the destructive item) is the menu family's 
 | Reduced motion | not handled | No transitions (`nsh/base`'s presence skips the states) |
 
 The side is the one the popup went on (`onPosition`), not the requested `placement`: after a flip it slides from the
-right side. Until the first report the requested `placement` is used. Whether `onPosition` comes before the first
-display frame decides whether a flipped popup's very first frame starts from the wrong side; the first headless test
-checks it. If it comes too late, the slide is dropped and only fade and zoom stay (Tooltip's choice).
+right side. `onPosition` comes before the first display frame (a test checks a flipped popup's first frame), so the
+slide is kept.
 
 ## States
 
@@ -206,8 +209,11 @@ No bottom-sheet form: `nsh/base` keeps a popover anchored everywhere, and phone 
 
 ## Tokens
 
-Proposed; once implemented, generated from `tokens!` (`<!-- tokens:popover -->`).
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme. The first six are the popup surface's (`foundation::popup`), which
+the menus read too; the rest are `Popover`'s own.
 
+<!-- tokens:popover -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `popover-border` | color | `border` |  |
@@ -215,16 +221,18 @@ Proposed; once implemented, generated from `tokens!` (`<!-- tokens:popover -->`)
 | `popover-shadow` | number | `3` | 3 |
 | `popover-offset` | length | `spacing` | 4 |
 | `popover-margin` | length | `spacing` | 4 |
+| `popover-animate` | number | `1` | 1 |
 | `popover-width` | length | `spacing × 72` | 288 |
 | `popover-padding` | length | `spacing × 4` | 16 |
 | `popover-header-gap` | length | `spacing` | 4 |
 | `popover-description-foreground` | color | `muted-foreground` |  |
-| `popover-animate` | number | `1` | 1 |
-
+<!-- /tokens -->
 - `popover` and `popover-foreground` are shadcn's semantic tokens, used directly (as `card` by `Card`).
 - `popover-margin` 4 is `nsh/base`'s `Tooltip`'s default margin, kept the same for every popup (Radix's
   `collisionPadding` is 0; a popup touching the window's edge looks cut).
-- Other tokens it reads: `border-width`, `font-weight-medium`, `duration`, `shadow`.
+- `popover-animate` is a switch: at 0 the library passes no starting or ending look, and the popup shows and goes in
+  one frame.
+- Other tokens it reads: `border-width`, `text-sm`, `font-weight-medium`, `duration`, `shadow`.
 
 ## Examples
 
@@ -282,27 +290,25 @@ popover()
 
 ## NSH gaps
 
-The ★ items are the first headless tests of the implementation; each has its fallback.
-
-1. ★ **A trigger's tooltip above its open popover** (Tooltip's NSH gap 4, met now): a button with a `tooltip` opens a
-   popover, the focus stays on the button, and the tooltip may show above the popover and take Escape first. The
-   test reproduces it. If it happens, ask NSH for the fix (a hint not shown while a popup anchored to its element is
-   open). Fallback in the library: its popups provide an "inside an open popup" context to their content and count
-   open popups in a surface global; while one is open, a library `Tooltip` not inside an open popup is `disabled`.
-   A tooltip of the app's own (not the library's) is not covered.
+1. **A trigger's tooltip above its open popover** (Tooltip's NSH gap 4; reproduced on NSH 0.7.0). A button with a
+   tooltip, focused from the keyboard, opens a popover: the tooltip stays shown over it (Escape still reaches the
+   popover first). The library's fallback is in place: its popups count themselves open in a surface global and
+   provide an "inside an open popup" context to their content (`foundation::popup::hold_open`); while one is open, a
+   library `Tooltip` not inside an open popup is `disabled`. A test guards it. A tooltip of the app's own (not the
+   library's) is not covered; the NSH fix would be a hint not shown while a popup anchored to its element is open.
 2. **No role on the popover's content.** Radix's popover content is a `dialog` for screen readers; `nsh/base`'s is a
    plain overlay. Noted; the library adds none (a non-modal `dialog` role would make screen readers treat it as
    modal on some platforms).
 3. **No separate anchor.** `nsh/base`'s `Popover` places the popup against its trigger only (shadcn's
    `PopoverAnchor` places it against another element). An `anchor` prop on `nsh/base`'s `Popover` (the core's
    overlay already takes any ref) would allow it.
-4. ★ **`onPosition` timing** decides the slide after a flip (see "Motion"). Fallback: no slide, fade and zoom only.
-5. **Part styles built once (accepted).** `nsh/base`'s `popupStyle` takes a style built once in Rust; the surface is
-   read as the popup opens, so a theme change while it is open shows at the next opening. Same for every popup on
-   `foundation::popup::surface` (the menus, `Select`'s list).
-6. ★ **The shadow on `nsh/base`'s popup.** The first test checks that the surface's shadow (an inline `BoxShadow`,
-   as `Button`'s G3) survives on the popup overlay (not clipped, drawn on every platform). Fallback: popups draw no
-   shadow, the border alone, and it is reported.
+4. **`onPosition` timing** decides the slide after a flip (see "Motion"): verified on NSH 0.7.0, it comes before the
+   first display frame, so a flipped popup slides from the right side; a test guards it.
+5. **Part styles built once.** `nsh/base`'s `popupStyle` takes a style built once in Rust, so it cannot take the
+   app's `style` passed through: the library draws the surface on a panel of its own inside the popup (see
+   "Implementation"). A popup drawn on `popupStyle` (a menu's) reads its surface as it opens.
+6. **The shadow on `nsh/base`'s popup**: verified headless on NSH 0.7.0, the surface's shadow reaches the panel and
+   nothing around it clips (a test guards it). Whether each platform draws it is for the web and macOS screenshots.
 
 ## Decisions
 
@@ -315,6 +321,7 @@ Settled in review.
 3. **The popup's text is 14 / 20**: shadcn's inherits the page's, NSH's would inherit the trigger's (a button's
    medium weight); the panel resets it to `text-sm`, the size of every shadcn part inside it.
 4. **Anchored on touch screens too** (`nsh/base`'s choice), no sheet.
-5. **The surface is inline, set by `foundation::popup::surface`**; the app changes it with tokens or `style`, not
-   `class`.
+5. **The surface is the library's panel inside the popup**, drawn by `foundation::popup::surface`; the app changes
+   it with tokens, `class` or `style` (changed in implementation: `nsh/base`'s `popupStyle` cannot take the app's
+   style from Rust).
 6. **A `Button` trigger shows `expanded`** with its hover fill (button.md "States").

@@ -90,6 +90,9 @@ tokens! {
     /// The color of shadows; each shadow level scales its alpha.
     SHADOW: Color = "shadow" => |t| t.css("oklch(0 0 0)"),
 
+    /// The smallest corners (a dialog's close button, Tailwind's
+    /// `rounded-xs`): `radius` − 8, never below 0.
+    RADIUS_XS: Length = "radius-xs" => |t| t.max(t.length(RADIUS) - 8.0, t.px(0.0)),
     /// Small corners (badges, checkboxes): `radius` − 4.
     RADIUS_SM: Length = "radius-sm" => |t| t.length(RADIUS) - 4.0,
     /// Controls' corners (buttons, inputs): `radius` − 2.

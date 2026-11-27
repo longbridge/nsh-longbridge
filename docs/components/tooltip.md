@@ -317,10 +317,11 @@ view().tooltip(
 3. **`Tooltip` has no `onPosition`**: the side it ends up on after a flip is unknown, so there is no arrow pointing at the
    element, no slide by side and no scale origin toward the element. Workaround: no arrow, no slide, a centered origin.
    `Tooltip` reporting `onPosition` (as `Popover` and `HoverCard` do) would lift this.
-4. **A tooltip above a popup opened later** (met in P2; noted now): seen in a real app: a button opens a Popover, menu or
-   dialog, the focus stays on the button, and the button's tooltip shows **above** the popup and takes Escape first. An
-   app can work around it by counting popup layers. When P2 builds `Popover`, reproduce it on NSH first, then decide
-   whether NSH fixes it or this library works around it.
+4. **A tooltip above a popup opened later** (reproduced in P2 on NSH 0.7.0): a button focused from the keyboard opens
+   a `Popover`, the focus stays on the button, and the button's tooltip stays shown over the popup. Workaround in
+   place: while a popup of the library is open, a library `Tooltip` outside every open popup is disabled
+   (`foundation::popup`'s count of open popups); one inside the popup still shows. An app's own tooltip is not
+   covered. NSH not showing a hint while a popup anchored to its element is open would lift this.
 5. **No hover tooltips on an iPad with a pointer**: `nsh/base` treats every tablet as a touch screen, while iPadOS shows
    pointer hints with a trackpad. Low priority; noted.
 6. **A Rust component takes no `tooltip`**: `ComponentElement` is deliberately not `Interactive`, so `button().tooltip(..)`
