@@ -73,9 +73,11 @@ tokens! {
     MENU_ITEM_PADDING_X: Length = "menu-item-padding-x" => |t| t.length(SPACING) * 2.0,
     /// The space between a row's icon or indicator, its label and its end.
     MENU_ITEM_GAP: Length = "menu-item-gap" => |t| t.length(SPACING) * 2.0,
-    /// A row's corner radius: concentric with the surface's. Drawn between
-    /// 0 and half the row's height.
-    MENU_ITEM_RADIUS: Length = "menu-item-radius" => |t| t.length(POPOVER_RADIUS) - t.length(MENU_PADDING),
+    /// A row's corner radius: concentric with the surface's, whose edge
+    /// and padding lie between the two (8 − 1 − 4 = 3 by default, between
+    /// the scale's tiers because it is derived). Drawn between 0 and half
+    /// the row's height.
+    MENU_ITEM_RADIUS: Length = "menu-item-radius" => |t| t.length(POPOVER_RADIUS) - t.length(MENU_PADDING) - t.length(BORDER_WIDTH),
     /// The highlighted row's fill (the keys or the pointer on it).
     MENU_ITEM_FOCUS: Color = "menu-item-focus" => |t| t.color(ACCENT),
     /// The highlighted row's text and icons.

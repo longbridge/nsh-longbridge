@@ -251,7 +251,7 @@ In classes:
 | Part | This library |
 |---|---|
 | Surface | `foundation::popup::surface(t)`: fill `popover`, text `popover-foreground`, edge `border-width` × `popover-border`, corners `popover-radius` (8), shadow tier `popover-shadow` (3, `md`; submenus too, NSH gaps 3); plus padding `menu-padding` (4), at least `menu-min-width` (128) wide, as wide as its widest item |
-| Item | A row, items centered, `menu-item-gap` (8) apart; height `menu-item-height-<size>`, its content centered; padding `menu-item-padding-x` (8) at the sides; corners `menu-item-radius` (4); text `menu-item-font-size-<size>`, regular weight, one line (`truncate`); full width of the surface's inner box |
+| Item | A row, items centered, `menu-item-gap` (8) apart; height `menu-item-height-<size>`, its content centered; padding `menu-item-padding-x` (8) at the sides; corners `menu-item-radius` (3); text `menu-item-font-size-<size>`, regular weight, one line (`truncate`); full width of the surface's inner box |
 | Icon | `icon-size-<size>` (16 at `md`), `menu-item-icon-foreground` |
 | Indicator column | Checkbox and radio items, and `inset`, start their label at `menu-item-padding-x` + `icon-size-<size>` + `menu-item-gap` (32 at `md`, `pl-8`): the indicator is a box `icon-size-<size>` square before the label, the check `icon-size-<size>`, the dot `icon-size-<size>` / 2 (8) round, in the item's text color |
 | Label | As an item's geometry, `font-weight-medium`, `popover-foreground`; not highlighted |
@@ -264,8 +264,10 @@ Decisions on the look:
 - **Item heights follow `size`** (as Button's): `md` is 28 (`py-1` around a 20 line), the desktop's medium density;
   gpui-kit's menu rows are 26, its Design Guides' "compact list and menu rows: 4 px vertical, 8–12 px horizontal".
   For 32 use `size="lg"`.
-- **Concentric item corners**: `menu-item-radius` is `popover-radius − menu-padding` (4), not a fixed `rounded-sm` (6):
-  the highlight inside the surface's padding follows its corner (conventions, gpui-kit's concentric radii).
+- **Concentric item corners**: `menu-item-radius` is `popover-radius − menu-padding − border-width` (3), not a fixed
+  `rounded-sm` (6): the highlight sits inside the surface's edge and padding, 5 from its outer silhouette, and follows
+  its corner (conventions, gpui-kit's concentric radii: inner = outer − gap). Leaving out the edge (4) drew the
+  highlight's corner a point rounder than the surface's.
 - **Indicator in the row, not absolutely placed**: the label starts at the same 32 at `md` and lines up with other
   sizes too (the column grows with `icon-size-<size>`).
 - **The trigger shows that its menu is open**: see [States](#states) (Decisions 3).
@@ -364,7 +366,7 @@ a test keeps it current.
 | `menu-item-font-size-lg` | length | `pointer_touch(font-size-lg, 16)` | 14 (touch 16) |
 | `menu-item-padding-x` | length | `spacing × 2` | 8 |
 | `menu-item-gap` | length | `spacing × 2` | 8 |
-| `menu-item-radius` | length | `popover-radius − menu-padding` | 4 |
+| `menu-item-radius` | length | `popover-radius − menu-padding − border-width` | 3 |
 | `menu-item-focus` | color | `accent` |  |
 | `menu-item-focus-foreground` | color | `accent-foreground` |  |
 | `menu-item-icon-foreground` | color | `muted-foreground` |  |
