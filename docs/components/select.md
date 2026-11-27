@@ -197,7 +197,7 @@ The menu look (DropdownMenu's "The menu look"), with a select's own parts:
 | Surface | The popup surface (`foundation::popup::surface`: `popover`, `popover-border`, `popover-radius`, `popover-shadow` 3, `md`); padding `menu-padding` (4) inside the scrolling list; as wide as the trigger, at least `menu-min-width` (128) | `rounded-md border bg-popover shadow-md min-w-[8rem]`, viewport `p-1`, at least the trigger's width |
 | Row | Height `menu-item-height-<size>`; padding `menu-item-padding-x` (8) at the start; the title (one line, ellipsis) `flex: 1`; then a box `icon-size-<size>` wide holding the `check` while chosen, `menu-item-gap` (8) after the title and `menu-item-padding-x` before the end (32 at `md`, `pr-8`); corners `menu-item-radius`; text `menu-item-font-size-<size>` | `py-1.5 pr-8 pl-2 text-sm rounded-sm`, the check `absolute right-2 size-3.5`, `CheckIcon size-4` |
 | Check | `icon-size-<size>`, the row's text color | — |
-| Group header | Height `menu-item-height-<size>`, padding `menu-item-padding-x` at the sides, `select-label-font-size` (12), `select-label-foreground` | `px-2 py-1.5 text-xs text-muted-foreground` |
+| Group header | Height `menu-item-height-<size>`, padding `menu-item-padding-x` at the sides, `menu-label-font-size` (12), `menu-label-foreground` (the menu family's) | `px-2 py-1.5 text-xs text-muted-foreground` |
 | Distance | `popover-offset` (4) from the trigger when on a side; none over it | `popper`: `translate-y-1` |
 
 The row heights and concentric row corners are DropdownMenu's; there are no separators or scroll buttons.
@@ -255,12 +255,11 @@ them. Its own tokens are what a select adds. The table is generated (`<!-- token
 |---|---|---|---|
 | `select-trigger-hover` | color | `light_dark(input-background, input × 50%)` |  |
 | `select-icon-foreground` | color | `muted-foreground × 50%` |  |
-| `select-label-foreground` | color | `muted-foreground` |  |
-| `select-label-font-size` | length | `12` | 12 |
 <!-- /tokens -->
 
 - `select-icon-foreground` is `text-muted-foreground opacity-50` as one color.
-- `select-label-font-size` is Tailwind's fixed 12 (`text-xs`), as `menu-shortcut-font-size`.
+- The group headers read the menu family's `menu-label-*` ([DropdownMenu](dropdown-menu.md#tokens)); the list is drawn
+  by `foundation::menu`'s list look, which `Combobox` shares.
 - A select's own `select-radius` or `select-height-*` are not declared: the trigger is a field, and fields share one set
   of tokens; a different select uses `triggerClass` or a scope.
 

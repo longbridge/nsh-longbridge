@@ -6,21 +6,20 @@
 //! headers (`foundation::menu`) and the check on the chosen row. API:
 //! `docs/components/select.md`.
 
+use std::rc::Rc;
+
 use nsh_base::{
     OpenChangeReason, SelectEvent as BaseSelectEvent, select as base_select, terminal::is_terminal,
 };
 use nsh_core::{
-    element::{Renderer, Style, StyleRefinement, TextPartStyle, safe_area},
+    element::{Renderer, Style, TextPartStyle},
     prelude::*,
 };
 
 pub use nsh_base::{SelectEntry, SelectItem, SelectValue};
 
 use crate::{
-    components::{
-        dropdown_menu::sheet_look,
-        input::{self, vertical_hit_slop},
-    },
+    components::input::{self, vertical_hit_slop},
     foundation::{
         field::{
             self, INPUT_BACKGROUND, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID, INPUT_FOREGROUND,
@@ -28,12 +27,8 @@ use crate::{
         },
         field_ref::FieldRef,
         icon::{IconName, icon_size_token, icon_view, provide_text_color},
-        menu::{
-            MENU_ITEM_FOCUS, MENU_ITEM_FOCUS_FOREGROUND, MENU_ITEM_GAP, MENU_ITEM_PADDING_X,
-            MENU_MIN_WIDTH, MENU_PADDING, MENU_SHEET_PADDING, item_height_token, item_row,
-            list_as_sheet,
-        },
-        popup::{self, POPOVER_MARGIN, POPOVER_OFFSET, set_popup_style},
+        menu::{ListLook, list_look},
+        popup::{self, POPOVER_MARGIN, POPOVER_OFFSET},
         size::Size,
         trigger,
         typography::line_height,
@@ -41,7 +36,7 @@ use crate::{
     theme::{
         Theme,
         seeds::SPACING,
-        semantic::{INPUT, MUTED_FOREGROUND, OPACITY_DISABLED, OVERLAY},
+        semantic::{INPUT, MUTED_FOREGROUND},
         theme,
     },
     tokens,
@@ -53,10 +48,6 @@ tokens! {
     SELECT_TRIGGER_HOVER: Color = "select-trigger-hover" => |t| t.light_dark(t.color(INPUT_BACKGROUND), t.color(INPUT).opacity(0.5)),
     /// The trigger's chevron.
     SELECT_ICON_FOREGROUND: Color = "select-icon-foreground" => |t| t.color(MUTED_FOREGROUND).opacity(0.5),
-    /// A group header's text.
-    SELECT_LABEL_FOREGROUND: Color = "select-label-foreground" => |t| t.color(MUTED_FOREGROUND),
-    /// A group header's text size: Tailwind's `text-xs`.
-    SELECT_LABEL_FONT_SIZE: Length = "select-label-font-size" => |t| t.px(12.0),
 }
 
 /// The props of [`Select`].
@@ -276,61 +267,25 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
         return root;
     }
 
-    root = root
-        .trigger(trigger(props.clone(), t, current, trigger_ref, joined))
-        .popup_class(props.content_class)
-        // No `onPosition` on a select: no slide, zooming from the middle.
-        .popup_starting_class(move || popup::ending_class(popup::animate(t)))
-        .popup_ending_class(move || popup::ending_class(popup::animate(t)))
-        .backdrop_style(move |s| s.bg(move || t.color(OVERLAY)))
-        .item_class(move || Some(item_class(t, props.item_class.get())))
-        .group_class(props.label_class)
-        .render_item(row_content(props.clone(), t, current));
-    let content_style = props.content_style;
-    set_popup_style(&mut root, move || {
-        let look = if list_as_sheet() {
-            sheet_look(t).p(px(0.0)).pb(safe_area().bottom)
-        } else {
-            popup::surface(StyleRefinement::default(), t).min_w(move || t.length(MENU_MIN_WIDTH))
-        };
-        Style::from(look).then(&content_style.get())
-    });
-    let parts = root.__element().__props_mut();
-    parts.list_style = Prop::from(IntoReactive::<Style>::into_reactive(move || {
-        let padding = if list_as_sheet() {
-            t.length(MENU_SHEET_PADDING)
-        } else {
-            t.length(MENU_PADDING)
-        };
-        Style::from(StyleRefinement::default().p(padding))
-    }));
-    parts.item_style = Prop::from(IntoReactive::<TextPartStyle>::into_reactive(move || {
-        let size = size();
-        // One child, the row's content (`renderItem`'s view), stretched
-        // across it: the content lays out the title and the check.
-        let look = item_row(StyleRefinement::default(), t, move || size)
-            .flex_col()
-            .items_stretch()
-            .justify_center();
-        TextPartStyle::from(Style::from(look).then(&Style::from(props.item_style.get())))
-    }));
-    parts.group_style = Prop::from(IntoReactive::<Style>::into_reactive(move || {
-        let size = size();
-        let font_size = t.length(SELECT_LABEL_FONT_SIZE);
-        let look = StyleRefinement::default()
-            .flex_row()
-            .items_center()
-            .flex_shrink_0()
-            .h(t.length(item_height_token(size)))
-            .px(t.length(MENU_ITEM_PADDING_X))
-            .text_size(font_size)
-            .line_height(line_height(font_size))
-            .font_weight(FontWeight::NORMAL)
-            .whitespace_nowrap()
-            .text_color(t.color(SELECT_LABEL_FOREGROUND))
-            .cursor(Cursor::Default);
-        Style::from(look).then(&props.label_style.get())
-    }));
+    root = root.trigger(trigger(props.clone(), t, current, trigger_ref, joined));
+    list_look!(
+        root,
+        t,
+        ListLook {
+            size: props.size,
+            chosen: Rc::new(move |value: &SharedString| {
+                current.with(|c| c.as_ref() == Some(value))
+            }),
+            render_item: props.render_item,
+            max_height: None,
+            content_class: props.content_class,
+            content_style: props.content_style,
+            item_class: props.item_class,
+            item_style: props.item_style,
+            label_class: props.label_class,
+            label_style: props.label_style,
+        }
+    );
     root
 }
 
@@ -432,62 +387,3 @@ impl From<ComponentRef<Select>> for FieldRef {
 }
 
 nsh_core::static_reactive!(FieldRef: ComponentRef<Select>);
-
-/// The rows' classes: the highlight (`focus:`, and `active:` for a finger)
-/// from the tokens, which an inline style cannot take, then the app's.
-fn item_class(t: Theme, app: Option<SharedString>) -> SharedString {
-    let fill = t.color(MENU_ITEM_FOCUS);
-    let text = t.color(MENU_ITEM_FOCUS_FOREGROUND);
-    let mut class = String::new();
-    for state in ["focus", "active"] {
-        class.push_str(&format!(
-            "{state}:bg-[{}] dark:{state}:bg-[{}] {state}:text-[{}] dark:{state}:text-[{}] ",
-            fill.light.to_hex(),
-            fill.dark.to_hex(),
-            text.light.to_hex(),
-            text.dark.to_hex(),
-        ));
-    }
-    if let Some(app) = app {
-        class.push_str(&app);
-    }
-    class.truncate(class.trim_end().len());
-    class.into()
-}
-
-/// A row's content: the title (or the app's `renderItem`), then a box
-/// holding the check while the item is the value.
-fn row_content(
-    props: SelectProps,
-    t: Theme,
-    current: Memo<Option<SharedString>>,
-) -> impl Fn(&SelectEntry) -> View + 'static {
-    let side = move || t.length(icon_size_token(props.size.get()));
-    move |entry: &SelectEntry| {
-        let value = entry.value.clone();
-        let chosen = move || current.with(|c| c.as_ref() == Some(&value));
-        let label = match props.render_item.get() {
-            Some(render) => render
-                .render(format!("item:{}", entry.index), entry.clone())
-                .flex_1()
-                .min_w(px(0.0))
-                .into_element(),
-            None => text(entry.title.clone())
-                .flex_1()
-                .min_w(px(0.0))
-                .truncate()
-                .into_element(),
-        };
-        let check = icon_view(t, || IconName::Check, side)
-            .opacity(move || if chosen() { 1.0_f32 } else { 0.0 });
-        view()
-            .flex_row()
-            .items_center()
-            .gap(move || t.length(MENU_ITEM_GAP))
-            .when(entry.disabled, |v| {
-                v.opacity(move || t.number(OPACITY_DISABLED))
-            })
-            .child(label)
-            .child(check)
-    }
-}
