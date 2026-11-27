@@ -117,12 +117,84 @@ fn a_day_picks_and_closes_the_popup() {
 #[test]
 fn an_uncontrolled_range_keeps_its_own_value() {
     let mut app = start::<Pickers>(true);
-    assert!(app.shows("Dec 20, 2026 - Jan 3, 2027"));
+    assert!(app.shows("Dec 20, 2026 – Jan 3, 2027"));
     open(&mut app, "Stay");
     app.press(&day("2026-12-07")).unwrap();
     app.press(&day("2026-12-09")).unwrap();
     app.run_for(Duration::from_millis(400)).unwrap();
-    assert!(app.shows("Dec 7, 2026 - Dec 9, 2026"));
+    assert!(app.shows("Dec 7, 2026 – Dec 9, 2026"));
+}
+
+/// What screen readers hear as the value of the combobox `name`.
+fn value_of(app: &Headless, name: &str) -> Option<String> {
+    app.screen()
+        .accessibility(Some(&combobox(name)))
+        .unwrap()
+        .unwrap()
+        .value
+}
+
+#[test]
+fn a_range_reads_with_the_value_range_dash() {
+    let app = start::<Pickers>(true);
+    // The field's ends joined by `value-range` (`{start} – {end}`), as a
+    // slider's two values; a single date unchanged.
+    assert!(app.shows("Dec 20, 2026 – Jan 3, 2027"));
+    assert!(!app.shows("Dec 20, 2026 - Jan 3, 2027"));
+    assert!(app.shows("Oct 5, 2026"));
+    // `nsh/base` writes its combobox's value itself, with ` - ` (NSH gaps
+    // 15): this fails once it takes the library's words, and the gap goes.
+    assert_eq!(
+        value_of(&app, "Stay").as_deref(),
+        Some("Dec 20, 2026 - Jan 3, 2027")
+    );
+}
+
+/// The ranges of a default and a `confirm` picker, under a translator of
+/// `value-range`.
+#[component]
+fn TranslatedRanges() -> impl IntoElement {
+    nsh_longbridge::set_translator(|label| {
+        (label == nsh_longbridge::labels::Label::ValueRange).then(|| "{start} to {end}".into())
+    });
+    view()
+        .pt(px(40.0))
+        .pl(px(40.0))
+        .items_start()
+        .gap(px(8.0))
+        .child(
+            date_picker()
+                .range(true)
+                .default_value(DateTime::from((d(2026, 12, 20), d(2027, 1, 3))))
+                .accessibility_label("Stay"),
+        )
+        .child(
+            date_picker()
+                .range(true)
+                .confirm(true)
+                .default_value(DateTime::from((d(2026, 10, 5), d(2026, 10, 9))))
+                .presets(vec![DateRangePreset::range(
+                    "Holidays",
+                    d(2026, 12, 24),
+                    d(2026, 12, 26),
+                )])
+                .accessibility_label("Period"),
+        )
+}
+
+#[test]
+fn a_ranges_dash_is_translatable() {
+    let mut app = start::<TranslatedRanges>(true);
+    assert!(app.shows("Dec 20, 2026 to Jan 3, 2027"));
+    assert!(app.shows("Oct 5, 2026 to Oct 9, 2026"));
+    // With `confirm` the library makes the combobox: its value too.
+    assert_eq!(
+        value_of(&app, "Period").as_deref(),
+        Some("Oct 5, 2026 to Oct 9, 2026")
+    );
+    // A preset's dates under its label.
+    open(&mut app, "Period");
+    assert!(app.shows("Dec 24, 2026 to Dec 26, 2026"));
 }
 
 #[test]
@@ -133,7 +205,7 @@ fn a_preset_sets_the_value_and_closes_it() {
     app.press("role:button[Holidays]").unwrap();
     app.run_for(Duration::from_millis(400)).unwrap();
     assert!(!app.screen().matches("role:button[Holidays]").unwrap());
-    assert!(app.shows("Dec 24, 2026 - Dec 26, 2026"));
+    assert!(app.shows("Dec 24, 2026 – Dec 26, 2026"));
 }
 
 #[test]
@@ -606,7 +678,7 @@ fn confirm_keeps_a_complete_range_pending_until_apply() {
         "{:?}",
         app.screen().texts()
     );
-    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+    assert!(app.shows("Oct 5, 2026 – Oct 9, 2026"));
     assert_eq!(field_text(&app, "Start date"), "Oct 12, 2026");
     assert_eq!(field_text(&app, "End date"), "Oct 14, 2026");
     app.press("role:button[Apply]").unwrap();
@@ -616,7 +688,7 @@ fn confirm_keeps_a_complete_range_pending_until_apply() {
     .unwrap();
     app.run_for(Duration::from_millis(400)).unwrap();
     assert!(!app.screen().matches(&day("2026-10-14")).unwrap());
-    assert!(app.shows("Oct 12, 2026 - Oct 14, 2026"));
+    assert!(app.shows("Oct 12, 2026 – Oct 14, 2026"));
 }
 
 #[test]
@@ -624,7 +696,7 @@ fn confirm_presets_show_their_dates_fill_the_calendar_and_cancel_drops_them() {
     let mut app = start::<Confirmed>(true);
     open(&mut app, "Period");
     // The dates under the label, in the field's format.
-    assert!(app.shows("Dec 24, 2026 - Dec 26, 2026"));
+    assert!(app.shows("Dec 24, 2026 – Dec 26, 2026"));
     let preset = app
         .screen()
         .accessibility(Some("role:button[Holidays]"))
@@ -647,7 +719,7 @@ fn confirm_presets_show_their_dates_fill_the_calendar_and_cancel_drops_them() {
     app.wait_for("text:log:open:true:TriggerPress,cancel,open:false:Cancel")
         .unwrap();
     app.run_for(Duration::from_millis(400)).unwrap();
-    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+    assert!(app.shows("Oct 5, 2026 – Oct 9, 2026"));
     // Opening again starts from the committed value.
     open(&mut app, "Period");
     assert_eq!(field_text(&app, "Start date"), "Oct 5, 2026");
@@ -661,7 +733,7 @@ fn confirm_escape_drops_the_pending_value() {
     app.press_key("escape").unwrap();
     app.run_for(Duration::from_millis(400)).unwrap();
     assert!(!app.screen().matches("role:button[Apply]").unwrap());
-    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+    assert!(app.shows("Oct 5, 2026 – Oct 9, 2026"));
     assert!(!app.screen().matches("text:/change:/").unwrap());
 }
 
@@ -683,7 +755,7 @@ fn confirm_typed_fields_set_the_ends_and_return_applies() {
     app.wait_for("text:/change:Some\\(2026-10-20\\)..Some\\(2026-10-25\\)/")
         .unwrap();
     app.run_for(Duration::from_millis(400)).unwrap();
-    assert!(app.shows("Oct 20, 2026 - Oct 25, 2026"));
+    assert!(app.shows("Oct 20, 2026 – Oct 25, 2026"));
 }
 
 #[test]
@@ -761,7 +833,7 @@ fn confirm_keeps_the_fields_combobox_and_its_keys() {
         .accessibility(Some(&combobox("Period")))
         .unwrap()
         .unwrap();
-    assert_eq!(node.value.as_deref(), Some("Oct 5, 2026 - Oct 9, 2026"));
+    assert_eq!(node.value.as_deref(), Some("Oct 5, 2026 – Oct 9, 2026"));
     assert_eq!(node.expanded, Some(false));
     // Return on the focused field opens it, the focus going to the first
     // typed field.
@@ -800,7 +872,7 @@ fn confirm_keeps_the_fields_combobox_and_its_keys() {
             .matches("text:/open:false:PressOutside/")
             .unwrap()
     );
-    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+    assert!(app.shows("Oct 5, 2026 – Oct 9, 2026"));
 }
 
 #[test]
@@ -827,10 +899,10 @@ fn confirm_on_touch_screens_is_a_sheet_with_the_footer() {
     assert!(app.screen().matches("role:button[Apply]").unwrap());
     assert!(app.screen().matches("role:button[Holidays]").unwrap());
     // The presets show their labels only; the footer what is pending.
-    assert!(!app.shows("Dec 24, 2026 - Dec 26, 2026"));
+    assert!(!app.shows("Dec 24, 2026 – Dec 26, 2026"));
     app.press("role:button[Holidays]").unwrap();
     app.run_for(Duration::from_millis(100)).unwrap();
-    assert!(app.shows("Dec 24, 2026 - Dec 26, 2026"));
+    assert!(app.shows("Dec 24, 2026 – Dec 26, 2026"));
     let sheet = popup_of(&app, &day("2026-12-24"));
     assert_eq!(size(&app, &format!("view:{sheet}")).0, 800.0);
     app.press("role:button[Apply]").unwrap();

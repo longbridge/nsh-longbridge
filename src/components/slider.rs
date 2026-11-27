@@ -25,8 +25,7 @@ use crate::{
     foundation::{
         class::Classes,
         field::{self, Kind},
-        labels::{self, Label},
-        motion, shadow,
+        labels, motion, shadow,
         size::pointer,
         typography::{line_height, reset_inherited},
     },
@@ -1347,10 +1346,7 @@ fn bubbles(
                 );
                 match (a, b) {
                     (Some(a), Some(b)) if a == b => a,
-                    (Some(a), Some(b)) => labels::text(Label::ValueRange)
-                        .replace("{start}", &a)
-                        .replace("{end}", &b)
-                        .into(),
+                    (Some(a), Some(b)) => labels::range(&a, &b),
                     _ => SharedString::default(),
                 }
             }),

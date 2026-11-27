@@ -159,8 +159,8 @@ pub enum Label {
     /// title (a combobox's chips).
     Remove,
     /// "{start} – {end}": two values as a range (a slider's bubble once its
-    /// thumbs' two come together); `{start}` and `{end}` are replaced by
-    /// the values' text.
+    /// thumbs' two come together, a date picker's range of dates);
+    /// `{start}` and `{end}` are replaced by the values' text.
     #[prop(rename = "value-range")]
     ValueRange,
     /// "Start date": a date range picker's typed start.
@@ -479,6 +479,16 @@ pub fn text(label: Label) -> SharedString {
         .unwrap_or_else(|| label.english().into())
 }
 
+/// `start` and `end` as a range, in the words of [`Label::ValueRange`]
+/// (`20 – 80`, `Oct 5, 2026 – Oct 9, 2026`): every range the library shows
+/// as text, so one translation reorders or replaces the dash everywhere.
+pub(crate) fn range(start: &str, end: &str) -> SharedString {
+    text(Label::ValueRange)
+        .replace("{start}", start)
+        .replace("{end}", end)
+        .into()
+}
+
 /// The library's words for TSX: `setTranslator`.
 #[module]
 pub(crate) struct Labels;
@@ -554,5 +564,17 @@ mod tests {
     #[test]
     fn outside_a_runtime_the_words_are_english() {
         assert_eq!(text(Label::Loading), "Loading");
+    }
+
+    #[test]
+    fn a_range_takes_the_value_range_words() {
+        assert_eq!(range("20", "80"), "20 – 80");
+        let runtime = Runtime::default();
+        let _entered = runtime.enter();
+        set_translator(|label| (label == Label::ValueRange).then(|| "{end} ← {start}".into()));
+        assert_eq!(
+            range("Oct 5, 2026", "Oct 9, 2026"),
+            "Oct 9, 2026 ← Oct 5, 2026"
+        );
     }
 }

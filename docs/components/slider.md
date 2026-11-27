@@ -235,7 +235,8 @@ Decisions in the look:
 - It follows its thumb in the same frame (pointer-driven, no transition on its place) and fades and zooms in from
   95% over `duration` when it shows (none with reduced motion or with `slider-bubble-animate` 0).
 - **A range's two bubbles never overlap**: once they would touch, one bubble between the thumbs shows both values
-  (`20 – 80`), in the library's words `value-range` (`"{start} – {end}"`, translated with `setTranslator`), or one
+  (`20 – 80`), in the library's words `value-range` (`"{start} – {end}"`, translated with `setTranslator`; a `DatePicker`'s range
+  of dates takes the same words), or one
   value when both read the same.
 
 ## States

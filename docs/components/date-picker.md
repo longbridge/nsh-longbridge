@@ -42,7 +42,7 @@ trigger and every part on its behavior, which is not rewritten:
 | Focus | Opened on a desktop, the keyboard focus goes to the calendar's stop day; closing gives it back to the trigger (opened by a pointer on macOS and iOS: back where it was), except after a press outside |
 | The calendar | Every `Calendar` behavior (keys, views, disabled days, the range's preview) |
 | The time field | `TimeField`'s editing (segments, digits, Up / Down, `a` / `p`, a native field behind for the keyboards and screen readers) |
-| Accessibility | The trigger is a `combobox` (`expanded`, `hasPopup`), its value the value in `dateFormat` |
+| Accessibility | The trigger is a `combobox` (`expanded`, `hasPopup`), its value the value in `dateFormat` (a range's ends joined by `nsh/base`'s ` - `: NSH gaps 15) |
 | Control | `open` / `defaultOpen` / `onOpenChange({ open, reason })`, `onOpen`, `onClose`, `onCancel` |
 | Terminal | A trigger with `▾`, the terminal calendar; this library's look does not apply there |
 
@@ -142,7 +142,7 @@ parsing, the presets' column (buttons with their dates) and the footer. It does 
 | `range` | `range` | `boolean` | `false` | Pick a range: the first press starts it, the second ends it and closes the popup (with `confirm`, keeps it open) |
 | `confirm` | `confirm` | `boolean` | `false` | Nothing is committed until Apply: a pick or a preset fills the calendar and the typed fields, Cancel and Apply at the popup's foot, Escape, a press outside and Cancel drop the pending value; desktops get typed Start / End fields (Date for a single date), each preset its dates. Read once, when the picker is made; no effect in a terminal |
 | `placeholder` | `placeholder` | `string` | "Pick a date" (`labels`) | What the field shows without a value |
-| `dateFormat` | `date_format` | `string` | `"%b %-d, %Y"` (`Oct 28, 2026`) | How the field shows the value and screen readers hear it, in `chrono`'s format; a range's ends joined by ` - `; with `timePrecision`, the time after a space (`%H:%M`, `%I:%M %p` by `hourCycle`, with `:%S` at seconds) |
+| `dateFormat` | `date_format` | `string` | `"%b %-d, %Y"` (`Oct 28, 2026`) | How the field shows the value and screen readers hear it, in `chrono`'s format; a range's ends joined by the library's `value-range` words (`Oct 5, 2026 – Oct 9, 2026`, translated with `setTranslator`, as Slider's two values); with `timePrecision`, the time after a space (`%H:%M`, `%I:%M %p` by `hourCycle`, with `:%S` at seconds) |
 | `size` | `size` | `Size` | `"md"` | The field's height, type, padding and icon, and the calendar's cells |
 | `disabled` | `disabled` | `boolean` | `false` | It does not open, takes no focus, is dimmed; also while its `Field` is disabled |
 | `invalid` | `invalid` | `boolean` | `false` | The app's checks reject the value: the field look's red edge and ring; screen readers say invalid; also while its `Field` is invalid |
@@ -269,7 +269,7 @@ With `confirm`, the popup's parts are the same, and:
 
 | Part | Look |
 |---|---|
-| Presets (desktops) | The same column and buttons, each two lines when it has a value: the label, and under it its dates in the field's format (`dateFormat`, a range's ends joined by ` - `, a range of one day as that day) at `font-size-xs` in `date-picker-preset-description`; the button grows to fit (padding 6 above and below, at least `button-height-sm`). The column is as wide as its widest preset, each line cut with an ellipsis if the app narrows it. The preset whose value is the pending one is lit: the ghost hover fill and its text, `selected` for screen readers |
+| Presets (desktops) | The same column and buttons, each two lines when it has a value: the label, and under it its dates in the field's format (`dateFormat`, a range's ends joined by `value-range`'s ` – `, a range of one day as that day) at `font-size-xs` in `date-picker-preset-description`; the button grows to fit (padding 6 above and below, at least `button-height-sm`). The column is as wide as its widest preset, each line cut with an ellipsis if the app narrows it. The preset whose value is the pending one is lit: the ghost hover fill and its text, `selected` for screen readers |
 | Fields (desktops) | A row above the calendar, padding `calendar-padding` and none under it (the calendar's follows), gap 8; each field a column: its name ("Start date", "End date"; "Date") at `text-sm` / 20 medium, as `Label`, gap 6, then an [Input](input.md) at the picker's `size`, the two sharing the row |
 | Footer (desktops) | Under the calendar (and the time row): an edge of `border-width` in `border` above, padding `calendar-padding`, Cancel (`outline`) and Apply (`default`) at the end, `sm`, gap 8 |
 | Footer (sheet) | The sheet's `footer`: an edge above, padding `calendar-padding` and the bottom safe area; the pending value at the start in `text-sm`, muted while there is none ("Pick a date"), then Cancel and Apply sharing the width, `md` (40 tall on touch) |
@@ -333,8 +333,8 @@ and Android's date pickers come up from the bottom or as a dialog, not anchored 
 
 ## Accessibility
 
-`nsh/base`'s (Built on): the field is a `combobox`, expanded while open, its value the value in `dateFormat`;
-the calendar's (Calendar's Accessibility); the time field's native field with its segments. The library adds
+`nsh/base`'s (Built on): the field is a `combobox`, expanded while open, its value the value in `dateFormat` (a
+range's ends joined by `nsh/base`'s ` - `, not the field's ` – `: NSH gaps 15); the calendar's (Calendar's Accessibility); the time field's native field with its segments. The library adds
 `invalid` to the field's accessibility state and hides the icon from screen readers. `accessibilityLabel` names the
 picker (Input's G1: no labelledby between elements); `timeAccessibilityLabel` the time field. Inside a `Field`, its
 description and error describe the trigger ([Field](field.md)).
@@ -343,7 +343,8 @@ With `confirm`: the typed fields are text fields named "Start date" and "End dat
 each preset is a button named by its label, its dates its hint, `selected` while its value is the pending one; Cancel
 and Apply are buttons, Apply `disabled` while there is nothing to apply. Tab goes from the fields to the calendar's stop
 day and its arrows, then Cancel and Apply (the presets are not Tab stops, as `nsh/base`'s). In the sheet, the pending
-value line is read before the buttons.
+value line is read before the buttons. The field's combobox is the library's there, so its value is the range as the
+field shows it (`value-range`).
 
 ## Tokens
 
@@ -542,6 +543,12 @@ date_picker()
     changes; there is no way to show the end's month (a typed end far from the start). With two months side by side
     the end is often in view; otherwise the user turns the months. Needs a `month` (the shown month) prop on
     `Calendar`.
+15. **A range's dash for screen readers is `nsh/base`'s.** `nsh/base`'s `DatePicker` writes its combobox's value
+    itself, a range's ends joined by a fixed ` - ` (`DateTime::format`), which is not translatable; the library has no
+    prop to give it the value (a second binding of the value on the same element would race with `nsh/base`'s). So
+    without `confirm` the field shows `Oct 5, 2026 – Oct 9, 2026` (`value-range`) while screen readers hear
+    `Oct 5, 2026 - Oct 9, 2026`. Needs an `accessibilityValue` (or a range separator / format callback) on
+    `nsh/base`'s `DatePicker`. With `confirm` the library makes the combobox and the value follows `value-range`.
 
 ## Decisions
 
@@ -590,3 +597,10 @@ Settled in implementation (range presets, Apply, typed fields):
 17. **Apply reports `onOpenChange` with `"select"` and Cancel with `"cancel"`** (and `onCancel`), `nsh/base`'s reasons
     for a choice and a dismissal, so an app's handling of the two paths is one.
 18. **Return in the calendar picks a day** (`nsh/base`'s key), not Apply; Return in a typed field applies.
+
+Settled in implementation (one range separator):
+
+19. **A range of dates is joined by the library's `value-range` words** (`{start} – {end}`), the label a `Slider`'s
+    range bubble uses, wherever the library shows a range as text: the field, the terminal's text, a preset's dates, the
+    sheet's pending value and, with `confirm`, the combobox's value. One label, not a date-only one: a translator sets
+    the range's form once for every component. A single date is `dateFormat` alone.
