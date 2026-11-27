@@ -1,12 +1,19 @@
-// The gallery's theme: a color preset, a density preset and the Theme
-// page's tweaks, merged into one theme file and applied with `setTheme`.
+// The gallery's theme: a color preset, a density preset and the edits made
+// on the Customize page and in the component pages' Tokens sections, merged
+// into one theme file and applied with `setTheme`. It also resolves any
+// token of the library as the library does, from `themes/default.json` (the
+// registry's copy of every token with its derived default), so the gallery
+// shows live values in both appearances.
 
-import { computed, effect, setColorScheme, setTheme, signal } from "nsh";
+import { colorScheme, computed, effect, setColorScheme, setTheme, signal } from "nsh";
 import blue from "../themes/blue.json";
 import compact from "../themes/compact.json";
+import defaults from "../themes/default.json";
 import rose from "../themes/rose.json";
+import { type Lab, parseColor, toHex } from "./ui/color";
 
 export type Vars = Record<string, string>;
+export type Scheme = "light" | "dark";
 export interface ThemeFile {
   name?: string;
   cssVars: { theme?: Vars; light?: Vars; dark?: Vars };
@@ -29,77 +36,41 @@ export const densityPresets: Preset[] = [
   { id: "compact", label: "Compact", file: compact as ThemeFile },
 ];
 
-/** Primary colors the Theme page offers (Tailwind's 600 in light, 500 in dark). */
-export const swatches = [
-  { id: "violet", label: "Violet", light: "oklch(0.541 0.281 293.009)", dark: "oklch(0.606 0.25 292.717)" },
-  { id: "green", label: "Green", light: "oklch(0.627 0.194 149.214)", dark: "oklch(0.723 0.219 149.579)" },
-  { id: "orange", label: "Orange", light: "oklch(0.646 0.222 41.116)", dark: "oklch(0.705 0.213 47.604)" },
-  { id: "sky", label: "Sky", light: "oklch(0.588 0.158 241.966)", dark: "oklch(0.685 0.169 237.323)" },
-];
-
 export type Appearance = "light" | "dark" | "system";
 
 export const appearance = signal<Appearance>("system");
 export const colorPreset = signal("neutral");
 export const densityPreset = signal("default");
-export const radius = signal<number | null>(null);
-export const controlHeight = signal<number | null>(null);
-export const primary = signal<string | null>(null);
 
-/** `radius` and `control-height` before any tweak. */
-export const RADIUS_DEFAULT = 10;
-export const controlHeightDefault = () => (densityPreset() === "compact" ? 28 : 32);
+/** What the user changed, over the presets: seeds, colors, component tokens. */
+export const edits = signal<Required<ThemeFile["cssVars"]>>({ theme: {}, light: {}, dark: {} });
 
-export function resetTweaks() {
-  radius.set(null);
-  controlHeight.set(null);
-  primary.set(null);
-}
+/** The appearance shown. */
+export const scheme = (): Scheme => colorScheme();
 
-function merge(files: (ThemeFile | null)[]): ThemeFile {
+// ---------------------------------------------------------------- the file
+
+function merge(files: (ThemeFile | null | undefined)[]): ThemeFile {
   const out: ThemeFile = { cssVars: {} };
   for (const file of files) {
     if (!file) continue;
     for (const section of ["theme", "light", "dark"] as const) {
       const vars = file.cssVars[section];
-      if (vars) out.cssVars[section] = { ...out.cssVars[section], ...vars };
+      if (vars && Object.keys(vars).length > 0) out.cssVars[section] = { ...out.cssVars[section], ...vars };
     }
   }
   return out;
 }
 
-function tweaks(): ThemeFile | null {
-  const theme: Vars = {};
-  const light: Vars = {};
-  const dark: Vars = {};
-  const r = radius();
-  if (r !== null) theme.radius = `${r}px`;
-  const h = controlHeight();
-  if (h !== null) theme["control-height"] = `${h}px`;
-  const swatch = swatches.find((s) => s.id === primary());
-  if (swatch) {
-    light.primary = swatch.light;
-    dark.primary = swatch.dark;
-    light["primary-foreground"] = dark["primary-foreground"] = "oklch(0.985 0 0)";
-    light.ring = swatch.light;
-    dark.ring = swatch.dark;
-  }
-  const empty = (v: Vars) => Object.keys(v).length === 0;
-  if (empty(theme) && empty(light) && empty(dark)) return null;
-  return { cssVars: { theme, light, dark } };
-}
-
 const find = (presets: Preset[], id: string) => presets.find((p) => p.id === id)?.file ?? null;
 
-/** The theme shown: the presets, then the tweaks. */
+/** The theme shown: the presets, then the edits. */
 export const currentTheme = computed(() =>
-  merge([find(colorPresets, colorPreset()), find(densityPresets, densityPreset()), tweaks()]),
+  merge([find(colorPresets, colorPreset()), find(densityPresets, densityPreset()), { cssVars: edits() }]),
 );
 
 /** The theme shown as a file an app's `nsh.json` can name. */
-export const themeJson = computed(() =>
-  JSON.stringify({ name: "my-theme", ...currentTheme() }, null, 2),
-);
+export const themeJson = computed(() => JSON.stringify({ name: "my-theme", ...currentTheme() }, null, 2));
 
 /** Keeps the app's theme and color scheme on the gallery's choices. */
 export function followTheme() {
@@ -109,4 +80,256 @@ export function followTheme() {
     setTheme(empty ? null : theme);
   });
   effect(() => setColorScheme(appearance()));
+}
+
+// ---------------------------------------------------------------- edits
+
+export type Section = "theme" | Scheme;
+
+/** Sets token `name` in `section` (`null` takes the edit back). */
+export function setToken(section: Section, name: string, value: string | null) {
+  const next = { ...edits(), [section]: { ...edits()[section] } };
+  if (value === null) delete next[section][name];
+  else next[section][name] = value;
+  edits.set(next);
+}
+
+/** The section a token's value lives in: colors per appearance. */
+export const sectionOf = (name: string): Section => (kindOf(name) === "color" ? scheme() : "theme");
+
+export const isEdited = (name: string) => {
+  const e = edits();
+  return name in e.theme || name in e.light || name in e.dark;
+};
+
+export function resetToken(name: string) {
+  const e = edits();
+  const drop = (v: Vars) => Object.fromEntries(Object.entries(v).filter(([k]) => k !== name));
+  edits.set({ theme: drop(e.theme), light: drop(e.light), dark: drop(e.dark) });
+}
+
+export function resetTokens(names: string[]) {
+  const e = edits();
+  const drop = (v: Vars) => Object.fromEntries(Object.entries(v).filter(([k]) => !names.includes(k)));
+  edits.set({ theme: drop(e.theme), light: drop(e.light), dark: drop(e.dark) });
+}
+
+export function resetAll() {
+  edits.set({ theme: {}, light: {}, dark: {} });
+}
+
+export const editCount = () => {
+  const e = edits();
+  return new Set([...Object.keys(e.theme), ...Object.keys(e.light), ...Object.keys(e.dark)]).size;
+};
+
+// ---------------------------------------------------------------- seeds
+
+export interface Seed {
+  name: string;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+}
+
+export const seeds: Seed[] = [
+  { name: "radius", label: "Radius", min: 0, max: 20, step: 1 },
+  { name: "spacing", label: "Spacing", min: 3, max: 5, step: 0.5 },
+  { name: "control-height", label: "Control height", min: 24, max: 40, step: 2 },
+  { name: "font-size", label: "Font size", min: 12, max: 16, step: 1 },
+];
+
+export const setSeed = (name: string, value: number) => setToken("theme", name, `${value}px`);
+
+// ---------------------------------------------------------------- resolving
+
+const resolved = computed(() => merge([defaults as ThemeFile, currentTheme()]).cssVars);
+
+/** A token's value as written, in `s` (colors) or the theme section. */
+export function raw(name: string, s: Scheme = scheme()): string | undefined {
+  const vars = resolved();
+  return vars[s]?.[name] ?? vars.theme?.[name];
+}
+
+/** A token's default as the library derives it (before presets and edits). */
+export function derived(name: string, s: Scheme = scheme()): string | undefined {
+  const vars = (defaults as ThemeFile).cssVars;
+  return vars[s]?.[name] ?? vars.theme?.[name];
+}
+
+/** `value` with every `var(--x)` replaced by x's value, recursively. */
+function substitute(value: string, s: Scheme, depth = 0): string {
+  if (depth > 12) return value;
+  return value.replace(/var\(--([a-z0-9-]+)\)/g, (_, name: string) => {
+    const v = raw(name, s);
+    return v === undefined ? "transparent" : substitute(v, s, depth + 1);
+  });
+}
+
+/** A color token in `s`, read. */
+export function colorOf(name: string, s: Scheme = scheme()): Lab | null {
+  const v = raw(name, s);
+  return v === undefined ? null : parseColor(substitute(v, s));
+}
+
+/** A color token in `s` as a style value (`#rrggbbaa`). */
+export function cssColor(name: string, s: Scheme = scheme()): string {
+  const c = colorOf(name, s);
+  return c ? toHex(c) : "transparent";
+}
+
+/** A length or number token, evaluated (`rem` as 16, `px` as points). */
+export function numberOf(name: string, s: Scheme = scheme()): number {
+  const v = raw(name, s);
+  return v === undefined ? NaN : evaluate(substitute(v, s));
+}
+
+/** Evaluates `calc()` arithmetic of `px`, `rem` and plain numbers. */
+function evaluate(expr: string): number {
+  const tokens = expr.replace(/calc\(/g, "(").match(/[\d.]+(px|rem|ms|%)?|[-+*/()]/g) ?? [];
+  let i = 0;
+  const atom = (): number => {
+    const t = tokens[i++];
+    if (t === "(") {
+      const v = sum();
+      i++;
+      return v;
+    }
+    if (t === "-") return -atom();
+    const n = parseFloat(t);
+    return t.endsWith("rem") ? n * 16 : n;
+  };
+  const product = (): number => {
+    let v = atom();
+    while (tokens[i] === "*" || tokens[i] === "/") v = tokens[i++] === "*" ? v * atom() : v / atom();
+    return v;
+  };
+  const sum = (): number => {
+    let v = product();
+    while (tokens[i] === "+" || tokens[i] === "-") v = tokens[i++] === "+" ? v + product() : v - product();
+    return v;
+  };
+  return sum();
+}
+
+export type TokenKind = "color" | "length" | "ms" | "tier" | "number";
+
+/** What a token holds, from its section and its name. */
+export function kindOf(name: string): TokenKind {
+  const vars = (defaults as ThemeFile).cssVars;
+  if (vars.light?.[name] !== undefined) return "color";
+  if (/duration|delay/.test(name)) return "ms";
+  if (/-shadow$/.test(name)) return "tier";
+  if (/opacity|animate|weight/.test(name)) return "number";
+  return "length";
+}
+
+/** A token's value for reading: `10`, `150 ms`, `sm`. */
+export function formatValue(name: string, s: Scheme = scheme()): string {
+  const kind = kindOf(name);
+  if (kind === "color") return colorOf(name, s) ? toHex(colorOf(name, s)!) : "—";
+  const n = numberOf(name, s);
+  const r = String(Number(n.toFixed(2)));
+  if (kind === "ms") return `${r} ms`;
+  if (kind === "tier") return ["none", "xs", "sm", "md", "lg"][Math.round(n)] ?? r;
+  return r;
+}
+
+/** A derived default as tokens.md writes it: `primary`, `button-default × 90%`, `radius − 2`. */
+export function formatDerived(value: string | undefined): string {
+  if (value === undefined) return "—";
+  const v = value.trim();
+  const mix = /^color-mix\(in oklab, var\(--([a-z0-9-]+)\) ([\d.]+)%, transparent\)$/.exec(v);
+  if (mix) return `${mix[1]} × ${mix[2]}%`;
+  const ref = /^var\(--([a-z0-9-]+)\)$/.exec(v);
+  if (ref) return ref[1];
+  const calc = /^calc\((.*)\)$/.exec(v);
+  if (calc) {
+    return calc[1]
+      .replace(/var\(--([a-z0-9-]+)\)/g, "$1")
+      .replace(/(\d)px/g, "$1")
+      .replace(/ - /g, " − ")
+      .replace(/ \* /g, " × ");
+  }
+  return v.replace(/(\d)px$/, "$1");
+}
+
+/** The primary color a color preset shows in the shown appearance, for its dot. */
+export function presetPrimary(id: string): string {
+  const file = colorPresets.find((p) => p.id === id)?.file;
+  const s = scheme();
+  const value = file?.cssVars[s]?.primary ?? derived("primary", s);
+  const color = value ? parseColor(value) : null;
+  return color ? toHex(color) : cssColor("primary", s);
+}
+
+// ---------------------------------------------------------------- the registry
+
+/** Semantic colors, grouped as the Colors page and the editor show them. */
+export const colorGroups: { title: string; pairs: [string, string | null][] }[] = [
+  { title: "Base", pairs: [["background", "foreground"]] },
+  { title: "Surfaces", pairs: [["card", "card-foreground"], ["popover", "popover-foreground"]] },
+  {
+    title: "Roles",
+    pairs: [
+      ["primary", "primary-foreground"],
+      ["secondary", "secondary-foreground"],
+      ["muted", "muted-foreground"],
+      ["accent", "accent-foreground"],
+      ["destructive", "destructive-foreground"],
+    ],
+  },
+  {
+    title: "Status",
+    pairs: [
+      ["success", "success-foreground"],
+      ["warning", "warning-foreground"],
+      ["info", "info-foreground"],
+    ],
+  },
+  {
+    title: "Lines and focus",
+    pairs: [
+      ["border", null],
+      ["input", null],
+      ["ring", null],
+      ["ring-invalid", null],
+    ],
+  },
+  {
+    title: "Charts",
+    pairs: [
+      ["chart-1", null],
+      ["chart-2", null],
+      ["chart-3", null],
+      ["chart-4", null],
+      ["chart-5", null],
+    ],
+  },
+  {
+    title: "Sidebar",
+    pairs: [
+      ["sidebar", "sidebar-foreground"],
+      ["sidebar-primary", "sidebar-primary-foreground"],
+      ["sidebar-accent", "sidebar-accent-foreground"],
+      ["sidebar-border", null],
+      ["sidebar-ring", null],
+    ],
+  },
+  { title: "Overlays", pairs: [["overlay", null], ["shadow", null]] },
+];
+
+export const semanticColors = colorGroups.flatMap((g) => g.pairs.flatMap(([a, b]) => (b ? [a, b] : [a])));
+
+const allTokens = [
+  ...Object.keys((defaults as ThemeFile).cssVars.theme ?? {}),
+  ...Object.keys((defaults as ThemeFile).cssVars.light ?? {}),
+].filter((n, i, list) => list.indexOf(n) === i);
+
+/** The tokens of one kind of component: `button-*`, `checkbox` and `checkbox-*`. */
+export function componentTokens(prefix: string): string[] {
+  return allTokens.filter(
+    (n) => (n === prefix || n.startsWith(`${prefix}-`)) && !semanticColors.includes(n) && n !== "input",
+  );
 }

@@ -3,7 +3,7 @@
 // [--dark] [--size 1280x860] [--wait 6000] [--click x,y]... [--hover x,y]
 // [--key Tab]...` (points in CSS pixels; `CHROME` names another browser).
 import { spawn } from "node:child_process";
-import { writeFileSync, mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -15,15 +15,21 @@ const all = (name) => args.flatMap((a, i) => (a === name ? [args[i + 1]] : []));
 const [width, height] = opt("--size", "1280x860").split("x").map(Number);
 const wait = Number(opt("--wait", "6000"));
 const chrome = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const port = 9300 + Math.floor(Math.random() * 500);
-const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, "--hide-scrollbars",
-  `--user-data-dir=${mkdtempSync(join(tmpdir(), "nlb-chrome-"))}`, `--window-size=${width},${height}`, "about:blank"], { stdio: "ignore" });
+// Port 0: Chrome picks a free port and writes it to DevToolsActivePort in
+// its profile, so runs side by side never reach each other's browser.
+const profile = mkdtempSync(join(tmpdir(), "nlb-chrome-"));
+const proc = spawn(chrome, ["--headless=new", "--remote-debugging-port=0", "--hide-scrollbars",
+  `--user-data-dir=${profile}`, `--window-size=${width},${height}`, "about:blank"], { stdio: "ignore" });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-let target;
+let port, target;
 for (let i = 0; i < 50 && !target; i++) {
-  try { target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find((t) => t.type === "page"); } catch {}
+  try {
+    port ??= Number(readFileSync(join(profile, "DevToolsActivePort"), "utf8").split("\n")[0]) || undefined;
+    if (port) target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find((t) => t.type === "page");
+  } catch {}
   if (!target) await sleep(200);
 }
+if (!target) { proc.kill(); throw new Error("Chrome did not start its DevTools endpoint"); }
 const ws = new WebSocket(target.webSocketDebuggerUrl);
 await new Promise((r) => ws.addEventListener("open", r));
 let id = 0;

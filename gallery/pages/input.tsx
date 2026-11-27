@@ -1,166 +1,183 @@
-// The Input page: sizes, states, a controlled field with its label, and
+// The Input page: a form, sizes beside buttons, states, kinds of field and
 // the ring against a container's edge.
 
 import { signal, Text, View } from "nsh";
-import { Button, Input, type InputRef, Label, Size } from "nsh-longbridge";
-import { Caption, Page, Preview, Section } from "../ui";
+import { Button, Input, type InputRef, Label, type Size } from "nsh-longbridge";
+import { Demo, Demos, Page, Row, Section } from "../ui/layout";
+import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
 
-/** The rows of the state matrix: a caption and the field's props. */
-const states: { label: string; props: Record<string, unknown> }[] = [
-  { label: "Placeholder", props: { placeholder: "Placeholder" } },
-  { label: "Value", props: { defaultValue: "Ada Lovelace" } },
-  { label: "Invalid", props: { invalid: true, defaultValue: "ada@" } },
-  { label: "Read-only", props: { readonly: true, defaultValue: "ACC-20931" } },
-  { label: "Disabled", props: { disabled: true, defaultValue: "Read from server" } },
+const states: { label: string; note: string; value?: string; placeholder?: string; invalid?: boolean; readonly?: boolean; disabled?: boolean }[] = [
+  { label: "Display name", note: "Placeholder", placeholder: "Ada Lovelace" },
+  { label: "Company", note: "With a value", value: "Analytical Engines Ltd" },
+  { label: "Email", note: "Invalid", value: "ada@", invalid: true },
+  { label: "Account ID", note: "Read-only: focusable, selectable", value: "ACC-20931", readonly: true },
+  { label: "Region", note: "Disabled", value: "Europe (Frankfurt)", disabled: true },
 ];
 
 export function InputPage() {
   return (
     <Page
+      eyebrow="Components"
       title="Input"
-      description="Single-line text entry. shadcn/ui's input on NSH's native text field: four sizes, invalid, read-only and disabled."
+      description="One line of text: a name, an email, a password, a search term. Four sizes that line up with buttons; invalid, read-only and disabled."
     >
-      <Section title="Default" description="Give every field an accessibilityLabel, even beside a visible Label.">
-        <Preview code={`<Input placeholder="Email" accessibilityLabel="Email" />`}>
-          <View class="w-72">
-            <Input placeholder="Email" accessibilityLabel="Email" />
-          </View>
-        </Preview>
-      </Section>
-
-      <Section title="With a label" description="Pressing the label focuses the field. A label above its field takes the ref through a signal.">
-        <EmailField />
-      </Section>
+      <Demo hero>
+        <ProfileForm />
+      </Demo>
 
       <Section
         title="Sizes"
-        description="Height, text and padding change together; an Input and a Button of the same size line up. Touch screens get taller fields with 16pt text at md and lg."
+        description="Height, text and padding change together, so a field and a button of the same size line up. Touch screens get taller fields with 16 point text at md and lg."
       >
-        <Preview
-          class="flex-col items-stretch"
-          code={sizes.map((s) => `<Input size="${s}" placeholder="Search" />`).join("\n")}
-        >
+        <Demo class="items-stretch">
           {sizes.map((size) => (
-            <View class="flex-row items-center gap-3">
-              <Caption class="w-8">{size}</Caption>
-              <View class="w-72">
-                <Input size={size} placeholder="Search" accessibilityLabel={`Search ${size}`} />
+            <Row label={size}>
+              <View class="flex-1 min-w-40 max-w-80">
+                <Input size={size} placeholder="Search projects" accessibilityLabel={`Search, ${size}`} />
               </View>
               <Button size={size} variant="outline">
                 <Text>Search</Text>
               </Button>
-            </View>
+            </Row>
           ))}
-        </Preview>
+        </Demo>
       </Section>
 
       <Section
         title="States"
-        description="No hover state. Click a field: focus draws a ring outside the field (on touch screens the edge alone). Invalid turns the edge and the ring destructive; read-only looks as at rest; disabled dims."
+        description="No hover. Focus draws a ring outside the field (on touch screens the edge alone). Invalid turns the edge and the ring destructive; read-only looks as at rest; disabled dims."
       >
-        <StateMatrix />
+        <Demo class="items-stretch">
+          <View class="w-full flex-row flex-wrap gap-x-8 gap-y-6">
+            {states.map((s) => (
+              <StateField {...s} />
+            ))}
+          </View>
+        </Demo>
       </Section>
 
-      <Section title="Password" description="masked hides what is typed; autoComplete tells autofill what the field holds.">
-        <Preview code={`<Input masked autoComplete="password" placeholder="Password" accessibilityLabel="Password" />`}>
-          <View class="w-72">
-            <Input masked autoComplete="password" placeholder="Password" accessibilityLabel="Password" />
-          </View>
-        </Preview>
+      <Section title="Kinds of field" description="masked hides what is typed; keyboardType and autoComplete tell the keyboard and autofill what the field holds.">
+        <Demos>
+          <Demo label="A password, masked">
+            <View class="w-full max-w-72 gap-2">
+              <Label>
+                <Text>Password</Text>
+              </Label>
+              <Input masked autoComplete="password" defaultValue="correct horse" accessibilityLabel="Password" />
+            </View>
+          </Demo>
+          <Demo label="A search with its button">
+            <View class="w-full max-w-80 flex-row gap-2">
+              <View class="flex-1">
+                <Input placeholder="Search the docs" accessibilityLabel="Search the docs" />
+              </View>
+              <Button>
+                <Text>Search</Text>
+              </Button>
+            </View>
+          </Demo>
+        </Demos>
       </Section>
 
       <Section
         title="Against an edge"
-        description="The ring is drawn outside the field and takes no layout: a clipping container leaves ring-width (3) of padding, or the ring is cut."
+        description="The ring is drawn outside the field and takes no room: a container that clips leaves ring-width (3) of padding, or the ring is cut. Click each field."
       >
-        <Preview
-          code={[`<View class="overflow-hidden p-[3px]">`, `  <Input placeholder="Ring fits" />`, `</View>`].join("\n")}
-        >
-          <View class="w-72 gap-2">
-            <Caption>p-[3px]</Caption>
-            <View class="overflow-hidden p-[3px]">
+        <Demos>
+          <Demo label="3 points of padding: the ring fits">
+            <View class="w-full max-w-64 overflow-hidden rounded-lg border border-dashed border-border p-[3px]">
               <Input placeholder="Ring fits" accessibilityLabel="Ring fits" />
             </View>
-          </View>
-          <View class="w-72 gap-2">
-            <Caption>No padding</Caption>
-            <View class="overflow-hidden">
-              <Input placeholder="Ring clipped" accessibilityLabel="Ring clipped" />
+          </Demo>
+          <Demo label="No padding: the ring is cut">
+            <View class="w-full max-w-64 overflow-hidden rounded-lg border border-dashed border-border">
+              <Input placeholder="Ring cut" accessibilityLabel="Ring cut" />
             </View>
-          </View>
-        </Preview>
+          </Demo>
+        </Demos>
       </Section>
+
+      <TokensSection
+        prefix="input"
+        component="Input"
+        note="Textarea and every later field share these tokens: a change here reaches them too."
+      />
     </Page>
   );
 }
 
-function EmailField() {
-  const email = signal("");
-  const invalid = () => email().length > 0 && !email().includes("@");
+function StateField(props: (typeof states)[number]) {
   const field = signal<InputRef>();
   return (
-    <Preview
-      code={[
-        `const email = signal("");`,
-        `const field = signal<InputRef>();`,
-        `<Label htmlFor={field()}>Email</Label>`,
-        `<Input`,
-        `  ref={field}`,
-        `  value={email()}`,
-        `  onChange={({ value }) => email.set(value)}`,
-        `  placeholder="name@example.com"`,
-        `  keyboardType="email-address"`,
-        `  autoComplete="email"`,
-        `  autoCapitalize="none"`,
-        `  invalid={email().length > 0 && !email().includes("@")}`,
-        `  accessibilityLabel="Email"`,
-        `/>`,
-      ].join("\n")}
-    >
-      <View class="w-72 gap-2">
-        <Label htmlFor={field()}>
+    <View class="flex-1 min-w-56 gap-2">
+      <Label htmlFor={field()} disabled={props.disabled}>
+        <Text>{props.label}</Text>
+      </Label>
+      <Input
+        ref={field}
+        placeholder={props.placeholder}
+        defaultValue={props.value}
+        invalid={props.invalid}
+        readonly={props.readonly}
+        disabled={props.disabled}
+        accessibilityLabel={props.label}
+      />
+      <Text class={`text-xs ${props.invalid ? "text-destructive" : "text-muted-foreground"}`}>
+        {props.invalid ? "Enter a whole address, with a domain." : props.note}
+      </Text>
+    </View>
+  );
+}
+
+/** A profile form: labels pressed focus their fields; the email checks itself as it is typed. */
+function ProfileForm() {
+  const name = signal<InputRef>();
+  const email = signal<InputRef>();
+  const site = signal<InputRef>();
+  const address = signal("ada@");
+  const invalid = () => address().length > 0 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address());
+  return (
+    <View class="w-full max-w-[400px] gap-5">
+      <View class="gap-2">
+        <Label htmlFor={name()}>
+          <Text>Name</Text>
+        </Label>
+        <Input ref={name} defaultValue="Ada Lovelace" accessibilityLabel="Name" autoComplete="name" />
+      </View>
+      <View class="gap-2">
+        <Label htmlFor={email()}>
           <Text>Email</Text>
         </Label>
         <Input
-          ref={field}
-          value={email()}
-          onChange={({ value }) => email.set(value)}
-          placeholder="name@example.com"
+          ref={email}
+          value={address()}
+          onChange={(e) => address.set(e.value)}
+          invalid={invalid()}
           keyboardType="email-address"
           autoComplete="email"
           autoCapitalize="none"
-          invalid={invalid()}
           accessibilityLabel="Email"
         />
-        <Caption>{invalid() ? "Enter an address with an @." : "Type an address without an @ to see invalid."}</Caption>
+        <Text class={`text-xs ${invalid() ? "text-destructive" : "text-muted-foreground"}`}>
+          {invalid() ? "Finish the address: it turns valid as you type." : "We send receipts here."}
+        </Text>
       </View>
-    </Preview>
+      <View class="gap-2">
+        <Label htmlFor={site()}>
+          <Text>Website</Text>
+        </Label>
+        <Input ref={site} placeholder="https://" keyboardType="url" autoCapitalize="none" accessibilityLabel="Website" />
+      </View>
+      <View class="flex-row justify-end gap-2 pt-1">
+        <Button variant="ghost">
+          <Text>Cancel</Text>
+        </Button>
+        <Button disabled={invalid()}>
+          <Text>Save profile</Text>
+        </Button>
+      </View>
+    </View>
   );
-}
-
-function StateMatrix() {
-  return (
-    <Preview
-      class="flex-col items-stretch gap-3"
-      code={states.map((st) => `<Input ${props(st.props)} />`).join("\n")}
-    >
-      {states.map((st) => (
-        <View class="flex-row items-center gap-3">
-          <Caption class="w-28">{st.label}</Caption>
-          <View class="w-72">
-            <Input {...st.props} accessibilityLabel={st.label} />
-          </View>
-        </View>
-      ))}
-    </Preview>
-  );
-}
-
-/** Props as JSX attributes, for the code under a demo. */
-function props(p: Record<string, unknown>) {
-  return Object.entries(p)
-    .map(([k, v]) => (v === true ? k : typeof v === "string" ? `${k}="${v}"` : `${k}={${JSON.stringify(v)}}`))
-    .join(" ");
 }

@@ -1,49 +1,60 @@
-// The Button page: variants, sizes, icons, states, parts.
+// The Button page: variants, sizes, icons, states and buttons at work.
 
 import { signal, Text, View } from "nsh";
-import { Button, ButtonVariant, Size } from "nsh-longbridge";
-import { Caption, Page, Preview, Section } from "../ui";
+import {
+  Button,
+  type ButtonVariant,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Separator,
+  type Size,
+  Tooltip,
+} from "nsh-longbridge";
+import { Demo, Demos, Page, Row, Section } from "../ui/layout";
+import { TokensSection } from "../ui/tokens";
 
-const variants: ButtonVariant[] = ["default", "secondary", "outline", "ghost", "destructive", "link"];
+const variants: { variant: ButtonVariant; label: string }[] = [
+  { variant: "default", label: "Default" },
+  { variant: "secondary", label: "Secondary" },
+  { variant: "outline", label: "Outline" },
+  { variant: "ghost", label: "Ghost" },
+  { variant: "destructive", label: "Destructive" },
+  { variant: "link", label: "Link" },
+];
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
-const title = (s: string) => s[0].toUpperCase() + s.slice(1);
+const tools = [
+  { icon: "plus", label: "Add" },
+  { icon: "trash-2", label: "Delete" },
+] as const;
 
 export function ButtonPage() {
   return (
     <Page
+      eyebrow="Components"
       title="Button"
-      description="Runs one action when pressed. shadcn/ui's button on nsh/base's Button: six variants, four sizes, icons, an icon-only square and a loading state."
+      description="Runs one action when pressed: six variants, four sizes, icons, an icon-only square and a loading state."
     >
-      <Section title="Variants" description="Default for the main action; outline for the ordinary one beside it; destructive for deleting.">
-        <Preview
-          code={variants.map((v) => `<Button variant="${v}">${title(v)}</Button>`).join("\n")}
-        >
-          {variants.map((v) => (
-            <Button variant={v}>
-              <Text>{title(v)}</Text>
-            </Button>
-          ))}
-        </Preview>
-      </Section>
+      <Demo hero row>
+        {variants.map((v) => (
+          <Button variant={v.variant}>
+            <Text>{v.label}</Text>
+          </Button>
+        ))}
+      </Demo>
 
       <Section
         title="Sizes"
-        description="Height, type, icon and padding change together. Touch screens get taller buttons and a 44pt press area."
+        description="Height, type, icon and padding change together. Touch screens get taller buttons and a 44 point press area."
       >
-        <Preview
-          class="flex-col items-start"
-          code={[
-            `<Button size="xs">Extra small</Button>`,
-            `<Button size="sm" variant="outline" icon="plus">Small</Button>`,
-            `<Button size="lg" iconEnd="arrow-right">Large</Button>`,
-            `<Button size="md" variant="outline" iconOnly icon="plus" accessibilityLabel="Add" />`,
-          ].join("\n")}
-        >
+        <Demo class="items-stretch">
           {sizes.map((size) => (
-            <View class="flex-row items-center gap-3">
-              <Caption class="w-8">{size}</Caption>
+            <Row label={size}>
               <Button size={size}>
-                <Text>Button</Text>
+                <Text>Continue</Text>
               </Button>
               <Button size={size} variant="outline" icon="plus">
                 <Text>New file</Text>
@@ -52,122 +63,103 @@ export function ButtonPage() {
                 <Text>Options</Text>
               </Button>
               <Button size={size} variant="outline" iconOnly icon="plus" accessibilityLabel="Add" />
-              <Button size={size} variant="ghost" iconOnly icon="trash-2" accessibilityLabel="Delete" />
-            </View>
+            </Row>
           ))}
-        </Preview>
+        </Demo>
       </Section>
 
-      <Section title="Icons" description="An icon before or after the label, or alone in a square (give it an accessibilityLabel).">
-        <Preview
-          code={[
-            `<Button variant="outline" icon="plus">New file</Button>`,
-            `<Button iconEnd="arrow-right">Continue</Button>`,
-            `<Button variant="destructive" icon="trash-2">Delete</Button>`,
-            `<Button variant="ghost" iconOnly icon="plus" accessibilityLabel="Add" />`,
-          ].join("\n")}
-        >
-          <Button variant="outline" icon="plus">
-            <Text>New file</Text>
-          </Button>
-          <Button iconEnd="arrow-right">
-            <Text>Continue</Text>
-          </Button>
-          <Button variant="destructive" icon="trash-2">
-            <Text>Delete</Text>
-          </Button>
-          <Button variant="ghost" iconOnly icon="plus" accessibilityLabel="Add" />
-        </Preview>
+      <Section title="Icons" description="An icon before or after the label, or alone in a square that names itself to screen readers.">
+        <Demos>
+          <Demo label="A toolbar of icon buttons, with their names on hover">
+            <View class="flex-row items-center gap-1 rounded-lg border border-border p-1">
+              {tools.map((t) => (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={t.icon}
+                  accessibilityLabel={t.label}
+                  tooltip={
+                    <Tooltip>
+                      <Text>{t.label}</Text>
+                    </Tooltip>
+                  }
+                />
+              ))}
+              <Separator orientation="vertical" class="mx-1 h-5" />
+              <Button variant="ghost" size="sm" iconEnd="chevron-down">
+                <Text>Sort</Text>
+              </Button>
+            </View>
+          </Demo>
+          <Demo row label="Leading and trailing icons">
+            <Button variant="outline" icon="plus">
+              <Text>New file</Text>
+            </Button>
+            <Button iconEnd="arrow-right">
+              <Text>Continue</Text>
+            </Button>
+          </Demo>
+        </Demos>
       </Section>
 
       <Section
         title="States"
-        description="Disabled dims and takes no presses. Loading shows a spinner, takes no presses and does not dim. Invalid marks the outline's edge. Press Tab to see the focus ring."
+        description="Disabled dims and takes no presses. Loading shows a spinner, takes no presses and does not dim. Invalid marks the edge. Tab shows the focus ring."
       >
-        <StateMatrix />
+        <Demos>
+          <Demo row label="Disabled until something changes">
+            <Button variant="outline">
+              <Text>Discard</Text>
+            </Button>
+            <Button disabled>
+              <Text>Save changes</Text>
+            </Button>
+          </Demo>
+          <SaveDemo />
+          <Demo row label="Invalid, beside the field it belongs to">
+            <Button variant="outline" invalid>
+              <Text>Choose a file</Text>
+            </Button>
+            <Text class="text-sm text-destructive">A file is required.</Text>
+          </Demo>
+        </Demos>
       </Section>
 
-      <Section title="Loading" description="Press it: the action runs for two seconds.">
-        <LoadingDemo />
+      <Section title="At work" description="A destructive action and its way out, at the end of a card.">
+        <Demo>
+          <Card class="w-full max-w-[420px]">
+            <CardHeader>
+              <CardTitle>
+                <Text>Delete project</Text>
+              </CardTitle>
+              <CardDescription>
+                <Text>The project, its deployments and its domains are removed. This cannot be undone.</Text>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <View class="rounded-md bg-muted px-3 py-2">
+                <Text class="text-sm text-muted-foreground">acme-web · 14 deployments · 2 domains</Text>
+              </View>
+            </CardContent>
+            <CardFooter class="justify-end gap-2">
+              <Button variant="outline">
+                <Text>Cancel</Text>
+              </Button>
+              <Button variant="destructive" icon="trash-2">
+                <Text>Delete</Text>
+              </Button>
+            </CardFooter>
+          </Card>
+        </Demo>
       </Section>
 
-      <Section title="Parts" description="labelClass and iconClass style the label and the icons; class styles the root.">
-        <Preview
-          code={[
-            `<Button variant="outline" labelClass="font-semibold" iconClass="text-destructive" icon="trash-2">`,
-            `  Remove`,
-            `</Button>`,
-            `<Button variant="secondary" class="rounded-full">Rounded</Button>`,
-          ].join("\n")}
-        >
-          <Button variant="outline" labelClass="font-semibold" iconClass="text-destructive" icon="trash-2">
-            <Text>Remove</Text>
-          </Button>
-          <Button variant="secondary" class="rounded-full">
-            <Text>Rounded</Text>
-          </Button>
-        </Preview>
-      </Section>
-
-      <Section title="String children" description="With NSH 0.7.0 a string child of a Rust component does not show yet (fixed on NSH main). Until the next release, write it inside Text.">
-        <Preview code={`// NSH 0.7.0\n<Button><Text>Save</Text></Button>\n// later\n<Button>Save</Button>`}>
-          <Button>
-            <Text>Save</Text>
-          </Button>
-        </Preview>
-      </Section>
+      <TokensSection prefix="button" component="Button" />
     </Page>
   );
 }
 
-const columns = ["Rest", "Disabled", "Loading", "Invalid"];
-
-function StateMatrix() {
-  return (
-    <Preview
-      class="flex-col items-stretch gap-2"
-      code={[
-        `<Button disabled>Disabled</Button>`,
-        `<Button loading>Saving</Button>`,
-        `<Button variant="outline" invalid>Submit</Button>`,
-      ].join("\n")}
-    >
-      <View class="flex-row items-center gap-3">
-        <View class="w-24" />
-        {columns.map((c) => (
-          <Caption class="w-32">{c}</Caption>
-        ))}
-      </View>
-      {variants.map((v) => (
-        <View class="flex-row items-center gap-3">
-          <Caption class="w-24">{v}</Caption>
-          <View class="w-32 items-start">
-            <Button variant={v}>
-              <Text>Button</Text>
-            </Button>
-          </View>
-          <View class="w-32 items-start">
-            <Button variant={v} disabled>
-              <Text>Button</Text>
-            </Button>
-          </View>
-          <View class="w-32 items-start">
-            <Button variant={v} loading>
-              <Text>Button</Text>
-            </Button>
-          </View>
-          <View class="w-32 items-start">
-            <Button variant={v} invalid>
-              <Text>Button</Text>
-            </Button>
-          </View>
-        </View>
-      ))}
-    </Preview>
-  );
-}
-
-function LoadingDemo() {
+function SaveDemo() {
   const saving = signal(false);
   const saves = signal(0);
   const save = () => {
@@ -178,18 +170,11 @@ function LoadingDemo() {
     }, 2000);
   };
   return (
-    <Preview
-      code={[
-        `const saving = signal(false);`,
-        `<Button loading={saving()} icon="plus" onPress={save}>Save</Button>`,
-        `<Button variant="outline" iconOnly icon="plus" loading={saving()} accessibilityLabel="Save" />`,
-      ].join("\n")}
-    >
-      <Button loading={saving()} icon="plus" onPress={save}>
+    <Demo row label={saves() === 0 ? "Loading: press it" : `Saved ${saves()} ${saves() === 1 ? "time" : "times"}`}>
+      <Button loading={saving()} onPress={save}>
         <Text>{saving() ? "Saving…" : "Save"}</Text>
       </Button>
       <Button variant="outline" iconOnly icon="plus" loading={saving()} onPress={save} accessibilityLabel="Save" />
-      <Caption>{`Saved ${saves()} times`}</Caption>
-    </Preview>
+    </Demo>
   );
 }

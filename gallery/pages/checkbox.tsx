@@ -1,8 +1,9 @@
-// The Checkbox page: states, sizes, "select all", a box alone, parts.
+// The Checkbox page: a terms row, "select all", states, sizes, a table's boxes.
 
-import { signal, Text } from "nsh";
-import { Checkbox, Size } from "nsh-longbridge";
-import { Caption, Page, Preview, Section } from "../ui";
+import { signal, Text, View } from "nsh";
+import { Badge, Checkbox, type Size } from "nsh-longbridge";
+import { Demo, Demos, Page, Row, Section } from "../ui/layout";
+import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
 
@@ -11,116 +12,97 @@ const states: { label: string; checked?: boolean; indeterminate?: boolean; disab
   { label: "Checked", checked: true },
   { label: "Indeterminate", indeterminate: true },
   { label: "Invalid", invalid: true },
-  { label: "Invalid, checked", invalid: true, checked: true },
   { label: "Disabled", disabled: true },
   { label: "Disabled, checked", disabled: true, checked: true },
 ];
 
 const notifications = ["Mentions", "Approvals", "Weekly summary"];
 
-const stateCode = (s: (typeof states)[number]) => {
-  const props = [
-    s.checked ? " checked" : "",
-    s.indeterminate ? " indeterminate" : "",
-    s.invalid ? " invalid" : "",
-    s.disabled ? " disabled" : "",
-  ].join("");
-  return `<Checkbox${props}>${s.label}</Checkbox>`;
-};
+const rows = [
+  { id: "INV-001", customer: "Sofia Davis", amount: "$250.00", status: "Paid" },
+  { id: "INV-002", customer: "Jackson Lee", amount: "$150.00", status: "Pending" },
+  { id: "INV-003", customer: "Isabella Nguyen", amount: "$350.00", status: "Paid" },
+];
 
 export function CheckboxPage() {
   return (
     <Page
+      eyebrow="Components"
       title="Checkbox"
-      description="An option the user turns on or off, taking effect when the form is submitted. shadcn/ui's checkbox on nsh/base's Checkbox: checked, unchecked or indeterminate, four sizes, the label pressable."
+      description="An option turned on or off, applied when the form is submitted: checked, unchecked or indeterminate, four sizes, the label pressable."
     >
-      <Section title="Usage" description="The app owns the value: onChange reports the next one. A press on the label checks the box too.">
-        <TermsDemo />
+      <HeroDemo />
+
+      <Section title="Select all" description="Indeterminate while only some are selected; a press on it selects them all.">
+        <SelectAllDemo />
       </Section>
 
       <Section
         title="States"
-        description="Invalid marks the edge of an unchecked box and the focus ring. Disabled dims the box and its label together. Press Tab to see the focus ring on the box."
+        description="Invalid marks the edge of an unchecked box and its focus ring. Disabled dims the box and its label together. Tab shows the ring on the box."
       >
-        <Preview class="flex-col items-start" code={states.map(stateCode).join("\n")}>
-          {states.map((s) => (
-            <Checkbox checked={s.checked} indeterminate={s.indeterminate} invalid={s.invalid} disabled={s.disabled}>
-              <Text>{s.label}</Text>
-            </Checkbox>
-          ))}
-        </Preview>
+        <Demo class="items-stretch">
+          <View class="flex-row flex-wrap gap-x-10 gap-y-4 self-center">
+            {states.map((s) => (
+              <View class="w-44">
+                <Checkbox checked={s.checked} indeterminate={s.indeterminate} invalid={s.invalid} disabled={s.disabled}>
+                  <Text>{s.label}</Text>
+                </Checkbox>
+              </View>
+            ))}
+          </View>
+        </Demo>
       </Section>
 
       <Section
         title="Sizes"
-        description="The box is half the control height of its size (12 / 14 / 16 / 18; 16 / 18 / 20 / 24 on touch screens), the label's text follows."
+        description="The box is half the control height of its size (12, 14, 16, 18; larger on touch screens), and the label's text follows."
       >
-        {sizes.map((size) => (
-          <Preview
-            code={`<Checkbox size="${size}">Label</Checkbox>\n<Checkbox size="${size}" checked>Label</Checkbox>\n<Checkbox size="${size}" indeterminate>Label</Checkbox>`}
-          >
-            <Caption>{size}</Caption>
-            <Checkbox size={size}>
-              <Text>Unchecked</Text>
-            </Checkbox>
-            <Checkbox size={size} checked>
-              <Text>Checked</Text>
-            </Checkbox>
-            <Checkbox size={size} indeterminate>
-              <Text>Indeterminate</Text>
-            </Checkbox>
-          </Preview>
-        ))}
+        <Demo class="items-stretch">
+          {sizes.map((size) => (
+            <Row label={size}>
+              <View class="flex-row items-center gap-8">
+                <Checkbox size={size} checked>
+                  <Text>Email me a copy</Text>
+                </Checkbox>
+                <Checkbox size={size} indeterminate>
+                  <Text>Some files</Text>
+                </Checkbox>
+              </View>
+            </Row>
+          ))}
+        </Demo>
       </Section>
 
-      <Section title="Select all" description="Indeterminate while only some items are selected; a press selects all.">
-        <SelectAllDemo />
+      <Section title="A box alone" description="In a table row it names itself to screen readers; on touch screens it takes presses up to 44 points around it.">
+        <TableDemo />
       </Section>
 
-      <Section title="A box alone" description="Without a label, give it an accessibilityLabel. On touch screens it takes presses up to 44 points around it.">
-        <BoxAloneDemo />
-      </Section>
-
-      <Section title="Long labels" description="One line sits level with the box; more lines start at its top.">
-        <Preview class="flex-col items-start" code={`<Checkbox class="max-w-80">By continuing you agree to …</Checkbox>`}>
-          <Checkbox class="max-w-80">
-            <Text>By continuing you agree to the terms of service and the privacy policy, and to receive occasional emails.</Text>
-          </Checkbox>
-        </Preview>
-      </Section>
-
-      <Section title="Parts" description="indicatorClass styles the box, markClass the check, labelClass the label; class styles the row.">
-        <Preview
-          code={[
-            `<Checkbox checked indicatorClass="rounded-full" labelClass="font-normal text-muted-foreground">`,
-            `  Round box, muted label`,
-            `</Checkbox>`,
-          ].join("\n")}
-        >
-          <Checkbox checked indicatorClass="rounded-full" labelClass="font-normal text-muted-foreground">
-            <Text>Round box, muted label</Text>
-          </Checkbox>
-        </Preview>
-      </Section>
+      <TokensSection prefix="checkbox" component="Checkbox" />
     </Page>
   );
 }
 
-function TermsDemo() {
+function HeroDemo() {
   const agreed = signal(false);
+  const news = signal(true);
   return (
-    <Preview
-      code={[
-        `const agreed = signal(false);`,
-        `<Checkbox checked={agreed()} onChange={({ checked }) => agreed.set(checked)}>`,
-        `  Accept terms and conditions`,
-        `</Checkbox>`,
-      ].join("\n")}
-    >
-      <Checkbox checked={agreed()} onChange={({ checked }) => agreed.set(checked)}>
-        <Text>Accept terms and conditions</Text>
-      </Checkbox>
-    </Preview>
+    <Demo hero>
+      <View class="w-full max-w-[360px] gap-6">
+        <Checkbox checked={agreed()} onChange={(e) => agreed.set(e.checked)}>
+          <Text>Accept terms and conditions</Text>
+        </Checkbox>
+        <Checkbox checked={news()} onChange={(e) => news.set(e.checked)}>
+          <View class="gap-1.5">
+            <Text>Product updates</Text>
+            <Text class="font-normal text-muted-foreground">A short email when something new ships, once a month at most.</Text>
+          </View>
+        </Checkbox>
+        <Checkbox disabled>
+          <Text>Share usage data (managed by your organization)</Text>
+        </Checkbox>
+      </View>
+    </Demo>
   );
 }
 
@@ -129,53 +111,69 @@ function SelectAllDemo() {
   const toggle = (item: string, on: boolean) =>
     selected.set(on ? [...selected(), item] : selected().filter((s) => s !== item));
   return (
-    <Preview
-      class="flex-col items-start"
-      code={[
-        `const all = ["Mentions", "Approvals", "Weekly summary"];`,
-        `<Checkbox`,
-        `  checked={selected().length === all.length}`,
-        `  indeterminate={selected().length > 0 && selected().length < all.length}`,
-        `  onChange={({ checked }) => selected.set(checked ? all : [])}`,
-        `>`,
-        `  All notifications`,
-        `</Checkbox>`,
-      ].join("\n")}
-    >
-      <Checkbox
-        checked={selected().length === notifications.length}
-        indeterminate={selected().length > 0 && selected().length < notifications.length}
-        onChange={({ checked }) => selected.set(checked ? [...notifications] : [])}
-      >
-        <Text>All notifications</Text>
-      </Checkbox>
-      {notifications.map((item) => (
+    <Demo>
+      <View class="w-64 gap-3">
         <Checkbox
-          class="ml-6"
-          checked={selected().includes(item)}
-          onChange={({ checked }) => toggle(item, checked)}
+          checked={selected().length === notifications.length}
+          indeterminate={selected().length > 0 && selected().length < notifications.length}
+          onChange={({ checked }) => selected.set(checked ? [...notifications] : [])}
         >
-          <Text>{item}</Text>
+          <Text>All notifications</Text>
         </Checkbox>
-      ))}
-    </Preview>
+        <View class="ml-6 gap-3">
+          {notifications.map((item) => (
+            <Checkbox checked={selected().includes(item)} onChange={({ checked }) => toggle(item, checked)}>
+              <Text>{item}</Text>
+            </Checkbox>
+          ))}
+        </View>
+      </View>
+    </Demo>
   );
 }
 
-function BoxAloneDemo() {
-  const checked = signal(true);
+function TableDemo() {
+  const picked = signal<string[]>(["INV-002"]);
+  const all = () => picked().length === rows.length;
   return (
-    <Preview
-      code={`<Checkbox checked={checked()} onChange={({ checked }) => checked.set(checked)} accessibilityLabel="Select row" />`}
-    >
-      {sizes.map((size) => (
-        <Checkbox
-          size={size}
-          checked={checked()}
-          onChange={(e) => checked.set(e.checked)}
-          accessibilityLabel="Select row"
-        />
-      ))}
-    </Preview>
+    <Demo class="items-stretch">
+      <View class="w-full max-w-[560px] self-center rounded-lg border border-border">
+        <View class="h-10 flex-row items-center gap-4 border-b border-border px-4">
+          <Checkbox
+            accessibilityLabel="Select all"
+            checked={all()}
+            indeterminate={picked().length > 0 && !all()}
+            onChange={(e) => picked.set(e.checked ? rows.map((r) => r.id) : [])}
+          />
+          <Text class="w-20 text-xs font-medium text-muted-foreground">Invoice</Text>
+          <Text class="flex-1 text-xs font-medium text-muted-foreground">Customer</Text>
+          <Text class="w-20 text-right text-xs font-medium text-muted-foreground">Amount</Text>
+        </View>
+        {rows.map((r, i) => (
+          <View
+            class={`h-12 flex-row items-center gap-4 px-4 ${i > 0 ? "border-t border-border" : ""} ${
+              picked().includes(r.id) ? "bg-muted/50" : ""
+            }`}
+          >
+            <Checkbox
+              accessibilityLabel={`Select ${r.id}`}
+              checked={picked().includes(r.id)}
+              onChange={(e) => picked.set(e.checked ? [...picked(), r.id] : picked().filter((x) => x !== r.id))}
+            />
+            <Text class="w-20 font-mono text-sm text-foreground">{r.id}</Text>
+            <View class="flex-1 flex-row items-center gap-2">
+              <Text class="text-sm text-foreground">{r.customer}</Text>
+              <If when={r.status === "Pending"}>
+                <Badge variant="secondary">
+                  <Text>Pending</Text>
+                </Badge>
+              </If>
+            </View>
+            <Text class="w-20 text-right text-sm tabular-nums text-foreground">{r.amount}</Text>
+          </View>
+        ))}
+      </View>
+      <Text class="self-center text-xs text-muted-foreground">{`${picked().length} of ${rows.length} selected`}</Text>
+    </Demo>
   );
 }

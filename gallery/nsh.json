@@ -6,7 +6,9 @@
   "dependencies": {
     "nsh-longbridge": {
       "path": ".."
-    }
+    },
+    "nsh-icon": "^0.2.2",
+    "nsh-icon-lucide": "^0.2.2"
   },
   "window": {
     "title": "nsh-longbridge",

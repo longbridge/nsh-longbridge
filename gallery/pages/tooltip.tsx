@@ -1,108 +1,85 @@
-// The Tooltip page: on buttons, the four sides, shortcuts, long text,
-// delays, a disabled trigger, controlled.
+// The Tooltip page: an editor's toolbar, the four sides, shortcuts and long
+// text, delays, a disabled trigger, controlled.
 
-import { signal, Text, View } from "nsh";
-import { Button, Kbd, Tooltip } from "nsh-longbridge";
-import { Caption, Page, Preview, Section } from "../ui";
+import { keymap, signal, Text, View } from "nsh";
+import { Button, Kbd, Separator, Tooltip } from "nsh-longbridge";
+import { Demo, Demos, Page, Section } from "../ui/layout";
+import { TokensSection } from "../ui/tokens";
 
 const placements = ["top", "right", "bottom", "left"] as const;
 const tools = [
-  { icon: "plus", label: "Add" },
-  { icon: "arrow-right", label: "Forward" },
-  { icon: "trash-2", label: "Delete" },
+  { icon: "plus", label: "New page", keys: "mod+n" },
+  { icon: "check", label: "Mark done", keys: "mod+enter" },
+  { icon: "arrow-right", label: "Move to…", keys: "mod+shift+m" },
+  { icon: "trash-2", label: "Delete", keys: "mod+backspace" },
 ] as const;
 const delays = [0, 500, 1000];
 const long =
-  "Shows the full text of a label cut short, wrapping at tooltip-max-width (320) rather than running out of the window.";
+  "Quarterly planning notes, including the hiring plan, the roadmap for the second half and the open questions from the offsite";
 
 export function TooltipPage() {
   return (
     <Page
+      eyebrow="Components"
       title="Tooltip"
       description="A hint beside an element while the pointer rests on it or the keyboard focus is on it. Inverted, no arrow; hardly ever shown on touch screens."
     >
-      <Section title="Icon buttons" description="Rest the pointer on a tool, then move along: the next shows at once. Tab shows them too.">
-        <Preview
-          code={tools
-            .map(
-              (t) =>
-                `<Button variant="ghost" iconOnly icon="${t.icon}" accessibilityLabel="${t.label}" tooltip={<Tooltip>${t.label}</Tooltip>} />`,
-            )
-            .join("\n")}
-        >
-          {tools.map((t) => (
-            <Button
-              variant="ghost"
-              iconOnly
-              icon={t.icon}
-              accessibilityLabel={t.label}
-              tooltip={
-                <Tooltip>
-                  <Text>{t.label}</Text>
-                </Tooltip>
-              }
-            />
-          ))}
-        </Preview>
-      </Section>
+      <Demo hero class="pt-20">
+        <Toolbar />
+      </Demo>
 
-      <Section title="Placement" description="Shown here with open. Flipped to the other side when only that one has room.">
-        <Preview
-          class="py-20 gap-16"
-          code={placements.map((p) => `<Button variant="outline" tooltip={<Tooltip placement="${p}">${p}</Tooltip>}>…</Button>`).join("\n")}
-        >
+      <Section title="Sides" description="Shown here held open. A tooltip flips to the other side when only that one has room.">
+        <Demo row class="gap-x-24 gap-y-20 py-20">
           {placements.map((p) => (
             <Button
               variant="outline"
               tooltip={
                 <Tooltip placement={p} open>
-                  <Text>{p}</Text>
+                  <Text>{p[0].toUpperCase() + p.slice(1)}</Text>
                 </Tooltip>
               }
             >
-              <Text>{p}</Text>
+              <Text>{p[0].toUpperCase() + p.slice(1)}</Text>
             </Button>
           ))}
-        </Preview>
+        </Demo>
       </Section>
 
-      <Section title="Shortcut and long text" description="A Kbd takes the tooltip's colors; long text wraps at 320.">
-        <Preview
-          class="pt-28 gap-28"
-          code={[
-            `<Button tooltip={<Tooltip>Save <Kbd>⌘S</Kbd></Tooltip>}>Save</Button>`,
-            `<Text class="truncate" tooltip={<Tooltip delay={0}>{long}</Tooltip>}>{long}</Text>`,
-          ].join("\n")}
-        >
-          <Button
-            tooltip={
-              <Tooltip open>
-                <Text>Save</Text>
-                <Kbd>
-                  <Text>⌘S</Text>
-                </Kbd>
-              </Tooltip>
-            }
-          >
-            <Text>Save</Text>
-          </Button>
-          <View class="w-48">
-            <Text
-              class="truncate text-sm text-foreground"
+      <Section title="Shortcuts and long text" description="A Kbd inside takes the tooltip's colors. Long text, such as a cut label's whole title, wraps at tooltip-max-width (320).">
+        <Demos>
+          <Demo row label="Save, with its shortcut" class="pt-20">
+            <Button
               tooltip={
-                <Tooltip open placement="top">
-                  <Text>{long}</Text>
+                <Tooltip open>
+                  <Text>Save</Text>
+                  <Kbd>
+                    <Text>{keymap.label("mod+s")}</Text>
+                  </Kbd>
                 </Tooltip>
               }
             >
-              {long}
-            </Text>
-          </View>
-        </Preview>
+              <Text>Save</Text>
+            </Button>
+          </Demo>
+          <Demo label="A title cut short, whole in the tooltip" class="pt-28">
+            <View class="w-56 flex-row items-center gap-2 rounded-md border border-border px-3 py-2">
+              <Text
+                class="flex-1 truncate text-sm text-foreground"
+                tooltip={
+                  <Tooltip open placement="top">
+                    <Text>{long}</Text>
+                  </Tooltip>
+                }
+              >
+                {long}
+              </Text>
+            </View>
+          </Demo>
+        </Demos>
       </Section>
 
-      <Section title="Delay" description="tooltip-delay (500) by default; 0 for what the user is there to read.">
-        <Preview code={delays.map((d) => `<Button variant="secondary" tooltip={<Tooltip delay={${d}}>…</Tooltip>}>${d} ms</Button>`).join("\n")}>
+      <Section title="Delay" description="tooltip-delay (500) by default. Once one shows, the next shows at once as the pointer moves along. 0 for what the user is there to read.">
+        <Demo row>
           {delays.map((d) => (
             <Button
               variant="secondary"
@@ -115,69 +92,79 @@ export function TooltipPage() {
               <Text>{`${d} ms`}</Text>
             </Button>
           ))}
-        </Preview>
+        </Demo>
       </Section>
 
-      <Section title="States" description="A disabled button still shows its tooltip (it may say why); disabled on the tooltip shows none.">
-        <Preview
-          code={[
-            `<Button disabled tooltip={<Tooltip>Nothing to save</Tooltip>}>Save</Button>`,
-            `<Button variant="outline" tooltip={<Tooltip disabled>Never shown</Tooltip>}>No tooltip</Button>`,
-          ].join("\n")}
-        >
-          <Button
-            disabled
-            tooltip={
-              <Tooltip>
-                <Text>Nothing to save</Text>
-              </Tooltip>
-            }
-          >
-            <Text>Save</Text>
-          </Button>
-          <Button
-            variant="outline"
-            tooltip={
-              <Tooltip disabled>
-                <Text>Never shown</Text>
-              </Tooltip>
-            }
-          >
-            <Text>No tooltip</Text>
-          </Button>
-        </Preview>
+      <Section title="States" description="A disabled button still shows its tooltip, which may say why. disabled on the tooltip shows none. The app can own open.">
+        <Demos>
+          <Demo row label="Rest the pointer on each">
+            <Button
+              disabled
+              tooltip={
+                <Tooltip>
+                  <Text>Nothing to save yet</Text>
+                </Tooltip>
+              }
+            >
+              <Text>Save</Text>
+            </Button>
+            <Button
+              variant="outline"
+              tooltip={
+                <Tooltip disabled>
+                  <Text>Never shown</Text>
+                </Tooltip>
+              }
+            >
+              <Text>No tooltip</Text>
+            </Button>
+          </Demo>
+          <ControlledDemo />
+        </Demos>
       </Section>
 
-      <Section title="Controlled" description="The app owns open and follows onOpenChange.">
-        <ControlledDemo />
-      </Section>
+      <TokensSection prefix="tooltip" component="Tooltip" />
     </Page>
+  );
+}
+
+/** An editor's toolbar: icon buttons named by their tooltips, the first held open. */
+function Toolbar() {
+  return (
+    <View class="flex-row items-center gap-1 rounded-lg border border-border bg-background p-1 shadow-xs">
+      {tools.map((t, i) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
+          icon={t.icon}
+          accessibilityLabel={t.label}
+          tooltip={
+            <Tooltip open={i === 0 ? true : undefined}>
+              <Text>{t.label}</Text>
+              <Kbd>
+                <Text>{keymap.label(t.keys)}</Text>
+              </Kbd>
+            </Tooltip>
+          }
+        />
+      ))}
+      <Separator orientation="vertical" class="mx-1 h-5" />
+      <Button variant="ghost" size="sm" iconEnd="chevron-down">
+        <Text>More</Text>
+      </Button>
+    </View>
   );
 }
 
 function ControlledDemo() {
   const open = signal(false);
-  const reason = signal("—");
   return (
-    <Preview
-      class="pt-16"
-      code={[
-        `const open = signal(false);`,
-        `<View tooltip={<Tooltip open={open()} onOpenChange={(e) => open.set(e.open)}>Synced 2 min ago</Tooltip>}>`,
-        `  <Button variant="outline">Status</Button>`,
-        `</View>`,
-      ].join("\n")}
-    >
+    <Demo row class="pt-16" label={`open: ${open()}`}>
       <View
         tooltip={
-          <Tooltip
-            open={open()}
-            onOpenChange={(e) => {
-              open.set(e.open);
-              reason.set(e.reason);
-            }}
-          >
-            <Text>Synced 2 min ago</Text>
+          <Tooltip open={open()} onOpenChange={(e) => open.set(e.open)}>
+            <Text>Synced 2 minutes ago</Text>
           </Tooltip>
         }
       >
@@ -188,7 +175,6 @@ function ControlledDemo() {
       <Button variant="ghost" onPress={() => open.set(!open())}>
         <Text>{open() ? "Hide" : "Show"}</Text>
       </Button>
-      <Caption>{`open: ${open()}, last reason: ${reason()}`}</Caption>
-    </Preview>
+    </Demo>
   );
 }
