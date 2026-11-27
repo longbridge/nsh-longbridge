@@ -69,7 +69,7 @@ With NSH 0.7.0, write a string child inside `<Text>` for now (`Button`'s G0).
 
 ### Look
 
-In classes: `inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border
+In classes: `inline-flex w-fit min-w-[22px] shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border
 border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `size-3`.
 
 | | Value |
@@ -81,6 +81,7 @@ border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `si
 | Text | `badge-font-size` (12), `font-weight-medium`, line height from the foundation's font size → line height (12 → 16, Tailwind's `text-xs`), one line |
 | Icons | 12 (the `xs` icon size the badge gives as context), colored as the text; `badge-gap` (4) between icon and text |
 | Height | 16 line height + 2 × 2 padding + 2 × 1 border = 22 |
+| Least width | Its height (22), as a class (`min-w-[22px]`, from the tokens) the app's `class` goes over: one character (a count) makes a circle, not a pill narrower than it is tall |
 
 Long text is truncated with an ellipsis (one line, as Rust's `number_of_lines(1)`) at the parent's width, rather than
 clipped (`overflow-hidden whitespace-nowrap`) with the badge overflowing a narrower parent. An ellipsis is the desktop
@@ -146,7 +147,7 @@ import { Badge, Icon } from "nsh-longbridge";
     <Icon name="plus" />
     New
   </Badge>
-  <Badge class="min-w-5 px-1 tabular-nums">8</Badge>
+  <Badge class="px-1 tabular-nums">8</Badge>
 </View>
 ```
 
@@ -165,7 +166,7 @@ view().flex_row().gap_2()
     )
 ```
 
-The count badge (`min-w-5 px-1 tabular-nums`) is a `class`, not a variant.
+The count badge (`px-1 tabular-nums`) is a `class`, not a variant; the least width already makes a single digit round.
 
 ## NSH gaps
 
