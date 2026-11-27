@@ -34,7 +34,7 @@ export function SizesPage() {
       title="Radius and sizes"
       description="The radius, control-height, control-height-touch, spacing and font-size seeds, and what derives from them. The values are this theme's; change a seed on the Customize page and they follow."
     >
-      <Section title="Radii" description="Five radii from one seed, shadcn v4's and Tailwind's rounded-xs. Badges and switches are pills whatever the seed. Nested surfaces step down a radius, so their corners stay concentric.">
+      <Section title="Radii" description="Five radii from one seed, xs to xl. Badges and switches are pills whatever the seed. Nested surfaces step down a radius, so their corners stay concentric.">
         <View class="flex-row flex-wrap gap-4">
           {radii.map((r) => (
             <View class="flex-1 min-w-40 gap-3">

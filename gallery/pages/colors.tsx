@@ -28,7 +28,7 @@ export function ColorsPage() {
     <Page
       eyebrow="Foundation"
       title="Colors"
-      description="shadcn's semantic colors and this library's additions, as the preset and your changes resolve them, light on the left of each swatch and dark on the right. Components read these roles, never a color of their own."
+      description="The semantic colors and this library's additions, as the preset and your changes resolve them, light on the left of each swatch and dark on the right. Components read these roles, never a color of their own."
     >
       {colorGroups.map((g) => (
         <Section title={g.title} description={notes[g.title]}>

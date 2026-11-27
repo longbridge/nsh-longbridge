@@ -18,7 +18,7 @@ export interface SegmentOption {
   name?: string;
 }
 
-/** One of a few options, as shadcn's tabs list: a muted track, the chosen one raised. */
+/** One of a few options, as a segmented tabs list: a muted track, the chosen one raised. */
 export function Segmented(props: {
   options: SegmentOption[];
   value: () => string;
@@ -55,7 +55,7 @@ export function Segmented(props: {
   );
 }
 
-/** A choice from a short list, as shadcn's select: an outline trigger and a popover list. */
+/** A choice from a short list, as a select: an outline trigger and a popover list. */
 export function Select(props: {
   items: { value: string; title: string }[];
   value: () => string;
@@ -101,7 +101,8 @@ export function Select(props: {
   );
 }
 
-/** A number on a track, as shadcn's slider. */
+/** A number on a track, as a slider. */
+
 export function Slider(props: {
   value: () => number;
   min: number;

@@ -43,7 +43,7 @@ export function LabelPage() {
         <LockedDemo />
       </Section>
 
-      <Section title="Line height" description="shadcn's leading-none: the line, shaded here, is exactly as tall as the text, checked with descenders and CJK text.">
+      <Section title="Line height" description="The line, shaded here, is exactly as tall as the text, checked with descenders and CJK text.">
         <Demo row class="gap-10">
           {lineHeightSamples.map((t) => (
             <View class="bg-muted">

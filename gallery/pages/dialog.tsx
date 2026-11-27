@@ -183,7 +183,7 @@ function ShareDialog() {
             <Text>Anyone who has this link will be able to view this.</Text>
           </DialogDescription>
         </DialogHeader>
-        <Input defaultValue="https://ui.shadcn.com/docs/installation" accessibilityLabel="Link" readonly />
+        <Input defaultValue="https://example.com/docs/installation" accessibilityLabel="Link" readonly />
         <DialogFooter class="justify-start">
           <DialogClose variant="secondary">
             <Text>Close</Text>

@@ -90,7 +90,7 @@ export function PopoverPage() {
   );
 }
 
-/** shadcn's example: a layer's dimensions, open as the page shows. */
+/** A layer's dimensions, open as the page shows. */
 function DimensionsPopover() {
   const fields = [
     { label: "Width", value: "100%" },

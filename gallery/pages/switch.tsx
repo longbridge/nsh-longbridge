@@ -50,7 +50,7 @@ export function SwitchPage() {
 
       <Section
         title="Sizes"
-        description="The thumb is half the control height of its size, the track twice as wide (md: 32 × 18, shadcn's), the side of a Checkbox of the same size."
+        description="The thumb is half the control height of its size, the track twice as wide (md: 32 × 18), the side of a Checkbox of the same size."
       >
         <SizesDemo />
       </Section>

@@ -19,7 +19,7 @@ export function HomePage() {
         </Badge>
         <Text class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">nsh-longbridge</Text>
         <Text class="max-w-[600px] text-lg leading-7 text-muted-foreground">
-          Components for NSH apps with the look of shadcn/ui, one Rust implementation for TSX and Rust, restyled from a
+          Components for NSH apps with a quiet, neutral look, one Rust implementation for TSX and Rust, restyled from a
           few seed tokens down to a single part.
         </Text>
         <View class="flex-row flex-wrap gap-2 pt-1">

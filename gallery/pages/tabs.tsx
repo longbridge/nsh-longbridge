@@ -108,7 +108,7 @@ export function TabsPage() {
   );
 }
 
-/** shadcn's account and password cards, one tab each. */
+/** Account and password cards, one tab each. */
 function AccountTabs() {
   return (
     <Tabs defaultValue="account" class="w-full max-w-[400px] gap-3">
