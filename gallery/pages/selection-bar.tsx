@@ -16,6 +16,7 @@ import {
   type Size,
   toast,
 } from "nsh-longbridge";
+import { numberOf } from "../theme";
 import { Caption, Demo, Page, Row, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
 
@@ -49,6 +50,11 @@ const columns: DataTableColumn[] = [
 
 const sizes: Size[] = ["sm", "md", "lg"];
 
+/** Room for a bar of `size` and its offset above and below, so it sits on its row's center. */
+const barRoom = (size: Size) =>
+  numberOf(`control-height-${size}`) +
+  2 * (numberOf("selection-bar-padding") + numberOf("border-width") + numberOf("selection-bar-offset"));
+
 export function SelectionBarPage() {
   return (
     <Page
@@ -65,7 +71,7 @@ export function SelectionBarPage() {
         <Demo class="items-stretch">
           {sizes.map((size) => (
             <Row label={size}>
-              <View class="h-[84px] flex-1">
+              <View class="flex-1" style={{ height: barRoom(size) }}>
                 <SelectionBar placement="container" size={size} count={3} onClear={() => {}}>
                   <SelectionBarAction icon="tag" label="Tags" />
                   <SelectionBarAction icon="archive" label="Archive" />
