@@ -15,7 +15,11 @@
 
 use std::rc::Rc;
 
-use nsh_core::{NodeId, element::ElementTarget, prelude::*};
+use nsh_core::{
+    NodeId,
+    element::{ElementTarget, StyleRefinement},
+    prelude::*,
+};
 
 use super::{
     field_ref::{Press, register_control},
@@ -98,8 +102,22 @@ pub fn field_look<E: Styled + Interactive>(
     t: Theme,
     invalid: impl Fn() -> bool + Copy + 'static,
 ) -> E {
-    let el = el
-        .rounded(move || t.length(INPUT_RADIUS))
+    let el = field_rest(el, t, invalid)
+        .focus_visible(move |s| field_focus(s, t, invalid))
+        .disabled_style(move |s| s.opacity(move || t.number(OPACITY_DISABLED)));
+    motion::transition_all(el, t)
+}
+
+/// The field look at rest ([`field_look`] without its states): the edge,
+/// background, text color and shadow. For a frame whose states the caller
+/// applies itself: a frame around an input takes [`field_focus`] while the
+/// input inside has the focus (`focus-within`), with the transitions.
+pub fn field_rest<E: Styled + Element>(
+    el: E,
+    t: Theme,
+    invalid: impl Fn() -> bool + Copy + 'static,
+) -> E {
+    el.rounded(move || t.length(INPUT_RADIUS))
         .border(move || t.length(INPUT_BORDER_WIDTH))
         .border_color(move || {
             if invalid() {
@@ -111,29 +129,34 @@ pub fn field_look<E: Styled + Interactive>(
         .bg(move || t.color(INPUT_BACKGROUND))
         .text_color(move || t.color(INPUT_FOREGROUND))
         .inline_style(move || shadow::shadow(t, shadow::level(t.number(INPUT_SHADOW))))
-        .focus_visible(move |s| {
-            focus::focus_ring(
-                s,
-                t,
-                move || {
-                    if invalid() {
-                        t.color(INPUT_RING_INVALID)
-                    } else {
-                        t.color(INPUT_RING)
-                    }
-                },
-                None,
-            )
-            .border_color(move || {
-                if invalid() {
-                    t.color(INPUT_BORDER_INVALID)
-                } else {
-                    t.color(INPUT_BORDER_FOCUS)
-                }
-            })
-        })
-        .disabled_style(move |s| s.opacity(move || t.number(OPACITY_DISABLED)));
-    motion::transition_all(el, t)
+}
+
+/// The field look's focus: the ring (with a pointer) and the focus edge,
+/// red while `invalid`.
+pub fn field_focus(
+    s: StyleRefinement,
+    t: Theme,
+    invalid: impl Fn() -> bool + Copy + 'static,
+) -> StyleRefinement {
+    focus::focus_ring(
+        s,
+        t,
+        move || {
+            if invalid() {
+                t.color(INPUT_RING_INVALID)
+            } else {
+                t.color(INPUT_RING)
+            }
+        },
+        None,
+    )
+    .border_color(move || {
+        if invalid() {
+            t.color(INPUT_BORDER_INVALID)
+        } else {
+            t.color(INPUT_BORDER_FOCUS)
+        }
+    })
 }
 
 /// What a label's press does to a control that joins a field ([`join`]).
