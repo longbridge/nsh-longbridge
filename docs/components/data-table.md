@@ -125,7 +125,7 @@ The parts are `nsh/base`'s (`DataTablePart`), styled through `classes` / `styles
 
 | Part | The library's look | In classes |
 |---|---|---|
-| `root` | Edge `border-width` × `data-table-border`, corners `data-table-radius`, clipped; no fill | The guide's `overflow-hidden rounded-md border` |
+| `root` | Edge `border-width` × `data-table-border`, corners `data-table-radius`, clipped; no fill; tabular figures (`tabular-nums`) | The guide's `overflow-hidden rounded-md border` |
 | `header` | Bottom edge `border-width` × `table-border` | `[&_tr]:border-b` |
 | `headerCell` | Padding `table-cell-padding-x` at the start; text `table-head-foreground`, `font-weight-medium` | `TableHead`: `px-2 font-medium text-foreground` |
 | `headerContent` | Gap `spacing` between the title and the sort button | The guide's `ArrowUpDown` button after the title |

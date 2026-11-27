@@ -118,7 +118,7 @@ a cell.
 
 | Part | What | Customize with |
 |---|---|---|
-| `Table` | A column, `w-full`, text `foreground` at `font-size-<size>` | `class` / `style` |
+| `Table` | A column, `w-full`, text `foreground` at `font-size-<size>`, tabular figures | `class` / `style` |
 | `TableHeader` | A column; with `sticky`, `position: sticky; top: 0` and its fill | `class` / `style` |
 | `TableBody`, `TableFooter` | A column | `class` / `style` |
 | `TableRow` | A row: min height, bottom edge, hover and selected fills | `class` / `style` |
@@ -199,7 +199,7 @@ No variants.
 
 | Part | In classes | This library |
 |---|---|---|
-| `Table` | `relative w-full overflow-x-auto` container; `w-full caption-bottom text-sm` | A column, `w-full`; text `foreground`, `font-size-<size>` (14 at `md`); no scroll container (Decisions 1) |
+| `Table` | `relative w-full overflow-x-auto` container; `w-full caption-bottom text-sm` | A column, `w-full`; text `foreground`, `font-size-<size>` (14 at `md`), tabular figures (`tabular-nums`, so a column of numbers lines up); no scroll container (Decisions 1) |
 | `TableHeader` | `[&_tr]:border-b` | Its rows keep their bottom edge (the line under the titles); no fill unless `sticky` |
 | `TableBody` | `[&_tr:last-child]:border-0` | The last row draws no bottom edge |
 | `TableFooter` | `border-t bg-muted/50 font-medium [&>tr]:last:border-b-0` | Top edge `border-width` × `table-border`, fill `table-footer`, `font-weight-medium`; its last row no bottom edge |
@@ -226,7 +226,8 @@ centers its content, so it is not needed.
   tables use 26 / 30 / 32 / 40).
 - Heights are minimums: a cell with an avatar and two lines makes its row taller, keeping `table-cell-padding-y` above
   and below.
-- Type is `font-size-<size>`, its line height foundation's `line_height`; an icon in a cell without a size takes
+- Type is `font-size-<size>`, its line height foundation's `line_height`, its figures tabular, so a column of numbers
+  at the end (`items-end`) lines up digit under digit; an icon in a cell without a size takes
   `icon-size-<size>` (the `Size` context, as in a `Button`).
 
 ### Sticky header
