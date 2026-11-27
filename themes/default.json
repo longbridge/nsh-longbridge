@@ -173,7 +173,7 @@
       "menu-item-font-size-lg": "calc(var(--font-size-lg))",
       "menu-item-padding-x": "calc(var(--spacing) * 2)",
       "menu-item-gap": "calc(var(--spacing) * 2)",
-      "menu-item-radius": "calc(var(--popover-radius) - var(--menu-padding))",
+      "menu-item-radius": "calc(var(--popover-radius) - var(--menu-padding) - var(--border-width))",
       "menu-shortcut-font-size": "12px",
       "menu-sheet-radius": "calc(var(--radius-lg))",
       "menu-sheet-padding": "calc(var(--spacing) * 2)",
