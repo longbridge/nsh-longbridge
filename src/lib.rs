@@ -115,6 +115,14 @@ pub use crate::{
             field_title,
         },
         input::{AutoComplete, Input, InputApi, InputElement, InputEvent, InputProps, input},
+        input_group::{
+            InputGroup, InputGroupAddon, InputGroupAddonElement, InputGroupAddonProps,
+            InputGroupAlign, InputGroupButton, InputGroupButtonElement, InputGroupButtonEvent,
+            InputGroupButtonProps, InputGroupElement, InputGroupPasswordToggle,
+            InputGroupPasswordToggleElement, InputGroupPasswordToggleEvent,
+            InputGroupPasswordToggleProps, InputGroupProps, input_group, input_group_addon,
+            input_group_button, input_group_password_toggle,
+        },
         kbd::{
             Kbd, KbdElement, KbdGroup, KbdGroupElement, KbdGroupProps, KbdProps, kbd, kbd_group,
         },
@@ -246,6 +254,10 @@ fn native(registry: &mut Registry) {
         .register::<FieldTitle>()
         .register::<Icon>()
         .register::<Input>()
+        .register::<InputGroup>()
+        .register::<InputGroupAddon>()
+        .register::<InputGroupButton>()
+        .register::<InputGroupPasswordToggle>()
         .register::<Kbd>()
         .register::<KbdGroup>()
         .register::<Label>()

@@ -184,6 +184,10 @@ pub enum Label {
     /// (a creatable combobox's); `{query}` stands for it (left out, the
     /// query follows the words).
     Create,
+    /// "Show password": an input group's password toggle (its pressed state
+    /// says whether it shows).
+    #[prop(rename = "show-password")]
+    ShowPassword,
 }
 
 impl Label {
@@ -245,6 +249,7 @@ impl Label {
         Label::Apply,
         Label::Search,
         Label::Create,
+        Label::ShowPassword,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -306,6 +311,7 @@ impl Label {
             Label::Apply => "apply",
             Label::Search => "search",
             Label::Create => "create",
+            Label::ShowPassword => "show-password",
         }
     }
 
@@ -368,6 +374,7 @@ impl Label {
             Label::Apply => "Apply",
             Label::Search => "Search",
             Label::Create => "Create “{query}”",
+            Label::ShowPassword => "Show password",
         }
     }
 

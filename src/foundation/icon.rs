@@ -77,6 +77,18 @@ pub enum IconName {
     /// `calendar`: a date picker's field.
     #[prop(rename = "calendar")]
     Calendar,
+    /// `eye`: show a password (`InputGroupPasswordToggle`).
+    #[prop(rename = "eye")]
+    Eye,
+    /// `eye-off`: a password shown, to hide again.
+    #[prop(rename = "eye-off")]
+    EyeOff,
+    /// `search`: a search field.
+    #[prop(rename = "search")]
+    Search,
+    /// `copy`: copy to the clipboard.
+    #[prop(rename = "copy")]
+    Copy,
 }
 
 nsh_core::static_reactive!(IconName: IconName);
@@ -105,6 +117,10 @@ impl IconName {
             IconName::LayoutDashboard => include_str!("icons/layout-dashboard.svg"),
             IconName::Activity => include_str!("icons/activity.svg"),
             IconName::Calendar => include_str!("icons/calendar.svg"),
+            IconName::Eye => include_str!("icons/eye.svg"),
+            IconName::EyeOff => include_str!("icons/eye-off.svg"),
+            IconName::Search => include_str!("icons/search.svg"),
+            IconName::Copy => include_str!("icons/copy.svg"),
         }
     }
 }

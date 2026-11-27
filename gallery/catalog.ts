@@ -19,6 +19,7 @@ import { FieldPage } from "./pages/field";
 import { HomePage } from "./pages/home";
 import { IconsPage } from "./pages/icons";
 import { InputPage } from "./pages/input";
+import { InputGroupPage } from "./pages/input-group";
 import { KbdPage } from "./pages/kbd";
 import { LabelPage } from "./pages/label";
 import { PaginationPage } from "./pages/pagination";
@@ -79,6 +80,7 @@ export const catalog: PageGroup[] = [
       { id: "dropdown-menu", label: "Dropdown Menu", page: DropdownMenuPage },
       { id: "field", label: "Field", page: FieldPage },
       { id: "input", label: "Input", page: InputPage },
+      { id: "input-group", label: "Input Group", page: InputGroupPage },
       { id: "kbd", label: "Kbd", page: KbdPage },
       { id: "label", label: "Label", page: LabelPage },
       { id: "pagination", label: "Pagination", page: PaginationPage },

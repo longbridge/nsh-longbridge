@@ -14,6 +14,7 @@ pub mod dialog;
 pub mod dropdown_menu;
 pub mod field;
 pub mod input;
+pub mod input_group;
 pub mod kbd;
 pub mod label;
 pub mod pagination;
