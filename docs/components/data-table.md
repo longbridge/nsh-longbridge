@@ -212,7 +212,7 @@ The rows, titles and cells read `Table`'s tokens ([Table](table.md#tokens)): `ta
 |---|---|---|---|
 | `data-table-border` | color | `table-border` |  |
 | `data-table-radius` | length | `radius-md` | 8 |
-| `data-table-row-odd` | color | `muted × 30%` |  |
+| `data-table-row-odd` | color | `muted × 50%` |  |
 | `data-table-sort-foreground` | color | `muted-foreground` |  |
 | `data-table-resize-handle-hover` | color | `border` |  |
 | `data-table-move-indicator` | color | `ring` |  |

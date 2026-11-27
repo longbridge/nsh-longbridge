@@ -55,7 +55,7 @@ tokens! {
     /// The corner radius of the table's box.
     DATA_TABLE_RADIUS: Length = "data-table-radius" => |t| t.length(RADIUS_MD),
     /// The fill of odd rows with `stripe`.
-    DATA_TABLE_ROW_ODD: Color = "data-table-row-odd" => |t| t.color(MUTED).opacity(0.3),
+    DATA_TABLE_ROW_ODD: Color = "data-table-row-odd" => |t| t.color(MUTED).opacity(0.5),
     /// A sort button's chevrons (the direction in use takes
     /// `table-head-foreground`).
     DATA_TABLE_SORT_FOREGROUND: Color = "data-table-sort-foreground" => |t| t.color(MUTED_FOREGROUND),
