@@ -559,7 +559,7 @@ pub struct DialogContentProps {
 }
 
 /// A dialog's overlay and panel: put it in a `Dialog`, its parts in it.
-/// Outside a `Dialog` it draws its panel in place.
+/// Outside a `Dialog` it draws its panel in place (a preview of the look).
 #[component]
 pub fn DialogContent(props: DialogContentProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
@@ -572,13 +572,9 @@ pub fn DialogContent(props: DialogContentProps, _cx: Scope<NoEvent>) -> impl Int
         close_style: props.close_style,
         children: props.children,
     };
-    content(
-        t,
-        parts,
-        props.show_close_button,
-        move || t.length(DIALOG_MAX_WIDTH),
-        "DialogContent",
-    )
+    content(t, parts, props.show_close_button, move || {
+        t.length(DIALOG_MAX_WIDTH)
+    })
 }
 
 /// The styled parts of a dialog's content.
@@ -600,15 +596,11 @@ pub(crate) fn content(
     parts: Parts,
     close_button: impl IntoReactive<bool> + 'static,
     max_width: impl Fn() -> Points + Copy + 'static,
-    name: &'static str,
 ) -> AnyElement {
     let close_button = close_button.into_reactive();
+    // Outside a dialog (a preview, a page that shows the look): the panel
+    // in place, its buttons closing nothing.
     let Some(d) = dialog_context() else {
-        if cfg!(debug_assertions) {
-            log::warn!(
-                "nsh-longbridge: {name} is not inside a dialog: its panel is drawn in place"
-            );
-        }
         return panel(t, parts, max_width)
             .child(when(
                 move || close_button.get(),

@@ -62,7 +62,8 @@ Dialog                        root: the open state, a view holding the trigger (
 ```
 
 `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter` and `DialogClose` are parts the app places in
-`DialogContent`, in its order.
+`DialogContent`, in its order. `DialogContent` (and `AlertDialogContent`) outside a dialog draws its panel in place,
+without the overlay: a preview of the look (the gallery's scenes), its buttons closing nothing.
 
 ### Differs from shadcn's structure
 

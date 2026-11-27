@@ -177,7 +177,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps, _cx: Scope<NoEvent>) -
             t.length(DIALOG_MAX_WIDTH)
         }
     };
-    content(t, parts, false, max_width, "AlertDialogContent")
+    content(t, parts, false, max_width)
 }
 
 /// Whether the current header has an `AlertDialogMedia`.
