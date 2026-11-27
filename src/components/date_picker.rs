@@ -88,6 +88,21 @@ tokens! {
 /// The field's format without `dateFormat`: `Oct 28, 2026`.
 const DATE_FORMAT: &str = "%b %-d, %Y";
 
+/// `value` as text in `format` (`chrono`'s), `None` until complete: a
+/// single date as `nsh/base` writes it, a range's ends joined by the
+/// library's `value-range` words (`Oct 5, 2026 – Oct 9, 2026`), as a
+/// slider's two values, so translators control the dash. Every place the
+/// library shows the value as text goes through it.
+fn shown_text(value: DateTime, format: &str) -> Option<SharedString> {
+    match value {
+        DateTime::Range(Some(start), Some(end)) => Some(labels::range(
+            &start.format(format).to_string(),
+            &end.format(format).to_string(),
+        )),
+        value => value.format(format),
+    }
+}
+
 /// The props of [`DatePicker`].
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct DatePickerProps {
@@ -478,9 +493,7 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
     if terminal {
         // `nsh/base`'s terminal calendar and marks, the value as text.
         let shown = move || {
-            current
-                .get()
-                .format(&format.get())
+            shown_text(current.get(), &format.get())
                 .or_else(|| props.placeholder.get())
                 .unwrap_or_else(|| labels::text(Label::PickADate))
         };
@@ -715,7 +728,7 @@ fn field_trigger(
     let height = move || t.length(input::height_token(size()));
     let font_size = move || t.length(input::font_size_token(size()));
     let invalid = move || props.invalid.get() || joined.invalid();
-    let shown = computed(move || format.with(|f| current.get().format(f)));
+    let shown = computed(move || format.with(|f| shown_text(current.get(), f)));
     let color = move || {
         if shown.with(Option::is_some) {
             t.color(INPUT_FOREGROUND)
@@ -1335,7 +1348,7 @@ fn confirmed(
                 .child(apply_button)
                 .into_element();
         }
-        let summary = computed(move || pending.get().format(&format.get()));
+        let summary = computed(move || shown_text(pending.get(), &format.get()));
         view()
             .flex_col()
             .gap(gap)
@@ -1424,13 +1437,12 @@ fn confirmed(
                 .disabled(disabled)
                 .focusable(move || !disabled())
                 .accessibility_value(move || {
-                    current
-                        .get()
-                        .format(&format.get())
-                        .map(|text| nsh_core::AccessibilityValue {
+                    shown_text(current.get(), &format.get()).map(|text| {
+                        nsh_core::AccessibilityValue {
                             text: Some(text.as_str().into()),
                             ..nsh_core::AccessibilityValue::default()
-                        })
+                        }
+                    })
                 })
                 .on_layout(move |frame: &Bounds<Points>| width.set(Some(frame.size.width)))
                 .on_focus(move || focused.set(true))
@@ -1622,7 +1634,7 @@ fn confirm_preset(
             }
             shown => shown,
         };
-        shown.format(&format.get())
+        shown_text(shown, &format.get())
     };
     let lit = move || pending.get().date() == shaped(value, range.get()).date();
     view()
