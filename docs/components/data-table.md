@@ -349,6 +349,13 @@ library, whose TypeScript declarations declare them too (as `Select`'s `SelectIt
    on the app's rows through `checkedRows`, the events' column indexes leave the library's column out, and the boxes
    are no Tab stops. **Verified** but the last: a box's press reports the data row, a sort keeps the boxes on the
    app's rows, a row press reports the app's column. The boxes stay Tab stops (2): no fallback is known.
+7. **The fixed columns' edge runs past the last row.** `nsh/base` draws the `fixedEdge` line twice: in each row, and
+   once over the whole body, top to bottom, so in a table taller than its rows the line goes on through the room
+   below the last row (the checkbox column's edge too, as that column is fixed). Both are the one `fixedEdge` part,
+   so the library cannot style the body's line alone; drawing the edge on the last fixed column's cells instead
+   would change what `fixedEdge` means and fight a selected cell's outline. Needs a separate part for the body's
+   line (or a way to end it at the last row) in `nsh/base`. Until then a table that is mostly empty shows the line
+   below its rows; a table whose rows fill it does not.
 
 ## Decisions
 
