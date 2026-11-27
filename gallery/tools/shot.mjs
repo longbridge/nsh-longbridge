@@ -1,10 +1,19 @@
 // Screenshots of the gallery's web build through Chrome's DevTools protocol
-// (Node's own WebSocket, no packages): `node tools/shot.mjs <url> <out.png>
+// (Node's own WebSocket, no packages). Serve the build with `tools/serve.mjs`,
+// then shoot a page by its path, with the theme in the query
+// (`http://127.0.0.1:8080/nsh-longbridge/button?preset=blue&appearance=dark`;
+// the site's root is the home page): `node tools/shot.mjs <url> <out.png>
 // [--dark] [--size 1280x860] [--wait 6000] [--click x,y]... [--hover x,y]
-// [--key Tab]... [--frames 3]` (points in CSS pixels; `CHROME` names another
-// browser). With `--frames n`, n shots scrolled a screen apart, written as
-// `<out>-1.png` … `<out>-n.png` (a tall page in frames, as a very tall
-// window renders blank).
+// [--key Tab]... [--frames 3] [--times 2000,4500] [--reduce-motion]` (points in CSS pixels;
+// `CHROME` names another browser). With `--frames n`, n shots scrolled a
+// screen apart, written as `<out>-1.png` … `<out>-n.png` (a tall page in
+// frames, as a very tall window renders blank). With `--times`, one shot
+// at each of those milliseconds after the wait, `<out>-<ms>.png`: frames of
+// something that moves by itself. Also: `--throttle kbps,latency` (a slow
+// network: shots and times count from the start of the load with `--wait 0`),
+// `--no-js`, `--pre <js>` (run in every document before its scripts),
+// `--eval <js>`... (run in the page after the clicks), `--after <js>`... (after the shots), `--scroll y` and
+// `--report` (bytes over the wire, the layout shift and the time to `load`), `--gl` (WebGL2 in software).
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -22,7 +31,10 @@ const chrome = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/M
 // its profile, so runs side by side never reach each other's browser.
 const profile = mkdtempSync(join(tmpdir(), "nlb-chrome-"));
 const proc = spawn(chrome, ["--headless=new", "--remote-debugging-port=0", "--hide-scrollbars",
-  `--user-data-dir=${profile}`, `--window-size=${width},${height}`, "about:blank"], { stdio: "ignore" });
+  `--user-data-dir=${profile}`, `--window-size=${width},${height}`,
+  // `--gl`: WebGL2 through the software renderer (plain headless Chrome has none).
+  ...(flag("--gl") ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] : []),
+  "about:blank"], { stdio: "ignore" });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let port, target;
 for (let i = 0; i < 50 && !target; i++) {
@@ -39,11 +51,34 @@ let id = 0;
 const pending = new Map();
 ws.addEventListener("message", (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } });
 const send = (method, params = {}) => new Promise((r) => { const i = ++id; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
-await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 2, mobile: false });
-await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: flag("--dark") ? "dark" : "light" }] });
+await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: Number(opt("--scale", "2")), mobile: false });
+await send("Emulation.setEmulatedMedia", {
+  features: [
+    { name: "prefers-color-scheme", value: flag("--dark") ? "dark" : "light" },
+    { name: "prefers-reduced-motion", value: flag("--reduce-motion") ? "reduce" : "no-preference" },
+  ],
+});
 await send("Page.enable");
+await send("Network.enable");
+let bytes = 0, requests = 0;
+const urls = new Map(), loaded = [];
+ws.addEventListener("message", (e) => {
+  const m = JSON.parse(e.data);
+  if (m.method === "Network.requestWillBeSent") urls.set(m.params.requestId, m.params.request.url);
+  if (m.method === "Network.loadingFinished") { bytes += m.params.encodedDataLength; requests++; loaded.push([urls.get(m.params.requestId), m.params.encodedDataLength]); }
+});
+const throttle = opt("--throttle");
+if (throttle) {
+  const [kbps, latency] = throttle.split(",").map(Number);
+  await send("Network.emulateNetworkConditions", { offline: false, latency, downloadThroughput: (kbps * 1000) / 8, uploadThroughput: (kbps * 1000) / 8 });
+}
+if (flag("--no-js")) await send("Emulation.setScriptExecutionDisabled", { value: true });
+await send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__cls=0;try{new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:'layout-shift',buffered:true})}catch{}` });
+for (const pre of all("--pre")) await send("Page.addScriptToEvaluateOnNewDocument", { source: pre });
+const started = Date.now();
 await send("Page.navigate", { url });
 await sleep(wait);
+const evaluate = async (expression) => (await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
 for (const c of all("--click")) {
   const [x, y] = c.split(",").map(Number);
   for (const type of ["mouseMoved", "mousePressed", "mouseReleased"]) {
@@ -56,6 +91,9 @@ for (const k of all("--key")) {
   await send("Input.dispatchKeyEvent", { type: "keyUp", key: k, code: k, windowsVirtualKeyCode: k === "Tab" ? 9 : 0 });
   await sleep(300);
 }
+for (const js of all("--eval")) { const v = await evaluate(js); if (v !== undefined) console.log(`eval ${typeof v === "string" ? v : JSON.stringify(v)}`); await sleep(Number(opt("--eval-wait", "700"))); }
+const scroll = opt("--scroll");
+if (scroll) { await evaluate(`window.scrollTo(0, ${scroll})`); await sleep(900); }
 const hover = opt("--hover");
 if (hover) { const [x, y] = hover.split(",").map(Number); await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y }); await sleep(500); }
 const frames = Number(opt("--frames", "0"));
@@ -64,7 +102,16 @@ const capture = async (path) => {
   writeFileSync(path, Buffer.from(shot.result.data, "base64"));
   console.log(`wrote ${path}`);
 };
-if (frames > 0) {
+const times = opt("--times");
+if (times) {
+  const stem = out.replace(/\.png$/, "");
+  // Each from the same start, however long the captures before it took.
+  const from = Date.now();
+  for (const t of times.split(",").map(Number)) {
+    await sleep(Math.max(0, from + t - Date.now()));
+    await capture(`${stem}-${t}.png`);
+  }
+} else if (frames > 0) {
   const stem = out.replace(/\.png$/, "");
   for (let i = 1; i <= frames; i++) {
     await capture(`${stem}-${i}.png`);
@@ -80,6 +127,12 @@ if (frames > 0) {
   }
 } else {
   await capture(out);
+}
+for (const js of all("--after")) { const v = await evaluate(js); if (v !== undefined) console.log(`after ${typeof v === "string" ? v : JSON.stringify(v)}`); }
+if (flag("--report")) {
+  const t = await evaluate("JSON.stringify({cls: window.__cls, load: performance.getEntriesByType('navigation')[0]?.loadEventEnd})");
+  if (flag("--requests")) for (const [u, b] of loaded) console.log(`  ${String(b).padStart(9)} ${u}`);
+  console.log(`report ${JSON.stringify({ bytes, requests, after: Date.now() - started, ...JSON.parse(t || "{}") })}`);
 }
 ws.close();
 proc.kill();

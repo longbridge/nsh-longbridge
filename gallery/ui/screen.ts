@@ -8,6 +8,9 @@ export const compact = () => windowSize().width < 900;
 /** Phone widths: the header keeps its essentials. */
 export const narrow = () => windowSize().width < 640;
 
+/** The smallest phones: the header's brand keeps the logo without the "NSH" beside it. */
+export const tiny = () => windowSize().width < 380;
+
 /** The page's side margins and the sidebar's width, as the shell lays them out. */
 export const pagePadding = () => (compact() ? 20 : 48);
 const sidebarWidth = 256;
@@ -26,3 +29,10 @@ export const columnWidth = (width: number, columns: number, gap: number) => Math
  * window's edge as the scene scrolls away. Back to 0 on each page.
  */
 export const pageScroll = signal(0);
+
+/**
+ * Whether a key was pressed anywhere in the window: what a scene that plays by
+ * itself (the home page's) checks to stop for good, so it never moves the
+ * keyboard focus of someone using the keyboard or a screen reader.
+ */
+export const keyboardUsed = signal(false);
