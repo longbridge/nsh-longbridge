@@ -213,7 +213,8 @@ and the open state:
   ellipsis, `flex: 1`, start-aligned). Text and icon are `input-foreground` with a value, both
   `input-placeholder-foreground` without one (the whole field reads empty). Regular weight.
 - Width: as wide as its content, as Select's (`w-fit`); an app sets a width (`w-[240px]`, `w-[280px]`) with `class`
-  so that the field keeps its width as the value changes.
+  so that the field keeps its width as the value changes. Beside a label in a horizontal `Field` it shrinks to share
+  the row (`Joined::in_row`, [Field](field.md)), its value truncated.
 - The `calendar` icon is lucide's `calendar` (added to `foundation`'s icons).
 
 ### The popup

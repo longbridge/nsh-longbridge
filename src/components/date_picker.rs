@@ -408,9 +408,16 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
         })
         .on_cancel(move || cx.emit(DatePickerEvent::Cancel))
         // As wide as its content where a column stretches its children
-        // (`w-fit`), while a row's `items-center` still centers it. The
+        // (`w-fit`), while a row's `items-center` still centers it; beside
+        // a label in a horizontal field, it shrinks to share the row. The
         // app's class goes over it.
-        .app_class(Some(SharedString::from("w-fit")));
+        .app_class(move || {
+            Some(SharedString::from(if joined.in_row() {
+                "w-fit min-w-0 shrink"
+            } else {
+                "w-fit"
+            }))
+        });
     if terminal {
         // `nsh/base`'s terminal calendar and marks, the value as text.
         let shown = move || {

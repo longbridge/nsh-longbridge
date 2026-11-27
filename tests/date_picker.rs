@@ -20,7 +20,7 @@ use nsh_longbridge::{
     Size, TimePrecision, button,
     chrono::NaiveDate,
     components::{calendar::CALENDAR_SELECTED, date_picker::DATE_PICKER_SEGMENT_FOCUS},
-    date_picker,
+    date_picker, field, field_label,
     foundation::field::{INPUT_BORDER, INPUT_BORDER_FOCUS, INPUT_PLACEHOLDER_FOREGROUND},
     label,
     theme::semantic::POPOVER,
@@ -477,4 +477,31 @@ fn tsx_gets_the_value_type_and_the_ref() {
     ] {
         assert!(ts.contains(wanted), "{wanted} in:\n{ts}");
     }
+}
+
+/// A date picker beside a long label in a narrow horizontal field.
+#[component]
+fn Beside() -> impl IntoElement {
+    view().p(px(20.0)).w(px(220.0)).child(
+        field()
+            .orientation(nsh_longbridge::FieldOrientation::Horizontal)
+            .child(field_label().child(text("Due date of the quarterly report")))
+            .child(date_picker().accessibility_label("Due")),
+    )
+}
+
+#[test]
+fn in_a_horizontal_field_it_shrinks_to_share_the_row() {
+    let app = start::<Beside>(true);
+    let picker = bounds(&app, &combobox("Due"));
+    let label = bounds(&app, "text:Due date of the quarterly report");
+    // Inside the 180-wide field, after the label and the gap.
+    assert!(
+        picker.origin.x + picker.size.width <= px(200.5),
+        "{picker:?}"
+    );
+    assert!(
+        label.origin.x + label.size.width + px(12.0) <= picker.origin.x + px(0.5),
+        "{label:?} {picker:?}"
+    );
 }
