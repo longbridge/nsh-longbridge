@@ -51,7 +51,7 @@ Names follow Tailwind 4's variables: kebab-case, without `--`.
   Line heights are no tokens: `foundation`'s `line_height(size)` pairs them as Tailwind does (12→16, 13→18, 14→20,
   16→24, 18→28).
 - **Icons**: an icon in a control is paired with its type, `icon-size-xs/sm/md/lg` = font-size − 2 / ± 0 / + 2 / + 2
-  (12 / 14 / 16 / 16, by the control's `size`; buttons keep `size-4` at every size but `xs`). An icon without
+  (12 / 14 / 16 / 16, by the control's `size`, buttons included). An icon without
   a size takes its control's; its color is its text's.
 - **Lines and focus**: `border-width` 1, `ring-width` 3, `ring-opacity` 0.5 (`focus-visible:ring-ring/50
   ring-[3px]`).
