@@ -1,0 +1,148 @@
+---
+// The demos' posters: what each demo draws when it starts, in HTML and the
+// library's tokens (`--lb-*`, per preset and appearance), so the page looks
+// finished before the wasm runs and the live demo takes its place without a
+// jump. They mirror `gallery/ui/hero-demo.tsx`, `gallery/ui/token-demo.tsx`
+// (`WorkspaceCard`) and `gallery/ui/sample.tsx` (`InviteCard`).
+import { icon } from '../lib/icons';
+import { swatches } from '../lib/theme-css';
+import { AMOUNT_MAX, amounts, COLLECTED, DUE, money, percent, presence, viewers } from '../../../gallery/ui/hero-data';
+
+export interface Props {
+  name: 'hero' | 'tokens' | 'sample';
+}
+const { name } = Astro.props;
+const radii = [2, 4.5, 7];
+// The hero's cards as the loop starts them: two viewers, the first amount, the month before the send.
+const START_AMOUNT = 1200;
+const most = Math.max(...amounts);
+const at = START_AMOUNT / AMOUNT_MAX;
+const who = presence(2);
+---
+
+{name === 'hero' && (
+  <div class="p-hero">
+    <div class="p-hero__scope">
+    <div class="lb lb-card p-hero__sheet">
+      <div class="lb-card__header">
+        <div class="lb-card__title">New invoice</div>
+        <div class="lb-card__desc">INV-2042, billed from Northwind Studio</div>
+      </div>
+      <div class="lb-card__content p-gap-5">
+        <div class="lb-field">
+          <div class="lb-label">Customer</div>
+          <div class="lb-input lb-input--icon"><span class="lb-placeholder">Search customers</span><Fragment set:html={icon('chevronDown', 16, 'lb-muted')} /></div>
+        </div>
+        <div class="p-hero__row">
+          <div class="lb-field">
+            <div class="lb-label">Due date</div>
+            <div class="lb-input lb-picker"><Fragment set:html={icon('calendar', 16, 'lb-muted')} /><span class="lb-placeholder">Pick a date</span></div>
+          </div>
+          <div class="lb-field">
+            <div class="lb-label lb-between"><span>Amount</span><span class="tabular">$1,200</span></div>
+            <div class="lb-slider-row"><div class="lb-slider" style="--at:20%"><i></i><b></b></div></div>
+          </div>
+        </div>
+        <div class="lb-between">
+          <div class="lb-label">Email it to the customer</div>
+          <span class="lb-switch is-on"><i></i></span>
+        </div>
+      </div>
+      <div class="lb-card__footer">
+        <span class="lb-button lb-button--outline">Cancel</span>
+        <span class="lb-button is-disabled">Send invoice</span>
+      </div>
+    </div>
+    <div class="p-float p-float--presence">
+      <div class="lb lb-card p-card p-presence">
+        <span class="p-avatars">{viewers.slice(0, 2).map((v) => <img src={v.photo} alt="" />)}</span>
+        <span class="p-lines"><b>{who.title}</b><small>{who.line}</small></span>
+      </div>
+    </div>
+    <div class="p-float p-float--amounts">
+      <div class="lb lb-card p-card p-amounts">
+        <span class="p-lines"><b>Against this quarter</b><small>186 invoices, most near $2,000</small></span>
+        <div class="p-histogram" style={`--at:${at * 100}%`}>
+          <div class="p-bars">
+            {amounts.map((n, i) => <i class={(i + 1) / amounts.length <= at ? 'is-in' : ''} style={`height:${Math.max(2, (n / most) * 40)}px`}></i>)}
+          </div>
+          <div class="lb-slider-row p-histogram__track"><div class="lb-slider" style={`--at:${at * 100}%`}><i></i><b></b></div></div>
+          <span class="p-bubble" style={`left:${at * 100}%`}>{money(START_AMOUNT)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="p-float p-float--collected">
+      <div class="lb lb-card p-card p-collected">
+        <span class="lb-between"><b>Collected in December</b><b class="tabular">{percent(COLLECTED)}</b></span>
+        <span class="p-progress"><i style={`width:${(COLLECTED / DUE) * 100}%`}></i></span>
+        <small class="tabular">{`${money(COLLECTED)} of ${money(DUE)}`}</small>
+      </div>
+    </div>
+    </div>
+    <div class="p-controls">
+      <div class="p-controls__swatches">
+        {swatches().map((s) => (
+          <span class="p-swatch" data-preset-swatch={s.id} data-on={String(s.id === 'neutral')} style={`--sw-light:${s.light};--sw-dark:${s.dark}`}><i></i></span>
+        ))}
+      </div>
+      <span class="p-divider p-wide"></span>
+      <div class="p-controls__rest">
+        <div class="p-glass-group">
+          {radii.map((r, i) => <span class={`p-glass ${i === 1 ? 'is-on' : ''}`}><i class="p-corner" style={`border-radius:${r}px`}></i></span>)}
+        </div>
+        <span class="p-divider"></span>
+        <div class="p-glass-group">
+          <span class="p-glass p-glass--light"><Fragment set:html={icon('sun', 14)} /></span>
+          <span class="p-glass p-glass--dark"><Fragment set:html={icon('moon', 14)} /></span>
+        </div>
+        <span class="p-divider"></span>
+        <span class="p-glass"><Fragment set:html={icon('pause', 13)} /></span>
+      </div>
+    </div>
+  </div>
+)}
+
+{name === 'tokens' && (
+  <div class="p-pad p-pad--tokens">
+    <div class="lb lb-card p-workspace">
+      <div class="lb-card__header">
+        <div class="lb-card__title">Workspace</div>
+        <div class="lb-card__desc">How your team sees Northwind Studio.</div>
+      </div>
+      <div class="lb-card__content p-gap-5">
+        <div class="lb-tabs"><span class="is-on">General</span><span>Members</span><span>Billing</span></div>
+        <div class="lb-field">
+          <div class="lb-label">Name</div>
+          <div class="lb-input">Northwind Studio</div>
+        </div>
+        <div class="lb-between">
+          <div class="lb-row"><span class="lb-label">Weekly digest</span><span class="lb-badge">New</span></div>
+          <span class="lb-switch is-on"><i></i></span>
+        </div>
+      </div>
+      <div class="lb-card__footer">
+        <span class="lb-button lb-button--outline">Cancel</span>
+        <span class="lb-button">Save</span>
+      </div>
+    </div>
+  </div>
+)}
+
+{name === 'sample' && (
+  <div class="p-pad p-pad--sample">
+    <div class="lb lb-card lb-card--lifted p-invite">
+      <div class="lb-card__header">
+        <div class="lb-card__title">Invite a teammate</div>
+        <div class="lb-card__desc">They join every project.</div>
+      </div>
+      <div class="lb-card__content p-gap-2">
+        <div class="lb-label">Email</div>
+        <div class="lb-input"><span class="lb-placeholder">ada@northwind.dev</span></div>
+      </div>
+      <div class="lb-card__footer">
+        <span class="lb-button lb-button--outline">Cancel</span>
+        <span class="lb-button is-disabled">Send invite</span>
+      </div>
+    </div>
+  </div>
+)}

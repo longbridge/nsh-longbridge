@@ -1,0 +1,21 @@
+---
+// A live demo of the gallery's web build (`embed/<name>`, `gallery/embed.tsx`)
+// over its poster: the poster (an HTML lookalike in the same tokens, the
+// slot) is the page until the demo says it is ready, then the demo fades in
+// over it. `site.ts` adds the iframe, so with JavaScript off, or before the
+// wasm arrives, the poster is what shows.
+export interface Props {
+  name: 'hero' | 'tokens' | 'sample';
+  label: string;
+  /** Load the demo with the page (the hero), not as it nears the view. */
+  eager?: boolean;
+  class?: string;
+}
+const { name, label, eager = false, class: cls = '' } = Astro.props;
+---
+
+<div class={`demo ${cls}`} data-demo={name} data-label={label} data-eager={eager ? '1' : undefined}>
+  <div class="demo__poster" aria-hidden="true" inert>
+    <slot />
+  </div>
+</div>
