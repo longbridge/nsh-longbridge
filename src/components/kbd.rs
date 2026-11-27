@@ -4,7 +4,7 @@
 use nsh_core::prelude::*;
 
 use crate::{
-    components::tooltip::{TOOLTIP_FOREGROUND, in_tooltip},
+    components::tooltip::{TOOLTIP_FOREGROUND, TOOLTIP_PADDING_Y, TOOLTIP_RADIUS, in_tooltip},
     foundation::{
         icon::{provide_icon_size, provide_text_color},
         size::Size,
@@ -12,7 +12,7 @@ use crate::{
     },
     theme::{
         seeds::SPACING,
-        semantic::{FONT_SIZE_XS, MUTED, MUTED_FOREGROUND, RADIUS_SM},
+        semantic::{FONT_SIZE_XS, MUTED, MUTED_FOREGROUND, RADIUS_SM, RADIUS_XS},
         theme,
     },
     tokens,
@@ -30,6 +30,11 @@ tokens! {
     KBD_TOOLTIP_FOREGROUND: Color = "kbd-tooltip-foreground" => |t| t.color(TOOLTIP_FOREGROUND),
     /// The cap's corner radius.
     KBD_RADIUS: Length = "kbd-radius" => |t| t.length(RADIUS_SM),
+    /// The cap's corner radius inside a tooltip: concentric with the
+    /// bubble, which it fills from top to bottom but for its padding
+    /// (`tooltip-radius` − `tooltip-padding-y`), and no less than
+    /// `radius-xs`, so a cap never turns square.
+    KBD_TOOLTIP_RADIUS: Length = "kbd-tooltip-radius" => |t| t.max(t.length(TOOLTIP_RADIUS) - t.length(TOOLTIP_PADDING_Y), t.length(RADIUS_XS)),
     /// The cap's height, and its least width (a single character is
     /// square).
     KBD_HEIGHT: Length = "kbd-height" => |t| t.length(SPACING) * 5.0,
@@ -68,7 +73,13 @@ pub fn Kbd(props: KbdProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         .h(move || t.length(KBD_HEIGHT))
         .min_w(move || t.length(KBD_HEIGHT))
         .px(move || t.length(KBD_PADDING_X))
-        .rounded(move || t.length(KBD_RADIUS))
+        .rounded(move || {
+            if tooltip {
+                t.length(KBD_TOOLTIP_RADIUS)
+            } else {
+                t.length(KBD_RADIUS)
+            }
+        })
         .bg(move || {
             if tooltip {
                 t.color(KBD_TOOLTIP)

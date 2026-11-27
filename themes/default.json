@@ -108,6 +108,7 @@
       "card-title-font-size": "16px",
       "card-description-font-size": "14px",
       "kbd-radius": "calc(var(--radius-sm))",
+      "kbd-tooltip-radius": "calc(max(var(--tooltip-radius) - var(--tooltip-padding-y), var(--radius-xs)))",
       "kbd-height": "calc(var(--spacing) * 5)",
       "kbd-padding-x": "calc(var(--spacing))",
       "kbd-font-size": "calc(var(--font-size-xs))",
