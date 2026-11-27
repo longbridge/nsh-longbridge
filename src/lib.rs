@@ -141,7 +141,8 @@ pub use crate::{
         separator::{Separator, SeparatorElement, SeparatorProps, separator},
         skeleton::{Skeleton, SkeletonElement, SkeletonProps, skeleton},
         slider::{
-            Slider, SliderElement, SliderEvent, SliderProps, SliderScale, SliderValue, slider,
+            Slider, SliderBubble, SliderElement, SliderEvent, SliderFormat, SliderMark,
+            SliderProps, SliderScale, SliderValue, slider,
         },
         spinner::{Spinner, SpinnerElement, SpinnerProps, spinner},
         switch::{Switch, SwitchApi, SwitchElement, SwitchEvent, SwitchProps, switch},
