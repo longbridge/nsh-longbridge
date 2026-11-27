@@ -3,6 +3,8 @@
 A component library for [NSH](https://github.com/longbridge/nsh) apps: a neutral look on `nsh/base`'s behavior, one
 Rust implementation for TSX and Rust apps, customizable through design tokens.
 
+See every component, and make a theme, in the [gallery](https://longbridge.github.io/nsh-longbridge/).
+
 ## Install
 
 ```sh
