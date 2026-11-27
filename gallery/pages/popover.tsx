@@ -30,14 +30,15 @@ const people = [
 ];
 
 export function PopoverPage() {
+  const heroShown = signal(true);
   return (
     <Page
       eyebrow="Components"
       title="Popover"
       description="Rich content in a floating panel next to the button that opened it. A press outside or Escape closes it; on touch screens it stays anchored."
     >
-      <Demo hero class="pb-64 justify-start pt-16">
-        <DimensionsPopover />
+      <Demo hero class="pb-64 justify-start pt-16" inView={heroShown.set}>
+        <DimensionsPopover shown={heroShown()} />
       </Demo>
 
       <Section title="Sides and alignment" description="On the trigger's side, flipped to the other when only that one has room; aligned to its start, center or end. Press each.">
@@ -91,15 +92,22 @@ export function PopoverPage() {
 }
 
 /** A layer's dimensions, open as the page shows. */
-function DimensionsPopover() {
+function DimensionsPopover(props: { shown: boolean }) {
   const fields = [
     { label: "Width", value: "100%" },
     { label: "Max. width", value: "300px" },
     { label: "Height", value: "25px" },
     { label: "Max. height", value: "none" },
   ];
+  // Open as the page opens, shown while its scene is in the window.
+  const open = signal(true);
   return (
-    <Popover defaultOpen class="w-80" trigger={<Button variant="outline"><Text>Open popover</Text></Button>}>
+    <Popover
+      open={open() && props.shown}
+      onOpenChange={(e) => open.set(e.open)}
+      class="w-80"
+      trigger={<Button variant="outline"><Text>Open popover</Text></Button>}
+    >
       <View class="gap-4">
         <PopoverHeader>
           <PopoverTitle>

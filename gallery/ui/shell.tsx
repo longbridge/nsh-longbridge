@@ -29,7 +29,7 @@ import {
 } from "../theme";
 import { Select } from "./controls";
 import { GalleryToaster } from "./toaster";
-import { compact, narrow, pagePadding } from "./screen";
+import { compact, narrow, pagePadding, pageScroll } from "./screen";
 import { GitHub, Glyph, Menu, Monitor, Moon, Search, Sun } from "./icons";
 
 export const REPOSITORY = "https://github.com/longbridge/nsh-longbridge";
@@ -247,8 +247,14 @@ function Content() {
       {(() => {
         const entry = pageById(route());
         const Current = entry.page;
+        pageScroll.set(0);
         return (
-          <Scroll class="flex-1" contentClass="items-center">
+          <Scroll
+            class="flex-1"
+            contentClass="items-center"
+            scrollEventThrottle={100}
+            onScroll={(e) => pageScroll.set(e.offset.y)}
+          >
             <View
               class={`w-full ${entry.wide ? "max-w-[1280px]" : "max-w-[960px]"}`}
               style={{ paddingHorizontal: pagePadding(), paddingTop: compact() ? 32 : 48, paddingBottom: 48 }}

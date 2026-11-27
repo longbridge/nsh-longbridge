@@ -1,7 +1,7 @@
 // The Kbd page: a command menu's hints, keys, groups, in a button and in a
 // tooltip.
 
-import { keymap, Text, View } from "nsh";
+import { keymap, signal, Text, View } from "nsh";
 import { Button, Kbd, KbdGroup, Separator, Tooltip } from "nsh-longbridge";
 import { Demo, Demos, Page, Section } from "../ui/layout";
 import { Glyph, Search } from "../ui/icons";
@@ -34,6 +34,7 @@ function Shortcut(props: { keys: string }) {
 }
 
 export function KbdPage() {
+  const tipShown = signal(false);
   return (
     <Page
       eyebrow="Components"
@@ -88,10 +89,10 @@ export function KbdPage() {
               </Kbd>
             </Button>
           </Demo>
-          <Demo row label="A tooltip naming its shortcut" class="pt-16">
+          <Demo row label="A tooltip naming its shortcut" class="pt-16" inView={tipShown.set}>
             <View
               tooltip={
-                <Tooltip open>
+                <Tooltip open={tipShown()}>
                   <Text>Save</Text>
                   <Kbd>
                     <Text>{keymap.label("mod+s")}</Text>

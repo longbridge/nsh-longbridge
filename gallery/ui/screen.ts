@@ -1,6 +1,6 @@
 // The window's width classes the gallery lays out by.
 
-import { windowSize } from "nsh";
+import { signal, windowSize } from "nsh";
 
 /** Below this width the sidebar goes behind a button and tables drop a column. */
 export const compact = () => windowSize().width < 900;
@@ -18,3 +18,11 @@ export const contentWidth = (wide = false) =>
 
 /** The width of each of `columns` columns `gap` apart in `width`. */
 export const columnWidth = (width: number, columns: number, gap: number) => Math.floor((width - gap * (columns - 1)) / columns);
+
+/**
+ * How far the page has scrolled (a tenth of a second behind at most): what a
+ * scene held open (a tooltip, a menu, a popover) checks to show its layer
+ * only while the scene is in the window, rather than leave it at the
+ * window's edge as the scene scrolls away. Back to 0 on each page.
+ */
+export const pageScroll = signal(0);

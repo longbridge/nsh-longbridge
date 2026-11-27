@@ -34,14 +34,16 @@ const files = [
 const folders = ["Design", "Planning", "Archive"];
 
 export function DropdownMenuPage() {
+  // The hero's menu shows while its scene is in the window.
+  const heroShown = signal(true);
   return (
     <Page
       eyebrow="Components"
       title="Dropdown Menu"
       description="Commands and settings a button opens: items with icons and shortcuts, checkbox and radio items, labels, separators and submenus. A popup at the trigger with a pointer, a sheet at the bottom of a phone."
     >
-      <Demo hero class="items-stretch justify-start">
-        <AppHeader />
+      <Demo hero class="items-stretch justify-start" inView={heroShown.set}>
+        <AppHeader shown={heroShown()} />
       </Demo>
 
       <Section
@@ -130,10 +132,10 @@ export function DropdownMenuPage() {
 
 /**
  * An app's header: the workspace, its navigation and the account menu at the
- * end, held open as the page opens (it closes as any menu does) in a frame
- * tall enough for it.
+ * end, held open as the page opens (it closes as any menu does, and shows
+ * only while `shown`: the scene in the window) in a frame tall enough for it.
  */
-function AppHeader() {
+function AppHeader(props: { shown: boolean }) {
   const last = signal("");
   const open = signal(true);
   return (
@@ -158,7 +160,7 @@ function AppHeader() {
             </>
           )}
         </View>
-        <AccountMenu open={open()} onOpenChange={(o) => open.set(o)} onSelect={(what) => last.set(what)} />
+        <AccountMenu open={open() && props.shown} onOpenChange={(o) => open.set(o)} onSelect={(what) => last.set(what)} />
       </View>
       <Text class="text-xs text-muted-foreground">{last() === "" ? "Choose an item: the menu reports it and closes." : `Chose: ${last()}`}</Text>
     </View>

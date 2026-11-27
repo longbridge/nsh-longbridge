@@ -2,8 +2,8 @@
 // caption 12), one spacing scale, hairline borders. Only theme tokens in
 // classes: the gallery looks like the library it shows.
 
-import { Text, View, type JSX } from "nsh";
-import { narrow } from "./screen";
+import { effect, Text, View, type JSX, type ViewRef, windowSize } from "nsh";
+import { narrow, pageScroll } from "./screen";
 
 /** A page: its title and one line under it, then its sections. */
 export function Page(props: { title: string; description: string; eyebrow?: string; children?: JSX.Element }) {
@@ -36,13 +36,38 @@ export function Section(props: { title: string; description?: string; children?:
   );
 }
 
+/** The header's height (`h-14`). */
+const HEADER = 56;
+
 /**
  * A scene: the components on the page's surface inside a hairline frame.
  * `hero` is the large one at the top of a component page.
  */
-export function Demo(props: { children?: JSX.Element; class?: string; hero?: boolean; label?: string; row?: boolean }) {
+export function Demo(props: {
+  children?: JSX.Element;
+  class?: string;
+  hero?: boolean;
+  label?: string;
+  row?: boolean;
+  /**
+   * Told whether the scene's top is in the window (below the header), as the page scrolls: a scene holding a layer
+   * open shows it only then, so the layer never stays at the window's edge or over the header.
+   */
+  inView?: (shown: boolean) => void;
+}) {
+  let scene: ViewRef | undefined;
+  if (props.inView) {
+    const report = props.inView;
+    effect(() => {
+      pageScroll();
+      const height = windowSize().height;
+      scene?.measure().then((m) => {
+        if (m) report(m.pagePosition.y > HEADER - 16 && m.pagePosition.y < height - 64);
+      });
+    });
+  }
   return (
-    <View class="flex-1 min-w-[240px] gap-2.5">
+    <View class="flex-1 min-w-[240px] gap-2.5" ref={(r: ViewRef) => (scene = r)}>
       <View
         class={`flex-1 rounded-xl border border-border bg-background items-center justify-center ${
           props.hero ? "min-h-[320px] p-12" : "min-h-[176px] p-8"

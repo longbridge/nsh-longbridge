@@ -18,23 +18,28 @@ const long =
   "Quarterly planning notes, including the hiring plan, the roadmap for the second half and the open questions from the offsite";
 
 export function TooltipPage() {
+  // Each scene holding its tooltips open shows them while it is in the window.
+  const hero = signal(true);
+  const sides = signal(false);
+  const save = signal(false);
+  const title = signal(false);
   return (
     <Page
       eyebrow="Components"
       title="Tooltip"
       description="A hint beside an element while the pointer rests on it or the keyboard focus is on it. Inverted, no arrow; hardly ever shown on touch screens."
     >
-      <Demo hero class="pt-20">
-        <Toolbar />
+      <Demo hero class="pt-20" inView={hero.set}>
+        <Toolbar shown={hero()} />
       </Demo>
 
       <Section title="Sides" description="Shown here held open. A tooltip flips to the other side when only that one has room.">
-        <Demo row class="gap-x-24 gap-y-20 py-20">
+        <Demo row class="gap-x-24 gap-y-20 py-20" inView={sides.set}>
           {placements.map((p) => (
             <Button
               variant="outline"
               tooltip={
-                <Tooltip placement={p} open>
+                <Tooltip placement={p} open={sides()}>
                   <Text>{p[0].toUpperCase() + p.slice(1)}</Text>
                 </Tooltip>
               }
@@ -47,10 +52,10 @@ export function TooltipPage() {
 
       <Section title="Shortcuts and long text" description="A Kbd inside takes the tooltip's colors. Long text, such as a cut label's whole title, wraps at tooltip-max-width (320).">
         <Demos>
-          <Demo row label="Save, with its shortcut" class="pt-20">
+          <Demo row label="Save, with its shortcut" class="pt-20" inView={save.set}>
             <Button
               tooltip={
-                <Tooltip open>
+                <Tooltip open={save()}>
                   <Text>Save</Text>
                   <Kbd>
                     <Text>{keymap.label("mod+s")}</Text>
@@ -61,12 +66,12 @@ export function TooltipPage() {
               <Text>Save</Text>
             </Button>
           </Demo>
-          <Demo label="A title cut short, whole in the tooltip" class="pt-28">
+          <Demo label="A title cut short, whole in the tooltip" class="pt-28" inView={title.set}>
             <View class="w-56 flex-row items-center gap-2 rounded-md border border-border px-3 py-2">
               <Text
                 class="flex-1 truncate text-sm text-foreground"
                 tooltip={
-                  <Tooltip open placement="top">
+                  <Tooltip open={title()} placement="top">
                     <Text>{long}</Text>
                   </Tooltip>
                 }
@@ -128,8 +133,8 @@ export function TooltipPage() {
   );
 }
 
-/** An editor's toolbar: icon buttons named by their tooltips, the first held open. */
-function Toolbar() {
+/** An editor's toolbar: icon buttons named by their tooltips, the first held open while `shown`. */
+function Toolbar(props: { shown: boolean }) {
   return (
     <View class="flex-row items-center gap-1 rounded-lg border border-border bg-background p-1 shadow-xs">
       {tools.map((t, i) => (
@@ -140,7 +145,7 @@ function Toolbar() {
           icon={t.icon}
           accessibilityLabel={t.label}
           tooltip={
-            <Tooltip open={i === 0 ? true : undefined}>
+            <Tooltip open={i === 0 ? props.shown : undefined}>
               <Text>{t.label}</Text>
               <Kbd>
                 <Text>{keymap.label(t.keys)}</Text>
