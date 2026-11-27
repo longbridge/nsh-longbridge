@@ -112,7 +112,9 @@ Dark has no values of its own: it takes the same roles in their dark values.
 
 - Heights are Button's (`md` is 32, a medium desktop density), so a Toggle and a Button of one `size` line up in a
   toolbar; the padding grows by half a `spacing` unit a size, tighter than Button's, as an icon toggle is a square.
-- The minimum width is the height, so an icon alone makes a square.
+- The minimum width is the height, so an icon alone makes a square. The padding counts from the outer edge: the
+  `outline` edge takes its width off it, so an icon alone is the same square in both variants (`md`: 1 + 7 + 16 + 7 +
+  1 = 32).
 - Gap and icon sizes are Button's (the gap by size Button, Toggle, a tab and Pagination share: 4 at `xs` and `sm`, 8 at
   `md` and `lg`; `icon-size-<size>`); type `font-size-<size>` at
   `font-weight-medium`, one line.

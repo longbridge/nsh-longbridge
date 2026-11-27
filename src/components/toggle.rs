@@ -210,9 +210,12 @@ pub(crate) fn draw(
             px(0.0)
         }
     };
+    // Counted from the outer edge: an outline toggle's edge takes its width
+    // off the padding, so an icon alone is as square in `outline` as in
+    // `default` (24 / 28 / 32 / 36 at any size).
     let padding_x = move || match item {
         Some(i) => t.length(i.padding_x),
-        None => t.length(padding_token(size())),
+        None => t.length(padding_token(size())) - border(),
     };
     let slop = move || {
         if let Some(given) = props.hit_slop.get() {
