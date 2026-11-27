@@ -1,5 +1,6 @@
 //! `Avatar`, `AvatarBadge`, `AvatarGroup` and `AvatarGroupCount` in a
-//! headless engine: the initials and what screen readers get, sizes, the
+//! headless engine: the initials and what screen readers get, sizes, two
+//! letters fitting at each size, the
 //! group's sizes, overlap and overflow, and a scope's tokens and the app's
 //! classes reaching the fallback.
 
@@ -156,8 +157,12 @@ fn a_group_sizes_and_overlaps_its_avatars() {
         ada.origin.x.0, group.origin.x.0,
         "the first does not overlap"
     );
-    assert_eq!(grace.origin.x.0, ada.origin.x.0 + 24.0 - 8.0);
-    assert_eq!(alan.origin.x.0, grace.origin.x.0 + 24.0 - 8.0);
+    assert_eq!(grace.origin.x.0, ada.origin.x.0 + 24.0 - 4.0);
+    assert_eq!(
+        alan.origin.x.0,
+        grace.origin.x.0 + 24.0 - 4.0,
+        "the group's overlap, not the avatar's size's"
+    );
     // The count's circle: the nearest view around its text as wide as the
     // group's avatars.
     let nodes = app.screen().layout_nodes();
@@ -171,7 +176,7 @@ fn a_group_sizes_and_overlaps_its_avatars() {
     };
     assert_eq!(
         circle.origin.x.0,
-        alan.origin.x.0 + 40.0 - 8.0,
+        alan.origin.x.0 + 40.0 - 4.0,
         "the count overlaps too"
     );
 }
@@ -202,4 +207,95 @@ fn a_scope_and_the_apps_class_reach_the_fallback() {
     assert_eq!(parent_fill(&app, "text:OS"), light(AVATAR_FALLBACK));
     assert_eq!(parent_fill(&app, "text:IS"), common::css("#2563eb"));
     assert_eq!(parent_fill(&app, "text:CW"), common::css("#16a34a"));
+}
+
+/// Two wide letters at each size, and a group of each size with a count.
+#[component]
+fn Wide() -> impl IntoElement {
+    let sizes = [
+        (Size::Xs, "Mark Wong"),
+        (Size::Sm, "Will Moss"),
+        (Size::Md, "Mary Wade"),
+        (Size::Lg, "Walt Mann"),
+    ];
+    view()
+        .items_start()
+        .children(
+            sizes
+                .into_iter()
+                .map(|(size, name)| avatar().name(name).size(size)),
+        )
+        .children(sizes.into_iter().map(|(size, _)| {
+            avatar_group()
+                .size(size)
+                .limit(1)
+                .total(9)
+                .accessibility_label(format!("{size:?} group"))
+                .overflow(avatar_group_count().child(format!("+{size:?}")))
+                .child(avatar().name("Ada Lovelace"))
+                .child(avatar().name("Grace Hopper"))
+        }))
+}
+
+/// The circle around a group's count: the nearest view around its text as
+/// wide as `side`.
+fn count_circle(app: &Headless, count: &str, side: f32) -> nsh_core::geometry::Bounds<Points> {
+    let nodes = app.screen().layout_nodes();
+    let mut id = app.screen().id(&format!("text:{count}")).unwrap();
+    loop {
+        let node = nodes.iter().find(|n| n.id == id).unwrap();
+        if node.bounds.size.width.0 == side {
+            return node.bounds;
+        }
+        id = node.parent;
+    }
+}
+
+/// The initials and a group's count are set in a size that keeps two wide
+/// letters inside the circle at every size, and in a group the next circle
+/// leaves the initials before it clear.
+#[test]
+fn two_letters_fit_at_every_size() {
+    let app = start::<Wide>(true);
+    let screen = app.screen();
+    for (name, initials, side, font) in [
+        ("Mark Wong", "MW", 20.0, 8.0),
+        ("Will Moss", "WM", 24.0, 10.0),
+        ("Mary Wade", "MW", 32.0, 14.0),
+        ("Walt Mann", "WM", 40.0, 16.0),
+    ] {
+        let label = format!("role:image[{name}] >> text:{initials}");
+        let style = screen.span_style(&label).unwrap();
+        assert_eq!(style.font_size.0, font, "{name}");
+        let width = bounds(&app, &label).size.width.0;
+        assert!(width <= side * 0.8, "{name}: {width} wide in {side}");
+    }
+    for (size, side, font) in [
+        ("Xs", 20.0, 8.0),
+        ("Sm", 24.0, 10.0),
+        ("Md", 32.0, 14.0),
+        ("Lg", 40.0, 16.0),
+    ] {
+        let count = format!("+{size}");
+        assert_eq!(
+            screen
+                .span_style(&format!("text:{count}"))
+                .unwrap()
+                .font_size
+                .0,
+            font,
+            "{size}"
+        );
+        let initials = bounds(
+            &app,
+            &format!("role:group[{size} group] >> role:image[Ada Lovelace] >> text:AL"),
+        );
+        let next = count_circle(&app, &count, side);
+        assert!(
+            initials.origin.x.0 + initials.size.width.0 <= next.origin.x.0,
+            "{size}: the initials end at {}, the next circle starts at {}",
+            initials.origin.x.0 + initials.size.width.0,
+            next.origin.x.0
+        );
+    }
 }

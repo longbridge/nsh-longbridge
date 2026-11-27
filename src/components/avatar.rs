@@ -49,14 +49,15 @@ tokens! {
     AVATAR_FALLBACK: Color = "avatar-fallback" => |t| t.color(MUTED),
     /// The fallback's text (the initials) and icons.
     AVATAR_FALLBACK_FOREGROUND: Color = "avatar-fallback-foreground" => |t| t.color(MUTED_FOREGROUND),
-    /// An extra small avatar's initials (Tailwind's `text-xs`).
-    AVATAR_FALLBACK_FONT_SIZE_XS: Length = "avatar-fallback-font-size-xs" => |t| t.px(12.0),
-    /// A small avatar's initials (`text-xs`).
-    AVATAR_FALLBACK_FONT_SIZE_SM: Length = "avatar-fallback-font-size-sm" => |t| t.px(12.0),
-    /// A medium avatar's initials (`text-sm`).
+    /// An extra small avatar's initials and a count: about two fifths of
+    /// the side, so two letters fit.
+    AVATAR_FALLBACK_FONT_SIZE_XS: Length = "avatar-fallback-font-size-xs" => |t| t.px(8.0),
+    /// A small avatar's initials and a count.
+    AVATAR_FALLBACK_FONT_SIZE_SM: Length = "avatar-fallback-font-size-sm" => |t| t.px(10.0),
+    /// A medium avatar's initials and a count (`text-sm`).
     AVATAR_FALLBACK_FONT_SIZE_MD: Length = "avatar-fallback-font-size-md" => |t| t.px(14.0),
-    /// A large avatar's initials (`text-sm`).
-    AVATAR_FALLBACK_FONT_SIZE_LG: Length = "avatar-fallback-font-size-lg" => |t| t.px(14.0),
+    /// A large avatar's initials and a count.
+    AVATAR_FALLBACK_FONT_SIZE_LG: Length = "avatar-fallback-font-size-lg" => |t| t.px(16.0),
     /// A badge's fill.
     AVATAR_BADGE: Color = "avatar-badge" => |t| t.color(PRIMARY),
     /// A badge's icon.
@@ -74,8 +75,15 @@ tokens! {
     AVATAR_RING: Color = "avatar-ring" => |t| t.color(BACKGROUND),
     /// The ring's width.
     AVATAR_RING_WIDTH: Length = "avatar-ring-width" => |t| t.px(2.0),
-    /// How far each avatar of a group lies over the one before it.
-    AVATAR_GROUP_OVERLAP: Length = "avatar-group-overlap" => |t| t.length(SPACING) * 2.0,
+    /// How far each avatar of an extra small group lies over the one before
+    /// it: less than a larger group's, so the initials before stay clear.
+    AVATAR_GROUP_OVERLAP_XS: Length = "avatar-group-overlap-xs" => |t| t.length(SPACING),
+    /// How far each avatar of a small group lies over the one before it.
+    AVATAR_GROUP_OVERLAP_SM: Length = "avatar-group-overlap-sm" => |t| t.length(SPACING),
+    /// How far each avatar of a medium group lies over the one before it.
+    AVATAR_GROUP_OVERLAP_MD: Length = "avatar-group-overlap-md" => |t| t.length(SPACING) * 2.0,
+    /// How far each avatar of a large group lies over the one before it.
+    AVATAR_GROUP_OVERLAP_LG: Length = "avatar-group-overlap-lg" => |t| t.length(SPACING) * 2.0,
 }
 
 /// The side token of `size`.
@@ -94,6 +102,15 @@ fn fallback_font_size_token(size: Size) -> Token<kind::Length> {
         AVATAR_FALLBACK_FONT_SIZE_SM,
         AVATAR_FALLBACK_FONT_SIZE_MD,
         AVATAR_FALLBACK_FONT_SIZE_LG,
+    )
+}
+
+fn group_overlap_token(size: Size) -> Token<kind::Length> {
+    size.pick(
+        AVATAR_GROUP_OVERLAP_XS,
+        AVATAR_GROUP_OVERLAP_SM,
+        AVATAR_GROUP_OVERLAP_MD,
+        AVATAR_GROUP_OVERLAP_LG,
     )
 }
 
@@ -180,7 +197,6 @@ pub fn Avatar(props: AvatarProps, cx: Scope<AvatarEvent>) -> impl IntoElement {
             .unwrap_or_default()
     });
     provide_context(AvatarSize(size));
-    let in_group = group.is_some();
     let radius = move || t.length(AVATAR_RADIUS);
     let mut root = base_avatar()
         .src(props.src)
@@ -197,10 +213,15 @@ pub fn Avatar(props: AvatarProps, cx: Scope<AvatarEvent>) -> impl IntoElement {
                 .length("", "size", t.length(size_token(size.get())))
                 .length("", "rounded", radius());
             // In a group: the ring, and each after the first over the one
-            // before.
-            let c = if in_group {
+            // before by the group's overlap, whatever this avatar's own size.
+            let c = if let Some(InGroup(group_size)) = group {
+                let group_size = group_size.get();
                 ring(c, t)
-                    .length("", "ml", px(0.0) - t.length(AVATAR_GROUP_OVERLAP))
+                    .length(
+                        "",
+                        "ml",
+                        px(0.0) - t.length(group_overlap_token(group_size)),
+                    )
                     .push("first:ml-0")
             } else {
                 c
@@ -324,7 +345,11 @@ pub fn AvatarGroup(props: AvatarGroupProps, _cx: Scope<NoEvent>) -> impl IntoEle
             let c = fallback_class(t, size.get())
                 .push("shrink-0")
                 .length("", "size", t.length(size_token(size.get())))
-                .length("", "ml", px(0.0) - t.length(AVATAR_GROUP_OVERLAP));
+                .length(
+                    "",
+                    "ml",
+                    px(0.0) - t.length(group_overlap_token(size.get())),
+                );
             Some(ring(c, t).then(props.overflow_class.get()))
         })
         .app_class(Some(SharedString::from("flex-row items-center")))

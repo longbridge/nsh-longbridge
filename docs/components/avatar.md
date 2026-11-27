@@ -64,7 +64,9 @@ a component cannot fill another's place in NSH (an `AvatarImage` child could not
 - `Avatar` provides its `size` in context (`AvatarSize`): `AvatarBadge` reads it.
 - `AvatarGroup` provides "in a group" and its `size` in context: an `Avatar` inside it without a `size` of its own
   takes the group's, draws its ring, and every one after the first overlaps the one before: a negative start margin
-  of `avatar-group-overlap` with `first:ml-0` (NSH's `first:` variant), so the group does not count its children.
+  of the group's `avatar-group-overlap-{size}` with `first:ml-0` (NSH's `first:` variant), so the group does not count
+  its children. The overlap is the group's size's, even for an avatar with its own `size`: 4 at `xs` and `sm`, so the
+  next circle leaves the initials before it clear, 8 from `md` up.
 - The ring around an avatar in a group, a badge and the count is a `ring` class (outside the box, taking no layout) of
   `avatar-ring-width` in `avatar-ring`, so the overlap does not change the avatars' size.
 - The count's circle is drawn on the group's `overflow` box (`nsh/base`'s `overflowClass`), not by
@@ -153,17 +155,17 @@ No variants.
 | image | `aspect-square size-full` | Covers the circle (`object-fit: cover`), corners `avatar-radius`, clipped |
 | fallback | `flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs` | Fill `avatar-fallback`, text `avatar-fallback-foreground` at `avatar-fallback-font-size-<size>`, centered; corners `avatar-radius` |
 | `AvatarBadge` | `absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-background`; `size-2` / `size-2.5` / `size-3`, its icon `size-2`, none at `sm` | At the bottom end over the avatar, a circle `avatar-badge-size-<size>`, fill `avatar-badge`, its content `avatar-badge-foreground`, a ring of `avatar-ring-width` in `avatar-ring`; an icon `avatar-badge-size-<size> − 2`, hidden at `xs` and `sm` |
-| `AvatarGroup` | `flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background` | A row; each avatar after the first `avatar-group-overlap` (8) over the one before; each with a ring of `avatar-ring-width` (2) in `avatar-ring` |
+| `AvatarGroup` | `flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background` | A row; each avatar after the first `avatar-group-overlap-{size}` (4 / 4 / 8 / 8) over the one before; each with a ring of `avatar-ring-width` (2) in `avatar-ring` |
 | `AvatarGroupCount` | `relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background`, icon `size-4` (`size-3` at `sm`, `size-5` at `lg`) | The fallback's look at the group's size, with the ring, on the group's `overflow` box; an icon half the side |
 
 ### Sizes
 
 | `size` | Side | Initials | Badge | Count's icon | In classes |
 |---|---|---|---|---|---|
-| `xs` | 20 | 12 | 6, no icon | 10 | — |
-| `sm` | 24 | 12 | 8, no icon | 12 | `size-6`, `text-xs`, badge `size-2` |
+| `xs` | 20 | 8 | 6, no icon | 10 | — |
+| `sm` | 24 | 10 | 8, no icon | 12 | `size-6`, `text-xs`, badge `size-2` |
 | `md` | 32 | 14 | 10 | 16 | `size-8`, `text-sm`, badge `size-2.5` |
-| `lg` | 40 | 14 | 12 | 20 | `size-10`, badge `size-3` |
+| `lg` | 40 | 16 | 12 | 20 | `size-10`, badge `size-3` |
 
 - The usual avatar sides, not stepped down: an avatar is no control, so it does not follow the control heights; `md` (32)
   is as tall as a `md` control, `lg` (40) as a touch one. `xs` (20) is added for dense rows (a `Table` of `xs` / `sm`).
@@ -207,10 +209,10 @@ Values are those of `nsh/base`'s default theme.
 | `avatar-radius` | length | `9999` | 9999 |
 | `avatar-fallback` | color | `muted` |  |
 | `avatar-fallback-foreground` | color | `muted-foreground` |  |
-| `avatar-fallback-font-size-xs` | length | `12` | 12 |
-| `avatar-fallback-font-size-sm` | length | `12` | 12 |
+| `avatar-fallback-font-size-xs` | length | `8` | 8 |
+| `avatar-fallback-font-size-sm` | length | `10` | 10 |
 | `avatar-fallback-font-size-md` | length | `14` | 14 |
-| `avatar-fallback-font-size-lg` | length | `14` | 14 |
+| `avatar-fallback-font-size-lg` | length | `16` | 16 |
 | `avatar-badge` | color | `primary` |  |
 | `avatar-badge-foreground` | color | `primary-foreground` |  |
 | `avatar-badge-size-xs` | length | `spacing × 1.5` | 6 |
@@ -219,13 +221,17 @@ Values are those of `nsh/base`'s default theme.
 | `avatar-badge-size-lg` | length | `spacing × 3` | 12 |
 | `avatar-ring` | color | `background` |  |
 | `avatar-ring-width` | length | `2` | 2 |
-| `avatar-group-overlap` | length | `spacing × 2` | 8 |
+| `avatar-group-overlap-xs` | length | `spacing` | 4 |
+| `avatar-group-overlap-sm` | length | `spacing` | 4 |
+| `avatar-group-overlap-md` | length | `spacing × 2` | 8 |
+| `avatar-group-overlap-lg` | length | `spacing × 2` | 8 |
 <!-- /tokens -->
 
 - `avatar-radius` is a circle at any side (`rounded-full`, a radius past half the side); `radius-lg` there gives every
   avatar of the app rounded square corners (`rounded-lg`).
-- The fallback's type is Tailwind's fixed `text-xs` / `text-sm` (as `select-label-font-size`), not the controls'
-  `font-size-*`.
+- The fallback's type (the initials, and a group's count) is about two fifths of the side (8 / 10 / 14 / 16), so two
+  wide letters ("MW") fit inside the circle at every size, and in a group the part the next avatar does not cover
+  still reads; not the controls' `font-size-*`.
 - `avatar-ring` is the page's color: on a `Card` set it to `card` in a scope, or the rings read as gaps of another
   color (a ring in the page's background color has that limit anywhere).
 - `AvatarGroupCount` reads `avatar-fallback` and `avatar-fallback-foreground`: it is a fallback with a count.
