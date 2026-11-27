@@ -361,6 +361,11 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
 4. **No `w-fit`**: NSH has no fit-content width; the root uses `align-self: flex-start` in a column, which sizes it to
    its content there; in a row it already is.
 5. **String children** do not apply (titles are data); `renderItem`'s elements follow Button's G0 in TSX.
+6. **The list is exactly as wide as the trigger** on desktops: `nsh/base` gives the popup the trigger's width, which
+   `menu-min-width` only raises, so rows wider than the trigger (`renderItem`'s, a long title) are cut or truncated,
+   where shadcn's popper list is at least the trigger's width and grows with its rows. Workaround: a trigger wide
+   enough for the rows (`class`). A width mode in `nsh/base` (at least the trigger's, else its content's) would allow
+   it.
 
 ## Decisions
 
