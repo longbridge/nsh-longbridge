@@ -30,7 +30,7 @@ styled library (`docs/dev/components.md` "Toasts"; NSH's gallery builds its own 
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
 | `ToastManager` | Ordered storage and the lifecycle of each toast: entering, present, its timeout, paused, ending, removed; `visible(limit)`, `push`, `dismiss`, `dismissAll`, `advance(now, paused)` |
-| `ToastStack` | Measures the toasts and lays them out from the placement's edge, the newest nearest it: collapsed, overlapping layers 14 apart, each 5% narrower, 3 shown, the content of those behind the newest hidden by the library (NSH gap 6); expanded (pointer over it, a finger down on it), a list 14 apart; arrivals, departures and expansion move with springs (`ToastMotion`); `onExpandedChange` pauses the timeouts |
+| `ToastStack` | Measures the toasts and lays them out from the placement's edge, the newest nearest it: collapsed, overlapping layers `toast-stack-peek` (12) apart, each 5% narrower, 3 shown, the content of those behind the newest hidden by the library (NSH gap 6); expanded (pointer over it, a finger down on it), a list `toast-stack-gap` (12) apart; arrivals, departures and expansion move with springs (`ToastMotion`); `onExpandedChange` pauses the timeouts |
 | `Toast` | The semantic root (role `alert`), read once by screen readers as it shows (`accessibilityLabel`); `transitionStatus` with `startingClass` / `endingClass` / `swipingClass` for the entrance and exit; a swipe toward `swipeDirection` past 50 points, or a flick, asks to dismiss it |
 | Terminal | Only the newest toast, on the status line; nothing stacks or moves |
 
@@ -220,10 +220,11 @@ brand theme colors a toast's action as its other main buttons; the shadow is the
 | Stack width | `toast-width` (356) | The window less `toast-offset` on each side (the phone layout) |
 | From the edges | `toast-offset` (24 with a pointer, also on a narrow window), inside the safe area | `toast-offset` (16) |
 | Horizontal place | The placement's (left, center, right) | Centered (full width) |
-| Collapsed / expanded | `nsh/base`'s stack: 3 layers 14 apart, each 5% narrower; expanded under the pointer, a list 14 apart | Expanded while a finger is down on it |
+| Collapsed / expanded | `nsh/base`'s stack: 3 layers `toast-stack-peek` (12) apart, each 5% narrower; expanded under the pointer, a list `toast-stack-gap` (12) apart | Expanded while a finger is down on it |
 
-`ToastMotion` is `nsh/base`'s default toast motion (400 ms springs, 200 ms exit, peek 14, gap 14, scale step 0.05, 3
-shown).
+`ToastMotion` is `nsh/base`'s default toast motion (400 ms springs, 200 ms exit, scale step 0.05, 3 shown) with the
+peek and the gap from `toast-stack-peek` and `toast-stack-gap` (12 each, one content group's gap, on the spacing
+scale).
 
 ### Motion
 
@@ -303,6 +304,8 @@ Values are those of `nsh/base`'s default theme.
 | `toast-font-size` | length | `13` | 13 |
 | `toast-icon-size` | length | `16` | 16 |
 | `toast-close-size` | length | `20` | 20 |
+| `toast-stack-gap` | length | `spacing × 3` | 12 |
+| `toast-stack-peek` | length | `spacing × 3` | 12 |
 | `toast-offset` | length | `pointer_touch(spacing × 6, spacing × 4)` | 24 (touch 16) |
 | `toast-duration` | number | `4000` | 4000 |
 | `toast-animate` | number | `1` | 1 |
@@ -454,3 +457,6 @@ Settled in review.
     message (`spacing`, 4) and the two buttons closely related controls (8). The icon used to be pulled 3 out and
     pushed 4 in with margins of its own, around a 6 gap, so a toast with an icon started 3 points left of one without
     and its text 10 from the icon, both off the scale.
+12. **The stack's distances are tokens on the spacing scale.** `nsh/base`'s default motion keeps collapsed layers and
+    expanded toasts 14 apart; the library passes `toast-stack-peek` and `toast-stack-gap` (12 each) instead, so the
+    expanded list is spaced as one content group and a theme can change both.
