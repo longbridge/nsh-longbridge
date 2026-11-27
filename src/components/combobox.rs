@@ -29,7 +29,7 @@ use crate::{
         class::Classes,
         field::{
             self, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, Kind, field_button_frame,
-            field_button_hover, field_button_side, field_focus, field_rest,
+            field_button_hover, field_button_radius, field_button_side, field_focus, field_rest,
         },
         icon::{IconName, icon_size_token, icon_view, provide_text_color},
         labels::{self, Label},
@@ -45,9 +45,7 @@ use crate::{
     theme::{
         Theme,
         seeds::SPACING,
-        semantic::{
-            FOREGROUND, MUTED, MUTED_FOREGROUND, OPACITY_DISABLED, RADIUS_SM, TEXT_SM, TEXT_XS,
-        },
+        semantic::{FOREGROUND, MUTED, MUTED_FOREGROUND, OPACITY_DISABLED, TEXT_SM, TEXT_XS},
         theme,
     },
     tokens,
@@ -677,7 +675,8 @@ fn chip_row(
                     .min_w(px(0.0))
                     .h(chip_height)
                     .ps(gap)
-                    .rounded(move || t.length(RADIUS_SM))
+                    // Concentric with the field's corners, as its buttons are.
+                    .rounded(move || field_button_radius(t))
                     .bg(move || t.color(COMBOBOX_CHIP))
                     .app_class(props.chip_class)
                     .inline_style(move || props.chip_style.get())
