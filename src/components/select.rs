@@ -3,8 +3,9 @@
 //! typeahead, the virtualized list, the combobox, listbox and option roles
 //! and their states for screen readers). The library draws the trigger
 //! (the field look), the list's surface (`foundation::popup`), its rows and
-//! headers (`foundation::menu`) and the check on the chosen row. API:
-//! `docs/components/select.md`.
+//! headers (`foundation::menu`), the check on the chosen row, and with
+//! `searchable` / `cleanable` the look of `nsh/base`'s search field, empty
+//! state and clear button. API: `docs/components/select.md`.
 
 use std::rc::Rc;
 
@@ -12,7 +13,8 @@ use nsh_base::{
     OpenChangeReason, SelectEvent as BaseSelectEvent, select as base_select, terminal::is_terminal,
 };
 use nsh_core::{
-    element::{Renderer, Style, TextPartStyle},
+    element::{InputPartStyle, Renderer, Style, StyleRefinement, TextPartStyle, screen_reader},
+    keymap::When,
     prelude::*,
 };
 
@@ -21,13 +23,19 @@ pub use nsh_base::{SelectEntry, SelectItem, SelectValue};
 use crate::{
     components::input::{self, vertical_hit_slop},
     foundation::{
+        class::Classes,
         field::{
             self, INPUT_BACKGROUND, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID, INPUT_FOREGROUND,
-            INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_look,
+            INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_button_frame, field_button_hover,
+            field_look,
         },
         field_ref::FieldRef,
         icon::{IconName, icon_size_token, icon_view, provide_text_color},
-        menu::{ListLook, list_look},
+        labels::{self, Label},
+        menu::{
+            self, ListLook, MENU_ITEM_PADDING_X, MENU_PADDING, MENU_SEPARATOR, MENU_SHEET_PADDING,
+            list_look,
+        },
         popup::{self, POPOVER_MARGIN, POPOVER_OFFSET},
         size::Size,
         trigger,
@@ -36,7 +44,9 @@ use crate::{
     theme::{
         Theme,
         seeds::SPACING,
-        semantic::{INPUT, MUTED_FOREGROUND},
+        semantic::{
+            BORDER_WIDTH, INPUT, MUTED_FOREGROUND, OPACITY_DISABLED, POPOVER_FOREGROUND, TEXT_SM,
+        },
         theme,
     },
     tokens,
@@ -48,6 +58,14 @@ tokens! {
     SELECT_TRIGGER_HOVER: Color = "select-trigger-hover" => |t| t.light_dark(t.color(INPUT_BACKGROUND), t.color(INPUT).opacity(0.5)),
     /// The trigger's chevron.
     SELECT_ICON_FOREGROUND: Color = "select-icon-foreground" => |t| t.color(MUTED_FOREGROUND).opacity(0.5),
+    /// The clear button's cross (`cleanable`): a button of its own,
+    /// stronger than the chevron.
+    SELECT_CLEAR_FOREGROUND: Color = "select-clear-foreground" => |t| t.color(MUTED_FOREGROUND),
+    /// The words of a list no option shows in (a search that matches
+    /// nothing).
+    SELECT_EMPTY_FOREGROUND: Color = "select-empty-foreground" => |t| t.color(MUTED_FOREGROUND),
+    /// A searchable list's greatest height on desktops.
+    SELECT_LIST_MAX_HEIGHT: Length = "select-list-max-height" => |t| t.length(SPACING) * 87.0,
 }
 
 /// The props of [`Select`].
@@ -96,8 +114,23 @@ pub struct SelectProps {
     pub align: Prop<Align>,
     /// Desktops: the list opens with the chosen row over the trigger
     /// (`true`) or on a side of it (`false`). Left out, the platform's way:
-    /// over it on macOS, on a side elsewhere.
+    /// over it on macOS, on a side elsewhere; a searchable list on a side
+    /// everywhere.
     pub cover: Prop<Option<bool>>,
+    /// A search field at the top of the list filters the options by title
+    /// (ignoring case); the trigger stays a button showing the value.
+    #[prop(default)]
+    pub searchable: Prop<bool>,
+    /// The search field's placeholder, which screen readers also hear as
+    /// its name ("Search countries"). Left out, "Search" (translatable).
+    pub search_placeholder: Prop<Option<SharedString>>,
+    /// What the list shows while no option does (a search that matches
+    /// nothing). Left out, "No items found." (translatable).
+    pub empty: Prop<Option<Slot>>,
+    /// A clear button on the trigger while a value is set: a press (or
+    /// Delete or Backspace on the focused trigger) reports a `null` value.
+    #[prop(default)]
+    pub cleanable: Prop<bool>,
     /// A row's content in place of its title (an icon and a title): the
     /// library still draws the row and the check. It gets what the item is,
     /// never its state.
@@ -115,11 +148,19 @@ pub struct SelectProps {
     /// The inline style of the trigger's text.
     #[prop(default)]
     pub value_style: Prop<TextPartStyle>,
-    /// Tailwind classes of the trigger's chevron.
+    /// Tailwind classes of the trigger's chevron and the clear button's
+    /// cross.
     pub icon_class: Prop<Option<SharedString>>,
-    /// The inline style of the trigger's chevron.
+    /// The inline style of the trigger's chevron and the clear button's
+    /// cross.
     #[prop(default)]
     pub icon_style: Prop<Style>,
+    /// Tailwind classes of the search field (`searchable`).
+    pub search_class: Prop<Option<SharedString>>,
+    /// The inline style of the search field, over the library's look: its
+    /// text styles too (`color`, `fontSize`, `placeholderColor`).
+    #[prop(default)]
+    pub search_style: Prop<InputPartStyle>,
     /// Tailwind classes of the popup (or sheet): they add to the library's
     /// look but cannot override what it sets inline (fill, edge, corners,
     /// shadow).
@@ -144,7 +185,8 @@ pub struct SelectProps {
 #[derive(Debug, Clone, PartialEq, Event)]
 pub enum SelectEvent {
     /// The user chose another item (a press, Return, typeahead on the
-    /// closed trigger): its value, which the app makes `value`.
+    /// closed trigger), or cleared it (`null`: the clear button, Delete or
+    /// Backspace): its value, which the app makes `value`.
     #[args(value)]
     Change(Option<SharedString>),
     /// The user asks to open or close the list, with why: set `open` to
@@ -222,6 +264,13 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
         }
     });
     let terminal = is_terminal();
+    // The search field's words: its placeholder and its name.
+    let search_words = move || {
+        props
+            .search_placeholder
+            .get()
+            .unwrap_or_else(|| labels::text(Label::Search))
+    };
     let mut root = base_select()
         .items(props.items)
         .value(move || SelectValue::Controlled(current.get()))
@@ -232,14 +281,32 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
         .accessibility_label(props.accessibility_label)
         .placement(props.placement)
         .align(props.align)
-        .cover(props.cover)
+        // A searchable list drops to a side, also on macOS: a field typed
+        // into stays put while the query moves the rows (Decisions 6).
+        .cover(move || {
+            props
+                .cover
+                .get()
+                .or_else(|| props.searchable.get().then_some(false))
+        })
         .offset(move || t.length(POPOVER_OFFSET))
         .margin(move || t.length(POPOVER_MARGIN))
+        .searchable(props.searchable)
+        .search_placeholder(move || Some(search_words()))
+        .search_accessibility_label(move || Some(search_words()))
+        .cleanable(props.cleanable)
+        .clear_button_accessibility_label(move || Some(labels::text(Label::Clear)))
         .on_change(move |value: &Option<SharedString>| {
             if props.value.get_untracked() == SelectValue::Uncontrolled {
                 own.set(value.clone());
             }
             cx.emit(SelectEvent::Change(value.clone()));
+            // Only the clear button reports none: the button the focus (or
+            // a screen reader's cursor) was on is gone, so it goes to the
+            // trigger, which says the placeholder (Decisions 11).
+            if value.is_none() && (is_desktop() || untracked(screen_reader)) {
+                trigger_ref.focus();
+            }
         })
         .on_open_change(move |e: &BaseSelectEvent| {
             if let BaseSelectEvent::OpenChange(open, reason) = e {
@@ -267,7 +334,75 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
         return root;
     }
 
-    root = root.trigger(trigger(props.clone(), t, current, trigger_ref, joined));
+    let clear_shown = move || props.cleanable.get() && current.with(Option::is_some);
+    root = root.trigger(trigger(
+        props.clone(),
+        t,
+        current,
+        trigger_ref,
+        joined,
+        clear_shown,
+    ));
+    // Delete and Backspace on the focused trigger clear the value: the
+    // keyboard's way to the clear button, which is no stop of Tab
+    // (Decisions 9).
+    let focused = signal(false);
+    trigger_ref.on_focus_in(move || focused.set(true));
+    trigger_ref.on_focus_out(move || focused.set(false));
+    effect(move || {
+        if !focused.get() || is_open() || disabled() || !clear_shown() {
+            return;
+        }
+        for key in ["backspace", "delete"] {
+            on_key_with(
+                key,
+                KeyOptions {
+                    when: When::NotEditing,
+                    repeat: false,
+                    for_focus: true,
+                    ..Default::default()
+                },
+                move |_| {
+                    if props.value.get_untracked() == SelectValue::Uncontrolled {
+                        own.set(None);
+                    }
+                    cx.emit(SelectEvent::Change(None));
+                },
+            );
+        }
+    });
+    root = root.clear_button(
+        icon_view(t, || IconName::X, move || t.length(icon_size_token(size())))
+            .text_color(move || t.color(SELECT_CLEAR_FOREGROUND))
+            .app_class(props.icon_class)
+            .inline_style(move || props.icon_style.get()),
+    );
+    // The words sit `spacing × 3` from the search field's line and from
+    // the surface's edge: the empty list above keeps its padding (twice
+    // `menu-padding`), which the space above them counts. The app's
+    // `empty` inherits their color and size.
+    let empty_space = move || t.length(SPACING) * 3.0;
+    root = root.empty(
+        view()
+            .pt(move || {
+                let list = if menu::list_as_sheet() {
+                    t.length(MENU_SHEET_PADDING)
+                } else {
+                    t.length(MENU_PADDING)
+                };
+                (empty_space() - list * 2.0).max(px(0.0))
+            })
+            .pb(empty_space)
+            .px(move || t.length(MENU_ITEM_PADDING_X))
+            .items_center()
+            .text_size(move || t.length(TEXT_SM))
+            .line_height(move || line_height(t.length(TEXT_SM)))
+            .text_color(move || t.color(SELECT_EMPTY_FOREGROUND))
+            .child(match props.empty.get_untracked() {
+                Some(_) => props.empty.place(|e| e).into_element(),
+                None => text(move || labels::text(Label::NoItems)).into_element(),
+            }),
+    );
     list_look!(
         root,
         t,
@@ -286,7 +421,91 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
             label_style: props.label_style,
         }
     );
+    {
+        let parts = root.__element().__props_mut();
+        // A searchable list is capped on desktops (Decisions 6); the sheet
+        // keeps its own height.
+        let list_style = parts.list_style;
+        parts.list_style = Prop::from(IntoReactive::<Style>::into_reactive(move || {
+            let look = list_style.get();
+            if props.searchable.get() && !menu::list_as_sheet() {
+                look.then(&Style::from(
+                    StyleRefinement::default().max_h(t.length(SELECT_LIST_MAX_HEIGHT)),
+                ))
+            } else {
+                look
+            }
+        }));
+        parts.search_class = props.search_class;
+        parts.search_style = Prop::from(IntoReactive::<InputPartStyle>::into_reactive(move || {
+            search_style(t, size(), props.search_style.get())
+        }));
+        let disabled = computed(disabled);
+        parts.clear_button_style = Prop::from(IntoReactive::<Style>::into_reactive(move || {
+            clear_style(t, size(), disabled.get())
+        }));
+        parts.clear_button_class = Prop::from(IntoReactive::<Option<SharedString>>::into_reactive(
+            move || Some(clear_class(t, disabled.get())),
+        ));
+    }
     root
+}
+
+/// The search field: a band across the surface above the rows, as tall as
+/// the trigger (a row in the sheet), its text where the rows' titles
+/// start, the menu's row text, no fill, edge or ring of its own and the
+/// menu's separator under it; the app's style last.
+fn search_style(t: Theme, size: Size, app: InputPartStyle) -> InputPartStyle {
+    let sheet = menu::list_as_sheet();
+    let height = if sheet {
+        t.length(menu::item_height_token(size))
+    } else {
+        t.length(input::height_token(size))
+    };
+    let inset = if sheet {
+        t.length(MENU_SHEET_PADDING)
+    } else {
+        t.length(MENU_PADDING)
+    } + t.length(MENU_ITEM_PADDING_X);
+    let font_size = t.length(menu::item_font_size_token(size));
+    let look = StyleRefinement::default()
+        .flex_shrink_0()
+        .h(height)
+        .px(inset)
+        .text_size(font_size)
+        .line_height(line_height(font_size))
+        .text_color(t.color(POPOVER_FOREGROUND))
+        .placeholder_color(t.color(INPUT_PLACEHOLDER_FOREGROUND))
+        .bg(AdaptiveColor::TRANSPARENT)
+        .border_b(t.length(BORDER_WIDTH))
+        .border_color(t.color(MENU_SEPARATOR));
+    InputPartStyle::from(Style::from(look).then(&Style::from(app)))
+}
+
+/// The clear button's frame over the trigger's end: the square of a button
+/// in a field, inset 4 (its place is `clear_class`'s); dimmed with the
+/// trigger while disabled. Combobox's cross, drawn the same way.
+fn clear_style(t: Theme, size: Size, disabled: bool) -> Style {
+    let look = field_button_frame(StyleRefinement::default(), t, size)
+        .cursor(Cursor::Default)
+        .opacity(if disabled {
+            t.number(OPACITY_DISABLED)
+        } else {
+            1.0
+        });
+    Style::from(look)
+}
+
+/// The clear button's place (over the trigger's end, `end` so a
+/// right-to-left layout mirrors it) and the ghost button's hover fill
+/// (none while pressed or disabled), as classes made from the tokens: only
+/// `nsh/base` knows the button's states.
+fn clear_class(t: Theme, disabled: bool) -> SharedString {
+    let classes = Classes::new().push("absolute top-[4px] end-[4px]");
+    if disabled {
+        return classes.build();
+    }
+    field_button_hover(classes, t).build()
 }
 
 /// The trigger: a field showing the chosen title or the placeholder, and
@@ -301,6 +520,7 @@ fn trigger(
     current: Memo<Option<SharedString>>,
     trigger_ref: ElementRef,
     joined: Joined,
+    clear_shown: impl Fn() -> bool + Copy + 'static,
 ) -> impl IntoElement {
     let size = move || props.size.get();
     let height = move || t.length(input::height_token(size()));
@@ -370,6 +590,9 @@ fn trigger(
         move || t.length(icon_size_token(size())),
     )
     .text_color(move || t.color(SELECT_ICON_FOREGROUND))
+    // The clear button takes its place: kept transparent, so the value is
+    // cut at the same width (Decisions 10).
+    .opacity(move || if clear_shown() { 0.0_f32 } else { 1.0 })
     .app_class(props.icon_class)
     .inline_style(move || props.icon_style.get());
     field_look(el, t, invalid)
