@@ -67,6 +67,23 @@ jobs:
           find "$site" \( -name '*.br' -o -name '*.gz' \) -delete
           mv "$site" "$RUNNER_TEMP/site"
 
+      # The gallery routes by path (`/nsh-longbridge/button`). Pages serves
+      # `button.html` for `/button`, so every page gets a copy of the entry;
+      # `<base>` keeps the relative files resolving from the site's root, and
+      # `404.html` opens the gallery on any other address.
+      - name: Give every page its own address
+        env:
+          SITE_BASE: /${{ github.event.repository.name }}/
+        run: |
+          site="$RUNNER_TEMP/site"
+          sed -i "s|<head>|<head><base href=\"$SITE_BASE\">|" "$site/index.html"
+          grep -q "<base href=\"$SITE_BASE\">" "$site/index.html"
+          for page in gallery/pages/*.tsx; do
+            id="$(basename "$page" .tsx)"
+            [ "$id" = home ] || cp "$site/index.html" "$site/$id.html"
+          done
+          cp "$site/index.html" "$site/404.html"
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ runner.temp }}/site
