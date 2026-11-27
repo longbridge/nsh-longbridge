@@ -63,7 +63,8 @@ mobile-first single column.
   radios; no scale with reduced motion. Color transitions take `duration`.
 - Fields (`Input`, `Textarea`, and later a `Select`'s trigger, `NumberInput`, `Combobox`) share `foundation`'s field
   look (edge, fill, shadow, focus, invalid, disabled) on the `input-*` tokens, rather than each drawing its own.
-- Icons: sized by `icon-size-*` with the control's `size`, from the context when not given; colored as their text.
+- Icons: sized by `icon-size-*` with the control's `size`, from the context when not given; colored as their text,
+  `foreground` outside the library's parts (below).
 - A part that colors its own text provides that color to what is inside it (`provide_text_color()`, as it provides
   the icon size): icons and spinners follow it, and outside the library's parts fall back to `foreground` (NSH gives
   a plain view black text in both appearances).
