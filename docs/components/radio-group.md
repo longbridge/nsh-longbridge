@@ -111,10 +111,10 @@ No variants. All four sizes, set on the group:
 
 | size | Circle (pointer) | Circle (touch) | Dot | Label font size |
 |---|---|---|---|---|
-| `xs` | 12 | 16 | circle / 2 | `font-size-xs` 12 |
-| `sm` | 14 | 18 | circle / 2 | `font-size-sm` 13 |
-| `md` | 16 | 20 | circle / 2 (8, `size-2`) | `font-size-md` 14 |
-| `lg` | 18 | 24 | circle / 2 | `font-size-lg` 14 |
+| `xs` | 12 | 16 | 6 (touch 8) | `font-size-xs` 12 |
+| `sm` | 14 | 18 | 6 (touch 8) | `font-size-sm` 13 |
+| `md` | 16 | 20 | 8, `size-2` (touch 10) | `font-size-md` 14 |
+| `lg` | 18 | 24 | 8 (touch 12) | `font-size-lg` 14 |
 
 The circle's side is half the control height of the size (`control-height-<size>` with a pointer,
 `control-height-touch-<size>` on touch): the side of a `Checkbox`'s box and a `Switch`'s thumb of the same size, so
@@ -123,7 +123,8 @@ the three line up side by side. `md` with a pointer is 16, `size-4`.
 Fixed geometry, in the component:
 
 - The circle is round (corners = side / 2, not following the `radius` seed), with a `border-width` border and
-  `flex-shrink: 0`; the dot is round and centered.
+  `flex-shrink: 0`; the dot is round and centered, about half the circle: the half rounded so the circle is an even
+  number of points wider than the dot, which then sits on whole points (half of 14, 7, would sit 3.5 from the edge).
 - An item's root is `flex-row items-start`, with `radio-group-item-gap` between the circle and the label.
 - The `label` part is `Checkbox`'s: `min-height` = the circle's side and `justify-center`; font size
   `font-size-<size>`, weight `label-font-weight`, color `label-foreground`, line height from foundation's font size →
