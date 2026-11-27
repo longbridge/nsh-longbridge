@@ -149,7 +149,7 @@ The parts are `nsh/base`'s (`DataTablePart`), styled through `classes` / `styles
 | `rowHeader` | Text `muted-foreground` at `font-size-xs` (12), centered; end edge `table-border` | — |
 | `rowHeaderCorner` | End and bottom edges `table-border` | — |
 | `fixedEdge` | Fill `data-table-fixed-edge` (a line of `border-width`) | — |
-| `empty` | Centered, `spacing × 24` (96) tall, text `table-caption-foreground` at `text-sm` | The guide's `h-24 text-center` "No results." cell |
+| `empty` | Centered in the body (the room under the titles), at least `spacing × 24` (96) tall, text `table-caption-foreground` at `text-sm` | The guide's `h-24 text-center` "No results." cell |
 
 The empty slot's content is the app's ("No results."), as `nsh/base`'s; `loadingView` too (a `Spinner`, rows of
 `Skeleton`).

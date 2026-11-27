@@ -3,7 +3,8 @@
 //! a selected row, the app's part classes after the library's, the resize
 //! line under the pointer, and the checkbox column (a box's press reports
 //! the app's data row, the boxes follow `checkedRows` through a sort, the
-//! "select all" box, column indexes as the app counts them).
+//! "select all" box, column indexes as the app counts them), the empty
+//! state centered under the titles.
 
 mod common;
 
@@ -266,5 +267,35 @@ fn the_checkbox_column_follows_the_apps_rows() {
         seen().iter().any(|s| s == "row:3:Some(1)"),
         "the row press counts the app's columns: {:?}",
         seen()
+    );
+}
+
+/// A table with no rows, taller than the empty part's minimum.
+#[component]
+fn NoRows() -> impl IntoElement {
+    view().w(px(600.0)).child(
+        data_table()
+            .app_class(Some("h-[300px]".into()))
+            .accessibility_label("None")
+            .columns(vec![column("name", "Name"), column("amount", "Amount")])
+            .data(rows(&[]))
+            .empty(text("No results.")),
+    )
+}
+
+/// The empty slot is centered in the room under the titles, as a
+/// `loadingView` is, not pinned under them at its minimum height.
+#[test]
+fn the_empty_state_is_centered_under_the_titles() {
+    let app = start::<NoRows>(true);
+    let table = bounds(&app, "role:grid[None]");
+    let title = bounds(&app, "role:grid[None] >> role:columnheader[Name]");
+    let empty = bounds(&app, "text:No results.");
+    let below = title.origin.y.0 + title.size.height.0;
+    let bottom = table.origin.y.0 + table.size.height.0;
+    let center = empty.origin.y.0 + empty.size.height.0 / 2.0;
+    assert!(
+        (center - (below + bottom) / 2.0).abs() <= 1.0,
+        "the empty text's center {center} is not between {below} and {bottom}"
     );
 }
