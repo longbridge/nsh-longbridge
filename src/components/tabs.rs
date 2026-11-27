@@ -213,7 +213,15 @@ pub fn TabsList(props: TabsListProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         return root.child(props.children);
     }
     root.flex_shrink_0()
-        .self_start()
+        // shadcn's `w-fit` (and `h-fit` beside vertical panels): as long as
+        // its triggers where the root stretches its children, while a row's
+        // `items-center` still centers it (an `align-self` would override
+        // the row's alignment). The app's class goes over it.
+        .app_class(Some(SharedString::from(if horizontal {
+            "w-fit"
+        } else {
+            "w-fit h-fit"
+        })))
         .when(horizontal, |v| {
             v.flex_row()
                 .items_center()

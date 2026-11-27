@@ -172,8 +172,9 @@ dark:bg-input/30 dark:hover:bg-input/50`, the value `line-clamp-1`, a `ChevronDo
 - A row: the value (one line, cut with an ellipsis, `flex: 1`, left-aligned), then the chevron (`icon-size-<size>`,
   `select-icon-foreground`), `spacing × 2` (8) apart.
 - The value's color is `input-foreground`; the placeholder's `input-placeholder-foreground`.
-- Width: as wide as its content, as shadcn's `w-fit` (in a column the root does not stretch: `align-self: flex-start`,
-  NSH having no `w-fit`); the app sets one with `class` (`w-[180px]`, `w-full`), which the trigger fills.
+- Width: as wide as its content, shadcn's `w-fit` (a column that stretches its children does not widen it, and a row's
+  `items-center` still centers it); the app sets one with `class` (`w-[180px]`, `w-full`), which goes over `w-fit` and
+  the trigger fills.
 
 ### The list
 
@@ -358,10 +359,8 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
    would follow `renderItem` later, if asked for.
 3. **No separators in the list**: `nsh/base`'s rows are items and headers; groups are split by their headers only.
    shadcn's examples rarely use `SelectSeparator` between groups; a separator row kind in `listbox.rs` would add it.
-4. **No `w-fit`**: NSH has no fit-content width; the root uses `align-self: flex-start` in a column, which sizes it to
-   its content there; in a row it already is.
-5. **String children** do not apply (titles are data); `renderItem`'s elements follow Button's G0 in TSX.
-6. **The list is exactly as wide as the trigger** on desktops: `nsh/base` gives the popup the trigger's width, which
+4. **String children** do not apply (titles are data); `renderItem`'s elements follow Button's G0 in TSX.
+5. **The list is exactly as wide as the trigger** on desktops: `nsh/base` gives the popup the trigger's width, which
    `menu-min-width` only raises, so rows wider than the trigger (`renderItem`'s, a long title) are cut or truncated,
    where shadcn's popper list is at least the trigger's width and grows with its rows. Workaround: a trigger wide
    enough for the rows (`class`). A width mode in `nsh/base` (at least the trigger's, else its content's) would allow
@@ -377,3 +376,6 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
 3. **macOS opens the list over the trigger, other desktops below it** (`nsh/base`'s default, `cover`): shadcn's
    default is item-aligned everywhere; the platforms' own habit wins.
 4. **No search, no clear button in P2**: Combobox (P3) is the searchable choice; `cleanable` waits for a look.
+5. **As wide as its content through `w-fit`, not `align-self: flex-start`**: an `align-self` of its own would override
+   the cross-axis alignment of a row it sits in (a filter bar), putting it at the top instead of the middle (as
+   `Badge`'s decision 3).

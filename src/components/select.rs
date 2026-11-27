@@ -230,7 +230,11 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
             }
             cx.emit(SelectEvent::Close)
         })
-        .self_start();
+        // shadcn's `w-fit`: as wide as its content where a column stretches
+        // its children, while a row's `items-center` still centers it (an
+        // `align-self` would override the row's alignment). The app's class
+        // goes over it.
+        .app_class(Some(SharedString::from("w-fit")));
     if terminal {
         // `nsh/base`'s terminal trigger and rows.
         root.__element().__props_mut().render_item = props.render_item;

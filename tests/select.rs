@@ -484,3 +484,63 @@ fn the_list_keeps_the_popover_margin_from_the_edges() {
     let b = bounds(&app, &format!("view:{popup}"));
     assert_eq!(b.origin.y.0, 4.0, "{b:?}");
 }
+
+/// A select in a column that stretches its children, one in a centered row
+/// beside taller content, and one given a width by its class.
+#[component]
+fn Layouts() -> impl IntoElement {
+    view()
+        .w(px(400.0))
+        .child(
+            select()
+                .test_id("in-column")
+                .items(fruits())
+                .default_value(Some(SharedString::from("apple")))
+                .accessibility_label("Column"),
+        )
+        .child(
+            view()
+                .test_id("row")
+                .flex_row()
+                .items_center()
+                .child(view().w(px(120.0)).h(px(60.0)))
+                .child(
+                    select()
+                        .test_id("in-row")
+                        .items(fruits())
+                        .default_value(Some(SharedString::from("apple")))
+                        .accessibility_label("Row"),
+                ),
+        )
+        .child(
+            select()
+                .test_id("classed")
+                .items(fruits())
+                .app_class(Some("w-[180px]".into()))
+                .accessibility_label("Classed"),
+        )
+}
+
+#[test]
+fn a_stretching_column_does_not_widen_it() {
+    let app = start::<Layouts>(true);
+    let (w, _) = size(&app, "id:in-column");
+    assert!(w < 200.0, "as wide as its value, not the column: {w}");
+}
+
+#[test]
+fn a_row_centers_it_beside_taller_content() {
+    let app = start::<Layouts>(true);
+    let row = bounds(&app, "id:row");
+    let select = bounds(&app, "id:in-row");
+    let above = select.origin.y.0 - row.origin.y.0;
+    let below = row.size.height.0 - above - select.size.height.0;
+    assert_eq!(row.size.height.0, 60.0);
+    assert_eq!(above, below, "centered in the row, not at its top");
+}
+
+#[test]
+fn a_width_class_goes_over_its_own_width() {
+    let app = start::<Layouts>(true);
+    assert_eq!(size(&app, "id:classed").0, 180.0);
+}

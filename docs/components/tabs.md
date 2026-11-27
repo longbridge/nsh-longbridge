@@ -161,10 +161,10 @@ shadcn:
 - A trigger fills the list's height inside its padding, less 1 (shadcn's `calc(100%-1px)`), its content centered; it
   has no vertical padding (shadcn's `py-1` fits its one size only). Horizontal padding `tabs-trigger-padding-x` (8),
   icon-to-label gap `spacing × 1.5` (6), text `font-size-<size>` at `font-weight-medium`, one line.
-- Triggers share the list's width, each growing from its content (`flex: 1 1 auto`; see [NSH gaps](#nsh-gaps) 6); the
-  list is as wide as its content (`w-fit`: `align-self: flex-start` in
-  a column, as Select's root), or as the app's `class` sets (`w-full`, `w-[400px]`). In a column each trigger takes the
-  full width and starts its content at the start.
+- Triggers share the list's width, each growing from its content (`flex: 1 1 auto`; see [NSH gaps](#nsh-gaps) 5); the
+  list is as wide as its content (`w-fit`, and `h-fit` beside vertical panels: a root that stretches its children does
+  not stretch the list, and a row's `items-center` still centers it), or as the app's `class` sets (`w-full`,
+  `w-[400px]`). In a column each trigger takes the full width and starts its content at the start.
 - Corners: the list `tabs-list-radius` (`radius-lg`, 10), the trigger `tabs-trigger-radius` = list radius − padding
   (7): concentric (conventions), where shadcn has `rounded-md` (8).
 - Root: the list and the panels `tabs-gap` (8) apart, in a column (horizontal) or a row (vertical).
@@ -189,7 +189,7 @@ motion; the `line` underline fades over `duration`. The cursor is the arrow (a t
 | | Pointer | Touch |
 |---|---|---|
 | List height | 24 / 28 / 32 / 36 | 32 / 36 / 40 / 48 |
-| Hit area | The trigger | The trigger (no hit slop: NSH gaps 5) |
+| Hit area | The trigger | The trigger (no hit slop: NSH gaps 4) |
 | Focus | Edge and ring | Edge only |
 | Hover | Yes | No |
 | Many tabs | — | The app puts the `TabsList` in a horizontal scroll view (`nsh/base` keeps the arrow pair across the row for the page) |
@@ -320,12 +320,11 @@ tabs()
    selected look (Decisions 2). A reactive `indicatorStyle` would let a sliding segment be offered.
 2. **No link between a tab and its panel** (Radix's `aria-controls` / `aria-labelledby`): NSH has no labelledby between
    elements (Input's G1). Workaround: the panel's own `accessibilityLabel` when needed.
-3. **No `w-fit`** (Select's gap 4): `align-self: flex-start`.
-4. **String children** (Button's G0): the gallery wraps them in `<Text>` until NSH's fix is released.
-5. **No hit slop on a tab.** `nsh/base`'s `Tab` takes no `hitSlop`, and a component's element takes none from its
+3. **String children** (Button's G0): the gallery wraps them in `<Text>` until NSH's fix is released.
+4. **No hit slop on a tab.** `nsh/base`'s `Tab` takes no `hitSlop`, and a component's element takes none from its
    parent, so a trigger on a touch screen is hit within its own bounds (33 tall in a 40 list at `md`), not the
    vertical (44 − list height) / 2 Input has. A `hitSlop` prop on `Tab` would add it.
-6. **No content minimum for flex items** (CSS's `min-width: auto`). shadcn's triggers are `flex-1`, which in a browser
+5. **No content minimum for flex items** (CSS's `min-width: auto`). shadcn's triggers are `flex-1`, which in a browser
    never shrinks one below its label, so a list as wide as its content gives each label at least its padding. In NSH a
    trigger growing from 0 could get less than its label (a long one lost most of its padding). Workaround: triggers
    grow from their content (`flex: 1 1 auto`): in a list as wide as its content each label has `tabs-trigger-padding-x`
@@ -341,3 +340,6 @@ tabs()
    segment (gpui-kit's) is the better motion; offer it once its style takes bindings (gap 1).
 3. **`line` is supported**: `nsh/base`'s tabs need nothing more for it.
 4. **No `forceMount`**: inactive panels are released, as Radix's by default.
+5. **The list is as long as its triggers through `w-fit` / `h-fit`, not `align-self: flex-start`**: an `align-self` of
+   its own would override the cross-axis alignment of a row it sits in (a toolbar), putting it at the top instead of
+   the middle (as `Badge`'s decision 3).

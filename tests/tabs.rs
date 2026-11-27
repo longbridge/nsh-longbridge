@@ -309,3 +309,77 @@ fn a_scope_reaches_the_list_and_the_selected_tab() {
     assert_eq!(fill(&app, "role:tab[Inside]"), css("#16a34a"));
     assert_ne!(fill(&app, "role:tab[Outside]"), css("#16a34a"));
 }
+
+/// A list in a column that stretches its children, a list in a centered
+/// toolbar row beside taller content, and a vertical list beside a tall
+/// panel.
+#[component]
+fn Layouts() -> impl IntoElement {
+    view()
+        .w(px(500.0))
+        .child(
+            tabs().default_value(Some(SharedString::from("day"))).child(
+                tabs_list()
+                    .test_id("in-column")
+                    .child(tabs_trigger().value("day").child("Day"))
+                    .child(tabs_trigger().value("week").child("Week")),
+            ),
+        )
+        .child(
+            tabs().default_value(Some(SharedString::from("day"))).child(
+                view()
+                    .test_id("row")
+                    .flex_row()
+                    .items_center()
+                    .child(
+                        tabs_list()
+                            .test_id("in-row")
+                            .child(tabs_trigger().value("day").child("Day"))
+                            .child(tabs_trigger().value("week").child("Week")),
+                    )
+                    .child(view().w(px(120.0)).h(px(60.0))),
+            ),
+        )
+        .child(
+            tabs()
+                .orientation(Axis::Vertical)
+                .default_value(Some(SharedString::from("general")))
+                .child(
+                    tabs_list()
+                        .test_id("vertical")
+                        .child(tabs_trigger().value("general").child("General"))
+                        .child(tabs_trigger().value("security").child("Security")),
+                )
+                .child(
+                    tabs_content()
+                        .value("general")
+                        .child(view().w(px(200.0)).h(px(240.0))),
+                ),
+        )
+}
+
+#[test]
+fn a_stretching_column_does_not_widen_the_list() {
+    let app = start::<Layouts>(true);
+    let (w, _) = size(&app, "id:in-column");
+    assert!(w < 200.0, "as wide as its triggers, not the column: {w}");
+}
+
+#[test]
+fn a_row_centers_the_list_beside_taller_content() {
+    let app = start::<Layouts>(true);
+    let row = bounds(&app, "id:row");
+    let list = bounds(&app, "id:in-row");
+    let above = list.origin.y.0 - row.origin.y.0;
+    let below = row.size.height.0 - above - list.size.height.0;
+    assert_eq!(row.size.height.0, 60.0);
+    assert_eq!(above, below, "centered in the row, not at its top");
+}
+
+#[test]
+fn a_vertical_list_is_as_tall_as_its_triggers_not_the_panel() {
+    let app = start::<Layouts>(true);
+    let (w, h) = size(&app, "id:vertical");
+    assert!(h < 120.0, "as tall as its two triggers: {h}");
+    assert!(w < 200.0, "as wide as its triggers: {w}");
+}
