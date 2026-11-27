@@ -16,18 +16,38 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Combobox,
+  DatePicker,
+  type DatePickerValue,
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
   Input,
   type InputRef,
   Kbd,
   KbdGroup,
   Label,
+  Pagination,
+  Progress,
   RadioGroup,
   RadioGroupItem,
   Separator,
   Skeleton,
+  type SelectItem,
+  Slider,
   Spinner,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Textarea,
+  ToggleGroup,
+  ToggleGroupItem,
   Tooltip,
 } from "nsh-longbridge";
 import { numberOf } from "../theme";
@@ -59,6 +79,35 @@ const shortcuts = [
 ];
 
 const revenue = [42, 58, 49, 66, 72, 61, 80, 74, 91, 86, 98, 104];
+
+const zones: SelectItem[] = [
+  { value: "london", title: "London (GMT)" },
+  { value: "new-york", title: "New York (EST)" },
+  { value: "san-francisco", title: "San Francisco (PST)" },
+  { value: "singapore", title: "Singapore (SGT)" },
+  { value: "tokyo", title: "Tokyo (JST)" },
+];
+
+const invoices: { id: string; status: string; variant: BadgeVariant; amount: string }[][] = [
+  [
+    { id: "INV-1042", status: "Paid", variant: "secondary", amount: "$1,250.00" },
+    { id: "INV-1041", status: "Pending", variant: "outline", amount: "$480.00" },
+    { id: "INV-1040", status: "Overdue", variant: "destructive", amount: "$2,100.00" },
+    { id: "INV-1039", status: "Paid", variant: "secondary", amount: "$320.00" },
+  ],
+  [
+    { id: "INV-1038", status: "Paid", variant: "secondary", amount: "$990.00" },
+    { id: "INV-1037", status: "Paid", variant: "secondary", amount: "$145.00" },
+    { id: "INV-1036", status: "Pending", variant: "outline", amount: "$760.00" },
+    { id: "INV-1035", status: "Paid", variant: "secondary", amount: "$1,810.00" },
+  ],
+  [
+    { id: "INV-1034", status: "Paid", variant: "secondary", amount: "$275.00" },
+    { id: "INV-1033", status: "Paid", variant: "secondary", amount: "$3,400.00" },
+    { id: "INV-1032", status: "Paid", variant: "secondary", amount: "$610.00" },
+    { id: "INV-1031", status: "Paid", variant: "secondary", amount: "$88.00" },
+  ],
+];
 
 // Text here takes the card's color, never a Tailwind color class: those read
 // the app's theme, while a ThemeScope reaches only the library's components.
@@ -289,6 +338,17 @@ export function ActivityCard(props: { class?: string } = {}) {
             <Text>Ready</Text>
           </Badge>
         </View>
+        <View class="flex-row items-center gap-3">
+          <Avatar name="Liam Johnson" />
+          <View class="flex-1">
+            <Progress value={64} accessibilityLabel="acme-docs deployment">
+              <View class="flex-row justify-between gap-2">
+                <Text class="truncate text-sm">Liam is deploying acme-docs</Text>
+                <Muted xs>64%</Muted>
+              </View>
+            </Progress>
+          </View>
+        </View>
         <View class="gap-5" accessibilityLabel="Loading activity">
           {[0.72, 0.56, 0.64].map((w) => (
             <View class="flex-row items-center gap-3">
@@ -469,6 +529,167 @@ export function ExportCard(props: { class?: string } = {}) {
   );
 }
 
+export function MeetingCard(props: { class?: string } = {}) {
+  const day = signal<DatePickerValue>("2026-12-03");
+  const zone = signal<string[]>(["london"]);
+  return (
+    <Card class={props.class}>
+      <CardHeader>
+        <CardTitle>
+          <Text>Schedule a meeting</Text>
+        </CardTitle>
+        <CardDescription>
+          <Text>Everyone invited gets it in their own time zone.</Text>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <Field>
+            <FieldLabel>
+              <Text>Title</Text>
+            </FieldLabel>
+            <Input defaultValue="Quarterly planning" accessibilityLabel="Title" />
+          </Field>
+          <Field>
+            <FieldLabel>
+              <Text>Date</Text>
+            </FieldLabel>
+            <DatePicker class="w-full" value={day()} onChange={(e) => day.set(e.value)} accessibilityLabel="Date" />
+          </Field>
+          <Field>
+            <FieldLabel>
+              <Text>Time zone</Text>
+            </FieldLabel>
+            <Combobox items={zones} value={zone()} onChange={(e) => zone.set(e.value)} accessibilityLabel="Time zone" />
+          </Field>
+        </FieldGroup>
+      </CardContent>
+      <CardFooter class="justify-end gap-2">
+        <Button variant="ghost" size="sm">
+          <Text>Cancel</Text>
+        </Button>
+        <Button size="sm" disabled={day() === null}>
+          <Text>Schedule</Text>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+export function DisplayCard(props: { class?: string } = {}) {
+  const size = signal(16);
+  const density = signal("default");
+  return (
+    <Card class={props.class}>
+      <CardHeader>
+        <CardTitle>
+          <Text>Display</Text>
+        </CardTitle>
+        <CardDescription>
+          <Text>How the editor looks on this device.</Text>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldLabel>
+                <Text>Text size</Text>
+              </FieldLabel>
+              <FieldDescription>
+                <Text>{`${size()} points`}</Text>
+              </FieldDescription>
+            </FieldContent>
+            <Slider min={12} max={24} value={size()} onChange={(e) => size.set(e.value as number)} accessibilityLabel="Text size" />
+          </Field>
+          <Field>
+            <FieldLabel>
+              <Text>Density</Text>
+            </FieldLabel>
+            <ToggleGroup
+              size="sm"
+              variant="outline"
+              value={[density()]}
+              onChange={(e) => e.value[0] && density.set(e.value[0])}
+              accessibilityLabel="Density"
+            >
+              <ToggleGroupItem value="compact">
+                <Text>Compact</Text>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="default">
+                <Text>Default</Text>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="comfortable">
+                <Text>Comfortable</Text>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </Field>
+        </FieldGroup>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function InvoicesCard(props: { class?: string } = {}) {
+  const page = signal(1);
+  return (
+    <Card class={props.class}>
+      <CardHeader>
+        <CardTitle>
+          <Text>Invoices</Text>
+        </CardTitle>
+        <CardDescription>
+          <Text>The latest first.</Text>
+        </CardDescription>
+      </CardHeader>
+      <CardContent class="gap-3">
+        <Table size="sm" accessibilityLabel="Invoices">
+          <TableHeader>
+            <TableRow>
+              <TableHead class="w-20 flex-none">
+                <Text>Invoice</Text>
+              </TableHead>
+              <TableHead>
+                <Text>Status</Text>
+              </TableHead>
+              <TableHead class="w-24 flex-none items-end">
+                <Text>Amount</Text>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {invoices[page() - 1].map((i) => (
+              <TableRow>
+                <TableCell class="w-20 flex-none">
+                  <Text>{i.id}</Text>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={i.variant}>
+                    <Text>{i.status}</Text>
+                  </Badge>
+                </TableCell>
+                <TableCell class="w-24 flex-none items-end">
+                  <Text class="tabular-nums">{i.amount}</Text>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Pagination
+          size="sm"
+          page={page()}
+          totalPages={invoices.length}
+          compact
+          onChange={({ page: next }) => page.set(next)}
+          accessibilityLabel="Invoice pages"
+        >
+          <Muted xs>{`${page()} / ${invoices.length}`}</Muted>
+        </Pagination>
+      </CardContent>
+    </Card>
+  );
+}
+
 type CardView = (props: { class?: string }) => JSX.Element;
 
 /**
@@ -478,15 +699,30 @@ type CardView = (props: { class?: string }) => JSX.Element;
 export function Showcase(props: { columns: number }) {
   const layouts: Record<number, CardView[][]> = {
     3: [
-      [SignInCard, ShortcutsCard, ExportCard],
-      [RevenueCard, PlanCard, ActivityCard],
-      [NotificationsCard, InviteCard, FeedbackCard],
+      [SignInCard, MeetingCard, ShortcutsCard, ExportCard],
+      [RevenueCard, PlanCard, InvoicesCard, ActivityCard],
+      [NotificationsCard, DisplayCard, InviteCard, FeedbackCard],
     ],
     2: [
-      [SignInCard, PlanCard, ActivityCard, ExportCard],
-      [RevenueCard, NotificationsCard, InviteCard, ShortcutsCard, FeedbackCard],
+      [SignInCard, MeetingCard, PlanCard, ActivityCard, ExportCard],
+      [RevenueCard, NotificationsCard, DisplayCard, InvoicesCard, InviteCard, ShortcutsCard, FeedbackCard],
     ],
-    1: [[SignInCard, RevenueCard, NotificationsCard, PlanCard, InviteCard, ActivityCard, ShortcutsCard, ExportCard, FeedbackCard]],
+    1: [
+      [
+        SignInCard,
+        RevenueCard,
+        NotificationsCard,
+        MeetingCard,
+        PlanCard,
+        DisplayCard,
+        InvoicesCard,
+        InviteCard,
+        ActivityCard,
+        ShortcutsCard,
+        ExportCard,
+        FeedbackCard,
+      ],
+    ],
   };
   return (
     <View class="flex-row gap-4">

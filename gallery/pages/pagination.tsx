@@ -58,12 +58,10 @@ function HeroDemo() {
   return (
     <Demo hero class="items-stretch">
       <View class="w-full max-w-[560px] self-center gap-6">
-        <View class="gap-1">
-          <Text class="text-sm text-muted-foreground">{`${results.length} results · page ${page()} of ${pages}`}</Text>
-        </View>
-        <View class="gap-4">
+        <Text class="-mb-3 text-sm text-muted-foreground">{`${results.length} results · page ${page()} of ${pages}`}</Text>
+        <View class="rounded-lg border border-border">
           {shown().map((r) => (
-            <View class="gap-0.5">
+            <View class="gap-0.5 border-b border-border px-4 py-3 last:border-b-0">
               <Text class="text-sm font-medium text-foreground">{r.title}</Text>
               <Text class="text-xs text-muted-foreground">{r.detail}</Text>
             </View>
