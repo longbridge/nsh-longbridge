@@ -191,6 +191,32 @@ fn a_disabled_field_dims_its_label_and_disables_its_control() {
     );
 }
 
+/// A label beside a full-width control, in a narrow row.
+#[component]
+fn Beside() -> impl IntoElement {
+    view().p(px(20.0)).w(px(260.0)).child(
+        field()
+            .orientation(FieldOrientation::Horizontal)
+            .child(field_label().child(text("Alert volume level")))
+            .child(input().accessibility_label("Level box")),
+    )
+}
+
+#[test]
+fn a_label_beside_a_full_width_control_shares_the_row_and_wraps() {
+    let app = start::<Beside>(true);
+    let label = bounds(&app, "text:Alert volume level");
+    let input = bounds(&app, "label:Level box");
+    // The control shrank to share the row; the label wraps rather than
+    // running under it.
+    assert!(
+        label.origin.x + label.size.width + px(12.0) <= input.origin.x + px(0.5),
+        "{label:?} {input:?}"
+    );
+    assert!(label.size.height > px(20.0), "{label:?}");
+    assert!(input.size.width > px(60.0), "{input:?}");
+}
+
 /// `FieldError`s: none, one message, several (one repeated, one empty),
 /// and children over messages.
 #[component]

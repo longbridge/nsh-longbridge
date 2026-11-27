@@ -81,6 +81,8 @@ components (DatePicker) take it before the Field parts exist.
   as React Native's, neither shrinks a view nor keeps it at its content's width unless told to, so in a row a
   full-width control (Input, Textarea, Combobox, Slider) shrinks (`flex-shrink: 1`) to share the row, and
   `FieldContent` and a horizontal `FieldLabel` keep CSS's automatic minimum (`min-width: auto`, their longest word);
+  a horizontal `FieldLabel` stacks its children (a column), since a text in a row does not shrink and would run under
+  the control instead of wrapping;
   beside a `FieldContent`, a choice control (Checkbox, Switch, a radio) centers itself on the text's first line as on
   its own label's (Decisions 5).
 - **Joining a field.** Every control of the library calls `field::join(host, kind, disabled)` in its body, once (with
@@ -190,7 +192,7 @@ them):
 | Part | Classes | This library |
 |---|---|---|
 | `Field` vertical | `group/field flex w-full flex-col gap-3 [&>*]:w-full` | A column, children stretched to its width, `field-gap` (12) apart |
-| `Field` horizontal | `flex-row items-center [&>[data-slot=field-label]]:flex-auto`, `has-[>[data-slot=field-content]]:items-start` | A row, centered, `field-gap` apart; a `FieldLabel` or `FieldContent` in it takes the room left (`flex: 1 1 auto`, never narrower than its longest word) and a full-width control shrinks to share the row (Implementation); with a `FieldContent`, the row aligns to the top and a choice control (Checkbox, Switch, a radio) is centered on the content's first line (Decisions 5) |
+| `Field` horizontal | `flex-row items-center [&>[data-slot=field-label]]:flex-auto`, `has-[>[data-slot=field-content]]:items-start` | A row, centered, `field-gap` apart; a `FieldLabel` or `FieldContent` in it takes the room left (`flex: 1 1 auto`, never narrower than its longest word; a `FieldLabel` there stacks its children, so a long label wraps) and a full-width control shrinks to share the row (Implementation); with a `FieldContent`, the row aligns to the top and a choice control (Checkbox, Switch, a radio) is centered on the content's first line (Decisions 5) |
 | `Field` responsive | vertical; `@md/field-group:` horizontal | Vertical while the enclosing `FieldGroup` is narrower than `field-responsive-width` (448, Tailwind's `@md` container, 28rem), horizontal from it; vertical outside a `FieldGroup` (no container) |
 | `FieldContent` | `flex flex-1 flex-col gap-1.5 leading-snug` | A column, `flex: 1 1 auto` (as a horizontal `FieldLabel`: from its words' width, so a full-width control beside it shares the row), `field-content-gap` (6) apart |
 | `FieldGroup` | `flex w-full flex-col gap-7`, a nested group `gap-4` | A column, full width, `field-group-gap` (28) apart; a `FieldGroup` directly in another (not through a `Field`) `field-group-nested-gap` (16) |

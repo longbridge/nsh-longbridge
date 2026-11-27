@@ -392,14 +392,19 @@ pub fn FieldLabel(props: FieldLabelProps, _cx: Scope<NoEvent>) -> impl IntoEleme
                         AdaptiveColor::TRANSPARENT
                     })
             } else {
-                let s = s.flex_row().items_center();
-                // Beside the control, it takes the room left.
+                // Beside the control, it takes the room left, never
+                // narrower than its longest word, its children stacked:
+                // NSH's layout does not shrink a text in a row, so a row
+                // here would let a long label run under the control
+                // rather than wrap.
                 if horizontal() {
-                    s.flex_grow(1.0)
+                    s.flex_col()
+                        .justify_center()
+                        .flex_grow(1.0)
                         .flex_shrink(1.0)
                         .min_w(nsh_core::geometry::auto())
                 } else {
-                    s
+                    s.flex_row().items_center()
                 }
             }
         })
