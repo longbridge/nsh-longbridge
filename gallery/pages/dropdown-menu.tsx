@@ -20,6 +20,7 @@ import {
   type Size,
 } from "nsh-longbridge";
 import { Demo, Demos, Page, Row, Section } from "../ui/layout";
+import { narrow } from "../ui/screen";
 import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
@@ -144,13 +145,18 @@ function AppHeader() {
           </View>
           <Text class="text-sm font-semibold text-foreground">Acme Inc</Text>
         </View>
+        {/* On a phone the navigation would crowd the account menu out. */}
         <View class="flex-1 flex-row items-center gap-1">
-          <Button variant="ghost" size="sm">
-            <Text>Overview</Text>
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Text>Deployments</Text>
-          </Button>
+          {narrow() ? null : (
+            <>
+              <Button variant="ghost" size="sm">
+                <Text>Overview</Text>
+              </Button>
+              <Button variant="ghost" size="sm">
+                <Text>Deployments</Text>
+              </Button>
+            </>
+          )}
         </View>
         <AccountMenu open={open()} onOpenChange={(o) => open.set(o)} onSelect={(what) => last.set(what)} />
       </View>

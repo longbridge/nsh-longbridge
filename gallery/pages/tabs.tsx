@@ -95,7 +95,7 @@ export function TabsPage() {
 
       <Section
         title="Vertical and controlled"
-        description={`orientation="vertical" stacks the triggers beside the panels; the up and down arrows move between them. The app can own value, here with steps of a wizard.`}
+        description={`With orientation="vertical" the triggers stack beside the panels; the up and down arrows move between them. The app can own value, here with steps of a wizard.`}
       >
         <Demos>
           <SettingsDemo />

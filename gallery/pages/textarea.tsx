@@ -83,7 +83,7 @@ export function TextareaPage() {
         </Demos>
       </Section>
 
-      <Section title="Return sends" description={`submitBehavior="submit": Return sends the message, Shift+Return breaks the line.`}>
+      <Section title="Return sends" description={`With submitBehavior="submit", Return sends the message, Shift+Return breaks the line.`}>
         <Composer />
       </Section>
 
