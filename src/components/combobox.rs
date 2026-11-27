@@ -226,6 +226,9 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
     let joined = field::join(cx.__host(), Kind::Inert, move || props.disabled.get());
     let disabled = computed(move || props.disabled.get() || joined.disabled());
     let invalid = move || props.invalid.get() || joined.invalid();
+    // One line of text in the middle of a one-row field; chips wrap below
+    // it.
+    joined.report_first_line(move || t.length(input::height_token(size())) / 2.0);
     let multiple = props.multiple.get_untracked();
     // The value the chips and the checks show: the app's, else its own.
     let own = signal(props.default_value.get_untracked());
@@ -398,10 +401,11 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
     root = root
         .items_center()
         .min_h(height)
-        // Room at the end for a button (inset 4), and around the chips.
+        // Room at the end for a button (its inset from the outer edge, less
+        // the field's edge), and around the chips.
         .pe(move || {
             if clear_shown() || trigger_shown() {
-                px(4.0)
+                field::field_button_inner_inset(t)
             } else {
                 px(0.0)
             }
@@ -411,7 +415,7 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
         // buttons' inset of 4 above and below.
         .py(move || {
             if chips.get() {
-                (px(4.0) - t.length(field::INPUT_BORDER_WIDTH)).max(px(0.0))
+                field::field_button_inner_inset(t)
             } else {
                 px(0.0)
             }
