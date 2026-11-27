@@ -158,6 +158,11 @@ pub enum Label {
     /// "Remove": the button that removes a chosen value, said before its
     /// title (a combobox's chips).
     Remove,
+    /// "{start} – {end}": two values as a range (a slider's bubble once its
+    /// thumbs' two come together); `{start}` and `{end}` are replaced by
+    /// the values' text.
+    #[prop(rename = "value-range")]
+    ValueRange,
 }
 
 impl Label {
@@ -211,6 +216,7 @@ impl Label {
         Label::NoItems,
         Label::Clear,
         Label::Remove,
+        Label::ValueRange,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -264,6 +270,7 @@ impl Label {
             Label::NoItems => "no-items",
             Label::Clear => "clear",
             Label::Remove => "remove",
+            Label::ValueRange => "value-range",
         }
     }
 
@@ -318,6 +325,7 @@ impl Label {
             Label::NoItems => "No items found.",
             Label::Clear => "Clear",
             Label::Remove => "Remove",
+            Label::ValueRange => "{start} – {end}",
         }
     }
 
