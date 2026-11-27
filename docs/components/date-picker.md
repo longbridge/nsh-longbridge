@@ -1,12 +1,10 @@
 # DatePicker
 
-Status: spec (P3), not implemented. A date, a range of dates or a date and time, picked from a
+Status: implemented (P3). A date, a range of dates or a date and time, picked from a
 [Calendar](calendar.md) that a field opens: a popup at the field on desktops, a sheet at the bottom on touch
 screens. The trigger is drawn by foundation's **field look** (the `input-*` tokens, as [Input](input.md) and
 [Select](select.md)); the popup by the **popup surface** (the `popover-*` tokens, owned by [Popover](popover.md));
-the calendar by the **calendar look** (the `calendar-*` tokens, owned by [Calendar](calendar.md)). Reference: shadcn/ui
-new-york v4's date picker examples (`date-picker-demo`, `date-picker-with-range`, `date-picker-with-presets`, the
-date and time picker), a composition of `Popover`, `Calendar` and an outline `Button`.
+the calendar by the **calendar look** (the `calendar-*` tokens, owned by [Calendar](calendar.md)).
 
 ## Usage
 
@@ -45,14 +43,14 @@ trigger and every part on its behavior, which is not rewritten:
 | Control | `open` / `defaultOpen` / `onOpenChange({ open, reason })`, `onOpen`, `onClose`, `onCancel` |
 | Terminal | A trigger with `▾`, the terminal calendar; this library's look does not apply there |
 
-### Differs from shadcn's structure
+### One component, not a composition
 
-shadcn has no date picker component: its docs compose `Popover > PopoverTrigger > Button` and `PopoverContent >
-Calendar`, and the app formats the date (date-fns `format(date, "PPP")`). Here it is one component, because
+On the web a date picker is often composed by the app: `Popover > PopoverTrigger > Button` and `PopoverContent >
+Calendar`, the app formatting the date (date-fns `format(date, "PPP")`). Here it is one component, because
 `nsh/base`'s `DatePicker` already joins the trigger, the popup and the calendar with the platform's presentation (a
 sheet on touch screens, where a popover would not be the habit) and the keys between them:
 
-| shadcn | This library |
+| A web composition | This library |
 |---|---|
 | `<Popover><PopoverTrigger asChild><Button variant="outline">…</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" …/></PopoverContent></Popover>` | `<DatePicker value onChange placeholder="Pick a date" />` |
 | The trigger's text: `format(date, "PPP")`, `<span>Pick a date</span>` muted | `dateFormat` (`chrono`'s) and `placeholder`, drawn by the library in the field |
@@ -67,8 +65,8 @@ Why not this library's `Popover` with a `Calendar` in it: that composition would
 `nsh/base`'s `DatePicker` already does (the sheet on touch screens, the focus moving into the days and back, the
 trigger's combobox role and value, Return and Delete on the trigger, the time's keep-open rule), against
 conventions ("a component wraps its `nsh/base` counterpart where there is one"). The popup still looks exactly like a
-`Popover`: the same surface, tokens and motion (`foundation::popup`). An app that wants shadcn's composition
-literally (a `Button` that opens a `Popover` holding a `Calendar`) can write it with this library's three components.
+`Popover`: the same surface, tokens and motion (`foundation::popup`). An app that wants the composition literally (a
+`Button` that opens a `Popover` holding a `Calendar`) can write it with this library's three components.
 
 ### Implementation
 
@@ -88,7 +86,7 @@ literally (a `Button` that opens a `Popover` holding a `Calendar`) can write it 
   Outside a `Field` nothing changes.
 - **The popup and the sheet**: `foundation::popup::surface` on `nsh/base`'s `popupStyle`, as `Select`'s
   (`foundation::popup::set_popup_style`, `PopupStyleProp` implemented for `DatePickerProps`), no padding of
-  its own (the calendar's padding is the popup's, shadcn's `p-0`); in the sheet, the menu's sheet look
+  its own (the calendar's padding is the popup's); in the sheet, the menu's sheet look
   (`menu-sheet-radius`, the top edge, the bottom safe area) and the `overlay` backdrop, as `Select`'s.
 - **The calendar** is `nsh/base`'s grid inside the popup: the library writes the calendar look into its parts
   (`headerStyle` … `itemClass`, its `renderItem`) exactly as `Calendar` does, through functions `Calendar`'s file
@@ -114,7 +112,7 @@ literally (a `Button` that opens a `Popover` holding a `Calendar`) can write it 
 | `value` | `value` | `DatePickerValue` / `DatePickerValue` (`nsh/base`'s) | uncontrolled | An ISO date, `[start, end]` with `range`, a date and time with `timePrecision` (`"2026-10-28T09:30"`), `null` for none ([Calendar, "Dates in TSX and Rust"](calendar.md#dates-in-tsx-and-rust)) |
 | `defaultValue` | `default_value` | `DatePickerValue` / `DateTime` | `null` | The first value while uncontrolled |
 | `range` | `range` | `boolean` | `false` | Pick a range: the first press starts it, the second ends it and closes the popup |
-| `placeholder` | `placeholder` | `string` | "Pick a date" (`labels`) | What the field shows without a value (shadcn's text) |
+| `placeholder` | `placeholder` | `string` | "Pick a date" (`labels`) | What the field shows without a value |
 | `dateFormat` | `date_format` | `string` | `"%b %-d, %Y"` (`Oct 28, 2026`) | How the field shows the value and screen readers hear it, in `chrono`'s format; a range's ends joined by ` - `; with `timePrecision`, the time after a space (`%H:%M`, `%I:%M %p` by `hourCycle`, with `:%S` at seconds) |
 | `size` | `size` | `Size` | `"md"` | The field's height, type, padding and icon, and the calendar's cells |
 | `disabled` | `disabled` | `boolean` | `false` | It does not open, takes no focus, is dimmed; also while its `Field` is disabled |
@@ -129,11 +127,11 @@ literally (a `Button` that opens a `Popover` holding a `Calendar`) can write it 
 | `disabledMatcher` | `disabled_matcher` | `DateMatcher` / `Matcher` | — | As Calendar's |
 | `yearRange` | `year_range` | `[number, number]` / `YearRange` | 50 years either side | As Calendar's |
 | `placement` | `placement` | `Placement` | `"bottom"` | Desktops: the side of the field the popup goes on |
-| `align` | `align` | `Align` | `"start"` | Desktops: the alignment along it (shadcn's examples: `align="start"`) |
+| `align` | `align` | `Align` | `"start"` | Desktops: the alignment along it: the popup starts where the field does |
 | `trigger` | `trigger` | element (slot) | the library's field | The app's own trigger in place of the field (an icon `Button` in a toolbar); it is placed against and announced as the combobox |
 | `accessibilityLabel` | `accessibility_label` | `string` | — | What screen readers call it; set it even beside a `Label` (Input's G1) |
 | `timeAccessibilityLabel` | `time_accessibility_label` | `string` | "Time" (`labels`) | What screen readers call the time field |
-| `renderItem` | `render_item` | as Calendar's | — | As Calendar's: a day's (or another item's) label inside the library's cell |
+| `renderItem` | `render_item` | as Calendar's | — | As Calendar's: a day's label inside the library's cell (days only) |
 | `class` / `style` | `class` / `style` | | | The root, the box the field fills: width and layout (`w-[240px]`, `w-full`) |
 | `triggerClass` / `triggerStyle` | `trigger_class` / `trigger_style` | | | The field, merged over the field look |
 | `valueClass` / `valueStyle` | `value_class` / `value_style` | | | The field's text (the value or the placeholder) |
@@ -147,8 +145,8 @@ literally (a `Button` that opens a `Popover` holding a `Calendar`) can write it 
 | `timeFieldClass` / `timeFieldStyle` | `time_field_class` / `time_field_style` | | | The time field (the field look around the segments) |
 | `segmentClass` / `segmentStyle` | `segment_class` / `segment_style` | | | Each segment of the time (hours, minutes, seconds, AM / PM) |
 
-Not exposed in P3, though `nsh/base` has them: `cleanable` and its clear button (as Select's: shadcn has none; added
-later with a look; Delete and Backspace on the trigger clear the value), `timeLabel` (the library's "Time"),
+Not exposed in P3, though `nsh/base` has them: `cleanable` and its clear button (as Select's: added later with a
+look; Delete and Backspace on the trigger clear the value), `timeLabel` (the library's "Time"),
 `renderSegment`, the calendar's `headerClass` … `rowStyle` (the calendar look; `calendarClass` and `itemClass`
 reach what an app restyles), `popupStartingClass` / `popupEndingClass` (the library's motion; `popover-animate` 0 turns
 it off), `backdropClass` (the `overlay` token), `offset` / `margin` (the `popover-offset` / `popover-margin`
@@ -199,9 +197,8 @@ No variants.
 
 ### The field
 
-shadcn's trigger: `Button variant="outline"`, `w-[240px] justify-start text-left font-normal`, muted without a date
-(`data-[empty=true]:text-muted-foreground`), a `CalendarIcon` (`size-4`) then the text. Here the field look (as
-`Select`'s trigger), which is the same edge, fill and shadow, and adds the focus ring, `invalid` and the open state:
+The field look (as `Select`'s trigger): an outline button's edge, fill and shadow, plus the focus ring, `invalid`
+and the open state:
 
 | `size` | Height (pointer / touch) | Text (pointer / touch) | Padding | Icon | Calendar cell |
 |---|---|---|---|---|---|
@@ -214,22 +211,22 @@ shadcn's trigger: `Button variant="outline"`, `w-[240px] justify-start text-left
   a DatePicker, a Select and an Input of a `size` line up in a row.
 - A row: the `calendar` icon (`icon-size-<size>`), `spacing × 2` (8) after it, then the value (one line, cut with an
   ellipsis, `flex: 1`, start-aligned). Text and icon are `input-foreground` with a value, both
-  `input-placeholder-foreground` without one (shadcn mutes the whole button). Regular weight (shadcn's `font-normal`).
-- Width: as wide as its content, as Select's (`w-fit`); shadcn's examples set `w-[240px]` / `w-[280px]`, which the
-  app sets with `class` so that the field keeps its width as the value changes.
+  `input-placeholder-foreground` without one (the whole field reads empty). Regular weight.
+- Width: as wide as its content, as Select's (`w-fit`); an app sets a width (`w-[240px]`, `w-[280px]`) with `class`
+  so that the field keeps its width as the value changes.
 - The `calendar` icon is lucide's `calendar` (added to `foundation`'s icons).
 
 ### The popup
 
-| Part | This library | shadcn |
-|---|---|---|
-| Surface | The popup surface (`popover`, `popover-border`, `popover-radius`, shadow tier `popover-shadow` 3), no padding; at least the field's width, otherwise the calendar's | `PopoverContent className="w-auto p-0"`: `rounded-md border bg-popover shadow-md` |
-| Distance | `popover-offset` (4) from the field, `popover-margin` (4) from the safe area | `sideOffset={4}` |
-| Calendar | The calendar look at the picker's `size`, transparent, padding `calendar-padding` (12) | `Calendar` (`p-3`, `bg-transparent` in a popover) |
-| Presets (desktops) | A column before the calendar: padding `calendar-padding`, gap 4, at least `menu-min-width` (128) wide, an edge of `border-width` in `border` between it and the calendar; each preset a ghost button `button-height-sm` tall, padding `menu-item-padding-x` (8), text 13 start-aligned, hover `button-ghost-hover` | A `Select` of presets above the calendar, or (shadcn's blocks) outline buttons `size="sm"` under it; `nsh/base` lays presets out beside it (gpui-component's), a desktop range picker's habit |
-| Time row | Under the calendar: an edge of `border-width` in `border` above, padding `calendar-padding`, a row with "Time" at the start (`text-sm` / 20, `font-weight-medium`, as `Label`) and the time field at the end, gap 8 | An `Input type="time"` beside the picker, labelled "Time" |
-| Time field | The field look (as Input) at the picker's `size`, as wide as its segments plus `input-padding-x-<size>`; its focus states while the native field inside has the focus | `Input` |
-| Segments | Padding 2 at the sides, corners `radius-xs`, text `input-font-size-<size>` with tabular figures; the edited one (`focus:`) `date-picker-segment-focus` / `-foreground`; `:` between them in `input-placeholder-foreground` | (the browser's time input) |
+| Part | Look |
+|---|---|
+| Surface | The popup surface (`popover`, `popover-border`, `popover-radius`, shadow tier `popover-shadow` 3), no padding; at least the field's width, otherwise the calendar's |
+| Distance | `popover-offset` (4) from the field, `popover-margin` (4) from the safe area |
+| Calendar | The calendar look at the picker's `size`, transparent, padding `calendar-padding` (12) |
+| Presets (desktops) | A column before the calendar: padding `calendar-padding`, gap 4, at least `menu-min-width` (128) wide, an edge of `border-width` in `border` between it and the calendar; each preset a ghost button `button-height-sm` tall, padding `menu-item-padding-x` (8), text 13 start-aligned, hover `button-ghost-hover`. Beside the calendar is `nsh/base`'s place (a desktop range picker's habit) |
+| Time row | Under the calendar: an edge of `border-width` in `border` above, padding `calendar-padding`, a row with "Time" at the start (`text-sm` / 20, `font-weight-medium`, as `Label`) and the time field at the end, gap 8 |
+| Time field | The field look (as Input) at the picker's `size`, as wide as its segments plus `input-padding-x-<size>`; its edge color is a generated class (`focus-within:` changes it, which an inline color would override), the focus edge and (with a pointer) ring on `focus-within:` while the native field inside has the focus |
+| Segments | Padding 2 at the sides, corners `radius-xs`, text `input-font-size-<size>` with tabular figures; the edited one (`focus:`) `date-picker-segment-focus` / `-foreground`; `:` between them in `input-placeholder-foreground` |
 
 ### Motion
 
@@ -242,14 +239,14 @@ it off; no slide and a centered origin (`nsh/base`'s `DatePicker` has no `onPosi
 The field takes the field look's states (Input's table): rest, focus-visible (`input-border-focus` edge and the
 `input-ring` ring), invalid, invalid + focus-visible, disabled (`opacity-disabled`, the arrow cursor). In addition:
 
-| State | Look | shadcn |
-|---|---|---|
-| Hover (pointer) | Fill `date-picker-trigger-hover` (dark only: `input` at 50%; light unchanged), as Select's trigger | outline button: `hover:bg-accent`, dark `hover:bg-input/50` |
-| Placeholder shown | Text and icon in `input-placeholder-foreground` | `data-[empty=true]:text-muted-foreground` |
-| Open (`expanded:`) | Edge `input-border-focus`, no ring (Select's Decisions 2) | none |
-| A half range | The calendar shows its start and the preview (Calendar's states); closing drops it, the value unchanged | — |
-| Preset hover / press | Ghost hover fill; touch: the press as hover | — |
-| Segment edited | `date-picker-segment-focus` fill and its foreground | — |
+| State | Look |
+|---|---|
+| Hover (pointer) | Fill `date-picker-trigger-hover` (dark only: `input` at 50%; light unchanged), as Select's trigger |
+| Placeholder shown | Text and icon in `input-placeholder-foreground` |
+| Open (`expanded:`) | Edge `input-border-focus`, no ring (Select's Decisions 2) |
+| A half range | The calendar shows its start and the preview (Calendar's states); closing drops it, the value unchanged |
+| Preset hover / press | Ghost hover fill (outline hover in the sheet); touch: the press as hover |
+| Segment edited | `date-picker-segment-focus` fill and its foreground |
 
 The field's colors, edge and ring transition over `duration` (the field look's); the cursor is the arrow (a date
 picker is not text).
@@ -261,8 +258,8 @@ picker is not text).
 | Field | `input-height-<size>`: 24 / 28 / 32 / 36 | 32 / 36 / 40 / 48, and below `touch-target` a vertical hit slop of (44 − height) / 2, as Input |
 | Focus | The edge and the ring | The edge only |
 | Form | A popup at the field (`placement`, `align`) | A sheet at the bottom, the menu's sheet look (`menu-sheet-radius`, a top edge, the bottom safe area), the `overlay` backdrop; the calendar spans the sheet, its cells sharing the width (44 tall at `md`) |
-| Months | `numberOfMonths` side by side | One (Calendar's rule below `md`) |
-| Presets | A column before the calendar | A wrapping row above the calendar: outline buttons `button-height-sm` (36 on touch), gap 8, padding `calendar-padding` (shadcn's blocks' presets) |
+| Months | `numberOfMonths` side by side (one below `md`, Calendar's rule) | One in the sheet |
+| Presets | A column before the calendar | A wrapping row above the calendar: outline buttons `button-height-sm` (36 on touch), gap 8, padding `calendar-padding` (none under it: the calendar's own padding follows) |
 | Picking with a time | The popup stays for the time; the selected day again closes it | A tap on a day picks it at its time and closes the sheet; opening it again edits the time (`nsh/base`) |
 | Time field | Typed on the keyboard | The numeric keypad (`nsh/base`'s native field) |
 
@@ -282,8 +279,8 @@ description and error describe the trigger ([Field](field.md)).
 The field reads the `input-*` tokens ([Input](input.md#tokens)), the popup the `popover-*` tokens
 ([Popover](popover.md#tokens)), the sheet and the presets' row geometry the `menu-*` tokens
 ([DropdownMenu](dropdown-menu.md#tokens)), the calendar the `calendar-*` tokens ([Calendar](calendar.md#tokens)), the
-presets Button's ghost and outline tokens. Its own tokens are what the picker alone has. When implemented, this table
-is generated (`<!-- tokens:date-picker -->`).
+presets Button's ghost and outline tokens. Its own tokens are what the picker alone has. This table is generated
+(`<!-- tokens:date-picker -->`).
 
 <!-- tokens:date-picker -->
 | Token | Type | Derived default | Value |
@@ -392,21 +389,20 @@ date_picker()
 1. **The field's text is `chrono`'s, in English.** `dateFormat` is a `chrono` format, whose month and weekday names
    are English (`%b` → `Oct`), and `nsh/base` hears the value in the same format, so screen and screen reader agree.
    Workaround: an app in another language sets a numeric format (`"%Y-%m-%d"`, `"%d.%m.%Y"`, `"%Y/%m/%d"`); the
-   default is English (shadcn's examples' `LLL dd, y` without the zero). The NSH fix is Calendar's NSH gaps 3 (locale
+   default is English (`LLL dd, y` without the zero). The NSH fix is Calendar's NSH gaps 3 (locale
    names in Rust), with a locale-aware default format (`Intl`'s `dateStyle: "medium"`).
 2. **The parts are `nsh/base`'s** (Select's gap 1): `popupStyle`, the calendar's part styles, the presets', the time
    row's and the segments' styles from Rust are built once; their look follows conventions.md's rule (Drawing).
-   ★ The first headless test changes a token while the popup is open and checks the popup, a day and a segment
-   follow it. Fallback: the surface is read as it opens (as a `Popover`'s panel), so a change shows at the next
-   opening.
+   ★ Verified: a headless test changes a token while the popup is open and the popup, a day and a segment follow
+   it (`tests/date_picker.rs`); no fallback needed.
 3. **No `onPosition`**: no slide toward the field and a centered zoom origin, as `Select` (Tooltip's gap 3).
 4. **The app's pressable as `trigger`** takes the press (Popover's NSH gaps 7): handled for this library's `Button`
    by `foundation::trigger` with the open state the library holds; an app's own pressable is not covered.
 5. **The time field's focus is inside it**: `nsh/base`'s time field keeps a native text field behind the segments,
    which takes the focus; the field look's focus states are drawn on `focus-within:` of the time field's view, not
-   `focus-visible:`. ★ The first headless test focuses the time field and checks the edge and the ring on its view.
-   Fallback: the edited segment's highlight alone shows the focus (no ring on the time field).
-6. **Not editable as text.** `nsh/base`'s trigger is a button-like combobox; shadcn's "input" date picker (an `Input`
+   `focus-visible:`. ★ Verified: a headless test focuses the time field and its view takes the focus edge and the
+   ring, and the rest edge again once Tab leaves it; no fallback needed.
+6. **Not editable as text.** `nsh/base`'s trigger is a button-like combobox; the web's "input" date picker (an `Input`
    that parses what is typed, with a calendar button) has no counterpart. An app builds it from `Input` and a
    `Popover` with a `Calendar`; a `DateField` of segments (React Aria's) would be the NSH answer, as `TimeField` is
    for times.
@@ -419,19 +415,28 @@ date_picker()
 
 Settled in review:
 
-1. **Built on `nsh/base`'s `DatePicker`, not this library's `Popover` + `Calendar`** (see "Differs from shadcn's
-   structure"): the platform's sheet, the focus and the keys come with it; the popup looks like a `Popover`
+1. **Built on `nsh/base`'s `DatePicker`, not this library's `Popover` + `Calendar`** (see "One component, not a
+   composition"): the platform's sheet, the focus and the keys come with it; the popup looks like a `Popover`
    (`foundation::popup`).
-2. **The trigger is the field look**, not shadcn's outline `Button`: the same edge, fill and shadow, plus the focus
+2. **The trigger is the field look**, not an outline `Button`: the same edge, fill and shadow, plus the focus
    ring, `invalid`, the open state and Input's heights, so it lines up with fields in a form. The app's own trigger
    is the `trigger` slot.
-3. **`dateFormat` defaults to `"%b %-d, %Y"`** (`Oct 28, 2026`) for single dates and ranges: shadcn's `PPP`
+3. **`dateFormat` defaults to `"%b %-d, %Y"`** (`Oct 28, 2026`) for single dates and ranges: date-fns' `PPP`
    (`October 28th, 2026`) needs ordinals `chrono` has not, and a range in it overflows a 300 wide field.
 4. **The calendar takes the picker's `size`**, as Select's rows take its `size`.
 5. **`hourCycle` and `firstDayOfWeek` default to the user's** (`localeSettings()`), where `nsh/base` defaults to 24-hour
    and Sunday.
-6. **Presets beside the calendar on desktops, a row above it in a sheet** (`nsh/base`'s place; the look of shadcn's
+6. **Presets beside the calendar on desktops, a row above it in a sheet** (`nsh/base`'s place; the look of the common
    preset buttons).
 7. **`cleanable` waits**, as Select's (Decisions 4); Delete and Backspace clear.
 8. **It joins `Field`** (`field::join`, kind `focus`) and has a `DatePickerRef` with `focus()`.
 9. **No `TimeField` component in P3.**
+
+Settled in implementation:
+
+9. **One month in the sheet**, whatever `numberOfMonths` and the window's width: the sheet is a phone's or a
+   tablet's, where months side by side under one header row do not read (Calendar's NSH gaps 2).
+10. **The time field's edge color is a class**, with its `focus-within:` twin: an inline color would win over the
+    focus class, so the focus edge would never show.
+11. **Presets in the sheet are outline buttons**, a wrapping row with no padding under it (the calendar's padding
+    follows), so the row and the calendar keep one gap.
