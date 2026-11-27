@@ -35,7 +35,7 @@ library adds the trigger it draws, the look of the list, its rows and headers, a
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
 | Value | `value` (controlled, `null` for none) / `defaultValue`, `onChange({ value })` only when it changes (choosing the chosen item again only closes the list) |
-| Presentation | Desktops: a popup at the trigger, as wide as the trigger, never taller than the room on its side, its rows scrolling. On macOS it opens with the chosen row **over the trigger** (the system's pop-up button); elsewhere below it (Windows', Linux's and browsers' drop-down lists). Touch screens: a sheet at the bottom over a backdrop |
+| Presentation | Desktops: a popup at the trigger, at least as wide as the trigger and as wide as its longest title, never taller than the room on its side, its rows scrolling. On macOS it opens with the chosen row **over the trigger** (the system's pop-up button); elsewhere below it (Windows', Linux's and browsers' drop-down lists). Touch screens: a sheet at the bottom over a backdrop |
 | Trigger keys | Down, Up, Return, Space open it (Down / Return / Space on the first enabled item when nothing is chosen, Up on the last); letters and digits choose by typeahead **without opening it**, as a native select |
 | List keys | Up / Down (around the ends), Home / End, Page Up / Down by the rows in view, typeahead; Return or a press chooses and closes (`"select"`); Escape, back and a press outside close (`"cancel"`, `"pressOutside"`); Tab moves on and closes (`"focus"`) |
 | Pointer | Moving over a row highlights it; desktops choose on press down |
@@ -231,7 +231,7 @@ The menu look (DropdownMenu's "The menu look"), with a select's own parts:
 
 | Part | Layout | Classes |
 |---|---|---|
-| Surface | The popup surface (`foundation::popup::surface`: `popover`, `popover-border`, `popover-radius`, `popover-shadow` 3, `md`); padding `menu-padding` (4) inside the scrolling list; as wide as the trigger, at least `menu-min-width` (128) | `rounded-md border bg-popover shadow-md min-w-[8rem]`, viewport `p-1`, at least the trigger's width |
+| Surface | The popup surface (`foundation::popup::surface`: `popover`, `popover-border`, `popover-radius`, `popover-shadow` 3, `md`); padding `menu-padding` (4) inside the scrolling list; at least as wide as the trigger, as `menu-min-width` (128) and as its widest title (with the check's room) and group heading (Decisions 14) | `rounded-md border bg-popover shadow-md min-w-[8rem]`, viewport `p-1`, at least the trigger's width |
 | Row | Height `menu-item-height-<size>`; padding `menu-item-padding-x` (8) at the start; the title (one line, ellipsis) `flex: 1`; then a box `icon-size-<size>` wide holding the `check` while chosen, `menu-item-gap` (8) after the title and `menu-item-padding-x` before the end (32 at `md`, `pr-8`); corners `menu-item-radius`; text `menu-item-font-size-<size>` | `py-1.5 pr-8 pl-2 text-sm rounded-sm`, the check `absolute right-2 size-3.5`, `CheckIcon size-4` |
 | Check | `icon-size-<size>`, the row's text color | — |
 | Group header | Height `menu-item-height-<size>`, padding `menu-item-padding-x` at the sides, `menu-label-font-size` (12), `menu-label-foreground` (the menu family's) | `px-2 py-1.5 text-xs text-muted-foreground` |
@@ -500,11 +500,11 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
 3. **No separators in the list**: `nsh/base`'s rows are items and headers; groups are split by their headers only.
    Separators between groups are rarely needed; a separator row kind in `listbox.rs` would add it.
 4. **String children** do not apply (titles are data); `renderItem`'s elements follow Button's G0 in TSX.
-5. **The list is exactly as wide as the trigger** on desktops: `nsh/base` gives the popup the trigger's width, which
-   `menu-min-width` only raises, so rows wider than the trigger (`renderItem`'s, a long title) are cut or truncated,
-   where a list should be at least the trigger's width and grow with its rows. Workaround: a trigger wide
-   enough for the rows (`class`). A width mode in `nsh/base` (at least the trigger's, else its content's) would allow
-   it. A searchable list in a narrow filter-bar trigger feels it most: its search field is as narrow as the trigger.
+5. **A list of `renderItem` rows is as wide as the trigger** on desktops: `nsh/base` gives the popup the trigger's
+   width and makes the rows as they come into view, so the library cannot measure an app's row content; such rows are
+   cut or truncated at the trigger's width (titles are measured instead, Decisions 14). Workaround: a trigger wide
+   enough for the rows (`class`), or a `contentStyle` width. A width mode in `nsh/base` (at least the trigger's, else
+   its content's) would allow it.
 6. **No search icon in the search field**: `nsh/base`'s search field is a bare input placed directly in the popup,
    with only classes, a style and a placeholder; the popup takes no other content of the app's above the rows. A
    magnifier at the field's start (a search field's usual mark) needs a slot beside the field (`searchPrefix`) or a
@@ -563,6 +563,14 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
     and its look unchanged.
 13. **The empty words show in every empty list**, searchable or not: a select given no items used to open an empty
     surface, which reads as broken; it now says "No items found." (or the app's `empty`). No API changes.
+14. **The list grows past the trigger to its longest title**: a list as narrow as its trigger cut "Every hour
+    (Enterprise)" under a short value, though the trigger only shows the chosen value and the list exists to compare
+    the choices. The list is at least the trigger's width (so it reads as attached to it), and wider when a title needs
+    it, its start edge still on the trigger's (`align` start), so the titles stay on the trigger's text spine. The library measures each title in the rows' font
+    (`measure_text`, the system font at `menu-item-font-size-<size>`) and each group heading, adds the row's padding,
+    the check's room, `menu-padding` and the edges, and gives that as the surface's least width: a popup style over
+    `nsh/base`'s trigger width. An app font other than the system's is measured in the system's; `renderItem` rows are
+    not measured (NSH gaps 5). Combobox's list does the same.
 
 ## Later
 

@@ -11,11 +11,11 @@
 
 use std::rc::Rc;
 
-use nsh_base::SelectEntry;
+use nsh_base::{SelectEntry, SelectItem};
 use nsh_core::{
     element::{
         Renderer, Style, StyleRefinement, TextPartStyle, horizontal_size_class, idiom, is_catalyst,
-        is_desktop, os,
+        is_desktop, measure_text, os,
     },
     platform::{Idiom, Os, SizeClass},
     prelude::*,
@@ -288,6 +288,12 @@ pub(crate) struct ListLook {
     pub chosen: Rc<dyn Fn(&SharedString) -> bool>,
     /// The app's content of a row, in place of its title.
     pub render_item: Prop<Option<Renderer<SelectEntry>>>,
+    /// The items, whose titles and group headings the list is made wide
+    /// enough for ([`fit_width`]).
+    pub items: Memo<Vec<SelectItem>>,
+    /// The weight a row's title may be drawn in at most (`Combobox`'s
+    /// matched part), which the widths are measured in.
+    pub title_weight: Option<Token<kind::Number>>,
     /// The longest the list of rows gets, if capped.
     pub max_height: Option<Token<kind::Length>>,
     /// The app's classes and style of the popup (or sheet).
@@ -333,8 +339,9 @@ macro_rules! list_look {
             .group_class(look.label_class)
             .render_item($row);
         let content_style = look.content_style;
+        let fit = menu::fit_width(t, look.clone());
         popup::set_popup_style(&mut $root, move || {
-            menu::list_surface(t, content_style.get())
+            menu::list_surface(t, content_style.get(), fit())
         });
         let parts = $root.__element().__props_mut();
         parts.list_style = menu::list_style(t, look.max_height);
@@ -346,16 +353,67 @@ macro_rules! list_look {
 pub(crate) use list_look;
 
 /// The surface of a list: the popup surface, at least `menu-min-width`
-/// wide, or the menu's sheet on touch screens; the app's `style` last.
-pub(crate) fn list_surface(t: Theme, app: Style) -> Style {
+/// and `fit` wide (`nsh/base` makes it as wide as the trigger: a list
+/// with longer titles grows past it, its start edge still on the
+/// trigger's), or the menu's sheet on touch screens; the app's `style`
+/// last.
+pub(crate) fn list_surface(t: Theme, app: Style, fit: Points) -> Style {
     let look = if list_as_sheet() {
         crate::components::dropdown_menu::sheet_look(t)
             .p(px(0.0))
             .pb(nsh_core::element::safe_area().bottom)
     } else {
-        super::popup::surface(StyleRefinement::default(), t).min_w(move || t.length(MENU_MIN_WIDTH))
+        let least = t.length(MENU_MIN_WIDTH).max(fit);
+        super::popup::surface(StyleRefinement::default(), t).min_w(least)
     };
     Style::from(look).then(&app)
+}
+
+/// How wide a list's surface must be for its widest title and group
+/// heading to show whole (read in a binding): the edges, `menu-padding`
+/// and `menu-item-padding-x` on both sides, and a title's room beside the
+/// check (`menu-item-gap` and the icon). The titles are measured by the
+/// platform in the system font at the rows' size (in `title_weight` when
+/// set), rounded up; nothing while the app draws the rows (`renderItem`,
+/// whose width the library cannot know) or on touch screens, whose sheet
+/// spans the window.
+pub(crate) fn fit_width(t: Theme, look: ListLook) -> impl Fn() -> Points + 'static {
+    move || {
+        if list_as_sheet() || look.render_item.with(Option::is_some) {
+            return Points::ZERO;
+        }
+        let size = look.size.get();
+        let weight = look
+            .title_weight
+            .map_or(400.0, |w| t.number(w).clamp(100.0, 900.0));
+        let title_font = format!(
+            "{} {}px system-ui",
+            weight as u16,
+            t.length(item_font_size_token(size)).0
+        );
+        let heading_font = format!("400 {}px system-ui", t.length(MENU_LABEL_FONT_SIZE).0);
+        let (title, heading) = look.items.with(|items| {
+            let mut groups = Vec::<&SharedString>::new();
+            let title = items
+                .iter()
+                .map(|i| measure_text(&title_font, &i.title))
+                .fold(Points::ZERO, Points::max);
+            for group in items.iter().filter_map(|i| i.group.as_ref()) {
+                if !groups.contains(&group) {
+                    groups.push(group);
+                }
+            }
+            let heading = groups
+                .into_iter()
+                .map(|g| measure_text(&heading_font, g))
+                .fold(Points::ZERO, Points::max);
+            (title, heading)
+        });
+        let check = t.length(MENU_ITEM_GAP) + t.length(icon_size_token(size));
+        let sides =
+            (t.length(BORDER_WIDTH) + t.length(MENU_PADDING) + t.length(MENU_ITEM_PADDING_X)) * 2.0;
+        px((title + check).max(heading).0.ceil()) + sides
+    }
 }
 
 /// The scroll view of a list's rows: `menu-padding` around them

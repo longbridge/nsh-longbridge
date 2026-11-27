@@ -510,6 +510,8 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
         size: props.size,
         chosen: Rc::new(move |value: &SharedString| current.with(|c| c.contains(value))),
         render_item: props.render_item,
+        items,
+        title_weight: Some(MENU_ITEM_MATCH_FONT_WEIGHT),
         max_height: Some(COMBOBOX_LIST_MAX_HEIGHT),
         content_class: props.content_class,
         content_style: props.content_style,

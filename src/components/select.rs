@@ -412,6 +412,8 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
                 current.with(|c| c.as_ref() == Some(value))
             }),
             render_item: props.render_item,
+            items: computed(move || props.items.get()),
+            title_weight: None,
             max_height: None,
             content_class: props.content_class,
             content_style: props.content_style,

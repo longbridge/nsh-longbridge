@@ -42,7 +42,7 @@ matched part of each title emphasized), the create row (`creatable`) and `size` 
 | Opening | Typing, Down or Up (Down on the first enabled item when none is chosen, Up on the last), a press on the input (not in a browser: NSH gaps 12) or on the chevron button opens it; desktops: Tab into the input does not; touch screens: the tap that focuses the input opens it once |
 | List keys | Up / Down (around the ends), Home / End, Page Up / Down, Return chooses, Escape, back and a press outside close (`"cancel"`, `"pressOutside"`), Tab or Shift+Tab close (`"focus"`) and move on; a new query highlights its first enabled match |
 | Focus | The input keeps the keyboard focus while the list is open (the highlighted row is its active descendant); the clear and chevron buttons are no Tab stops |
-| Presentation | Desktops: a popup below the field (`placement`, `align`), as wide as it, never taller than the room on its side. Touch screens: a sheet at the bottom over a backdrop |
+| Presentation | Desktops: a popup below the field (`placement`, `align`), at least as wide as it and as its longest title, never taller than the room on its side. Touch screens: a sheet at the bottom over a backdrop |
 | Rows | Virtualized: thousands of items make only the rows in view; sections from the items' `group`; `focus:` (highlighted), `selected:`, `disabled:` on each row |
 | Clear button | With `cleanable`, while a value is set: a press clears it (`onChange({ value: [] })`) and gives the focus back to the input |
 | Control | `open` / `defaultOpen` / `onOpenChange({ open, reason })`, `onOpen`, `onClose`, `onCancel` |
@@ -235,7 +235,8 @@ No variants.
 Select's list, the same parts and values (Select's "The list"): the popup surface (`popover`, `popover-border`,
 `popover-radius`, shadow tier 3), padding `menu-padding`, rows `menu-item-height-<size>` with the title and the check
 at the end (each chosen value checked), group headings in `menu-label-font-size` / `menu-label-foreground`, as wide
-as the field (at least `menu-min-width`), `popover-offset` (4) below it. Its height is at most
+as the field and at least as `menu-min-width` and as its widest title (measured in `menu-item-match-font-weight`, the
+weight a matched part takes; Select's Decisions 14), `popover-offset` (4) below it. Its height is at most
 `combobox-list-max-height` (348, its padding inside: about eight and a half rows at `md`, so a cut row shows there is
 more) and the room on its side; the popup shrinks with it.
 
@@ -290,7 +291,7 @@ The cursor is the I-beam over the input (native), the arrow on the buttons, chip
 | Buttons | 16 / 20 / 24 / 28 | 24 / 28 / 32 / 40; the chevron a vertical hit slop to 44 (none sideways: the input is beside it), the clear button none (NSH gaps 9) |
 | Focus | The edge and the ring | The edge only |
 | Opening | Typing, the arrow keys, a press on the input (not in a browser: NSH gaps 12) or the chevron | The tap that focuses the input, typing |
-| List | A popup below the field, as wide as it | A sheet at the bottom (`nsh/base`'s), the menu's sheet look, rows 44 / 44 / 44 / 48 |
+| List | A popup below the field, at least as wide as it | A sheet at the bottom (`nsh/base`'s), the menu's sheet look, rows 44 / 44 / 44 / 48 |
 | Chip remove | 22 square | 22 square, a hit slop to 44 vertically |
 
 On a phone the sheet and the software keyboard share the bottom of the screen with the input typed into: whether
