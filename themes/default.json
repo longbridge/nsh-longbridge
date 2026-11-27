@@ -254,7 +254,19 @@
       "slider-thumb-shadow": "2",
       "slider-thumb-ring-width": "calc(var(--ring-width) + 1px)",
       "combobox-list-max-height": "calc(var(--spacing) * 87)",
-      "combobox-chip-height": "calc(var(--spacing) * 5.5)"
+      "combobox-chip-height": "calc(var(--spacing) * 5.5)",
+      "field-gap": "calc(var(--spacing) * 3)",
+      "field-content-gap": "calc(var(--spacing) * 1.5)",
+      "field-group-gap": "calc(var(--spacing) * 7)",
+      "field-group-nested-gap": "calc(var(--spacing) * 4)",
+      "field-set-gap": "calc(var(--spacing) * 6)",
+      "field-responsive-width": "448px",
+      "field-legend-margin-bottom": "calc(var(--spacing) * 3)",
+      "field-legend-font-size": "calc(var(--text-base))",
+      "field-description-font-size": "calc(var(--text-sm))",
+      "field-error-font-size": "calc(var(--text-sm))",
+      "field-choice-card-radius": "calc(var(--radius-md))",
+      "field-choice-card-padding": "calc(var(--spacing) * 4)"
     },
     "light": {
       "background": "oklch(1 0 0)",
@@ -454,7 +466,16 @@
       "combobox-icon-foreground": "var(--muted-foreground)",
       "combobox-empty-foreground": "var(--muted-foreground)",
       "combobox-chip": "var(--muted)",
-      "combobox-chip-foreground": "var(--foreground)"
+      "combobox-chip-foreground": "var(--foreground)",
+      "field-legend-foreground": "var(--foreground)",
+      "field-label-foreground-invalid": "var(--destructive)",
+      "field-description-foreground": "var(--muted-foreground)",
+      "field-error-foreground": "var(--destructive)",
+      "field-separator-content-foreground": "var(--muted-foreground)",
+      "field-separator-content-background": "var(--background)",
+      "field-choice-card-border": "var(--border)",
+      "field-choice-card-checked": "color-mix(in oklab, var(--primary) 5%, transparent)",
+      "field-choice-card-checked-border": "var(--primary)"
     },
     "dark": {
       "background": "oklch(0.145 0 0)",
@@ -654,7 +675,16 @@
       "combobox-icon-foreground": "var(--muted-foreground)",
       "combobox-empty-foreground": "var(--muted-foreground)",
       "combobox-chip": "var(--muted)",
-      "combobox-chip-foreground": "var(--foreground)"
+      "combobox-chip-foreground": "var(--foreground)",
+      "field-legend-foreground": "var(--foreground)",
+      "field-label-foreground-invalid": "var(--destructive)",
+      "field-description-foreground": "var(--muted-foreground)",
+      "field-error-foreground": "var(--destructive)",
+      "field-separator-content-foreground": "var(--muted-foreground)",
+      "field-separator-content-background": "var(--background)",
+      "field-choice-card-border": "var(--border)",
+      "field-choice-card-checked": "color-mix(in oklab, var(--primary) 10%, transparent)",
+      "field-choice-card-checked-border": "var(--primary)"
     }
   }
 }

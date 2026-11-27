@@ -267,8 +267,15 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
             cx.emit(ComboboxEvent::Close)
         })
         .on_cancel(move || cx.emit(ComboboxEvent::Cancel))
-        // As wide as its parent, as Input.
-        .app_class(Some(SharedString::from("w-full min-w-0")));
+        // As wide as its parent, as Input; beside a label in a horizontal
+        // field, it shares the row.
+        .app_class(move || {
+            Some(SharedString::from(if joined.in_row() {
+                "w-full min-w-0 shrink"
+            } else {
+                "w-full min-w-0"
+            }))
+        });
     if is_terminal() {
         // `nsh/base`'s terminal field and rows.
         root.__element().__props_mut().render_item = props.render_item;

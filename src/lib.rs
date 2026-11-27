@@ -102,6 +102,18 @@ pub use crate::{
             dropdown_menu_separator, dropdown_menu_shortcut, dropdown_menu_sub,
             dropdown_menu_sub_trigger,
         },
+        field::{
+            Field, FieldContent, FieldContentElement, FieldContentProps, FieldDescription,
+            FieldDescriptionElement, FieldDescriptionProps, FieldElement, FieldError,
+            FieldErrorElement, FieldErrorMessage, FieldErrorProps, FieldErrors, FieldGroup,
+            FieldGroupElement, FieldGroupProps, FieldLabel, FieldLabelElement, FieldLabelProps,
+            FieldLegend, FieldLegendElement, FieldLegendProps, FieldLegendVariant,
+            FieldOrientation, FieldProps, FieldSeparator, FieldSeparatorElement,
+            FieldSeparatorProps, FieldSet, FieldSetElement, FieldSetProps, FieldTitle,
+            FieldTitleElement, FieldTitleProps, field, field_content, field_description,
+            field_error, field_group, field_label, field_legend, field_separator, field_set,
+            field_title,
+        },
         input::{AutoComplete, Input, InputApi, InputElement, InputEvent, InputProps, input},
         kbd::{
             Kbd, KbdElement, KbdGroup, KbdGroupElement, KbdGroupProps, KbdProps, kbd, kbd_group,
@@ -221,6 +233,16 @@ fn native(registry: &mut Registry) {
         .register::<DropdownMenuShortcut>()
         .register::<DropdownMenuSub>()
         .register::<DropdownMenuSubTrigger>()
+        .register::<Field>()
+        .register::<FieldContent>()
+        .register::<FieldDescription>()
+        .register::<FieldError>()
+        .register::<FieldGroup>()
+        .register::<FieldLabel>()
+        .register::<FieldLegend>()
+        .register::<FieldSeparator>()
+        .register::<FieldSet>()
+        .register::<FieldTitle>()
         .register::<Icon>()
         .register::<Input>()
         .register::<Kbd>()

@@ -204,7 +204,14 @@ pub fn Slider(props: SliderProps, cx: Scope<SliderEvent>) -> impl IntoElement {
                     .min_h(move || t.length(SLIDER_VERTICAL_MIN_HEIGHT))
                     .app_class(Some(SharedString::from("h-full")))
             } else {
-                s.app_class(Some(SharedString::from("w-full")))
+                // Beside a label in a horizontal field, it shares the row.
+                s.app_class(move || {
+                    Some(SharedString::from(if joined.in_row() {
+                        "w-full min-w-0 shrink"
+                    } else {
+                        "w-full"
+                    }))
+                })
             }
         })
         .cursor(Cursor::Default)

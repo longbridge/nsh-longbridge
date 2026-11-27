@@ -345,6 +345,15 @@ fn the_pagination_token_table_is_current() {
 }
 
 #[test]
+fn the_field_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/field.md"),
+        "field",
+        &token_table(nsh_longbridge::components::field::TOKENS),
+    );
+}
+
+#[test]
 fn the_combobox_token_table_is_current() {
     check_block(
         &root().join("docs/components/combobox.md"),

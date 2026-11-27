@@ -190,13 +190,15 @@ impl Kind {
 }
 
 /// The state a `Field` gives the parts and the control inside it.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct FieldState {
     invalid: Memo<bool>,
     disabled: Memo<bool>,
     control: Signal<Option<NodeId>>,
     description: Signal<Option<ElementRef>>,
     error: Signal<Option<ElementRef>>,
+    beside_content: Signal<bool>,
+    in_row: Signal<bool>,
 }
 
 impl FieldState {
@@ -238,6 +240,36 @@ impl FieldState {
             .or_else(|| self.description.get())
             .and_then(Option::<ElementTarget>::from)
     }
+
+    /// Whether the control sits beside a column of text that starts at its
+    /// top (a horizontal `Field` with a `FieldContent`): a choice control
+    /// centers itself on the text's first line, as on its own label's.
+    pub fn beside_content(&self) -> bool {
+        self.beside_content.get()
+    }
+
+    /// Says whether the control sits beside a column of text (the `Field`
+    /// layer, from its orientation and its parts).
+    pub fn set_beside_content(&self, beside: bool) {
+        if self.beside_content.get_untracked() != beside {
+            self.beside_content.set(beside);
+        }
+    }
+
+    /// Whether the field lays its parts out in a row (a horizontal
+    /// `Field`): a full-width control shrinks to share the row with the
+    /// text beside it.
+    pub fn in_row(&self) -> bool {
+        self.in_row.get()
+    }
+
+    /// Says whether the field lays its parts out in a row (the `Field`
+    /// layer, from its orientation).
+    pub fn set_in_row(&self, row: bool) {
+        if self.in_row.get_untracked() != row {
+            self.in_row.set(row);
+        }
+    }
 }
 
 /// Fills a part's register with `element` while the current owner lives,
@@ -274,6 +306,8 @@ pub fn provide(
         control: signal(None),
         description: signal(None),
         error: signal(None),
+        beside_content: signal(false),
+        in_row: signal(false),
     };
     provide_context(Some(state));
     state
@@ -341,6 +375,19 @@ impl Joined {
     /// `accessibilityDescribedBy` wins over it.
     pub fn described_by(&self) -> Option<ElementTarget> {
         self.field.and_then(|f| f.described_by())
+    }
+
+    /// Whether the control sits beside a column of text in its field
+    /// ([`FieldState::beside_content`]).
+    pub fn beside_content(&self) -> bool {
+        self.field.is_some_and(|f| f.beside_content())
+    }
+
+    /// Whether its field lays its parts out in a row
+    /// ([`FieldState::in_row`]): a full-width control shrinks in it
+    /// (layout does not shrink a view unless told to).
+    pub fn in_row(&self) -> bool {
+        self.field.is_some_and(|f| f.in_row())
     }
 }
 

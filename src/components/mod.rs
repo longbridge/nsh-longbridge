@@ -12,6 +12,7 @@ pub mod data_table;
 pub mod date_picker;
 pub mod dialog;
 pub mod dropdown_menu;
+pub mod field;
 pub mod input;
 pub mod kbd;
 pub mod label;

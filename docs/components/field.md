@@ -1,10 +1,10 @@
 # Field
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
 The layout of a form: a control with its label, its description and its error, alone (`Field`), in a column of
 fields (`FieldGroup`) or in a titled set (`FieldSet` with a `FieldLegend`), vertical, horizontal or switching between
-the two with the room it has. The look is shadcn/ui new-york v4's `field.tsx`. A `Field` also hands its `invalid` and
+the two with the room it has. A `Field` also hands its `invalid` and
 `disabled` state, and its description or error for screen readers, to the control inside it, so the app writes them
 once.
 
@@ -23,7 +23,7 @@ once.
 | Need | Use instead |
 |---|---|
 | A label alone beside a control, no description or error | [Label](label.md) is enough (or the control's children: `Checkbox`, `Switch`, `RadioGroupItem`) |
-| The form's state, validation rules, submission | The app's own code (or a form library): `Field` draws, it does not validate. shadcn's `Form` (react-hook-form) has no counterpart; see Decisions 1 |
+| The form's state, validation rules, submission | The app's own code (or a form library): `Field` draws, it does not validate. No `Form` part binds a form library; see Decisions 1 |
 | A message about the whole form or page ("Could not save") | A `Toast`, or an Alert (later) above the form |
 | A titled box around settings | [Card](card.md), with `Field`s in its content |
 | A table of values to edit | Table (P3), with controls in its cells |
@@ -41,32 +41,31 @@ uses from NSH and from the library, rather than rewriting:
 | NSH's `accessibilityDescribedBy` | The element whose text describes a control, read after its name (nsh-core's `accessibility_described_by`; ARIA's `aria-describedby`). [Dialog](dialog.md) uses it for its description |
 | `foundation::field_ref` | The registry by which a label finds its field (`FieldRef`, Label's `htmlFor`), extended here (see Implementation) |
 
-### Differs from shadcn's structure
+### Structure
 
-The parts and their nesting are shadcn's: `FieldSet > FieldLegend + FieldDescription + FieldGroup > Field > FieldLabel
-+ control + FieldDescription + FieldError`, `FieldContent` and `FieldTitle` in horizontal fields and choice cards,
-`FieldSeparator` between groups. What changes:
+The parts nest as `FieldSet > FieldLegend + FieldDescription + FieldGroup > Field > FieldLabel + control +
+FieldDescription + FieldError`, with `FieldContent` and `FieldTitle` in horizontal fields and choice cards and
+`FieldSeparator` between groups. How they work together, and why:
 
-- **The state goes on `Field` once.** shadcn writes `data-invalid` on the `Field` (the label turns red) and
-  `aria-invalid` on the control (its edge turns red), `id` on the control and `htmlFor` on the label, and
-  `group-data-[disabled=true]` dims the label while the app disables the control too. Here `Field`'s `invalid` and
-  `disabled` reach the label and the control, and `FieldLabel` finds the field's control without a ref.
+- **The state goes on `Field` once.** On the web an app marks the field invalid for the label's color and the control
+  invalid for its edge, pairs an `id` on the control with `htmlFor` on the label, and disables the control besides
+  dimming the label. Here `Field`'s `invalid` and `disabled` reach the label and the control, and `FieldLabel` finds
+  the field's control without a ref: one place to write each, so the label and the control cannot disagree.
 - **No `id` / `htmlFor` wiring needed.** `FieldLabel`'s `htmlFor` defaults to the `Field`'s control (the first control
   of the library made inside it). It still takes a ref, as `Label`'s, for a label that names a control elsewhere.
-- **The description and the error describe the control.** shadcn leaves `aria-describedby` to the app; here the
-  `Field`'s control is described by its `FieldError` while that shows, else by its `FieldDescription`.
-- **Responsive without container queries.** shadcn's `orientation="responsive"` switches at the `@md` width of the
-  nearest `FieldGroup` (a CSS container query); NSH has none, so `FieldGroup` measures its width and tells its fields
-  (NSH gaps 3).
-- **What `has-[…]` selects is told through context.** shadcn's `Field` aligns its row to the top when it has a
-  `FieldContent` (`has-[>[data-slot=field-content]]`), and its `FieldLabel` becomes a card when it holds a `Field`
-  (`has-[>[data-slot=field]]`); NSH has no `has-` or `peer-` variants, so the inner part registers itself with the
-  outer one.
+- **The description and the error describe the control.** Rather than leaving the described-by relation to the app,
+  the `Field`'s control is described by its `FieldError` while that shows, else by its `FieldDescription`, so screen
+  readers read them by default.
+- **Responsive without container queries.** `orientation="responsive"` switches at the width of the nearest
+  `FieldGroup`; NSH has no container queries, so `FieldGroup` measures its width and tells its fields (NSH gaps 3).
+- **What the children are is told through context.** A `Field` aligns its row to the top when it holds a
+  `FieldContent`, and a `FieldLabel` becomes a card when it holds a `Field`; NSH has no `has-` or `peer-` variants to
+  select on children, so the inner part registers itself with the outer one.
 
 ### Implementation
 
-The field integration (`foundation::field`, the widened `foundation::field_ref`, `SelectRef`, `ComboboxRef` and each
-existing control's `field::join`) lands first, in one self-contained commit (as `popup::surface` did in P2), so other
+The field integration (`foundation::field`, the widened `foundation::field_ref`, `SelectRef` and each existing
+control's `field::join`) lands first, in one self-contained commit (as `popup::surface` did in P2), so other
 components (DatePicker) take it before the Field parts exist.
 
 - **Context.** `Field` starts a field with `field::provide(invalid, disabled)`, which gives what is made inside it a
@@ -77,6 +76,13 @@ components (DatePicker) take it before the Field parts exist.
   content placed in a field ends it (`field::clear`). The component layer adds the `orientation` (responsive resolved
   to vertical or horizontal), `FieldGroup`'s measured width and the choice card, which reads its field's control's
   checked state through `FieldRef`.
+- **Layout the control reads.** `Field` tells its `FieldState` two facts of its layout, which a control reads from its
+  `Joined`: `in_row` (the field is horizontal) and `beside_content` (horizontal with a `FieldContent`). NSH's layout,
+  as React Native's, neither shrinks a view nor keeps it at its content's width unless told to, so in a row a
+  full-width control (Input, Textarea, Combobox, Slider) shrinks (`flex-shrink: 1`) to share the row, and
+  `FieldContent` and a horizontal `FieldLabel` keep CSS's automatic minimum (`min-width: auto`, their longest word);
+  beside a `FieldContent`, a choice control (Checkbox, Switch, a radio) centers itself on the text's first line as on
+  its own label's (Decisions 5).
 - **Joining a field.** Every control of the library calls `field::join(host, kind, disabled)` in its body, once (with
   its own `disabled`): it registers what a label's press does to it, and inside a `Field` whose control slot is empty,
   it takes it, and it gets back the field's `invalid`, `disabled` and described-by target (a `Joined`; inside a
@@ -87,17 +93,17 @@ components (DatePicker) take it before the Field parts exist.
     Textarea's host field, Select's trigger (the view `nsh/base` makes the combobox), Checkbox's root through
     `nsh/base`'s `accessibilityDescribedBy`, DatePicker's trigger; a control's own `accessibilityDescribedBy`, where it
     has one, wins. Switch, RadioGroup, ToggleGroup, Combobox and Slider cannot carry it (NSH gaps 5).
-  - `kind` says what a label's press does: `Focus` (Input, Textarea, Select's trigger, Combobox's input, DatePicker's
-    trigger), `Activate` (Checkbox, Switch, a RadioGroupItem: the control's own press, reporting its `onChange`) or
-    `Inert` (a RadioGroup, ToggleGroup, Slider, which a label's press does not reach; they join for `invalid` where
-    they have it and `disabled`).
+  - `kind` says what a label's press does: `Focus` (Input, Textarea, Select's trigger, DatePicker's trigger),
+    `Activate` (Checkbox, Switch, a RadioGroupItem: the control's own press, reporting its `onChange`) or `Inert` (a
+    RadioGroup, ToggleGroup, Slider, and Combobox, whose input `nsh/base` gives no handle on: NSH gaps 7; a label's
+    press does not reach them; they join for `invalid` where they have it and `disabled`).
   The controls that join: Input, Textarea, Select, Checkbox, Switch, RadioGroup (and its items in choice cards),
   Combobox, Slider, ToggleGroup, DatePicker. Joining changes nothing outside a `Field`: the P1 and P2 controls behave
   as today.
 - **`foundation::field_ref`** grows from "a field to focus" to "a field's control": each entry keeps the element to
   focus and, for a choice control, its activation and its checked state. `FieldRef`'s TSX type widens to the refs of
   every control a label can focus or press (`InputRef | TextareaRef | SelectRef | CheckboxRef | SwitchRef |
-  ComboboxRef | DatePickerRef`; `SelectRef`, `ComboboxRef` and `DatePickerRef` are new, each with `focus()`). Label's
+  DatePickerRef`; `SelectRef` and `DatePickerRef` are new, each with `focus()`; no `ComboboxRef`: NSH gaps 7). Label's
   `htmlFor` keeps working and takes the new refs (Decisions 3).
 - **Parts are views of this library's**, styled with bindings on the tokens, the app's `class` / `style` merged last.
   String children are wrapped in a text that takes the part's text style (Button's G1).
@@ -115,7 +121,7 @@ components (DatePicker) take it before the Field parts exist.
 | `FieldContent` | `<FieldContent>` | `field_content()` | A column for a label (or title) and a description beside a control, in a horizontal field |
 | `FieldTitle` | `<FieldTitle>` | `field_title()` | A label-looking title that is no label (inside a choice card, where the card is the label) |
 | `FieldGroup` | `<FieldGroup>` | `field_group()` | A column of fields; the width responsive fields switch on |
-| `FieldSet` | `<FieldSet>` | `field_set()` | A set of related fields under a legend (shadcn's `<fieldset>`) |
+| `FieldSet` | `<FieldSet>` | `field_set()` | A set of related fields under a legend (a browser's `<fieldset>`) |
 | `FieldLegend` | `<FieldLegend>` | `field_legend()` | The set's title |
 | `FieldSeparator` | `<FieldSeparator>` | `field_separator()` | A line between groups, optionally with a word on it ("Or continue with") |
 
@@ -124,8 +130,8 @@ components (DatePicker) take it before the Field parts exist.
 | TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
 | `orientation` | `orientation` | `"vertical"` \| `"horizontal"` \| `"responsive"` (`FieldOrientation`) | `"vertical"` | Label above the control, beside it, or above it until the enclosing `FieldGroup` is at least `field-responsive-width` (448) wide |
-| `invalid` | `invalid` | `boolean` / `Prop<bool>` | `false` | The value is rejected: the label turns `destructive`, the control takes its invalid look and state (shadcn's `data-invalid` + `aria-invalid`) |
-| `disabled` | `disabled` | `boolean` / `Prop<bool>` | `false` | The label and title dim; the control is disabled (shadcn's `data-disabled` + the control's `disabled`) |
+| `invalid` | `invalid` | `boolean` / `Prop<bool>` | `false` | The value is rejected: the label turns `destructive`, the control takes its invalid look and state |
+| `disabled` | `disabled` | `boolean` / `Prop<bool>` | `false` | The label and title dim; the control is disabled (or'ed with its own `disabled`) |
 | `children` | `.child(..)` | elements | — | The parts and the control, in the order shown |
 | `class` / `style` | `class` / `style` | | | The root, merged last |
 
@@ -151,7 +157,7 @@ A `FieldLabel` around a `Field` is a **choice card** (see Variants): a press any
 | `FieldContent` | `children`, `class` / `style` | Tells its `Field` it is there (the row aligns to the top) |
 | `FieldTitle` | `children`, `class` / `style` | Follows the field's `invalid` and `disabled` as `FieldLabel` |
 
-`errors` (shadcn's, for validation libraries): TSX `({ message?: string } | undefined)[]`, Rust `FieldErrors`
+`errors` (for validation libraries): TSX `({ message?: string | null } | null | undefined)[]`, Rust `FieldErrors`
 (`Vec<SharedString>`, from an iterator of messages). Messages are deduplicated in order and empty ones skipped; one
 message shows as text, several as a bulleted list. A Zod issue list or a react-hook-form error passes as is.
 
@@ -174,36 +180,36 @@ message shows as text, several as a bulleted list. A Zod issue list or a react-h
 
 ## Variants and sizes
 
-No `size`: as shadcn's, the field parts have one size; the control inside keeps its own `size`.
+No `size`: the field parts have one size; the control inside keeps its own `size`.
 
 ### Layout
 
-shadcn's classes and this library's values (all lengths are tokens, multiples of `spacing`, so a compact theme shrinks
+The reference look as Tailwind classes, and this library's values (all lengths are tokens, multiples of `spacing`, so a compact theme shrinks
 them):
 
-| Part | shadcn | This library |
+| Part | Classes | This library |
 |---|---|---|
 | `Field` vertical | `group/field flex w-full flex-col gap-3 [&>*]:w-full` | A column, children stretched to its width, `field-gap` (12) apart |
-| `Field` horizontal | `flex-row items-center [&>[data-slot=field-label]]:flex-auto`, `has-[>[data-slot=field-content]]:items-start` | A row, centered, `field-gap` apart; a `FieldLabel` or `FieldContent` in it takes the room left (`flex: 1 1 auto`); with a `FieldContent`, the row aligns to the top and a choice control (Checkbox, Switch, a radio) is centered on the content's first line (Decisions 5) |
+| `Field` horizontal | `flex-row items-center [&>[data-slot=field-label]]:flex-auto`, `has-[>[data-slot=field-content]]:items-start` | A row, centered, `field-gap` apart; a `FieldLabel` or `FieldContent` in it takes the room left (`flex: 1 1 auto`, never narrower than its longest word) and a full-width control shrinks to share the row (Implementation); with a `FieldContent`, the row aligns to the top and a choice control (Checkbox, Switch, a radio) is centered on the content's first line (Decisions 5) |
 | `Field` responsive | vertical; `@md/field-group:` horizontal | Vertical while the enclosing `FieldGroup` is narrower than `field-responsive-width` (448, Tailwind's `@md` container, 28rem), horizontal from it; vertical outside a `FieldGroup` (no container) |
-| `FieldContent` | `flex flex-1 flex-col gap-1.5 leading-snug` | A column, `flex: 1`, `field-content-gap` (6) apart |
+| `FieldContent` | `flex flex-1 flex-col gap-1.5 leading-snug` | A column, `flex: 1 1 auto` (as a horizontal `FieldLabel`: from its words' width, so a full-width control beside it shares the row), `field-content-gap` (6) apart |
 | `FieldGroup` | `flex w-full flex-col gap-7`, a nested group `gap-4` | A column, full width, `field-group-gap` (28) apart; a `FieldGroup` directly in another (not through a `Field`) `field-group-nested-gap` (16) |
-| `FieldSet` | `flex flex-col gap-6` | A column, `field-set-gap` (24) apart. shadcn's `gap-3` around a checkbox or radio group is the app's `class="gap-3"` (NSH gaps 4) |
+| `FieldSet` | `flex flex-col gap-6` | A column, `field-set-gap` (24) apart. A tighter `gap-3` around a checkbox or radio group is the app's `class="gap-3"` (NSH gaps 4) |
 | `FieldLegend` | `mb-3 font-medium`, `text-base` / `text-sm` | Margin below `field-legend-margin-bottom` (12), `font-weight-medium`, `field-legend-font-size` (16) or `label-font-size` (14) with `variant="label"`, color `field-legend-foreground`, line height from foundation (24 / 20) |
-| `FieldLabel` | Label + `flex w-fit gap-2 leading-snug` | Label's look; as wide as its content (`w-fit`) in a vertical field, line height from foundation (20; shadcn's `leading-snug` is 19.25, Label's own `leading-none` is dropped here so wrapped labels do not collide) |
+| `FieldLabel` | Label + `flex w-fit gap-2 leading-snug` | Label's look; as wide as its content (`w-fit`) in a vertical field, line height from foundation (20, rather than `leading-snug`'s 19.25, which is off the 4-point grid; Label's own `leading-none` is dropped here so wrapped labels do not collide) |
 | `FieldTitle` | `flex w-fit items-center gap-2 text-sm leading-snug font-medium` | `label-font-size`, `label-font-weight`, `label-foreground`, line height 20, `w-fit` |
 | `FieldDescription` | `text-sm leading-normal font-normal text-muted-foreground`, `last:mt-0 nth-last-2:-mt-1`, after a legend `-mt-1.5` | `field-description-font-size` (14), line height 20, regular, `field-description-foreground`; `-mt-1` (−4: closer to the label above it) unless it is the last child (`last:mt-0`); directly in a `FieldSet` after the legend −6 |
 | `FieldError` | `text-sm font-normal text-destructive`; several: `ml-4 flex list-disc flex-col gap-1` | `field-error-font-size` (14), line height 20, regular, `field-error-foreground`; several: a column 4 apart, each row a bullet (`•`) in a 16-wide column, then the message |
 | `FieldSeparator` | `relative -my-2 h-5 text-sm`; the line `absolute inset-0 top-1/2`; the word `mx-auto w-fit bg-background px-2 text-muted-foreground` | 20 tall (`spacing × 5`), `-my-2`; a `Separator` across its middle; the word centered on it, `w-fit`, padding 8 at the sides, fill `field-separator-content-background` (`background`), text 14 `field-separator-content-foreground` |
 
-Text in `FieldDescription` is not balanced (shadcn's horizontal `text-balance` has no NSH counterpart); links in it are
+Text in `FieldDescription` is not balanced (`text-balance` has no NSH counterpart); links in it are
 the app's own elements.
 
 ### Choice card
 
-A `FieldLabel` whose child is a `Field` (shadcn's "Choice Card"): a bordered card the whole of which is the option.
+A `FieldLabel` whose child is a `Field`: a bordered card the whole of which is the option.
 
-| | shadcn | This library |
+| | Classes | This library |
 |---|---|---|
 | Card | `w-full flex-col rounded-md border`, the inner field `p-4` | Full width, a column, `field-choice-card-radius` (8), `border-width` × `field-choice-card-border` (`border`); the inner `Field` padded `field-choice-card-padding` (16) |
 | Checked (the control inside is on) | `border-primary bg-primary/5 dark:bg-primary/10` | Edge `field-choice-card-checked-border` (`primary`), fill `field-choice-card-checked` (`primary` at 5%, 10% in dark) |
@@ -213,7 +219,7 @@ control. Its `FieldTitle` is used rather than a `FieldLabel`, the card being the
 
 ## States
 
-| State | Look | shadcn |
+| State | Look | Classes |
 |---|---|---|
 | Rest | As Layout | — |
 | invalid (`Field`'s) | `FieldLabel`, `FieldTitle` text `field-label-foreground-invalid` (`destructive`); the control's invalid look (its own spec); `FieldDescription` unchanged | `data-[invalid=true]:text-destructive` on the field |
@@ -222,7 +228,7 @@ control. Its `FieldTitle` is used rather than a `FieldLabel`, the card being the
 | Choice card pressed, hovered, focused | No look of its own: the control inside shows its press, and its focus ring when the keyboard is on it | none |
 
 No hover, focus or press look on any part: they are text and layout. The choice card's edge and fill change at once
-with the control's value (shadcn's `FieldLabel` has no transition), as the checkbox's own fill does.
+with the control's value (no transition), as the checkbox's own fill does.
 
 ## Pointer and touch
 
@@ -243,9 +249,9 @@ with the control's value (shadcn's `FieldLabel` has no transition), as the check
   name and the value.
 - **Invalid and disabled** reach the control's accessibility state through its own props (`invalid` is announced,
   `disabled` reads as dimmed).
-- **`FieldError`** has the `alert` role and an `assertive` live region (shadcn's `role="alert"`): an error that
+- **`FieldError`** has the `alert` role and an `assertive` live region: an error that
   appears is announced at once.
-- **`Field`** has the `group` role (shadcn's `role="group"`), unnamed. **`FieldSet`** has the `group` role, named by
+- **`Field`** has the `group` role, unnamed. **`FieldSet`** has the `group` role, named by
   its `accessibilityLabel` (NSH has no legend relation: NSH gaps 1).
 - **`FieldLegend`**, `FieldTitle`, `FieldDescription`: plain text. `FieldSeparator`'s line is hidden from screen
   readers (Separator's rule); its word is read.
@@ -290,7 +296,7 @@ Values are those of `nsh/base`'s default theme.
 - `field-responsive-width` is Tailwind's fixed `@md` container width (28rem), not a multiple of `spacing`: it is a
   breakpoint, not a gap.
 - `field-separator-content-background` must match what the separator is drawn on; inside a `Card` set it to `card` in
-  a scope, or `contentClass="bg-card"` (shadcn has the same limit).
+  a scope, or `contentClass="bg-card"`.
 - Other tokens it reads: `border-width`, `opacity-disabled`, `font-weight-medium`.
 
 ## Examples
@@ -374,9 +380,8 @@ const nameError = () => (name().trim() === "" ? "Enter your name." : null);
 ```
 
 With NSH 0.7.0, a string child is written inside `<Text>` for now ([Button's G0](button.md#nsh-gaps)). A
-`FieldError` whose child is `null` (no error) makes nothing. ★ A first headless test: a reactive TSX child that
-evaluates to `null` counts as no content (a component sees its children as nodes). Fallback: the examples use
-`errors` (`errors={nameError() ? [{ message: nameError() }] : []}`) or an `<If>` around the part.
+`FieldError` whose child is `null` (no error) makes nothing, and shows once the child is not: verified headless
+(`tests/field.rs`, a TSX app whose `FieldError` child is `null` until the value is cleared).
 
 Rust:
 
@@ -421,13 +426,14 @@ field_group()
    it shows, else the description (the error is what the user must act on). A list of targets, or a target whose text
    is the joined text of several, would let both be read.
 3. **No container queries.** `responsive` reads the `FieldGroup`'s width from its layout (`on_layout`), so it is known
-   one layout pass after the group is first laid out. ★ A first headless test: a wide group's responsive fields show
-   no vertical frame first. Fallback: the group is laid out hidden (`opacity: 0`) until its first width is known. A
-   `@container` variant in NSH's Tailwind would make it a class.
-4. **No `has-`, `peer-` or `nth-last-` variants.** What shadcn selects by the children (a `FieldContent` in a field, a
-   `Field` in a label, a checkbox group in a set) is told through context instead; `FieldSet`'s tighter gap around a
-   checkbox or radio group is the app's `class="gap-3"`; `FieldDescription`'s pull toward the label is "not last"
-   (`last:`), which matches shadcn's `nth-last-2` in the orders shadcn's examples use.
+   one layout pass after the group is first laid out. Verified headless: the width arrives before the first frame is
+   sent, and a wide group's responsive fields are never placed vertical (`tests/field.rs` watches every frame), so no
+   hiding is needed. A `@container` variant in NSH's Tailwind would make it a class.
+4. **No `has-`, `peer-` or `nth-last-` variants.** What would be selected by the children (a `FieldContent` in a
+   field, a `Field` in a label, a checkbox group in a set) is told through context instead; `FieldSet`'s tighter gap
+   around a checkbox or radio group is the app's `class="gap-3"`; `FieldDescription`'s pull toward the label is "not
+   last" (`last:`), which matches "second to last" (`nth-last-2`) in the usual orders (label, control, description;
+   label, description, control).
 5. **Controls of `nsh/base` without a described-by prop.** The element screen readers reach is `nsh/base`'s in
    `Switch` and `RadioGroup` (their root), `ToggleGroup` (its root), `Combobox` (its input) and `Slider` (its thumbs),
    and those components take no `accessibilityDescribedBy` (only `Checkbox` does); a described-by set on a component
@@ -437,22 +443,25 @@ field_group()
    `nsh/base`'s `Switch`, `RadioGroup`, `ToggleGroup`, `Combobox` and `Slider`, passed to that element, would close
    it.
 6. **String children** (Button's G0) in TSX until NSH's fix is released.
+7. **No handle on `nsh/base`'s `Combobox` input** (Combobox's NSH gaps): no ref, no focus method. So there is no
+   `ComboboxRef`, a `FieldLabel`'s press does not reach a combobox (it joins as `Inert`), and a `Label`'s `htmlFor`
+   cannot name one. A ref on the input with `focus()` would let it join as `Focus`.
 
 ## Decisions
 
 Settled in the P3 review:
 
-1. **No `Form`**: shadcn's `Form` binds react-hook-form; NSH apps keep form state in signals or their own library.
-   `Field` takes `invalid` and the error text from it, as shadcn's Field does.
-2. **`Field`'s `invalid` and `disabled` reach the control** (they are or'ed with the control's own). shadcn makes the
-   app write both; Label's G3 already promised this.
+1. **No `Form`**: a part binding one form library would tie the library to it; NSH apps keep form state in signals
+   or their own library. `Field` takes `invalid` and the error text from it.
+2. **`Field`'s `invalid` and `disabled` reach the control** (they are or'ed with the control's own), so the app does
+   not write both; Label's G3 already promised this.
 3. **`FieldRef` grows to every control** (`foundation::field_ref`, `kind` focus or activate): a press on a label
    focuses a text control and presses a checkbox-like one, as a browser's `<label>`; Label's `htmlFor` takes the new
-   refs too. Additive: Label's TSX type widens, each control's body gains one `field::join` call. p3-forms owns it
-   and lands it first.
-4. **Spacing is shadcn's** (28 between fields, 24 in a set), as tokens derived from `spacing`: the compact preset
+   refs too. Additive: Label's TSX type widens, each control's body gains one `field::join` call. It lands first.
+   Combobox cannot take part yet (NSH gaps 7).
+4. **The reference spacing** (28 between fields, 24 in a set), as tokens derived from `spacing`: the compact preset
    and apps tighten them (`spacing: 3` gives 21 / 18). No separate desktop values.
 5. **A choice control in a horizontal field with content is centered on the content's first line** (the label's 20
-   line), as Checkbox centers its box on its own label, rather than shadcn's fixed `mt-px`.
+   line), as Checkbox centers its box on its own label, rather than a fixed `mt-px`, which only fits one text size.
 6. **`FieldLabel` uses foundation's line heights** (20), not Label's `leading-none`: field labels wrap more often
-   (long settings titles), and shadcn's `FieldLabel` overrides `leading-none` with `leading-snug` too.
+   (long settings titles), and a label that wraps under `leading-none` collides with itself.

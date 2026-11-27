@@ -248,7 +248,9 @@ pub fn RadioGroupItem(props: RadioGroupItemProps, cx: Scope<NoEvent>) -> impl In
     let circle = view()
         .w(side)
         .h(side)
-        .mt(move || choice_offset(t, labelled(), size(), side()))
+        // Centered on its label's first line, or on the text beside it in a
+        // field.
+        .mt(move || choice_offset(t, labelled() || joined.beside_content(), size(), side()))
         .flex_shrink_0()
         .items_center()
         .justify_center()

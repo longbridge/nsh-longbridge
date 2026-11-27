@@ -219,7 +219,9 @@ pub fn Switch(props: SwitchProps, cx: Scope<SwitchEvent>) -> impl IntoElement {
 
     let track = view()
         .flex_row()
-        .mt(move || choice_offset(t, labelled(), size(), track_h()))
+        // Centered on its label's first line, or on the text beside it in a
+        // field.
+        .mt(move || choice_offset(t, labelled() || joined.beside_content(), size(), track_h()))
         .items_center()
         .flex_shrink_0()
         .w(track_w)
