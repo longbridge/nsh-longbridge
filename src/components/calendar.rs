@@ -40,8 +40,7 @@ use crate::{
             ACCENT, ACCENT_FOREGROUND, BACKGROUND, CONTROL_HEIGHT_LG, CONTROL_HEIGHT_MD,
             CONTROL_HEIGHT_SM, CONTROL_HEIGHT_TOUCH_LG, CONTROL_HEIGHT_TOUCH_MD,
             CONTROL_HEIGHT_TOUCH_SM, CONTROL_HEIGHT_TOUCH_XS, CONTROL_HEIGHT_XS, FONT_SIZE_XS,
-            MUTED_FOREGROUND, OPACITY_DISABLED, PRIMARY, PRIMARY_FOREGROUND, TEXT_SM,
-            TOUCH_TARGET,
+            MUTED_FOREGROUND, OPACITY_DISABLED, PRIMARY, PRIMARY_FOREGROUND, TEXT_SM, TOUCH_TARGET,
         },
         theme,
     },
@@ -398,7 +397,8 @@ pub(crate) fn look(t: Theme, config: LookConfig) -> Look {
         let look = StyleRefinement::default().gap(t.length(CALENDAR_ROW_GAP));
         Style::from(look).then(&parts.month_style.get())
     });
-    let row_style = bound_style(move || Style::from(StyleRefinement::default()).then(&parts.row_style.get()));
+    let row_style =
+        bound_style(move || Style::from(StyleRefinement::default()).then(&parts.row_style.get()));
     let item_style = Prop::from(IntoReactive::<TextPartStyle>::into_reactive(move || {
         let font_size = t.length(font_size_token(size.get()));
         let look = StyleRefinement::default()
@@ -417,7 +417,9 @@ pub(crate) fn look(t: Theme, config: LookConfig) -> Look {
     let draw = Rc::new(move |entry: &CalendarEntry| {
         content(t, entry, size, first_day, months, render_item).into_element()
     });
-    let render_item = Prop::from(Some(Renderer::new(move |entry: &CalendarEntry| draw(entry))));
+    let render_item = Prop::from(Some(Renderer::new(move |entry: &CalendarEntry| {
+        draw(entry)
+    })));
     Look {
         header_class: parts.header_class,
         header_style,
@@ -437,7 +439,7 @@ pub(crate) fn look(t: Theme, config: LookConfig) -> Look {
 /// light value, and its dark value under `dark:`. Both are always written,
 /// so in the dark appearance the `dark:` rules decide among themselves in
 /// the order the light ones do.
-fn color_class(out: &mut String, variants: &str, property: &str, color: AdaptiveColor) {
+pub(crate) fn color_class(out: &mut String, variants: &str, property: &str, color: AdaptiveColor) {
     out.push_str(&format!(
         "{variants}{property}-[{}] dark:{variants}{property}-[{}] ",
         color.light.to_hex(),
@@ -513,15 +515,30 @@ fn day_text_class(t: Theme) -> SharedString {
         "text",
         selected,
     );
-    color_class(&mut c, &in_item(&["selected", "data-range-middle"]), "text", range);
+    color_class(
+        &mut c,
+        &in_item(&["selected", "data-range-middle"]),
+        "text",
+        range,
+    );
     color_class(
         &mut c,
         &in_item(&["selected", "data-range-middle", "data-outside"]),
         "text",
         outside,
     );
-    color_class(&mut c, &in_item(&["selected", "data-range-middle", "data-today"]), "text", range);
-    color_class(&mut c, &in_item(&["disabled", "data-today"]), "text", outside);
+    color_class(
+        &mut c,
+        &in_item(&["selected", "data-range-middle", "data-today"]),
+        "text",
+        range,
+    );
+    color_class(
+        &mut c,
+        &in_item(&["disabled", "data-today"]),
+        "text",
+        outside,
+    );
     c.truncate(c.trim_end().len());
     c.into()
 }
@@ -540,7 +557,12 @@ fn pick_text_class(t: Theme) -> SharedString {
 /// A toggle whose view is open keeps the hover's fill and text.
 fn toggle_class(t: Theme) -> SharedString {
     let mut c = String::new();
-    color_class(&mut c, &in_item(&["selected"]), "bg", t.color(BUTTON_GHOST_HOVER));
+    color_class(
+        &mut c,
+        &in_item(&["selected"]),
+        "bg",
+        t.color(BUTTON_GHOST_HOVER),
+    );
     color_class(
         &mut c,
         &in_item(&["selected"]),
@@ -553,7 +575,11 @@ fn toggle_class(t: Theme) -> SharedString {
 
 /// A layer filling its parent, shown while `shown` (classes of the
 /// item's states) holds: `opacity-0` until then.
-fn layer(fill: impl Fn() -> AdaptiveColor + 'static, radius: impl Fn() -> Points + 'static, shown: &str) -> View {
+fn layer(
+    fill: impl Fn() -> AdaptiveColor + 'static,
+    radius: impl Fn() -> Points + 'static,
+    shown: &str,
+) -> View {
     view()
         .absolute()
         .inset(px(0.0))
@@ -581,15 +607,12 @@ fn content(
         CalendarItemKind::Weekday => {
             let font_size = move || t.length(CALENDAR_WEEKDAY_FONT_SIZE);
             let name = entry.value.max(0) as u32;
-            view()
-                .min_w(cell)
-                .items_center()
-                .child(
-                    text(move || labels::text(Label::weekday(name)))
-                        .text_size(font_size)
-                        .line_height(move || line_height(font_size()))
-                        .text_color(move || t.color(CALENDAR_WEEKDAY_FOREGROUND)),
-                )
+            view().min_w(cell).items_center().child(
+                text(move || labels::text(Label::weekday(name)))
+                    .text_size(font_size)
+                    .line_height(move || line_height(font_size()))
+                    .text_color(move || t.color(CALENDAR_WEEKDAY_FOREGROUND)),
+            )
         }
         CalendarItemKind::Previous | CalendarItemKind::Next => {
             let name = if entry.kind == CalendarItemKind::Previous {
@@ -636,14 +659,16 @@ fn content(
                 .mx(px(2.0))
                 .items_center()
                 .justify_center()
-                .child(layer(move || t.color(BUTTON_GHOST_HOVER), radius, &format!(
-                    "{}opacity-100",
-                    in_item(&["hover"])
-                )))
-                .child(layer(move || t.color(CALENDAR_SELECTED), radius, &format!(
-                    "{}opacity-100",
-                    in_item(&["selected"])
-                )))
+                .child(layer(
+                    move || t.color(BUTTON_GHOST_HOVER),
+                    radius,
+                    &format!("{}opacity-100", in_item(&["hover"])),
+                ))
+                .child(layer(
+                    move || t.color(CALENDAR_SELECTED),
+                    radius,
+                    &format!("{}opacity-100", in_item(&["selected"])),
+                ))
                 .child(
                     text(label)
                         .relative()
@@ -703,7 +728,11 @@ fn toggle(t: Theme, entry: &CalendarEntry, size: Memo<Size>) -> View {
             icon_view(t, || IconName::ChevronDown, || px(14.0))
                 .text_color(move || t.color(CALENDAR_WEEKDAY_FOREGROUND)),
         );
-    if month { el.self_end() } else { el.self_start() }
+    if month {
+        el.self_end()
+    } else {
+        el.self_start()
+    }
 }
 
 /// A month's title over it, with several months: "October 2026",
@@ -742,9 +771,19 @@ fn day(
     };
     let band = |start_half: bool| {
         let shown = if start_half {
-            ["data-range-end", "data-range-middle", "data-range-preview-end", "data-range-preview-middle"]
+            [
+                "data-range-end",
+                "data-range-middle",
+                "data-range-preview-end",
+                "data-range-preview-middle",
+            ]
         } else {
-            ["data-range-start", "data-range-middle", "data-range-preview-start", "data-range-preview-middle"]
+            [
+                "data-range-start",
+                "data-range-middle",
+                "data-range-preview-start",
+                "data-range-preview-middle",
+            ]
         };
         let mut class = String::from("opacity-0 ");
         for state in shown {
@@ -763,17 +802,21 @@ fn day(
             .bg(move || t.color(CALENDAR_RANGE))
             .app_class(Some(SharedString::from(class)));
         if start_half {
-            el.left(px(0.0))
-                .right(relative(0.5))
-                .style_with(move |s| {
-                    if column() == 0 { s.rounded_l(radius()) } else { s }
-                })
+            el.left(px(0.0)).right(relative(0.5)).style_with(move |s| {
+                if column() == 0 {
+                    s.rounded_l(radius())
+                } else {
+                    s
+                }
+            })
         } else {
-            el.left(relative(0.5))
-                .right(px(0.0))
-                .style_with(move |s| {
-                    if column() == 6 { s.rounded_r(radius()) } else { s }
-                })
+            el.left(relative(0.5)).right(px(0.0)).style_with(move |s| {
+                if column() == 6 {
+                    s.rounded_r(radius())
+                } else {
+                    s
+                }
+            })
         }
     };
     let label = match app.get() {
@@ -811,12 +854,21 @@ fn day(
         .items_center()
         .justify_center()
         .rounded(radius)
-        .child(layer(move || t.color(CALENDAR_TODAY), radius, &format!(
-            "{}opacity-100",
-            in_item(&["data-today"])
-        )))
-        .child(layer(move || t.color(BUTTON_GHOST_HOVER), radius, &hover_shown))
-        .child(layer(move || t.color(CALENDAR_SELECTED), radius, &selected_shown))
+        .child(layer(
+            move || t.color(CALENDAR_TODAY),
+            radius,
+            &format!("{}opacity-100", in_item(&["data-today"])),
+        ))
+        .child(layer(
+            move || t.color(BUTTON_GHOST_HOVER),
+            radius,
+            &hover_shown,
+        ))
+        .child(layer(
+            move || t.color(CALENDAR_SELECTED),
+            radius,
+            &selected_shown,
+        ))
         .group_focus_visible_named(ITEM_GROUP, move |s| {
             focus_ring(s, t, move || t.color(BUTTON_RING), None)
         })

@@ -23,11 +23,12 @@ const TS_TYPES: &[&str] = &[
     "SelectRef",
     "CheckboxRef",
     "SwitchRef",
+    "DatePickerRef",
 ];
 
 /// A control a label's press reaches: none, or a control component's ref.
-/// Controls are this library's `Input`, `Textarea`, `Select`, `Checkbox`
-/// and `Switch`, and later ones that register (Rust converts their
+/// Controls are this library's `Input`, `Textarea`, `Select`, `Checkbox`,
+/// `Switch` and `DatePicker`, and later ones that register (Rust converts their
 /// `ComponentRef`s into it).
 #[derive(Clone, Default)]
 pub struct FieldRef(Target);

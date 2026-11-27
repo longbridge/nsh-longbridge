@@ -287,17 +287,35 @@ fn a_selected_day_a_day_of_another_month_and_a_disabled_day() {
     let single = drawing(&app, "2026-12-09");
     assert!(shown(&app, single.selected));
     assert_eq!(fill_of(&app, single.selected), light(CALENDAR_SELECTED));
-    assert_eq!(number(&app, "2026-12-09"), light(CALENDAR_SELECTED_FOREGROUND));
+    assert_eq!(
+        number(&app, "2026-12-09"),
+        light(CALENDAR_SELECTED_FOREGROUND)
+    );
     // September 27 shows in October's first week, muted.
-    assert_eq!(number(&app, "2026-09-27"), light(CALENDAR_OUTSIDE_FOREGROUND));
+    assert_eq!(
+        number(&app, "2026-09-27"),
+        light(CALENDAR_OUTSIDE_FOREGROUND)
+    );
     // A Saturday of December: dimmed, muted, not pressable.
     let screen = app.screen();
-    assert!(screen.accessibility_state(&day("2026-12-12")).unwrap().disabled);
+    assert!(
+        screen
+            .accessibility_state(&day("2026-12-12"))
+            .unwrap()
+            .disabled
+    );
     assert_eq!(
-        screen.view_style(&day("2026-12-12")).unwrap().unwrap().opacity,
+        screen
+            .view_style(&day("2026-12-12"))
+            .unwrap()
+            .unwrap()
+            .opacity,
         0.5
     );
-    assert_eq!(number(&app, "2026-12-12"), light(CALENDAR_OUTSIDE_FOREGROUND));
+    assert_eq!(
+        number(&app, "2026-12-12"),
+        light(CALENDAR_OUTSIDE_FOREGROUND)
+    );
 }
 
 #[test]

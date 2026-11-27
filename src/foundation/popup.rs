@@ -176,6 +176,12 @@ impl PopupStyleProp for nsh_base::MenuProps {
     }
 }
 
+impl PopupStyleProp for nsh_base::DatePickerProps {
+    fn set_popup_style(&mut self, style: Prop<Style>) {
+        self.popup_style = style;
+    }
+}
+
 impl PopupStyleProp for nsh_base::SelectProps {
     fn set_popup_style(&mut self, style: Prop<Style>) {
         self.popup_style = style;

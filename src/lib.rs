@@ -55,6 +55,11 @@ pub use crate::{
         checkbox::{
             Checkbox, CheckboxApi, CheckboxElement, CheckboxEvent, CheckboxProps, checkbox,
         },
+        date_picker::{
+            DatePicker, DatePickerApi, DatePickerElement, DatePickerEvent, DatePickerProps,
+            DatePickerValue, DateRangePreset, DateTime, HourCycle, PickedDate, TimeOfDay,
+            TimePrecision, date_picker,
+        },
         dialog::{
             Dialog, DialogClose, DialogCloseElement, DialogCloseProps, DialogContent,
             DialogContentElement, DialogContentProps, DialogDescription, DialogDescriptionElement,
@@ -154,6 +159,7 @@ fn native(registry: &mut Registry) {
         .register::<CardHeader>()
         .register::<CardTitle>()
         .register::<Checkbox>()
+        .register::<DatePicker>()
         .register::<Dialog>()
         .register::<DialogClose>()
         .register::<DialogContent>()

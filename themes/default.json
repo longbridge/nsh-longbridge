@@ -353,7 +353,10 @@
       "calendar-selected": "var(--primary)",
       "calendar-selected-foreground": "var(--primary-foreground)",
       "calendar-range": "var(--accent)",
-      "calendar-range-foreground": "var(--accent-foreground)"
+      "calendar-range-foreground": "var(--accent-foreground)",
+      "date-picker-trigger-hover": "var(--select-trigger-hover)",
+      "date-picker-segment-focus": "var(--menu-item-focus)",
+      "date-picker-segment-focus-foreground": "var(--menu-item-focus-foreground)"
     },
     "dark": {
       "background": "oklch(0.145 0 0)",
@@ -510,7 +513,10 @@
       "calendar-selected": "var(--primary)",
       "calendar-selected-foreground": "var(--primary-foreground)",
       "calendar-range": "var(--accent)",
-      "calendar-range-foreground": "var(--accent-foreground)"
+      "calendar-range-foreground": "var(--accent-foreground)",
+      "date-picker-trigger-hover": "var(--select-trigger-hover)",
+      "date-picker-segment-focus": "var(--menu-item-focus)",
+      "date-picker-segment-focus-foreground": "var(--menu-item-focus-foreground)"
     }
   }
 }

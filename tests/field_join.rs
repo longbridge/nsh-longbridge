@@ -487,10 +487,10 @@ fn current_finds_the_enclosing_field() {
 fn tsx_labels_take_every_controls_ref() {
     let ts = nsh_core::element::declarations(&nsh_longbridge::registry(), &[]);
     assert!(
-        ts.contains("htmlFor?: InputRef | TextareaRef | SelectRef | CheckboxRef | SwitchRef;"),
+        ts.contains("htmlFor?: InputRef | TextareaRef | SelectRef | CheckboxRef | SwitchRef | DatePickerRef;"),
         "{ts}"
     );
-    for name in ["SelectRef", "CheckboxRef", "SwitchRef"] {
+    for name in ["SelectRef", "CheckboxRef", "SwitchRef", "DatePickerRef"] {
         let start = ts
             .find(&format!("export interface {name} {{"))
             .unwrap_or_else(|| panic!("no {name}"));

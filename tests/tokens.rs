@@ -282,6 +282,15 @@ fn the_calendar_token_table_is_current() {
 }
 
 #[test]
+fn the_date_picker_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/date-picker.md"),
+        "date-picker",
+        &token_table(nsh_longbridge::components::date_picker::TOKENS),
+    );
+}
+
+#[test]
 fn the_menu_token_table_is_current() {
     check_block(
         &root().join("docs/components/dropdown-menu.md"),
