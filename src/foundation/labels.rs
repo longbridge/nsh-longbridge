@@ -150,6 +150,14 @@ pub enum Label {
     /// "Select all": a data table's box over every row.
     #[prop(rename = "select-all")]
     SelectAll,
+    /// "No items found.": a list a search left empty (a combobox's).
+    #[prop(rename = "no-items")]
+    NoItems,
+    /// "Clear": the button that clears a value (a combobox's).
+    Clear,
+    /// "Remove": the button that removes a chosen value, said before its
+    /// title (a combobox's chips).
+    Remove,
 }
 
 impl Label {
@@ -200,6 +208,9 @@ impl Label {
         Label::Pagination,
         Label::SelectRow,
         Label::SelectAll,
+        Label::NoItems,
+        Label::Clear,
+        Label::Remove,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -250,6 +261,9 @@ impl Label {
             Label::Pagination => "pagination",
             Label::SelectRow => "select-row",
             Label::SelectAll => "select-all",
+            Label::NoItems => "no-items",
+            Label::Clear => "clear",
+            Label::Remove => "remove",
         }
     }
 
@@ -301,6 +315,9 @@ impl Label {
             Label::Pagination => "Pagination",
             Label::SelectRow => "Select row",
             Label::SelectAll => "Select all",
+            Label::NoItems => "No items found.",
+            Label::Clear => "Clear",
+            Label::Remove => "Remove",
         }
     }
 

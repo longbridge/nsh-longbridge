@@ -7,6 +7,7 @@ pub mod button;
 pub mod calendar;
 pub mod card;
 pub mod checkbox;
+pub mod combobox;
 pub mod data_table;
 pub mod date_picker;
 pub mod dialog;

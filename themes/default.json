@@ -252,7 +252,9 @@
       "slider-track-thickness": "calc(var(--spacing) * 1.5)",
       "slider-thumb-size": "calc(var(--control-height-md) * 0.5)",
       "slider-thumb-shadow": "2",
-      "slider-thumb-ring-width": "calc(var(--ring-width) + 1px)"
+      "slider-thumb-ring-width": "calc(var(--ring-width) + 1px)",
+      "combobox-list-max-height": "calc(var(--spacing) * 87)",
+      "combobox-chip-height": "calc(var(--spacing) * 5.5)"
     },
     "light": {
       "background": "oklch(1 0 0)",
@@ -448,7 +450,11 @@
       "slider-range": "var(--primary)",
       "slider-thumb": "var(--background)",
       "slider-thumb-border": "var(--slider-range)",
-      "slider-thumb-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
+      "slider-thumb-ring": "color-mix(in oklab, var(--ring) 50%, transparent)",
+      "combobox-icon-foreground": "var(--muted-foreground)",
+      "combobox-empty-foreground": "var(--muted-foreground)",
+      "combobox-chip": "var(--muted)",
+      "combobox-chip-foreground": "var(--foreground)"
     },
     "dark": {
       "background": "oklch(0.145 0 0)",
@@ -644,7 +650,11 @@
       "slider-range": "var(--primary)",
       "slider-thumb": "var(--foreground)",
       "slider-thumb-border": "var(--slider-range)",
-      "slider-thumb-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
+      "slider-thumb-ring": "color-mix(in oklab, var(--ring) 50%, transparent)",
+      "combobox-icon-foreground": "var(--muted-foreground)",
+      "combobox-empty-foreground": "var(--muted-foreground)",
+      "combobox-chip": "var(--muted)",
+      "combobox-chip-foreground": "var(--foreground)"
     }
   }
 }

@@ -187,3 +187,9 @@ impl PopupStyleProp for nsh_base::SelectProps {
         self.popup_style = style;
     }
 }
+
+impl PopupStyleProp for nsh_base::ComboboxProps {
+    fn set_popup_style(&mut self, style: Prop<Style>) {
+        self.popup_style = style;
+    }
+}

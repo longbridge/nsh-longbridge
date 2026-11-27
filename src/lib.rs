@@ -61,6 +61,7 @@ pub use crate::{
         checkbox::{
             Checkbox, CheckboxApi, CheckboxElement, CheckboxEvent, CheckboxProps, checkbox,
         },
+        combobox::{Combobox, ComboboxElement, ComboboxEvent, ComboboxProps, combobox},
         data_table::{
             DataTable, DataTableAlign, DataTableApi, DataTableCell, DataTableCellClass,
             DataTableClasses, DataTableColumn, DataTableColumnGroup, DataTableColumnMove,
@@ -201,6 +202,7 @@ fn native(registry: &mut Registry) {
         .register::<Checkbox>()
         .register::<DataTable>()
         .register::<DatePicker>()
+        .register::<Combobox>()
         .register::<Dialog>()
         .register::<DialogClose>()
         .register::<DialogContent>()

@@ -345,6 +345,15 @@ fn the_pagination_token_table_is_current() {
 }
 
 #[test]
+fn the_combobox_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/combobox.md"),
+        "combobox",
+        &token_table(nsh_longbridge::components::combobox::TOKENS),
+    );
+}
+
+#[test]
 fn the_slider_token_table_is_current() {
     check_block(
         &root().join("docs/components/slider.md"),

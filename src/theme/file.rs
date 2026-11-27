@@ -47,6 +47,7 @@ pub fn registry() -> Vec<TokenDecl> {
         crate::components::toggle::TOKENS,
         crate::components::toggle_group::TOKENS,
         crate::components::slider::TOKENS,
+        crate::components::combobox::TOKENS,
     ]
     .concat()
 }
