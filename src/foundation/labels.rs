@@ -127,6 +127,29 @@ pub enum Label {
     /// "Pick a date": a date picker's placeholder.
     #[prop(rename = "pick-a-date")]
     PickADate,
+    /// "Previous": the word of a pagination's step back.
+    #[prop(rename = "previous")]
+    Previous,
+    /// "Next": the word of a pagination's step forward.
+    #[prop(rename = "next")]
+    Next,
+    /// "Go to previous page": what screen readers call a pagination's
+    /// step back.
+    #[prop(rename = "go-to-previous-page")]
+    GoToPreviousPage,
+    /// "Go to next page": what screen readers call a pagination's step
+    /// forward.
+    #[prop(rename = "go-to-next-page")]
+    GoToNextPage,
+    /// "Pagination": what screen readers call a pagination.
+    #[prop(rename = "pagination")]
+    Pagination,
+    /// "Select row": a data table's box of a row.
+    #[prop(rename = "select-row")]
+    SelectRow,
+    /// "Select all": a data table's box over every row.
+    #[prop(rename = "select-all")]
+    SelectAll,
 }
 
 impl Label {
@@ -170,6 +193,13 @@ impl Label {
         Label::NextMonth,
         Label::Time,
         Label::PickADate,
+        Label::Previous,
+        Label::Next,
+        Label::GoToPreviousPage,
+        Label::GoToNextPage,
+        Label::Pagination,
+        Label::SelectRow,
+        Label::SelectAll,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -213,6 +243,13 @@ impl Label {
             Label::NextMonth => "next-month",
             Label::Time => "time",
             Label::PickADate => "pick-a-date",
+            Label::Previous => "previous",
+            Label::Next => "next",
+            Label::GoToPreviousPage => "go-to-previous-page",
+            Label::GoToNextPage => "go-to-next-page",
+            Label::Pagination => "pagination",
+            Label::SelectRow => "select-row",
+            Label::SelectAll => "select-all",
         }
     }
 
@@ -257,6 +294,13 @@ impl Label {
             Label::NextMonth => "Go to the next month",
             Label::Time => "Time",
             Label::PickADate => "Pick a date",
+            Label::Previous => "Previous",
+            Label::Next => "Next",
+            Label::GoToPreviousPage => "Go to previous page",
+            Label::GoToNextPage => "Go to next page",
+            Label::Pagination => "Pagination",
+            Label::SelectRow => "Select row",
+            Label::SelectAll => "Select all",
         }
     }
 
