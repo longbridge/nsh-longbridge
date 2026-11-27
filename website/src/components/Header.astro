@@ -1,0 +1,111 @@
+---
+// The site's header, as the gallery's draws it: the brand, "NSH / Longbridge"
+// (the mark and "NSH" lead to nsh.dev; "Longbridge" opens the family's
+// menu), then the theme, the appearance and GitHub. Its menus are
+// HTML popovers (`popover`), placed under their buttons by `site.ts`.
+import { BASE, NSH_SITE, REPOSITORY, SITE_TITLE as PRODUCT, href } from '../lib/site';
+import { github, icon } from '../lib/icons';
+import { swatches } from '../lib/theme-css';
+
+const logo = (size: number) => `
+  <img class="logo logo--light" src="${BASE}brand/nsh-logo-light.svg" width="${size}" height="${size}" alt="" />
+  <img class="logo logo--dark" src="${BASE}brand/nsh-logo-dark.svg" width="${size}" height="${size}" alt="" />`;
+const appearances = [
+  { value: 'system', label: 'System', icon: 'monitor' as const },
+  { value: 'light', label: 'Light', icon: 'sun' as const },
+  { value: 'dark', label: 'Dark', icon: 'moon' as const },
+];
+---
+
+<header class="site-header">
+  <div class="site-header__row">
+    <div class="site-header__start">
+      <a class="brand" href={NSH_SITE} aria-label="NSH, nsh.dev">
+        <Fragment set:html={logo(22)} />
+        <span class="brand__family">NSH</span>
+      </a>
+      <span class="brand__slash" aria-hidden="true">/</span>
+      <button class="brand__product" popovertarget="brand-menu" aria-label={`${PRODUCT}, other projects`} data-anchor="start">
+        <span>Longbridge</span>
+        <Fragment set:html={icon('chevronsUpDown', 14, 'brand__chevrons')} />
+      </button>
+      <div id="brand-menu" popover class="menu menu--brand">
+        <a class="project project--current" href={href()} aria-label={`${PRODUCT}, home`}>
+          <Fragment set:html={logo(28)} />
+          <span class="project__text"><b>{PRODUCT}</b><small>Components and design tokens for NSH</small></span>
+        </a>
+        <a class="project" href={NSH_SITE} rel="noopener">
+          <Fragment set:html={logo(28)} />
+          <span class="project__text"><b>Native Shell</b><small>One native UI framework, every platform</small></span>
+          <Fragment set:html={icon('arrowUpRight', 14, 'faint')} />
+        </a>
+      </div>
+    </div>
+
+    <div class="site-header__end">
+      <button class="theme-button" popovertarget="theme-menu" aria-label="Theme" data-anchor="end">
+        <span class="swatch-dot" aria-hidden="true"></span>
+        <span class="wide-only">Theme</span>
+        <Fragment set:html={icon('chevronDown', 14, 'faint wide-only')} />
+      </button>
+      <div id="theme-menu" popover class="menu menu--theme">
+        <div class="menu__head">
+          <b>Theme</b>
+          <span>Recolors every demo on the site, in light and dark.</span>
+        </div>
+        <div class="menu__section">
+          <span class="menu__label">COLOR</span>
+          <div class="swatches swatches--spread" role="radiogroup" aria-label="Color preset">
+            {swatches().map((s) => (
+              <button class="swatch" role="radio" data-preset-choice={s.id} aria-label={s.label} style={`--sw-light:${s.light};--sw-dark:${s.dark}`}>
+                <span class="swatch__ring"><span class="swatch__fill"></span></span>
+                <span class="swatch__name">{s.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div class="menu__section">
+          <span class="menu__label">DENSITY</span>
+          <div class="densities" role="radiogroup" aria-label="Density">
+            {[{ id: 'default', label: 'Default', gap: 5, bar: 5 }, { id: 'compact', label: 'Compact', gap: 2.5, bar: 4 }].map((d) => (
+              <button class="density" role="radio" data-density-choice={d.id} aria-label={d.label}>
+                <span class="density__ring">
+                  <span class="density__tile" style={`gap:${d.gap}px`}>
+                    {[1, 0.7, 0.85].map((w, i) => <i style={`height:${d.bar}px;width:${w * 100}%`} class={i === 0 ? 'on' : ''}></i>)}
+                  </span>
+                </span>
+                <span class="swatch__name">{d.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <a class="menu__foot" href={href('customize')}>
+          <span>Every token, in the theme studio</span>
+          <Fragment set:html={icon('arrowRight', 14)} />
+        </a>
+      </div>
+
+      <div class="segmented wide-only" role="radiogroup" aria-label="Appearance">
+        {appearances.map((a) => (
+          <button role="radio" data-appearance-choice={a.value} aria-label={a.label}>
+            <Fragment set:html={icon(a.icon, 14)} />
+          </button>
+        ))}
+      </div>
+      <button class="icon-button narrow-only" popovertarget="appearance-menu" aria-label="Appearance" data-anchor="end">
+        <span class="appearance-icon" data-for="system"><Fragment set:html={icon('monitor', 16)} /></span>
+        <span class="appearance-icon" data-for="light"><Fragment set:html={icon('sun', 16)} /></span>
+        <span class="appearance-icon" data-for="dark"><Fragment set:html={icon('moon', 16)} /></span>
+      </button>
+      <div id="appearance-menu" popover class="menu menu--small">
+        {appearances.map((a) => (
+          <button class="menu__item" role="menuitemradio" data-appearance-choice={a.value}>{a.label}</button>
+        ))}
+      </div>
+
+      <a class="icon-button" href={REPOSITORY} aria-label="Source on GitHub" title="Source on GitHub" rel="noopener">
+        <Fragment set:html={github(16)} />
+      </a>
+    </div>
+  </div>
+</header>

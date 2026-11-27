@@ -1,0 +1,69 @@
+---
+// The page's frame: its head (title, description, share previews, the
+// theme applied before first paint) and the site's styles.
+import '@fontsource-variable/figtree/wght.css';
+import '../styles/global.css';
+import { themeCss } from '../lib/theme-css';
+import { BASE, SITE_DESCRIPTION, SITE_TITLE } from '../lib/site';
+
+export interface Props {
+  title?: string;
+  description?: string;
+}
+const { title = `${SITE_TITLE}: native apps that look finished from day one`, description = SITE_DESCRIPTION } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = new URL(`${BASE}og-image.png`, Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en" class="light" data-preset="neutral" data-density="default" data-appearance="system">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1016" media="(prefers-color-scheme: dark)" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={`${BASE}favicon.svg`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_TITLE} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <!-- Before first paint: the theme chosen on the site (shared with the
+         gallery's pages and demos, `gallery/sync.ts`), on <html>. -->
+    <script is:inline>
+      (function () {
+        var root = document.documentElement, s = {};
+        try { s = JSON.parse(localStorage.getItem('nsh-longbridge:theme') || '{}') || {}; } catch (e) {}
+        var media = matchMedia('(prefers-color-scheme: dark)');
+        root.dataset.preset = s.preset || 'neutral';
+        root.dataset.density = s.density || 'default';
+        root.dataset.appearance = s.appearance === 'light' || s.appearance === 'dark' ? s.appearance : 'system';
+        var apply = function () {
+          var a = root.dataset.appearance;
+          var dark = a === 'dark' || (a === 'system' && media.matches);
+          root.classList.toggle('dark', dark);
+          root.classList.toggle('light', !dark);
+          root.style.colorScheme = dark ? 'dark' : 'light';
+        };
+        apply();
+        media.addEventListener('change', apply);
+        window.__applyAppearance = apply;
+      })();
+    </script>
+    <style is:inline set:html={themeCss()}></style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

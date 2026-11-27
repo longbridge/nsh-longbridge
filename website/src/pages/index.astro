@@ -1,0 +1,160 @@
+---
+// The home page: a sentence, one button and the install command over the
+// stage, where the gallery's hero demo plays (an iframe of the gallery's web
+// build over its poster); then three short sections, each one demo, and the
+// footer. Everything but the demos is HTML and CSS: it paints at once and
+// reads without JavaScript.
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import DemoFrame from '../components/DemoFrame.astro';
+import Posters from '../components/Posters.astro';
+import { codeHtml } from '../lib/code';
+import { components, kinds } from '../lib/components';
+import { github, icon } from '../lib/icons';
+import { BASE, INSTALL, NSH_SITE, REPOSITORY, href } from '../lib/site';
+import { INVITE_FILE, INVITE_SOURCE } from '../../../gallery/ui/sample-source';
+
+const knobs = [
+  { name: 'radius', label: 'Radius', min: 0, max: 20, step: 1, start: 10 },
+  { name: 'control-height', label: 'Control height', min: 24, max: 40, step: 2, start: 32 },
+  { name: 'font-size', label: 'Font size', min: 12, max: 16, step: 1, start: 14 },
+];
+const tokenFile = (values: Record<string, number>) =>
+  ['{', '  "cssVars": {', '    "theme": {', ...knobs.map((k, i) => `      "${k.name}": "${values[k.name]}px"${i < knobs.length - 1 ? ',' : ''}`), '    }', '  }', '}'].join('\n');
+const start = Object.fromEntries(knobs.map((k) => [k.name, k.start]));
+const first = components[0].id;
+---
+
+<Base>
+  <Header />
+  <main>
+    <section class="hero">
+      <div class="column hero__column">
+        <h1 class="hero__title enter" style="--i:0">Native apps that look finished from day&nbsp;one.</h1>
+        <p class="hero__lead enter" style="--i:1">{components.length} components for NSH apps, in TSX or Rust. One theme file restyles every one of them.</p>
+        <div class="hero__actions enter" style="--i:2">
+          <a class="site-button" href={href(first)}>Browse components</a>
+          <div class="install">
+            <span class="install__prompt">$</span>
+            <code class="install__text">{INSTALL}</code>
+            <button class="install__copy" data-copy={INSTALL} aria-label="Copy the command">
+              <span class="when-idle"><Fragment set:html={icon('copy', 14)} /></span>
+              <span class="when-done"><Fragment set:html={icon('check', 14)} /></span>
+            </button>
+          </div>
+        </div>
+        <div class="stage enter" style="--i:3">
+          <div class="stage__light" aria-hidden="true"></div>
+          <canvas class="stage__silk" aria-hidden="true"></canvas>
+          <DemoFrame name="hero" label="A New invoice form, built from NSH Longbridge components, that fills itself in" eager>
+            <Posters name="hero" />
+          </DemoFrame>
+        </div>
+      </div>
+    </section>
+
+    <section class="band reveal">
+      <div class="column">
+        <div class="heading">
+          <h2>One file restyles all of it.</h2>
+          <p>Every radius, size and color is a token. Move one and every component that reads it follows.</p>
+        </div>
+        <div class="panel panel--tokens">
+          <div class="knobs">
+            <div class="knobs__list">
+              {knobs.map((k) => (
+                <label class="knob">
+                  <span class="knob__head"><span>{k.label}</span><code data-knob-value={k.name}>{k.start}px</code></span>
+                  <input type="range" min={k.min} max={k.max} step={k.step} value={k.start} data-knob={k.name} aria-label={k.label} />
+                </label>
+              ))}
+            </div>
+            <pre class="code code--file" data-token-file><code set:html={codeHtml(tokenFile(start))}></code></pre>
+          </div>
+          <div class="preview preview--tokens">
+            <DemoFrame name="tokens" label="A settings card in the tokens above">
+              <Posters name="tokens" />
+            </DemoFrame>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band reveal">
+      <div class="column">
+        <div class="heading">
+          <h2>Write it once.</h2>
+          <p>A component is a function in TSX. The card beside the file is that file, running: type an email and Send invite wakes up.</p>
+        </div>
+        <div class="panel panel--code">
+          <div class="window-bar">
+            <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="window-bar__title">{INVITE_FILE}</span>
+          </div>
+          <div class="panel__split">
+            <div class="pane pane--source">
+              <div class="pane__label">SOURCE</div>
+              <pre class="code code--numbered"><code set:html={codeHtml(INVITE_SOURCE)}></code></pre>
+            </div>
+            <div class="pane pane--running">
+              <div class="pane__label"><span class="live-dot" aria-hidden="true"></span>RUNNING</div>
+              <div class="preview preview--grid">
+                <DemoFrame name="sample" label="The invite card from the source, running">
+                  <Posters name="sample" />
+                </DemoFrame>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band reveal">
+      <div class="column">
+        <div class="heading">
+          <h2>{components.length} components.</h2>
+          <p>Each with its own page: the variants, the states and the tokens it reads.</p>
+        </div>
+        <div class="kinds">
+          {kinds.map((k) => (
+            <div class="kind">
+              <div class="kind__head"><span class={`kind__dot kind__dot--${k.toLowerCase()}`}></span>{k}</div>
+              <ul>
+                {components.filter((c) => c.kind === k).map((c) => (
+                  <li><a href={href(c.id)}><span>{c.label}</span><Fragment set:html={icon('arrowRight', 13, 'kind__arrow')} /><small class="kind__line">{c.line}</small></a></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="column site-footer__row">
+      <div class="site-footer__about">
+        <div class="site-footer__brand">
+          <img class="logo logo--light" src={`${BASE}brand/nsh-logo-light.svg`} width="20" height="20" alt="" />
+          <img class="logo logo--dark" src={`${BASE}brand/nsh-logo-dark.svg`} width="20" height="20" alt="" />
+          <span>NSH Longbridge</span>
+        </div>
+        <p>Components and design tokens for NSH apps.</p>
+        <p>Code licensed under Apache-2.0. Developed by Longbridge.</p>
+      </div>
+      <nav class="site-footer__links" aria-label="Site">
+        <a href={href(first)}>Components</a>
+        <a href={href('customize')}>Theme studio</a>
+        <a href={href('colors')}>Colors</a>
+        <a href={REPOSITORY} rel="noopener">Source code</a>
+        <a href={`${REPOSITORY}/issues`} rel="noopener">Report an issue</a>
+        <a href={NSH_SITE} rel="noopener">Native Shell</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    import { start } from '../lib/client';
+    start();
+  </script>
+</Base>
