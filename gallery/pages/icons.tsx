@@ -19,6 +19,7 @@ const icons: { name: IconName; for: string }[] = [
   { name: "octagon-x", for: "Toast, error" },
   { name: "loader-circle", for: "Spinner, loading" },
   { name: "ellipsis", for: "An overflow menu" },
+  { name: "calendar", for: "DatePicker's field" },
   { name: "plus", for: "Adding" },
   { name: "arrow-right", for: "Going on" },
   { name: "trash-2", for: "Deleting" },

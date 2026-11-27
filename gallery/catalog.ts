@@ -4,10 +4,12 @@ import type { JSX } from "nsh";
 import { AlertDialogPage } from "./pages/alert-dialog";
 import { BadgePage } from "./pages/badge";
 import { ButtonPage } from "./pages/button";
+import { CalendarPage } from "./pages/calendar";
 import { CardPage } from "./pages/card";
 import { CheckboxPage } from "./pages/checkbox";
 import { ColorsPage } from "./pages/colors";
 import { CustomizePage } from "./pages/customize";
+import { DatePickerPage } from "./pages/date-picker";
 import { DialogPage } from "./pages/dialog";
 import { DropdownMenuPage } from "./pages/dropdown-menu";
 import { HomePage } from "./pages/home";
@@ -56,8 +58,10 @@ export const catalog: PageGroup[] = [
       { id: "alert-dialog", label: "Alert Dialog", page: AlertDialogPage },
       { id: "badge", label: "Badge", page: BadgePage },
       { id: "button", label: "Button", page: ButtonPage },
+      { id: "calendar", label: "Calendar", page: CalendarPage },
       { id: "card", label: "Card", page: CardPage },
       { id: "checkbox", label: "Checkbox", page: CheckboxPage },
+      { id: "date-picker", label: "Date Picker", page: DatePickerPage },
       { id: "dialog", label: "Dialog", page: DialogPage },
       { id: "dropdown-menu", label: "Dropdown Menu", page: DropdownMenuPage },
       { id: "input", label: "Input", page: InputPage },
