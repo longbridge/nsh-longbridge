@@ -2,30 +2,32 @@
   "name": "nsh-longbridge blue",
   "cssVars": {
     "light": {
-      "primary": "oklch(0.488 0.243 264.376)",
-      "primary-foreground": "oklch(0.97 0.014 254.604)",
+      "primary": "oklch(0.545 0.13 242)",
+      "primary-foreground": "oklch(0.985 0.006 242)",
       "secondary": "oklch(0.967 0.001 286.375)",
       "secondary-foreground": "oklch(0.21 0.006 285.885)",
-      "chart-1": "oklch(0.809 0.105 251.813)",
-      "chart-2": "oklch(0.623 0.214 259.815)",
-      "chart-3": "oklch(0.546 0.245 262.881)",
-      "chart-4": "oklch(0.488 0.243 264.376)",
-      "chart-5": "oklch(0.424 0.199 265.638)",
-      "sidebar-primary": "oklch(0.546 0.245 262.881)",
-      "sidebar-primary-foreground": "oklch(0.97 0.014 254.604)"
+      "destructive": "oklch(0.58 0.17 25)",
+      "chart-1": "oklch(0.86 0.055 242)",
+      "chart-2": "oklch(0.75 0.098 242)",
+      "chart-3": "oklch(0.65 0.123 242)",
+      "chart-4": "oklch(0.55 0.13 242)",
+      "chart-5": "oklch(0.45 0.107 242)",
+      "sidebar-primary": "oklch(0.545 0.13 242)",
+      "sidebar-primary-foreground": "oklch(0.985 0.006 242)"
     },
     "dark": {
-      "primary": "oklch(0.424 0.199 265.638)",
-      "primary-foreground": "oklch(0.97 0.014 254.604)",
+      "primary": "oklch(0.72 0.11 242)",
+      "primary-foreground": "oklch(0.22 0.04 242)",
       "secondary": "oklch(0.274 0.006 286.033)",
       "secondary-foreground": "oklch(0.985 0 0)",
-      "chart-1": "oklch(0.809 0.105 251.813)",
-      "chart-2": "oklch(0.623 0.214 259.815)",
-      "chart-3": "oklch(0.546 0.245 262.881)",
-      "chart-4": "oklch(0.488 0.243 264.376)",
-      "chart-5": "oklch(0.424 0.199 265.638)",
-      "sidebar-primary": "oklch(0.623 0.214 259.815)",
-      "sidebar-primary-foreground": "oklch(0.97 0.014 254.604)"
+      "destructive": "oklch(0.68 0.14 22)",
+      "chart-1": "oklch(0.88 0.046 242)",
+      "chart-2": "oklch(0.79 0.083 242)",
+      "chart-3": "oklch(0.7 0.104 242)",
+      "chart-4": "oklch(0.61 0.11 242)",
+      "chart-5": "oklch(0.52 0.099 242)",
+      "sidebar-primary": "oklch(0.72 0.11 242)",
+      "sidebar-primary-foreground": "oklch(0.22 0.04 242)"
     }
   }
 }

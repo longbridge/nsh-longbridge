@@ -2,31 +2,33 @@
   "name": "nsh-longbridge rose",
   "cssVars": {
     "light": {
-      "primary": "oklch(0.514 0.222 16.935)",
-      "primary-foreground": "oklch(0.969 0.015 12.422)",
+      "primary": "oklch(0.565 0.15 10)",
+      "primary-foreground": "oklch(0.985 0.006 10)",
       "secondary": "oklch(0.967 0.001 286.375)",
       "secondary-foreground": "oklch(0.21 0.006 285.885)",
-      "chart-1": "oklch(0.81 0.117 11.638)",
-      "chart-2": "oklch(0.645 0.246 16.439)",
-      "chart-3": "oklch(0.586 0.253 17.585)",
-      "chart-4": "oklch(0.514 0.222 16.935)",
-      "chart-5": "oklch(0.455 0.188 13.697)",
-      "sidebar-primary": "oklch(0.586 0.253 17.585)",
-      "sidebar-primary-foreground": "oklch(0.969 0.015 12.422)"
+      "destructive": "oklch(0.58 0.17 25)",
+      "chart-1": "oklch(0.86 0.063 10)",
+      "chart-2": "oklch(0.75 0.112 10)",
+      "chart-3": "oklch(0.65 0.142 10)",
+      "chart-4": "oklch(0.55 0.15 10)",
+      "chart-5": "oklch(0.45 0.135 10)",
+      "sidebar-primary": "oklch(0.565 0.15 10)",
+      "sidebar-primary-foreground": "oklch(0.985 0.006 10)"
     },
     "dark": {
-      "primary": "oklch(0.645 0.246 16.439)",
-      "primary-foreground": "oklch(0.969 0.015 12.422)",
+      "primary": "oklch(0.72 0.12 10)",
+      "primary-foreground": "oklch(0.22 0.04 10)",
       "secondary": "oklch(0.274 0.006 286.033)",
       "secondary-foreground": "oklch(0.985 0 0)",
-      "chart-1": "oklch(0.81 0.117 11.638)",
-      "chart-2": "oklch(0.645 0.246 16.439)",
-      "chart-3": "oklch(0.586 0.253 17.585)",
-      "chart-4": "oklch(0.514 0.222 16.935)",
-      "chart-5": "oklch(0.455 0.188 13.697)",
+      "destructive": "oklch(0.68 0.14 22)",
+      "chart-1": "oklch(0.88 0.05 10)",
+      "chart-2": "oklch(0.79 0.09 10)",
+      "chart-3": "oklch(0.7 0.114 10)",
+      "chart-4": "oklch(0.61 0.12 10)",
+      "chart-5": "oklch(0.52 0.108 10)",
       "sidebar": "oklch(0.21 0.006 285.885)",
-      "sidebar-primary": "oklch(0.645 0.246 16.439)",
-      "sidebar-primary-foreground": "oklch(0.969 0.015 12.422)"
+      "sidebar-primary": "oklch(0.72 0.12 10)",
+      "sidebar-primary-foreground": "oklch(0.22 0.04 10)"
     }
   }
 }
