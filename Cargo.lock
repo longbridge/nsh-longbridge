@@ -2657,6 +2657,7 @@ dependencies = [
 name = "nsh-longbridge"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "log",
  "nsh-base",
  "nsh-core",

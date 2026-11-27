@@ -22,11 +22,155 @@ pub enum Label {
     Close,
     /// "Back": the row that goes back up from a submenu in a sheet.
     Back,
+    /// "Su": Sunday over a calendar's days.
+    #[prop(rename = "weekday-0")]
+    Weekday0,
+    /// "Mo": Monday over a calendar's days.
+    #[prop(rename = "weekday-1")]
+    Weekday1,
+    /// "Tu": Tuesday over a calendar's days.
+    #[prop(rename = "weekday-2")]
+    Weekday2,
+    /// "We": Wednesday over a calendar's days.
+    #[prop(rename = "weekday-3")]
+    Weekday3,
+    /// "Th": Thursday over a calendar's days.
+    #[prop(rename = "weekday-4")]
+    Weekday4,
+    /// "Fr": Friday over a calendar's days.
+    #[prop(rename = "weekday-5")]
+    Weekday5,
+    /// "Sa": Saturday over a calendar's days.
+    #[prop(rename = "weekday-6")]
+    Weekday6,
+    /// "January": a calendar's month toggle and titles.
+    #[prop(rename = "month-1")]
+    Month1,
+    /// "February": a calendar's month toggle and titles.
+    #[prop(rename = "month-2")]
+    Month2,
+    /// "March": a calendar's month toggle and titles.
+    #[prop(rename = "month-3")]
+    Month3,
+    /// "April": a calendar's month toggle and titles.
+    #[prop(rename = "month-4")]
+    Month4,
+    /// "May": a calendar's month toggle and titles.
+    #[prop(rename = "month-5")]
+    Month5,
+    /// "June": a calendar's month toggle and titles.
+    #[prop(rename = "month-6")]
+    Month6,
+    /// "July": a calendar's month toggle and titles.
+    #[prop(rename = "month-7")]
+    Month7,
+    /// "August": a calendar's month toggle and titles.
+    #[prop(rename = "month-8")]
+    Month8,
+    /// "September": a calendar's month toggle and titles.
+    #[prop(rename = "month-9")]
+    Month9,
+    /// "October": a calendar's month toggle and titles.
+    #[prop(rename = "month-10")]
+    Month10,
+    /// "November": a calendar's month toggle and titles.
+    #[prop(rename = "month-11")]
+    Month11,
+    /// "December": a calendar's month toggle and titles.
+    #[prop(rename = "month-12")]
+    Month12,
+    /// "Jan": January in a calendar's month view.
+    #[prop(rename = "month-short-1")]
+    MonthShort1,
+    /// "Feb": February in a calendar's month view.
+    #[prop(rename = "month-short-2")]
+    MonthShort2,
+    /// "Mar": March in a calendar's month view.
+    #[prop(rename = "month-short-3")]
+    MonthShort3,
+    /// "Apr": April in a calendar's month view.
+    #[prop(rename = "month-short-4")]
+    MonthShort4,
+    /// "May": May in a calendar's month view.
+    #[prop(rename = "month-short-5")]
+    MonthShort5,
+    /// "Jun": June in a calendar's month view.
+    #[prop(rename = "month-short-6")]
+    MonthShort6,
+    /// "Jul": July in a calendar's month view.
+    #[prop(rename = "month-short-7")]
+    MonthShort7,
+    /// "Aug": August in a calendar's month view.
+    #[prop(rename = "month-short-8")]
+    MonthShort8,
+    /// "Sep": September in a calendar's month view.
+    #[prop(rename = "month-short-9")]
+    MonthShort9,
+    /// "Oct": October in a calendar's month view.
+    #[prop(rename = "month-short-10")]
+    MonthShort10,
+    /// "Nov": November in a calendar's month view.
+    #[prop(rename = "month-short-11")]
+    MonthShort11,
+    /// "Dec": December in a calendar's month view.
+    #[prop(rename = "month-short-12")]
+    MonthShort12,
+    /// "Go to the previous month": a calendar's Previous.
+    #[prop(rename = "previous-month")]
+    PreviousMonth,
+    /// "Go to the next month": a calendar's Next.
+    #[prop(rename = "next-month")]
+    NextMonth,
+    /// "Time": the label of a date picker's time field.
+    #[prop(rename = "time")]
+    Time,
+    /// "Pick a date": a date picker's placeholder.
+    #[prop(rename = "pick-a-date")]
+    PickADate,
 }
 
 impl Label {
     /// Every word, in a stable order.
-    pub const ALL: &'static [Label] = &[Label::Loading, Label::Close, Label::Back];
+    pub const ALL: &'static [Label] = &[
+        Label::Loading,
+        Label::Close,
+        Label::Back,
+        Label::Weekday0,
+        Label::Weekday1,
+        Label::Weekday2,
+        Label::Weekday3,
+        Label::Weekday4,
+        Label::Weekday5,
+        Label::Weekday6,
+        Label::Month1,
+        Label::Month2,
+        Label::Month3,
+        Label::Month4,
+        Label::Month5,
+        Label::Month6,
+        Label::Month7,
+        Label::Month8,
+        Label::Month9,
+        Label::Month10,
+        Label::Month11,
+        Label::Month12,
+        Label::MonthShort1,
+        Label::MonthShort2,
+        Label::MonthShort3,
+        Label::MonthShort4,
+        Label::MonthShort5,
+        Label::MonthShort6,
+        Label::MonthShort7,
+        Label::MonthShort8,
+        Label::MonthShort9,
+        Label::MonthShort10,
+        Label::MonthShort11,
+        Label::MonthShort12,
+        Label::PreviousMonth,
+        Label::NextMonth,
+        Label::Time,
+        Label::PickADate,
+    ];
 
     /// Its key, which a translator is given (`"loading"`).
     pub fn key(self) -> &'static str {
@@ -34,6 +178,41 @@ impl Label {
             Label::Loading => "loading",
             Label::Close => "close",
             Label::Back => "back",
+            Label::Weekday0 => "weekday-0",
+            Label::Weekday1 => "weekday-1",
+            Label::Weekday2 => "weekday-2",
+            Label::Weekday3 => "weekday-3",
+            Label::Weekday4 => "weekday-4",
+            Label::Weekday5 => "weekday-5",
+            Label::Weekday6 => "weekday-6",
+            Label::Month1 => "month-1",
+            Label::Month2 => "month-2",
+            Label::Month3 => "month-3",
+            Label::Month4 => "month-4",
+            Label::Month5 => "month-5",
+            Label::Month6 => "month-6",
+            Label::Month7 => "month-7",
+            Label::Month8 => "month-8",
+            Label::Month9 => "month-9",
+            Label::Month10 => "month-10",
+            Label::Month11 => "month-11",
+            Label::Month12 => "month-12",
+            Label::MonthShort1 => "month-short-1",
+            Label::MonthShort2 => "month-short-2",
+            Label::MonthShort3 => "month-short-3",
+            Label::MonthShort4 => "month-short-4",
+            Label::MonthShort5 => "month-short-5",
+            Label::MonthShort6 => "month-short-6",
+            Label::MonthShort7 => "month-short-7",
+            Label::MonthShort8 => "month-short-8",
+            Label::MonthShort9 => "month-short-9",
+            Label::MonthShort10 => "month-short-10",
+            Label::MonthShort11 => "month-short-11",
+            Label::MonthShort12 => "month-short-12",
+            Label::PreviousMonth => "previous-month",
+            Label::NextMonth => "next-month",
+            Label::Time => "time",
+            Label::PickADate => "pick-a-date",
         }
     }
 
@@ -43,9 +222,100 @@ impl Label {
             Label::Loading => "Loading",
             Label::Close => "Close",
             Label::Back => "Back",
+            Label::Weekday0 => "Su",
+            Label::Weekday1 => "Mo",
+            Label::Weekday2 => "Tu",
+            Label::Weekday3 => "We",
+            Label::Weekday4 => "Th",
+            Label::Weekday5 => "Fr",
+            Label::Weekday6 => "Sa",
+            Label::Month1 => "January",
+            Label::Month2 => "February",
+            Label::Month3 => "March",
+            Label::Month4 => "April",
+            Label::Month5 => "May",
+            Label::Month6 => "June",
+            Label::Month7 => "July",
+            Label::Month8 => "August",
+            Label::Month9 => "September",
+            Label::Month10 => "October",
+            Label::Month11 => "November",
+            Label::Month12 => "December",
+            Label::MonthShort1 => "Jan",
+            Label::MonthShort2 => "Feb",
+            Label::MonthShort3 => "Mar",
+            Label::MonthShort4 => "Apr",
+            Label::MonthShort5 => "May",
+            Label::MonthShort6 => "Jun",
+            Label::MonthShort7 => "Jul",
+            Label::MonthShort8 => "Aug",
+            Label::MonthShort9 => "Sep",
+            Label::MonthShort10 => "Oct",
+            Label::MonthShort11 => "Nov",
+            Label::MonthShort12 => "Dec",
+            Label::PreviousMonth => "Go to the previous month",
+            Label::NextMonth => "Go to the next month",
+            Label::Time => "Time",
+            Label::PickADate => "Pick a date",
         }
     }
+
+    /// The short name of weekday `day` (`0` Sunday to `6`; taken modulo
+    /// 7): `Su` … `Sa`.
+    pub fn weekday(day: u32) -> Label {
+        [
+            Label::Weekday0,
+            Label::Weekday1,
+            Label::Weekday2,
+            Label::Weekday3,
+            Label::Weekday4,
+            Label::Weekday5,
+            Label::Weekday6,
+        ][(day % 7) as usize]
+    }
+
+    /// The name of month `month` (`1` January to `12`; clamped): `January`
+    /// … `December`.
+    pub fn month(month: u32) -> Label {
+        MONTHS[month.clamp(1, 12) as usize - 1]
+    }
+
+    /// The short name of month `month` (`1` to `12`; clamped): `Jan` …
+    /// `Dec`.
+    pub fn month_short(month: u32) -> Label {
+        MONTHS_SHORT[month.clamp(1, 12) as usize - 1]
+    }
 }
+
+const MONTHS: [Label; 12] = [
+    Label::Month1,
+    Label::Month2,
+    Label::Month3,
+    Label::Month4,
+    Label::Month5,
+    Label::Month6,
+    Label::Month7,
+    Label::Month8,
+    Label::Month9,
+    Label::Month10,
+    Label::Month11,
+    Label::Month12,
+];
+
+const MONTHS_SHORT: [Label; 12] = [
+    Label::MonthShort1,
+    Label::MonthShort2,
+    Label::MonthShort3,
+    Label::MonthShort4,
+    Label::MonthShort5,
+    Label::MonthShort6,
+    Label::MonthShort7,
+    Label::MonthShort8,
+    Label::MonthShort9,
+    Label::MonthShort10,
+    Label::MonthShort11,
+    Label::MonthShort12,
+];
 
 type Translator = Rc<dyn Fn(Label) -> Option<SharedString>>;
 

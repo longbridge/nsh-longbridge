@@ -74,6 +74,9 @@ pub enum IconName {
     /// `activity`.
     #[prop(rename = "activity")]
     Activity,
+    /// `calendar`: a date picker's field.
+    #[prop(rename = "calendar")]
+    Calendar,
 }
 
 nsh_core::static_reactive!(IconName: IconName);
@@ -101,6 +104,7 @@ impl IconName {
             IconName::LogOut => include_str!("icons/log-out.svg"),
             IconName::LayoutDashboard => include_str!("icons/layout-dashboard.svg"),
             IconName::Activity => include_str!("icons/activity.svg"),
+            IconName::Calendar => include_str!("icons/calendar.svg"),
         }
     }
 }
