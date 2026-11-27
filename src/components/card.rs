@@ -5,7 +5,7 @@
 use nsh_core::prelude::*;
 
 use crate::{
-    foundation::{shadow, typography::line_height, typography::semibold},
+    foundation::{icon::provide_text_color, shadow, typography::line_height, typography::semibold},
     theme::{
         seeds::SPACING,
         semantic::{BORDER, BORDER_WIDTH, CARD, CARD_FOREGROUND, MUTED_FOREGROUND, RADIUS_XL},
@@ -54,6 +54,7 @@ pub struct CardProps {
 /// work as usual.
 #[component]
 pub fn Card(props: CardProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     view()
         .flex_col()

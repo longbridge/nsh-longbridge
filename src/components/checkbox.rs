@@ -14,7 +14,7 @@ use crate::{
     foundation::{
         choice::{choice_hit_slop, choice_label, choice_offset},
         focus::focus_ring,
-        icon::{IconName, icon_view},
+        icon::{IconName, icon_view, provide_text_color},
         motion,
         press::{SMALL_SCALE, press},
         shadow,
@@ -146,6 +146,7 @@ pub enum CheckboxEvent {
 /// up to 44 points around it.
 #[component]
 pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let size = move || props.size.get();
     let side = move || t.length(size_token(size()));

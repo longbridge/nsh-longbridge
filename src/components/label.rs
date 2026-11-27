@@ -5,7 +5,7 @@
 use nsh_core::prelude::*;
 
 use crate::{
-    foundation::{field_ref::FieldRef, typography::weight},
+    foundation::{field_ref::FieldRef, icon::provide_text_color, typography::weight},
     theme::{
         seeds::SPACING,
         semantic::{FONT_SIZE_MD, FONT_WEIGHT_MEDIUM, FOREGROUND, OPACITY_DISABLED},
@@ -43,6 +43,7 @@ pub struct LabelProps {
 /// control: no focus, no press feedback, its text not selectable.
 #[component]
 pub fn Label(props: LabelProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let font_size = move || t.length(LABEL_FONT_SIZE);
     view()

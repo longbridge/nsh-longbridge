@@ -16,7 +16,7 @@ use super::{
 };
 use crate::{
     foundation::{
-        icon::provide_icon_side,
+        icon::{provide_icon_side, provide_text_color},
         size::Size,
         typography::{line_height, semibold},
     },
@@ -156,6 +156,7 @@ fn start_aligned() -> bool {
 /// it in an `AlertDialog`, its parts in it.
 #[component]
 pub fn AlertDialogContent(props: AlertDialogContentProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let size = props.size;
     provide_context(Small(computed(move || {

@@ -15,7 +15,7 @@ use nsh_core::{
 use crate::{
     foundation::{
         focus::focus_ring,
-        icon::{IconName, icon_size_token, icon_view, provide_icon_size},
+        icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
         motion, shadow,
         size::Size,
         typography::{font_size_token, line_height, medium},
@@ -277,6 +277,7 @@ pub struct TabsTriggerProps {
 /// (`line`). Outside a `Tabs` it is never selected.
 #[component]
 pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let tabs = use_context::<TabsContext>();
     let list = use_context::<ListContext>();

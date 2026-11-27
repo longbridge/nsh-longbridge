@@ -15,6 +15,7 @@ use crate::{
     foundation::{
         choice::{choice_hit_slop, choice_label, choice_offset},
         focus::focus_ring,
+        icon::provide_text_color,
         motion,
         press::{SMALL_SCALE, press},
         shadow,
@@ -185,6 +186,7 @@ pub struct RadioGroupItemProps {
 /// nothing.
 #[component]
 pub fn RadioGroupItem(props: RadioGroupItemProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let group = use_context::<GroupContext>();
     if group.is_none() {

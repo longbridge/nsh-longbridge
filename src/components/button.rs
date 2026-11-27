@@ -8,7 +8,7 @@ use nsh_core::{element::Style, element::TextPartStyle, prelude::*};
 use crate::{
     foundation::{
         focus::focus_ring,
-        icon::{IconName, icon_size_token, icon_view, provide_icon_size},
+        icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
         labels::{self, Label},
         motion,
         press::{BUTTON_SCALE, press},
@@ -229,6 +229,7 @@ pub(crate) fn draw(
     let font_size = move || t.length(font_size_token(size()));
     let icon_side = move || t.length(icon_size_token(size()));
     provide_icon_size(size);
+    provide_text_color();
 
     let icon_part = move |name: IconName, spin: bool| {
         let icon = icon_view(t, move || name, icon_side);

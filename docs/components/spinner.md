@@ -57,11 +57,16 @@ shadcn: `size-4 animate-spin`, color `currentColor` (the surrounding text).
 | | Value |
 |---|---|
 | Shape | The `loader-circle` icon, with the icon set's stroke width (lucide's 2) |
-| Color | Follows the surrounding text (the foundation's icon rule, shadcn's `currentColor`): the button's text color in a button, muted in a `text-muted-foreground` row. Another color: `class="text-…"` |
+| Color | Inside a library part that colors its text (a `Button`, a `Card`, a menu row, a `Badge`…), that text color (shadcn's `currentColor`): the button's text color in a button. Elsewhere `foreground`, so it shows in both appearances. Another color: `class="text-…"`, which goes over both |
 | Animation | One turn per second, linear, endless (`animate-spin`'s timing; `foundation`'s `motion::spin`) |
 
 No color token: following the text keeps it right in every button variant; to change it everywhere, change the text
 color where it sits.
+
+Outside the library's parts NSH hands an svg black as its text color whatever the appearance, and a component cannot
+tell that default from a color an app set (see "NSH gaps"). So the parts that color their text say so through the
+foundation's text color context, and a spinner outside them takes `foreground`. A spinner inside an app's own colored
+`View` (`class="text-muted-foreground"`) therefore also takes `foreground`: give the spinner the class itself.
 
 ## States
 
@@ -88,7 +93,7 @@ No difference.
 ## Tokens
 
 No component tokens: the edge is the foundation's icon edge (`icon-size-xs/sm/md/lg`, 12 / 14 / 16 / 16), the color
-follows the text, and the animation is `animate-spin`'s fixed timing (NSH tokens cannot hold a curve). To change size or color
+follows the text (`foreground` outside the library's parts), and the animation is `animate-spin`'s fixed timing (NSH tokens cannot hold a curve). To change size or color
 everywhere, change the `size` or the text color where it sits.
 
 ## Examples
@@ -120,7 +125,14 @@ spinner().app_class(Some("size-8 text-primary".into())).accessibility_label("Loa
 - **`animate-spin` stops under reduced motion.** NSH's core drops every keyframe animation then, with no way for a view
   to opt out. Workaround: `foundation`'s `motion::spin` (a `motion()` bound to the icon, played ignoring reduced motion).
   A per-animation opt-out (or `animate-spin` exempted, as the platforms' spinners are) would let this be a class again.
+- **The default text color is black, and an unset color cannot be told from a set one.** Outside any `text-…` class an
+  svg's `currentColor` is black, also in the dark appearance, so a bare spinner was black on black. Workaround: the
+  library's parts that color their text provide the foundation's text color context, and the spinner takes `foreground`
+  where none does. A theme-aware default text color (or a way to ask whether one is inherited) would let it follow the
+  text everywhere.
 
 ## Decisions
 
 - Keeps spinning under reduced motion (review outcome).
+- Outside the library's parts it is `foreground`, not the inherited (black) text color, so it shows in the dark
+  appearance; a class color goes over it.

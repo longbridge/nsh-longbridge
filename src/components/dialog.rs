@@ -17,7 +17,7 @@ use super::button::{ButtonEvent, ButtonProps, ButtonVariant, draw as draw_button
 use crate::{
     foundation::{
         focus::focus_ring,
-        icon::{IconName, icon_view},
+        icon::{IconName, icon_view, provide_text_color},
         labels::{self, Label},
         motion, shadow,
         size::{Size, hit_slop},
@@ -579,6 +579,7 @@ pub struct DialogContentProps {
 /// Outside a `Dialog` it draws its panel in place (a preview of the look).
 #[component]
 pub fn DialogContent(props: DialogContentProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let parts = Parts {
         class: props.class,

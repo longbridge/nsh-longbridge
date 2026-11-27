@@ -19,7 +19,7 @@ use nsh_core::{
 
 use crate::{
     foundation::{
-        icon::{IconName, icon_size_token, icon_view, provide_icon_size},
+        icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
         labels::{self, Label},
         menu::{
             MENU_MIN_WIDTH, MENU_PADDING, MENU_SHEET_PADDING, MENU_SHEET_RADIUS, MENU_SUB_OFFSET,
@@ -181,6 +181,7 @@ struct DropdownMenuItemsProps {
 /// menu alone (the trigger is under it too).
 #[component]
 fn DropdownMenuItems(props: DropdownMenuItemsProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     trigger::clear();
     props.children
 }

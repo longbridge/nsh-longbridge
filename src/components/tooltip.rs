@@ -9,7 +9,7 @@ use nsh_core::{
 };
 
 use crate::{
-    foundation::{motion, popup, typography::line_height},
+    foundation::{icon::provide_text_color, motion, popup, typography::line_height},
     theme::{
         seeds::SPACING,
         semantic::{BACKGROUND, FOREGROUND, RADIUS_MD},
@@ -116,6 +116,7 @@ pub enum TooltipEvent {
 /// user must know only in a tooltip.
 #[component]
 pub fn Tooltip(props: TooltipProps, cx: Scope<TooltipEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     provide_context(InTooltip);
     let animate = move || t.number(TOOLTIP_ANIMATE) != 0.0;

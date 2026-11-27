@@ -6,7 +6,7 @@ use nsh_core::prelude::*;
 use crate::{
     components::tooltip::{TOOLTIP_FOREGROUND, in_tooltip},
     foundation::{
-        icon::provide_icon_size,
+        icon::{provide_icon_size, provide_text_color},
         size::Size,
         typography::{line_height, medium},
     },
@@ -54,6 +54,7 @@ pub struct KbdProps {
 /// `Tooltip` it takes the tooltip's colors.
 #[component]
 pub fn Kbd(props: KbdProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let tooltip = in_tooltip();
     let font_size = move || t.length(KBD_FONT_SIZE);

@@ -5,12 +5,12 @@ use nsh_core::prelude::*;
 
 use crate::{
     foundation::{
-        icon::{IconName, icon_size_here, icon_size_token, icon_view},
+        icon::{IconName, icon_size_here, icon_size_token, icon_view, text_color_here},
         labels::{self, Label},
         motion,
         size::Size,
     },
-    theme::theme,
+    theme::{semantic::FOREGROUND, theme},
 };
 
 /// The props of [`Spinner`].
@@ -26,9 +26,11 @@ pub struct SpinnerProps {
 }
 
 /// A loading spinner, shadcn/ui's: lucide's `loader-circle` turning once a
-/// second, in the color of the text around it. It keeps turning with
-/// reduced motion (its turning is what it says). Screen readers hear a
-/// busy progress indicator named "Loading".
+/// second, in the color of the text around it inside this library's parts
+/// (a button, a card, a menu), and `foreground` outside them, where NSH
+/// passes no color (a `class` color on it wins either way). It keeps
+/// turning with reduced motion (its turning is what it says). Screen
+/// readers hear a busy progress indicator named "Loading".
 #[component]
 pub fn Spinner(props: SpinnerProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
@@ -53,5 +55,12 @@ pub fn Spinner(props: SpinnerProps, _cx: Scope<NoEvent>) -> impl IntoElement {
             ..Default::default()
         })
         .pointer_events(PointerEvents::None);
+    // Inside a part that colors its text, it takes that color; elsewhere
+    // the text color NSH passes is black whatever the appearance.
+    let root = if text_color_here() {
+        root
+    } else {
+        root.text_color(move || t.color(FOREGROUND))
+    };
     motion::spin(root)
 }

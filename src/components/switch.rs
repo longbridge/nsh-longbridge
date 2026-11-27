@@ -14,6 +14,7 @@ use crate::{
     foundation::{
         choice::{choice_hit_slop, choice_label, choice_offset},
         focus::focus_ring,
+        icon::provide_text_color,
         motion, shadow,
         size::Size,
         typography::font_weight,
@@ -131,6 +132,7 @@ pub enum SwitchEvent {
 /// presses up to 44 points around it.
 #[component]
 pub fn Switch(props: SwitchProps, cx: Scope<SwitchEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let size = move || props.size.get();
     let checked = props.checked;

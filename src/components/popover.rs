@@ -8,6 +8,7 @@ use nsh_core::{element::Style, prelude::*};
 
 use crate::{
     foundation::{
+        icon::provide_text_color,
         popup::{self, POPOVER_MARGIN, POPOVER_OFFSET},
         trigger,
         typography::{line_height, medium},
@@ -191,6 +192,7 @@ struct PopoverPanelProps {
 /// be under `nsh/base`'s popover alone (the trigger is under it too).
 #[component]
 fn PopoverPanel(props: PopoverPanelProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let look = use_context::<PanelLook>().expect("a popover's panel is in a popover");
     trigger::clear();

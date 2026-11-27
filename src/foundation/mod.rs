@@ -25,6 +25,7 @@ pub use field_ref::FieldRef;
 pub use focus::focus_ring;
 pub use icon::{
     Icon, IconElement, IconName, IconProps, icon, provide_icon_side, provide_icon_size,
+    provide_text_color,
 };
 pub use press::press;
 pub use size::Size;

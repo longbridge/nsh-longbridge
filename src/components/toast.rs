@@ -30,7 +30,7 @@ use nsh_core::{
 use super::button::{ButtonVariant, button};
 use crate::{
     foundation::{
-        icon::{IconName, icon_view},
+        icon::{IconName, icon_view, provide_text_color},
         labels::{self, Label},
         motion, shadow,
         size::{Size, hit_slop, pointer},
@@ -614,6 +614,7 @@ pub struct ToasterProps {
 /// while one of the library's dialogs is open, they show above it.
 #[component]
 pub fn Toaster(props: ToasterProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let slot = global::<ToasterSlot>();
     let first = slot.with_untracked(|s| s.count == 0);
     slot.update(|s| s.count += 1);

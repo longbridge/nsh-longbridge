@@ -5,7 +5,7 @@ use nsh_core::{element::Style, element::TextPartStyle, prelude::*};
 
 use crate::{
     foundation::{
-        icon::provide_icon_size,
+        icon::{provide_icon_size, provide_text_color},
         size::Size,
         typography::{line_height, medium},
     },
@@ -89,6 +89,7 @@ pub struct BadgeProps {
 /// too long). Not interactive: it is not pressed or focused.
 #[component]
 pub fn Badge(props: BadgeProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let variant = move || props.variant.get();
     let font_size = move || t.length(BADGE_FONT_SIZE);

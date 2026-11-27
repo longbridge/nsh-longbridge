@@ -26,7 +26,7 @@ use crate::{
             INPUT_BACKGROUND, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID, INPUT_FOREGROUND,
             INPUT_PLACEHOLDER_FOREGROUND, field_look,
         },
-        icon::{IconName, icon_size_token, icon_view},
+        icon::{IconName, icon_size_token, icon_view, provide_text_color},
         menu::{
             MENU_ITEM_FOCUS, MENU_ITEM_FOCUS_FOREGROUND, MENU_ITEM_GAP, MENU_ITEM_PADDING_X,
             MENU_MIN_WIDTH, MENU_PADDING, MENU_SHEET_PADDING, item_height_token, item_row,
@@ -169,6 +169,7 @@ pub enum SelectEvent {
 /// of thousands makes only the rows in view.
 #[component]
 pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
+    provide_text_color();
     let t = theme();
     let size = move || props.size.get();
     // The value the trigger and the checks show: the app's, else its own.

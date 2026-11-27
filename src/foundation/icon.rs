@@ -130,6 +130,24 @@ pub fn icon_size_here() -> Memo<Size> {
     }
 }
 
+/// Says the text here takes a color this library set (a button's, a
+/// card's, a tooltip's): a spinner inside follows the text around it. One
+/// outside every such part takes `foreground` instead, since NSH's own text
+/// color, where nothing sets one, is black in both appearances.
+#[derive(Debug, Clone, Copy)]
+pub struct TextColorContext;
+
+/// Says the text inside the current component takes a color this library
+/// set (call it in the body of a component that colors its text).
+pub fn provide_text_color() {
+    provide_context(TextColorContext);
+}
+
+/// Whether a part of this library around here colors the text.
+pub fn text_color_here() -> bool {
+    use_context::<TextColorContext>().is_some()
+}
+
 /// A length icons take inside a part that sizes them apart from the
 /// control sizes (an alert dialog's media: 32): provided by the part;
 /// `None` inside a control within it.
