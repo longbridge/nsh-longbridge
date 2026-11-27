@@ -1,7 +1,7 @@
 // The Checkbox page: a terms row, "select all", states, sizes, a table's boxes.
 
 import { signal, Text, View } from "nsh";
-import { Badge, Checkbox, type Size } from "nsh-longbridge";
+import { Badge, Checkbox, type Size, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "nsh-longbridge";
 import { Demo, Demos, Page, Row, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
 
@@ -137,41 +137,59 @@ function TableDemo() {
   const all = () => picked().length === rows.length;
   return (
     <Demo class="items-stretch">
-      <View class="w-full max-w-[560px] self-center rounded-lg border border-border">
-        <View class="h-10 flex-row items-center gap-4 border-b border-border px-4">
-          <Checkbox
-            accessibilityLabel="Select all"
-            checked={all()}
-            indeterminate={picked().length > 0 && !all()}
-            onChange={(e) => picked.set(e.checked ? rows.map((r) => r.id) : [])}
-          />
-          <Text class="w-20 text-xs font-medium text-muted-foreground">Invoice</Text>
-          <Text class="flex-1 text-xs font-medium text-muted-foreground">Customer</Text>
-          <Text class="w-20 text-right text-xs font-medium text-muted-foreground">Amount</Text>
-        </View>
-        {rows.map((r, i) => (
-          <View
-            class={`h-12 flex-row items-center gap-4 px-4 ${i > 0 ? "border-t border-border" : ""} ${
-              picked().includes(r.id) ? "bg-muted/50" : ""
-            }`}
-          >
-            <Checkbox
-              accessibilityLabel={`Select ${r.id}`}
-              checked={picked().includes(r.id)}
-              onChange={(e) => picked.set(e.checked ? [...picked(), r.id] : picked().filter((x) => x !== r.id))}
-            />
-            <Text class="w-20 font-mono text-sm text-foreground">{r.id}</Text>
-            <View class="flex-1 flex-row items-center gap-2">
-              <Text class="text-sm text-foreground">{r.customer}</Text>
-              <If when={r.status === "Pending"}>
-                <Badge variant="secondary">
-                  <Text>Pending</Text>
-                </Badge>
-              </If>
-            </View>
-            <Text class="w-20 text-right text-sm tabular-nums text-foreground">{r.amount}</Text>
-          </View>
-        ))}
+      <View class="w-full max-w-[560px] self-center overflow-hidden rounded-lg border border-border">
+        <Table size="lg" accessibilityLabel="Invoices">
+          <TableHeader>
+            <TableRow>
+              <TableHead class="flex-none pl-4">
+                <Checkbox
+                  accessibilityLabel="Select all"
+                  checked={all()}
+                  indeterminate={picked().length > 0 && !all()}
+                  onChange={(e) => picked.set(e.checked ? rows.map((r) => r.id) : [])}
+                />
+              </TableHead>
+              <TableHead class="w-24 flex-none">
+                <Text>Invoice</Text>
+              </TableHead>
+              <TableHead>
+                <Text>Customer</Text>
+              </TableHead>
+              <TableHead class="w-24 flex-none items-end pr-4">
+                <Text>Amount</Text>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow selected={picked().includes(r.id)}>
+                <TableCell class="flex-none pl-4">
+                  <Checkbox
+                    accessibilityLabel={`Select ${r.id}`}
+                    checked={picked().includes(r.id)}
+                    onChange={(e) => picked.set(e.checked ? [...picked(), r.id] : picked().filter((x) => x !== r.id))}
+                  />
+                </TableCell>
+                <TableCell class="w-24 flex-none">
+                  <Text class="font-mono">{r.id}</Text>
+                </TableCell>
+                <TableCell>
+                  <View class="flex-row items-center gap-2">
+                    <Text>{r.customer}</Text>
+                    <If when={r.status === "Pending"}>
+                      <Badge variant="secondary">
+                        <Text>Pending</Text>
+                      </Badge>
+                    </If>
+                  </View>
+                </TableCell>
+                <TableCell class="w-24 flex-none items-end pr-4">
+                  <Text class="tabular-nums">{r.amount}</Text>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </View>
       <Text class="self-center text-xs text-muted-foreground">{`${picked().length} of ${rows.length} selected`}</Text>
     </Demo>

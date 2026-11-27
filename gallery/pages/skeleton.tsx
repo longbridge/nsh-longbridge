@@ -1,7 +1,7 @@
 // The Skeleton page: a feed loading, a profile, a card, a table.
 
 import { signal, Text, View } from "nsh";
-import { Button, Card, CardContent, CardHeader, Skeleton } from "nsh-longbridge";
+import { Button, Card, CardContent, CardHeader, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "nsh-longbridge";
 import { Demo, Demos, Page, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
 
@@ -50,21 +50,37 @@ export function SkeletonPage() {
 
       <Section title="A table" description="Rows of the table's own height, columns of its own widths.">
         <Demo class="items-stretch">
-          <View class="w-full max-w-[560px] self-center rounded-lg border border-border" accessibilityLabel="Loading invoices" accessibilityState={{ busy: true }}>
-            <View class="h-10 flex-row items-center gap-6 border-b border-border px-4">
-              <Text class="w-24 text-xs font-medium text-muted-foreground">Invoice</Text>
-              <Text class="flex-1 text-xs font-medium text-muted-foreground">Customer</Text>
-              <Text class="w-16 text-right text-xs font-medium text-muted-foreground">Amount</Text>
-            </View>
-            {[0, 1, 2, 3].map((i) => (
-              <View class={`h-12 flex-row items-center gap-6 px-4 ${i > 0 ? "border-t border-border" : ""}`}>
-                {columns.map((w, j) => (
-                  <View class={`${w} ${j === 2 ? "items-end" : ""}`}>
-                    <Skeleton class={`h-3.5 ${j === 1 ? (i % 2 ? "w-1/2" : "w-2/3") : "w-full"}`} />
-                  </View>
+          <View class="w-full max-w-[560px] self-center overflow-hidden rounded-lg border border-border" accessibilityState={{ busy: true }}>
+            <Table size="lg" accessibilityLabel="Loading invoices">
+              <TableHeader>
+                <TableRow>
+                  <TableHead class={`${columns[0]} flex-none pl-4`}>
+                    <Text>Invoice</Text>
+                  </TableHead>
+                  <TableHead class={columns[1]}>
+                    <Text>Customer</Text>
+                  </TableHead>
+                  <TableHead class={`${columns[2]} flex-none items-end pr-4`}>
+                    <Text>Amount</Text>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[0, 1, 2, 3].map((i) => (
+                  <TableRow>
+                    <TableCell class={`${columns[0]} flex-none pl-4`}>
+                      <Skeleton class="h-3.5 w-full" />
+                    </TableCell>
+                    <TableCell class={columns[1]}>
+                      <Skeleton class={`h-3.5 ${i % 2 ? "w-1/2" : "w-2/3"}`} />
+                    </TableCell>
+                    <TableCell class={`${columns[2]} flex-none items-end pr-4`}>
+                      <Skeleton class="h-3.5 w-full" />
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </View>
-            ))}
+              </TableBody>
+            </Table>
           </View>
         </Demo>
       </Section>

@@ -4,6 +4,7 @@
 
 import { keymap, signal, Text, View, type JSX } from "nsh";
 import {
+  Avatar,
   Badge,
   type BadgeVariant,
   Button,
@@ -43,10 +44,10 @@ const plans = [
   { id: "team", title: "Enterprise", price: "Custom", note: "SSO, audit logs, support" },
 ];
 
-const members: { initials: string; name: string; email: string; role: string; variant: BadgeVariant }[] = [
-  { initials: "SD", name: "Sofia Davis", email: "sofia@example.com", role: "Owner", variant: "default" },
-  { initials: "JL", name: "Jackson Lee", email: "jackson@example.com", role: "Member", variant: "secondary" },
-  { initials: "IN", name: "Isabella Nguyen", email: "isabella@example.com", role: "Invited", variant: "outline" },
+const members: { name: string; email: string; role: string; variant: BadgeVariant }[] = [
+  { name: "Sofia Davis", email: "sofia@example.com", role: "Owner", variant: "default" },
+  { name: "Jackson Lee", email: "jackson@example.com", role: "Member", variant: "secondary" },
+  { name: "Isabella Nguyen", email: "isabella@example.com", role: "Invited", variant: "outline" },
 ];
 
 const shortcuts = [
@@ -62,15 +63,6 @@ const revenue = [42, 58, 49, 66, 72, 61, 80, 74, 91, 86, 98, 104];
 // Text here takes the card's color, never a Tailwind color class: those read
 // the app's theme, while a ThemeScope reaches only the library's components.
 // Muted text is a CardDescription, so it follows a scope too.
-
-/** Initials in a circle: a secondary badge, so a scope colors it. */
-function Avatar(props: { initials: string }) {
-  return (
-    <Badge variant="secondary" class="size-8 rounded-full px-0 py-0">
-      <Text>{props.initials}</Text>
-    </Badge>
-  );
-}
 
 /** Quieter text, the description's color; `xs` for a smaller size. */
 function Muted(props: { children: string; xs?: boolean }) {
@@ -240,7 +232,7 @@ export function InviteCard(props: { class?: string } = {}) {
           <Text class="text-sm font-medium">People with access</Text>
           {members.map((m) => (
             <View class="flex-row items-center gap-3">
-              <Avatar initials={m.initials} />
+              <Avatar name={m.name} />
               <View class="flex-1 gap-0.5">
                 <Text class="truncate text-sm font-medium">{m.name}</Text>
                 <Muted xs>{m.email}</Muted>
@@ -288,7 +280,7 @@ export function ActivityCard(props: { class?: string } = {}) {
       </CardHeader>
       <CardContent class="gap-5">
         <View class="flex-row items-center gap-3">
-          <Avatar initials="OM" />
+          <Avatar name="Olivia Martin" />
           <View class="flex-1 gap-0.5">
             <Text class="text-sm">Olivia deployed acme-web</Text>
             <Muted xs>2 minutes ago · main</Muted>

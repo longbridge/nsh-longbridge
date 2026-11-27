@@ -2,7 +2,7 @@
 // table, parts.
 
 import { signal, Text, View } from "nsh";
-import { Badge, Separator, type Size, Switch } from "nsh-longbridge";
+import { Badge, Separator, type Size, Switch, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "nsh-longbridge";
 import { Demo, Demos, Page, Row, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
 
@@ -136,30 +136,44 @@ function FlagsDemo() {
   const on = signal(flags.filter((f) => f.on).map((f) => f.name));
   return (
     <Demo class="items-stretch">
-      <View class="w-full max-w-[520px] self-center rounded-lg border border-border">
-        <View class="h-10 flex-row items-center gap-4 border-b border-border px-4">
-          <Text class="flex-1 text-xs font-medium text-muted-foreground">Flag</Text>
-          <Text class="w-24 text-xs font-medium text-muted-foreground">Environment</Text>
-          <Text class="w-12 text-right text-xs font-medium text-muted-foreground">On</Text>
-        </View>
-        {flags.map((f, i) => (
-          <View class={`h-12 flex-row items-center gap-4 px-4 ${i > 0 ? "border-t border-border" : ""}`}>
-            <Text class="flex-1 font-mono text-sm text-foreground">{f.name}</Text>
-            <View class="w-24 items-start">
-              <Badge variant="secondary">
-                <Text>{f.env}</Text>
-              </Badge>
-            </View>
-            <View class="w-12 items-end">
-              <Switch
-                size="sm"
-                checked={on().includes(f.name)}
-                accessibilityLabel={f.name}
-                onChange={(e) => on.set(e.checked ? [...on(), f.name] : on().filter((x) => x !== f.name))}
-              />
-            </View>
-          </View>
-        ))}
+      <View class="w-full max-w-[520px] self-center overflow-hidden rounded-lg border border-border">
+        <Table size="lg" accessibilityLabel="Feature flags">
+          <TableHeader>
+            <TableRow>
+              <TableHead class="pl-4">
+                <Text>Flag</Text>
+              </TableHead>
+              <TableHead class="w-28 flex-none">
+                <Text>Environment</Text>
+              </TableHead>
+              <TableHead class="w-16 flex-none items-end pr-4">
+                <Text>On</Text>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {flags.map((f) => (
+              <TableRow>
+                <TableCell class="pl-4">
+                  <Text class="font-mono">{f.name}</Text>
+                </TableCell>
+                <TableCell class="w-28 flex-none">
+                  <Badge variant="secondary">
+                    <Text>{f.env}</Text>
+                  </Badge>
+                </TableCell>
+                <TableCell class="w-16 flex-none items-end pr-4">
+                  <Switch
+                    size="sm"
+                    checked={on().includes(f.name)}
+                    accessibilityLabel={f.name}
+                    onChange={(e) => on.set(e.checked ? [...on(), f.name] : on().filter((x) => x !== f.name))}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </View>
     </Demo>
   );
