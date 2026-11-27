@@ -1,7 +1,21 @@
 // The Checkbox page: a terms row, "select all", states, sizes, a table's boxes.
 
 import { signal, Text, View } from "nsh";
-import { Badge, Checkbox, type Size, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "nsh-longbridge";
+import {
+  Badge,
+  Checkbox,
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  type Size,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "nsh-longbridge";
 import { Demo, Demos, Page, Row, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
 
@@ -92,12 +106,17 @@ function HeroDemo() {
         <Checkbox checked={agreed()} onChange={(e) => agreed.set(e.checked)}>
           <Text>Accept terms and conditions</Text>
         </Checkbox>
-        <Checkbox checked={news()} onChange={(e) => news.set(e.checked)}>
-          <View class="gap-1.5">
-            <Text>Product updates</Text>
-            <Text class="font-normal text-muted-foreground">A short email when something new ships, once a month at most.</Text>
-          </View>
-        </Checkbox>
+        <Field orientation="horizontal">
+          <Checkbox checked={news()} onChange={(e) => news.set(e.checked)} accessibilityLabel="Product updates" />
+          <FieldContent>
+            <FieldLabel>
+              <Text>Product updates</Text>
+            </FieldLabel>
+            <FieldDescription>
+              <Text>A short email when something new ships, once a month at most.</Text>
+            </FieldDescription>
+          </FieldContent>
+        </Field>
         <Checkbox disabled>
           <Text>Share usage data (managed by your organization)</Text>
         </Checkbox>

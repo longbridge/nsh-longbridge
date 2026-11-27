@@ -70,7 +70,7 @@ export function Demo(props: {
     <View class="flex-1 min-w-[240px] gap-2.5" ref={(r: ViewRef) => (scene = r)}>
       <View
         class={`flex-1 rounded-xl border border-border bg-background items-center justify-center ${
-          props.hero ? "min-h-[320px] p-12" : "min-h-[176px] p-8"
+          props.hero ? `min-h-[320px] ${narrow() ? "p-5" : "p-12"}` : `min-h-[176px] ${narrow() ? "p-4" : "p-8"}`
         } ${props.row ? "flex-row flex-wrap content-center gap-3" : "gap-4"} ${props.class ?? ""}`}
       >
         {props.children}

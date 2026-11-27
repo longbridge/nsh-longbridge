@@ -5,6 +5,7 @@ import { Text, View } from "nsh";
 import { Button, Checkbox, Input, type Size, Switch } from "nsh-longbridge";
 import { formatValue, numberOf } from "../theme";
 import { Page, Section } from "../ui/layout";
+import { narrow } from "../ui/screen";
 import { Glyph, Search } from "../ui/icons";
 
 const radii = [
@@ -63,14 +64,16 @@ export function SizesPage() {
             <Text class="w-10 text-xs font-medium text-muted-foreground">Size</Text>
             <Text class="w-20 text-xs font-medium text-muted-foreground">Pointer</Text>
             <Text class="w-20 text-xs font-medium text-muted-foreground">Touch</Text>
-            <Text class="flex-1 text-xs font-medium text-muted-foreground">With a pointer</Text>
+            <If when={!narrow()}>
+              <Text class="flex-1 text-xs font-medium text-muted-foreground">With a pointer</Text>
+            </If>
           </View>
           {sizes.map((size, i) => (
-            <View class={`min-h-16 flex-row items-center gap-4 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
+            <View class={`min-h-16 flex-row flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
               <Text class="w-10 font-mono text-xs text-foreground">{size}</Text>
               <Text class="w-20 font-mono text-xs tabular-nums text-foreground">{formatValue(`control-height-${size}`)}</Text>
               <Text class="w-20 font-mono text-xs tabular-nums text-muted-foreground">{formatValue(`control-height-touch-${size}`)}</Text>
-              <View class="flex-1 flex-row flex-wrap items-center gap-3">
+              <View class="min-w-[240px] flex-1 flex-row flex-wrap items-center gap-3">
                 <Button size={size}>
                   <Text>Save</Text>
                 </Button>

@@ -231,19 +231,22 @@ export function PlanCard(props: { class?: string } = {}) {
       <CardContent>
         <RadioGroup accessibilityLabel="Plan" value={plan()} onChange={(e) => plan.set(e.value)} class="gap-4">
           {plans.map((p) => (
-            <RadioGroupItem value={p.id}>
-              <View class="gap-0.5">
-                <View class="flex-row items-center gap-2">
-                  <Text class="text-sm font-medium">{p.title}</Text>
+            <Field orientation="horizontal">
+              <RadioGroupItem value={p.id} accessibilityLabel={p.title} />
+              <FieldContent>
+                <FieldLabel class="flex-row items-center gap-2">
+                  <Text>{p.title}</Text>
                   <If when={p.badge}>
                     <Badge>
                       <Text>{p.badge!}</Text>
                     </Badge>
                   </If>
-                </View>
-                <Muted xs>{`${p.price} · ${p.note}`}</Muted>
-              </View>
-            </RadioGroupItem>
+                </FieldLabel>
+                <FieldDescription>
+                  <Text>{`${p.price} · ${p.note}`}</Text>
+                </FieldDescription>
+              </FieldContent>
+            </Field>
           ))}
         </RadioGroup>
       </CardContent>
@@ -340,13 +343,12 @@ export function ActivityCard(props: { class?: string } = {}) {
         </View>
         <View class="flex-row items-center gap-3">
           <Avatar name="Liam Johnson" />
-          <View class="flex-1">
-            <Progress value={64} accessibilityLabel="acme-docs deployment">
-              <View class="flex-row justify-between gap-2">
-                <Text class="truncate text-sm">Liam is deploying acme-docs</Text>
-                <Muted xs>64%</Muted>
-              </View>
-            </Progress>
+          <View class="flex-1 gap-1.5">
+            <View class="flex-row justify-between gap-2">
+              <Text class="truncate text-sm">Liam is deploying acme-docs</Text>
+              <Muted xs>64%</Muted>
+            </View>
+            <Progress value={64} accessibilityLabel="acme-docs deployment" />
           </View>
         </View>
         <View class="gap-5" accessibilityLabel="Loading activity">

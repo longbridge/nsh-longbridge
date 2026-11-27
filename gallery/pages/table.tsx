@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "nsh-longbridge";
 import { Demo, Page, Row, Section } from "../ui/layout";
+import { narrow } from "../ui/screen";
 import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
@@ -186,9 +187,11 @@ function HeroDemo() {
               <TableHead class={col.status}>
                 <Text>Status</Text>
               </TableHead>
-              <TableHead class={col.method}>
-                <Text>Method</Text>
-              </TableHead>
+              <If when={!narrow()}>
+                <TableHead class={col.method}>
+                  <Text>Method</Text>
+                </TableHead>
+              </If>
               <TableHead class={col.amount}>
                 <Text>Amount</Text>
               </TableHead>
@@ -205,9 +208,11 @@ function HeroDemo() {
                     <Text>{i.status}</Text>
                   </Badge>
                 </TableCell>
-                <TableCell class={col.method}>
-                  <Text>{i.method}</Text>
-                </TableCell>
+                <If when={!narrow()}>
+                  <TableCell class={col.method}>
+                    <Text>{i.method}</Text>
+                  </TableCell>
+                </If>
                 <TableCell class={col.amount}>
                   <Text class="tabular-nums">{i.amount}</Text>
                 </TableCell>

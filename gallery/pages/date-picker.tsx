@@ -166,8 +166,8 @@ function MeetingForm() {
         </Label>
         <Input defaultValue="Quarterly planning" accessibilityLabel="Title" />
       </View>
-      <View class="flex-row gap-3">
-        <View class="flex-1 gap-2">
+      <View class="flex-row flex-wrap gap-3">
+        <View class="flex-1 min-w-52 gap-2">
           <Label>
             <Text>Starts</Text>
           </Label>
@@ -179,7 +179,7 @@ function MeetingForm() {
             accessibilityLabel="Starts"
           />
         </View>
-        <View class="w-44 gap-2">
+        <View class="flex-1 min-w-36 max-w-44 gap-2">
           <Label>
             <Text>Room</Text>
           </Label>

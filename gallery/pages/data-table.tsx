@@ -13,6 +13,7 @@ import {
   Spinner,
 } from "nsh-longbridge";
 import { Demo, Page, Row, Section } from "../ui/layout";
+import { narrow } from "../ui/screen";
 import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
@@ -33,6 +34,12 @@ const paymentColumns: DataTableColumn[] = [
   { key: "status", title: "Status", width: 120 },
   { key: "email", title: "Email", sortable: true, grow: 1, minWidth: 180 },
   { key: "amount", title: "Amount", align: "end", sortable: true, width: 110 },
+];
+
+// At phone widths: no status, a narrower email and amount, so the table fits.
+const narrowColumns: DataTableColumn[] = [
+  { key: "email", title: "Email", sortable: true, grow: 1, minWidth: 140 },
+  { key: "amount", title: "Amount", align: "end", sortable: true, width: 96 },
 ];
 
 const money = (n: number) => `$${n.toFixed(2)}`;
@@ -157,11 +164,10 @@ function HeroDemo() {
   return (
     <Demo hero class="items-stretch">
       <View class="w-full max-w-[640px] self-center gap-4">
-        <View class="flex-row items-center gap-2">
-          <View class="w-64">
+        <View class="flex-row items-center justify-between gap-2">
+          <View class="min-w-0 max-w-64 flex-1">
             <Input placeholder="Filter emails…" accessibilityLabel="Filter emails" value={filter()} onChange={(e) => filter.set(e.value)} />
           </View>
-          <View class="flex-1" />
           <Button variant="outline" disabled={picked().length === 0} onPress={() => picked.set([])}>
             <Text>Clear selection</Text>
           </Button>
@@ -169,7 +175,7 @@ function HeroDemo() {
         <DataTable
           class="h-[262px]"
           accessibilityLabel="Payments"
-          columns={paymentColumns}
+          columns={narrow() ? narrowColumns : paymentColumns}
           data={rows().map((p) => ({ ...p, amount: money(p.amount) }))}
           sort={sort()}
           onSortChange={({ sort: next }) => sort.set(next)}

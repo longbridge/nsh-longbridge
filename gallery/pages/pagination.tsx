@@ -4,6 +4,7 @@
 import { signal, Text, View } from "nsh";
 import { Pagination, type Size } from "nsh-longbridge";
 import { Demo, Page, Row, Section } from "../ui/layout";
+import { narrow } from "../ui/screen";
 import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
@@ -67,7 +68,7 @@ function HeroDemo() {
             </View>
           ))}
         </View>
-        <Pagination page={page()} totalPages={pages} visiblePages={7} onChange={({ page: next }) => page.set(next)} accessibilityLabel="Results pages" />
+        <Pagination page={page()} totalPages={pages} visiblePages={narrow() ? 5 : 7} onChange={({ page: next }) => page.set(next)} accessibilityLabel="Results pages" />
       </View>
     </Demo>
   );

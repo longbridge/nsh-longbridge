@@ -2,7 +2,16 @@
 // parts.
 
 import { signal, Text, View } from "nsh";
-import { Badge, RadioGroup, RadioGroupItem, type Size } from "nsh-longbridge";
+import {
+  Badge,
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  RadioGroup,
+  RadioGroupItem,
+  type Size,
+} from "nsh-longbridge";
 import { Demo, Demos, Page, Row, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
 
@@ -129,12 +138,17 @@ function ShippingDemo() {
         class="gap-4"
       >
         {shipping.map((s) => (
-          <RadioGroupItem value={s.value} disabled={s.disabled}>
-            <View class="gap-1">
-              <Text>{s.label}</Text>
-              <Text class="text-xs font-normal text-muted-foreground">{s.note}</Text>
-            </View>
-          </RadioGroupItem>
+          <Field orientation="horizontal" disabled={s.disabled}>
+            <RadioGroupItem value={s.value} accessibilityLabel={s.label} />
+            <FieldContent>
+              <FieldLabel>
+                <Text>{s.label}</Text>
+              </FieldLabel>
+              <FieldDescription>
+                <Text>{s.note}</Text>
+              </FieldDescription>
+            </FieldContent>
+          </Field>
         ))}
       </RadioGroup>
     </View>

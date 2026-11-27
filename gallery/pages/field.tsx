@@ -157,20 +157,20 @@ function PaymentDemo() {
               </FieldDescription>
               <FieldError>{numberError() === null ? null : <Text>{numberError()!}</Text>}</FieldError>
             </Field>
-            <View class="flex-row gap-4">
-              <Field class="flex-1">
+            <View class="flex-row flex-wrap gap-4">
+              <Field class="min-w-24 flex-1">
                 <FieldLabel>
                   <Text>Month</Text>
                 </FieldLabel>
                 <Select class="w-full" items={months} placeholder="MM" accessibilityLabel="Expiry month" />
               </Field>
-              <Field class="flex-1">
+              <Field class="min-w-24 flex-1">
                 <FieldLabel>
                   <Text>Year</Text>
                 </FieldLabel>
                 <Select class="w-full" items={years} placeholder="YYYY" accessibilityLabel="Expiry year" />
               </Field>
-              <Field class="flex-1">
+              <Field class="min-w-24 flex-1">
                 <FieldLabel>
                   <Text>CVV</Text>
                 </FieldLabel>
