@@ -117,15 +117,19 @@ enum Group {
 }
 
 /// The library controls a cell holds that want no end padding beside them
-/// (a `Checkbox`).
+/// (a `Checkbox`), and whether it has held a control at all.
 #[derive(Clone, Copy)]
-struct CellControls(Signal<u32>);
+struct CellControls(Signal<u32>, Signal<bool>);
 
 /// Registers a library control with the `TableHead` / `TableCell` it is
 /// in, while it is mounted: the cell drops its end padding (NSH has no
-/// `:has()`). Nothing outside a cell. Call it in the control's body.
+/// `:has()`) and places its content as it is ([`cell_content`]). Nothing
+/// outside a cell. Call it in the control's body.
 pub(crate) fn register_cell_control() {
-    if let Some(CellControls(count)) = use_context::<Option<CellControls>>().flatten() {
+    if let Some(CellControls(count, holds)) = use_context::<Option<CellControls>>().flatten() {
+        if !holds.get_untracked() {
+            holds.set(true);
+        }
         count.update(|n| *n += 1);
         cleanup(move || count.update(|n| *n = n.saturating_sub(1)));
     }
@@ -342,12 +346,14 @@ pub struct TableCellProps {
 pub fn TableHead(props: TableCellProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
     let controls = signal(0u32);
-    provide_context(Some(CellControls(controls)));
+    let holds = signal(false);
+    provide_context(Some(CellControls(controls, holds)));
+    trigger::provide_holds_overlay(holds);
     base_table_head()
         .font_weight(medium(t))
         .app_class(move || Some(cell_class(t, controls.get() > 0, true)))
         .children_each(props.children, move |child, _| {
-            cell_label(props.label_class, props.label_style, child)
+            cell_content(holds, props.label_class, props.label_style, child)
         })
 }
 
@@ -359,11 +365,13 @@ pub fn TableHead(props: TableCellProps, _cx: Scope<NoEvent>) -> impl IntoElement
 pub fn TableCell(props: TableCellProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
     let controls = signal(0u32);
-    provide_context(Some(CellControls(controls)));
+    let holds = signal(false);
+    provide_context(Some(CellControls(controls, holds)));
+    trigger::provide_holds_overlay(holds);
     base_table_cell()
         .app_class(move || Some(cell_class(t, controls.get() > 0, false)))
         .children_each(props.children, move |child, _| {
-            cell_label(props.label_class, props.label_style, child)
+            cell_content(holds, props.label_class, props.label_style, child)
         })
 }
 
@@ -381,6 +389,25 @@ fn cell_class(t: Theme, control: bool, head: bool) -> SharedString {
     } else {
         c.build()
     }
+}
+
+/// A cell's child: in a text part ([`cell_label`]); once the cell holds a
+/// library control or an overlay, as it is, so the control is centered on
+/// the row as the text is (inside a text it would sit on the baseline,
+/// higher). A cell that held one keeps that form.
+fn cell_content(
+    holds: Signal<bool>,
+    class: Prop<Option<SharedString>>,
+    style: Prop<TextPartStyle>,
+    child: Child,
+) -> AnyElement {
+    dynamic(move || {
+        if holds.get() {
+            child.into_element()
+        } else {
+            cell_label(class, style, child).into_element()
+        }
+    })
 }
 
 /// The text part around a cell's child: one line cut with an ellipsis,

@@ -76,6 +76,10 @@ cells' padding and one-line text, and the caption's place.
   string child takes the cell's text styles. In cells it is one line cut with an ellipsis through
   `whitespace-nowrap overflow-hidden text-ellipsis`, not `truncate`: `truncate` also clamps the text to one line,
   which a later `whitespace-normal` does not lift (NSH gaps 5).
+- A cell that holds a library control (a `Checkbox`, which registers with it, or an overlay such as a `DropdownMenu`,
+  which reports to it through `foundation::trigger`) places its children as they are, not inside the text part: a
+  view inside a text sits on the text's baseline, which sets a box or a button about 2 points above the row's middle.
+  The cell keeps that form once it has held one.
 
 ## API
 
@@ -119,7 +123,7 @@ a cell.
 | `TableRow` | A row: min height, bottom edge, hover and selected fills | `class` / `style` |
 | `TableHead`, `TableCell` | A cell: padding, vertically centered, one line | `class` / `style` |
 | `TableCaption` | Muted text under the table | `class` / `style` |
-| `label` | In `TableHead`, `TableCell` and `TableCaption`: a text around each child, one line cut with an ellipsis in cells (`whitespace-nowrap overflow-hidden text-ellipsis`), wrapping in the caption | `labelClass` / `labelStyle` |
+| `label` | In `TableHead`, `TableCell` and `TableCaption`: a text around each child, one line cut with an ellipsis in cells (`whitespace-nowrap overflow-hidden text-ellipsis`), wrapping in the caption; none in a cell holding a library control (Implementation) | `labelClass` / `labelStyle` |
 
 Column widths are the cells' (NSH gaps 1): by default every `TableHead` and `TableCell` takes an equal share of the
 row (`flex: 1 1 0`, `min-width: 0`); a column of its own width gives each of its cells the same classes:

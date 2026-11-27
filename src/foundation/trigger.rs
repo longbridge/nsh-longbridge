@@ -106,11 +106,29 @@ pub(crate) fn provide_open_inside(count: Signal<u32>) {
     provide_context(Some(OpenInside(count)));
 }
 
+/// Set, for good, once an overlay is placed in a container that lays out
+/// its content differently around one.
+#[derive(Clone, Copy)]
+struct HoldsOverlay(Signal<bool>);
+
+/// Sets `flag` once an overlay is placed below (a table cell then places
+/// its content as it is, not inside a text, so the trigger is not set on
+/// the text's baseline). Call it in the container's body.
+pub(crate) fn provide_holds_overlay(flag: Signal<bool>) {
+    provide_context(Some(HoldsOverlay(flag)));
+}
+
 /// Reports `open`, an overlay's open state, to the nearest container
 /// counting open overlays ([`provide_open_inside`]), while the overlay is
-/// mounted: nothing outside one. Call it in the overlay's body; overlays
-/// with a trigger slot do through [`provide`].
+/// mounted, and that it is there to the nearest one that asks
+/// ([`provide_holds_overlay`]): nothing outside them. Call it in the
+/// overlay's body; overlays with a trigger slot do through [`provide`].
 pub(crate) fn report_open(open: impl Fn() -> bool + 'static) {
+    if let Some(HoldsOverlay(flag)) = use_context::<Option<HoldsOverlay>>().flatten()
+        && !flag.get_untracked()
+    {
+        flag.set(true);
+    }
     let Some(OpenInside(count)) = use_context::<Option<OpenInside>>().flatten() else {
         return;
     };

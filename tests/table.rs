@@ -54,13 +54,7 @@ fn Invoices() -> impl IntoElement {
                                                 .on_change(move |c: &bool| picked.set(*c)),
                                         ),
                                 )
-                                .child(table_cell().test_id("c1").child("INV001"))
-                                .child(
-                                    table_cell()
-                                        .test_id("square-cell")
-                                        .app_class(Some("flex-none".into()))
-                                        .child(view().w(px(16.0)).h(px(16.0))),
-                                ),
+                                .child(table_cell().test_id("c1").child("INV001")),
                         )
                         .child(
                             table_row()
@@ -179,7 +173,7 @@ fn the_last_row_of_the_body_draws_no_edge() {
 }
 
 /// ★ NSH gaps 2 / 6: a cell holding a library `Checkbox` drops its end
-/// padding; the others keep it.
+/// padding, and centers the box on the row (not on a text's baseline).
 #[test]
 fn a_cell_holding_a_checkbox_drops_its_end_padding() {
     let app = start::<Invoices>(true);
@@ -190,10 +184,17 @@ fn a_cell_holding_a_checkbox_drops_its_end_padding() {
         8.0,
         "start padding kept"
     );
-    // Two cells as wide as their content (`flex-none`), the same content
-    // but for the `Checkbox`: the box's has no end padding.
-    let plain = bounds(&app, "id:square-cell");
-    assert_eq!(plain.size.width.0 - cell.size.width.0, 8.0);
+    // As wide as its content (`flex-none`): the start padding and the box.
+    assert_eq!(
+        cell.size.width.0,
+        8.0 + check.size.width.0,
+        "no end padding"
+    );
+    let middle = |b: nsh_core::geometry::Bounds<Points>| b.origin.y.0 + b.size.height.0 / 2.0;
+    assert!(
+        (middle(check) - middle(cell)).abs() <= 0.5,
+        "the box is centered on the row"
+    );
 }
 
 /// The selected row's fill, the hover fill under the pointer (not on the
