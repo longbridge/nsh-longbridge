@@ -8,7 +8,8 @@ import { Demo, Demos, Page, Row, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
-const iconSizes: Record<Size, number> = { xs: 12, sm: 14, md: 16, lg: 18 };
+// `icon-size-<size>`: the icon a control of that size draws.
+const iconSizes: Record<Size, number> = { xs: 12, sm: 14, md: 16, lg: 16 };
 
 const states: { label: string; pressed?: boolean; disabled?: boolean }[] = [
   { label: "Off" },
