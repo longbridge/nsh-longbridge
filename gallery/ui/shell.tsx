@@ -232,7 +232,7 @@ function AppearanceMenu() {
       size="sm"
       contentClass="w-36"
       trigger={
-        <Button variant="ghost" size="sm" class="px-0 w-8" accessibilityLabel={`Appearance: ${current().label}`}>
+        <Button variant="ghost" size="md" class="px-0 w-8" accessibilityLabel={`Appearance: ${current().label}`}>
           <Glyph icon={current().icon} class={ink(site().muted)} />
         </Button>
       }
@@ -252,7 +252,7 @@ function GitHubButton() {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="md"
       class="px-0 w-8"
       accessibilityLabel="GitHub"
       onPress={() => openUrl(REPOSITORY)}
@@ -279,7 +279,7 @@ function Header(props: { onMenu: () => void }) {
     <View class="flex-1 flex-row items-center justify-between gap-2 pr-3 sm:pr-5" style={{ paddingLeft: macos ? 8 : narrow() ? 8 : compact() ? pagePadding() : 16 }}>
       <View class="flex-row items-center gap-1">
         <If when={compact()}>
-          <Button variant="ghost" size="sm" class="px-0 w-8" accessibilityLabel="Pages" onPress={props.onMenu}>
+          <Button variant="ghost" size="md" class="px-0 w-8" accessibilityLabel="Pages" onPress={props.onMenu}>
             <Glyph icon={Menu} />
           </Button>
         </If>
