@@ -6,9 +6,12 @@
 // shows live values in both appearances.
 
 import { colorScheme, computed, effect, setColorScheme, setTheme, signal } from "nsh";
+import amber from "../themes/amber.json";
 import blue from "../themes/blue.json";
 import compact from "../themes/compact.json";
 import defaults from "../themes/default.json";
+import green from "../themes/green.json";
+import indigo from "../themes/indigo.json";
 import rose from "../themes/rose.json";
 import { type Lab, parseColor, toHex } from "./ui/color";
 
@@ -27,7 +30,10 @@ export interface Preset {
 
 export const colorPresets: Preset[] = [
   { id: "neutral", label: "Neutral", file: null },
+  { id: "indigo", label: "Indigo", file: indigo as ThemeFile },
   { id: "blue", label: "Blue", file: blue as ThemeFile },
+  { id: "green", label: "Green", file: green as ThemeFile },
+  { id: "amber", label: "Amber", file: amber as ThemeFile },
   { id: "rose", label: "Rose", file: rose as ThemeFile },
 ];
 
@@ -211,6 +217,46 @@ function evaluate(expr: string): number {
     return v;
   };
   return sum();
+}
+
+/**
+ * The length tokens that follow `seeds` (`{ radius: "16px" }`), evaluated
+ * with them over the current theme. A `ThemeScope` that sets a seed must set
+ * these too: the app's theme gives each of them a value of its own, made from
+ * its own seed, and that wins over the scope's seed.
+ */
+export function followers(seeds: Vars): Vars {
+  const vars = resolved().theme ?? {};
+  const s = scheme();
+  const names = Object.keys(seeds);
+  const refs = (v: string) => [...v.matchAll(/var\(--([a-z0-9-]+)\)/g)].map((m) => m[1]);
+  const known = new Map<string, boolean>();
+  const follows = (name: string, depth = 0): boolean => {
+    if (names.includes(name)) return true;
+    if (known.has(name)) return known.get(name)!;
+    const v = vars[name];
+    const r = v !== undefined && depth < 12 && refs(v).some((n) => follows(n, depth + 1));
+    known.set(name, r);
+    return r;
+  };
+  const uses = (v: string) => refs(v).some((n) => follows(n));
+  const sub = (v: string, depth = 0): string =>
+    depth > 12
+      ? v
+      : v.replace(/var\(--([a-z0-9-]+)\)/g, (_, n: string) => {
+          const x = seeds[n] ?? raw(n, s);
+          return x === undefined ? "0" : sub(x, depth + 1);
+        });
+  const out: Vars = {};
+  for (const [name, v] of Object.entries(vars)) {
+    if (names.includes(name) || kindOf(name) !== "length" || !uses(v)) continue;
+    const expr = sub(v);
+    // `max()` and the like are left to the library.
+    if (/[a-z]\(/.test(expr.replace(/calc\(/g, "("))) continue;
+    const n = evaluate(expr);
+    if (Number.isFinite(n)) out[name] = `${Number(n.toFixed(3))}px`;
+  }
+  return out;
 }
 
 export type TokenKind = "color" | "length" | "ms" | "tier" | "number";
