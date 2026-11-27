@@ -77,6 +77,9 @@ mobile-first single column.
 - Touch screens: controls take `control-height-touch-*`; one smaller than `touch-target` gets a hit slop, not a larger
   look. A checkbox-like control with a label is hit through its label and gets none. A field's `md` and `lg` text is
   16 on a touch screen (iOS Safari zooms the page into a field with smaller text).
+- A part of an `nsh/base` component whose Rust style is built once (`popupStyle`, `itemStyle`, a part's
+  `*_style`) gets the library's look as a class generated from the resolved tokens, placed before the app's class;
+  the app's `style` is merged last. So a token change or a `ThemeScope` reaches it, and the app still overrides it.
 - A part of an `nsh/base` component that the app must be able to restyle (`<part>Style` from Rust takes only fixed
   styles there) is drawn by the library, on `nsh/base`'s behavior, rather than styled through `nsh/base`'s part.
 - Decorative components (`Separator`, `Skeleton`) are hidden from accessibility: `accessible(false)` and
