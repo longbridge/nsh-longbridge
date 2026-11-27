@@ -14,6 +14,7 @@ use nsh_core::{
 
 use crate::{
     foundation::{
+        class::Classes,
         field::{self, Kind},
         motion, shadow,
         size::pointer,
@@ -234,14 +235,15 @@ fn reactive(style: impl Fn() -> Style + 'static) -> Prop<Style> {
 /// The ring a thumb shows under the pointer, dragged and with the keyboard
 /// focus: a class made from the tokens, as the states are `nsh/base`'s.
 fn ring_class(t: Theme) -> String {
-    let width = t.length(SLIDER_THUMB_RING_WIDTH).0;
+    let width = t.length(SLIDER_THUMB_RING_WIDTH);
     let color = t.color(SLIDER_THUMB_RING);
-    let (light, dark) = (color.light.to_hex(), color.dark.to_hex());
     ["hover", "active", "focus-visible"]
-        .map(|state| {
-            format!("{state}:ring-[{width}px] {state}:ring-[{light}] dark:{state}:ring-[{dark}]")
+        .into_iter()
+        .fold(Classes::new(), |c, state| {
+            c.length(state, "ring", width).color(state, "ring", color)
         })
-        .join(" ")
+        .build()
+        .to_string()
 }
 
 /// The library's classes, then the app's.

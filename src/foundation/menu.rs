@@ -22,6 +22,7 @@ use nsh_core::{
 };
 
 use super::{
+    class::Classes,
     icon::{IconName, icon_size_token, icon_view},
     size::Size,
     typography::line_height,
@@ -406,21 +407,12 @@ pub(crate) fn list_heading_style(t: Theme, size: Prop<Size>, app: Prop<Style>) -
 pub(crate) fn list_item_class(t: Theme, app: Option<SharedString>) -> SharedString {
     let fill = t.color(MENU_ITEM_FOCUS);
     let text = t.color(MENU_ITEM_FOCUS_FOREGROUND);
-    let mut class = String::new();
-    for state in ["focus", "active"] {
-        class.push_str(&format!(
-            "{state}:bg-[{}] dark:{state}:bg-[{}] {state}:text-[{}] dark:{state}:text-[{}] ",
-            fill.light.to_hex(),
-            fill.dark.to_hex(),
-            text.light.to_hex(),
-            text.dark.to_hex(),
-        ));
-    }
-    if let Some(app) = app {
-        class.push_str(&app);
-    }
-    class.truncate(class.trim_end().len());
-    class.into()
+    ["focus", "active"]
+        .into_iter()
+        .fold(Classes::new(), |c, state| {
+            c.color(state, "bg", fill).color(state, "text", text)
+        })
+        .then(app)
 }
 
 /// A list row's content: the title (or the app's `renderItem`), then a box

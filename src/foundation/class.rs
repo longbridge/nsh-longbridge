@@ -36,9 +36,12 @@ impl Classes {
         if on { self.push(classes) } else { self }
     }
 
-    /// `utility` in `color` under `variant` (`""` for none, `"hover"`,
-    /// `"selected"`): `hover:bg-[#light] dark:hover:bg-[#dark]`, the dark
-    /// one only where it differs.
+    /// `utility` in `color` under `variant` (`""` for none, `"hover"`, a
+    /// chain as `"group-selected/x:group-hover/x"`):
+    /// `hover:bg-[#light] dark:hover:bg-[#dark]`. The dark rule is written
+    /// even where it equals the light one: NSH orders the `dark:` rules
+    /// among themselves as the light ones, so a state's rule left out in
+    /// the dark would let a lower-ranked state's `dark:` rule win there.
     pub fn color(self, variant: &str, utility: &str, color: AdaptiveColor) -> Self {
         let (light, dark) = (color.light.to_hex(), color.dark.to_hex());
         let prefix = if variant.is_empty() {
@@ -46,12 +49,8 @@ impl Classes {
         } else {
             format!("{variant}:")
         };
-        let s = self.push(&format!("{prefix}{utility}-[{light}]"));
-        if dark == light {
-            s
-        } else {
-            s.push(&format!("dark:{prefix}{utility}-[{dark}]"))
-        }
+        self.push(&format!("{prefix}{utility}-[{light}]"))
+            .push(&format!("dark:{prefix}{utility}-[{dark}]"))
     }
 
     /// `utility` of `length` points under `variant`: `h-[32px]`.

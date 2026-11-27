@@ -21,6 +21,7 @@ use crate::{
     SelectEntry, SelectItem,
     components::{button::BUTTON_GHOST_HOVER, input},
     foundation::{
+        class::Classes,
         field::{
             self, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, INPUT_RADIUS, Kind, field_focus,
             field_rest,
@@ -460,12 +461,11 @@ fn touch_slop(t: Theme, side: Points) -> EdgeInsets {
 /// The ghost button's hover fill (none pressed), as a class made from the
 /// tokens, for a part only `nsh/base` knows the states of.
 fn hover_class(t: Theme) -> String {
-    let fill = t.color(BUTTON_GHOST_HOVER);
-    format!(
-        "hover:bg-[{}] dark:hover:bg-[{}] active:bg-transparent",
-        fill.light.to_hex(),
-        fill.dark.to_hex()
-    )
+    Classes::new()
+        .color("hover", "bg", t.color(BUTTON_GHOST_HOVER))
+        .push("active:bg-transparent")
+        .build()
+        .to_string()
 }
 
 /// The chevron button: a square of the field with the ghost button's

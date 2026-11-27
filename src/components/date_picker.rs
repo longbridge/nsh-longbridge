@@ -27,15 +27,13 @@ use crate::{
             BUTTON_OUTLINE_HOVER, BUTTON_OUTLINE_HOVER_FOREGROUND, BUTTON_PADDING_X_SM,
             BUTTON_RADIUS,
         },
-        calendar::{
-            self, CALENDAR_PADDING, CalendarEntry, LookConfig, Matcher, Parts, YearRange,
-            color_class,
-        },
+        calendar::{self, CALENDAR_PADDING, CalendarEntry, LookConfig, Matcher, Parts, YearRange},
         dropdown_menu::sheet_look,
         input::{self, vertical_hit_slop},
         select::SELECT_TRIGGER_HOVER,
     },
     foundation::{
+        class::Classes,
         field::{
             self, INPUT_BACKGROUND, INPUT_BORDER, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID,
             INPUT_BORDER_WIDTH, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, INPUT_RADIUS,
@@ -703,20 +701,11 @@ impl From<ComponentRef<DatePicker>> for FieldRef {
 
 nsh_core::static_reactive!(FieldRef: ComponentRef<DatePicker>);
 
-/// Ends `class` with the app's classes.
-fn with_app(mut class: String, app: Option<SharedString>) -> SharedString {
-    if let Some(app) = app {
-        class.push_str(&app);
-    }
-    class.truncate(class.trim_end().len());
-    class.into()
-}
-
 /// The presets' classes: the hover (and the press, for a finger), ghost
 /// beside the calendar and outline in the sheet, from the tokens, which an
 /// inline style cannot take; then the app's.
 fn preset_class(t: Theme, app: Option<SharedString>) -> SharedString {
-    let mut class = String::new();
+    let mut class = Classes::new();
     let (rest, rest_text, fill, text) = if list_as_sheet() {
         (
             Some(t.color(BUTTON_OUTLINE)),
@@ -733,57 +722,46 @@ fn preset_class(t: Theme, app: Option<SharedString>) -> SharedString {
         )
     };
     if let Some(rest) = rest {
-        color_class(&mut class, "", "bg", rest);
+        class = class.color("", "bg", rest);
     }
-    color_class(&mut class, "", "text", rest_text);
+    class = class.color("", "text", rest_text);
     for state in ["hover", "active"] {
-        color_class(&mut class, &format!("{state}:"), "bg", fill);
-        color_class(&mut class, &format!("{state}:"), "text", text);
+        class = class.color(state, "bg", fill);
+        class = class.color(state, "text", text);
     }
-    with_app(class, app)
+    class.then(app)
 }
 
 /// The time field's classes: the field look's edge color, the focus edge
 /// and (with a pointer) ring while the native field inside has the focus
 /// (`focus-within:`), the disabled opacity; then the app's.
 fn time_field_class(t: Theme, app: Option<SharedString>) -> SharedString {
-    let mut class = String::new();
-    color_class(&mut class, "", "border", t.color(INPUT_BORDER));
-    color_class(
-        &mut class,
-        "focus-within:",
-        "border",
-        t.color(INPUT_BORDER_FOCUS),
-    );
+    let mut class = Classes::new();
+    class = class.color("", "border", t.color(INPUT_BORDER));
+    class = class.color("focus-within", "border", t.color(INPUT_BORDER_FOCUS));
     if pointer() {
-        class.push_str(&format!(
-            "focus-within:ring-[{}px] ",
+        class = class.push(&format!(
+            "focus-within:ring-[{}px]",
             f32::from(t.length(INPUT_RING_WIDTH))
         ));
-        color_class(&mut class, "focus-within:", "ring", t.color(INPUT_RING));
+        class = class.color("focus-within", "ring", t.color(INPUT_RING));
     }
-    class.push_str(&format!(
-        "disabled:opacity-[{}] ",
+    class = class.push(&format!(
+        "disabled:opacity-[{}]",
         t.number(OPACITY_DISABLED)
     ));
-    with_app(class, app)
+    class.then(app)
 }
 
 /// The segments' classes: the edited one's highlight (`focus:`, which
 /// `nsh/base` projects on it); then the app's.
 fn segment_class(t: Theme, app: Option<SharedString>) -> SharedString {
-    let mut class = String::new();
-    color_class(
-        &mut class,
-        "focus:",
-        "bg",
-        t.color(DATE_PICKER_SEGMENT_FOCUS),
-    );
-    color_class(
-        &mut class,
-        "focus:",
+    let mut class = Classes::new();
+    class = class.color("focus", "bg", t.color(DATE_PICKER_SEGMENT_FOCUS));
+    class = class.color(
+        "focus",
         "text",
         t.color(DATE_PICKER_SEGMENT_FOCUS_FOREGROUND),
     );
-    with_app(class, app)
+    class.then(app)
 }

@@ -26,6 +26,7 @@ use crate::{
         card::in_card,
     },
     foundation::{
+        class::Classes,
         focus::focus_ring,
         icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
         labels::{self, Label},
@@ -435,20 +436,8 @@ pub(crate) fn look(t: Theme, config: LookConfig) -> Look {
     }
 }
 
-/// `color` as two classes under `variants` (`"group-selected/x:"`): its
-/// light value, and its dark value under `dark:`. Both are always written,
-/// so in the dark appearance the `dark:` rules decide among themselves in
-/// the order the light ones do.
-pub(crate) fn color_class(out: &mut String, variants: &str, property: &str, color: AdaptiveColor) {
-    out.push_str(&format!(
-        "{variants}{property}-[{}] dark:{variants}{property}-[{}] ",
-        color.light.to_hex(),
-        color.dark.to_hex(),
-    ));
-}
-
 /// `group-<state>/nlb-calendar-item:` for each of `states`, as one
-/// variant chain.
+/// variant chain (ending in `:`, to prefix a utility).
 fn in_item(states: &[&str]) -> String {
     states
         .iter()
@@ -456,19 +445,22 @@ fn in_item(states: &[&str]) -> String {
         .collect()
 }
 
+/// The variant chain of [`in_item`] without its last `:`, for
+/// [`Classes::color`].
+fn on_item(states: &[&str]) -> String {
+    let mut chain = in_item(states);
+    chain.pop();
+    chain
+}
+
 /// The items' classes: the group their content follows, the keyboard's
 /// day over its neighbours (its ring), dimmed while disabled, then the
 /// app's.
 fn item_class(t: Theme, app: Option<SharedString>) -> SharedString {
-    let mut class = format!(
-        "group/{ITEM_GROUP} focus-visible:z-10 disabled:opacity-[{}] ",
-        t.number(OPACITY_DISABLED)
-    );
-    if let Some(app) = app {
-        class.push_str(&app);
-    }
-    class.truncate(class.trim_end().len());
-    class.into()
+    Classes::new()
+        .push(&format!("group/{ITEM_GROUP} focus-visible:z-10"))
+        .number("disabled", "opacity", t.number(OPACITY_DISABLED))
+        .then(app)
 }
 
 /// The text colors of a day's square by its item's states, as classes
@@ -485,92 +477,70 @@ fn day_text_class(t: Theme) -> SharedString {
     let hover = t.color(BUTTON_GHOST_HOVER_FOREGROUND);
     let selected = t.color(CALENDAR_SELECTED_FOREGROUND);
     let range = t.color(CALENDAR_RANGE_FOREGROUND);
-    let mut c = String::new();
-    color_class(&mut c, "", "text", day);
-    color_class(&mut c, &in_item(&["selected"]), "text", selected);
-    color_class(&mut c, &in_item(&["hover"]), "text", hover);
-    color_class(&mut c, &in_item(&["selected", "hover"]), "text", selected);
-    color_class(&mut c, &in_item(&["disabled"]), "text", outside);
+    let mut c = Classes::new();
+    c = c.color("", "text", day);
+    c = c.color(&on_item(&["selected"]), "text", selected);
+    c = c.color(&on_item(&["hover"]), "text", hover);
+    c = c.color(&on_item(&["selected", "hover"]), "text", selected);
+    c = c.color(&on_item(&["disabled"]), "text", outside);
     // The `data-*` states, lowest first.
-    color_class(&mut c, &in_item(&["data-outside"]), "text", outside);
-    color_class(&mut c, &in_item(&["data-today"]), "text", today);
+    c = c.color(&on_item(&["data-outside"]), "text", outside);
+    c = c.color(&on_item(&["data-today"]), "text", today);
     for state in ["data-range-middle", "data-range-preview-middle"] {
-        color_class(&mut c, &in_item(&[state]), "text", range);
-        color_class(&mut c, &in_item(&[state, "data-outside"]), "text", outside);
+        c = c.color(&on_item(&[state]), "text", range);
+        c = c.color(&on_item(&[state, "data-outside"]), "text", outside);
     }
     for state in ["data-range-start", "data-range-end"] {
-        color_class(&mut c, &in_item(&[state]), "text", selected);
+        c = c.color(&on_item(&[state]), "text", selected);
     }
     // A hovered day of the months around takes the hover's text, unless
     // selected.
-    color_class(&mut c, &in_item(&["hover", "data-outside"]), "text", hover);
+    c = c.color(&on_item(&["hover", "data-outside"]), "text", hover);
     // Selected (a date, a half range's start) wins over today and the
     // months around; a range's middle keeps its own.
     for state in ["data-today", "data-outside"] {
-        color_class(&mut c, &in_item(&["selected", state]), "text", selected);
+        c = c.color(&on_item(&["selected", state]), "text", selected);
     }
-    color_class(
-        &mut c,
-        &in_item(&["selected", "hover", "data-outside"]),
+    c = c.color(
+        &on_item(&["selected", "hover", "data-outside"]),
         "text",
         selected,
     );
-    color_class(
-        &mut c,
-        &in_item(&["selected", "data-range-middle"]),
-        "text",
-        range,
-    );
-    color_class(
-        &mut c,
-        &in_item(&["selected", "data-range-middle", "data-outside"]),
+    c = c.color(&on_item(&["selected", "data-range-middle"]), "text", range);
+    c = c.color(
+        &on_item(&["selected", "data-range-middle", "data-outside"]),
         "text",
         outside,
     );
-    color_class(
-        &mut c,
-        &in_item(&["selected", "data-range-middle", "data-today"]),
+    c = c.color(
+        &on_item(&["selected", "data-range-middle", "data-today"]),
         "text",
         range,
     );
-    color_class(
-        &mut c,
-        &in_item(&["disabled", "data-today"]),
-        "text",
-        outside,
-    );
-    c.truncate(c.trim_end().len());
-    c.into()
+    c = c.color(&on_item(&["disabled", "data-today"]), "text", outside);
+    c.build()
 }
 
 /// The text of a month or a year of those views: the ghost's, selected
 /// `calendar-selected-foreground` (also under the pointer).
 fn pick_text_class(t: Theme) -> SharedString {
     let selected = t.color(CALENDAR_SELECTED_FOREGROUND);
-    let mut c = String::new();
-    color_class(&mut c, &in_item(&["selected"]), "text", selected);
-    color_class(&mut c, &in_item(&["selected", "hover"]), "text", selected);
-    c.truncate(c.trim_end().len());
-    c.into()
+    let mut c = Classes::new();
+    c = c.color(&on_item(&["selected"]), "text", selected);
+    c = c.color(&on_item(&["selected", "hover"]), "text", selected);
+    c.build()
 }
 
 /// A toggle whose view is open keeps the hover's fill and text.
 fn toggle_class(t: Theme) -> SharedString {
-    let mut c = String::new();
-    color_class(
-        &mut c,
-        &in_item(&["selected"]),
-        "bg",
-        t.color(BUTTON_GHOST_HOVER),
-    );
-    color_class(
-        &mut c,
-        &in_item(&["selected"]),
+    let mut c = Classes::new();
+    c = c.color(&on_item(&["selected"]), "bg", t.color(BUTTON_GHOST_HOVER));
+    c = c.color(
+        &on_item(&["selected"]),
         "text",
         t.color(BUTTON_GHOST_HOVER_FOREGROUND),
     );
-    c.truncate(c.trim_end().len());
-    c.into()
+    c.build()
 }
 
 /// A layer filling its parent, shown while `shown` (classes of the
