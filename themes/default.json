@@ -145,7 +145,7 @@
       "dialog-duration": "calc(var(--duration) * 4 / 3)",
       "dialog-animate": "1",
       "alert-dialog-max-width-sm": "calc(var(--spacing) * 80)",
-      "alert-dialog-header-gap": "calc(var(--spacing) * 1.5)",
+      "alert-dialog-header-gap": "calc(var(--dialog-header-gap))",
       "alert-dialog-media-size": "calc(var(--spacing) * 16)",
       "alert-dialog-media-icon-size": "calc(var(--spacing) * 8)",
       "toast-radius": "calc(var(--radius-lg))",

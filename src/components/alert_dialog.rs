@@ -9,9 +9,9 @@ use nsh_core::{element::Style, prelude::*};
 use super::{
     button::{ButtonEvent, ButtonProps, draw as draw_button},
     dialog::{
-        DIALOG_FOOTER_GAP, DIALOG_MAX_WIDTH, DIALOG_TITLE_FONT_SIZE, DialogCloseProps, Parts,
-        RootEvent, RootProps, content, description, dialog_context, register_description,
-        register_title, root, wide,
+        DIALOG_FOOTER_GAP, DIALOG_HEADER_GAP, DIALOG_MAX_WIDTH, DIALOG_TITLE_FONT_SIZE,
+        DialogCloseProps, Parts, RootEvent, RootProps, content, description, dialog_context,
+        register_description, register_title, root, wide,
     },
 };
 use crate::{
@@ -32,9 +32,10 @@ use crate::{
 tokens! {
     /// The panel's widest at size `sm` and `xs` (`max-w-xs`).
     ALERT_DIALOG_MAX_WIDTH_SM: Length = "alert-dialog-max-width-sm" => |t| t.length(SPACING) * 80.0,
-    /// The gap between the header's media, title and description
-    /// (`gap-1.5`).
-    ALERT_DIALOG_HEADER_GAP: Length = "alert-dialog-header-gap" => |t| t.length(SPACING) * 1.5,
+    /// The gap between the header's media, title and description: a
+    /// `DialogHeader`'s (`dialog-header-gap`, 8), so both dialogs space
+    /// their headers alike.
+    ALERT_DIALOG_HEADER_GAP: Length = "alert-dialog-header-gap" => |t| t.length(DIALOG_HEADER_GAP),
     /// The media tile's fill.
     ALERT_DIALOG_MEDIA: Color = "alert-dialog-media" => |t| t.color(MUTED),
     /// The media tile's side.
