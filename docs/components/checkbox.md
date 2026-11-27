@@ -308,3 +308,7 @@ view()
    through. So this library draws its parts as views of its own (the box in the `indicator` slot), where its look and
    the app's `<part>Class` / `<part>Style` merge in order. A setter taking `impl IntoReactive<Style>` would let the
    parts be `nsh/base`'s own.
+4. **A view in the label keeps its one-line width.** Each child sits in the label's text part, and a view inside a text
+   is laid out at its widest (its text on one line), not narrowed to the line, so a view holding a title and a
+   description does not wrap in a narrow column. A label with a description is a `Field` (horizontal, the box beside a
+   `FieldContent`), which is the pattern anyway (When not to use); a string or a `<Text>` child wraps.

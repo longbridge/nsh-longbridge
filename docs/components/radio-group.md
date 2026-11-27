@@ -285,3 +285,5 @@ radio_group()
 3. **The parts do not follow focus-visible or active.** As `Checkbox`'s NSH gap 1; `Radio` has no indicator part at all
    (the circle is one this library puts among the children), so named groups are the only way.
 4. **The projected `checked:` does not hold while disabled.** As `Checkbox`; bindings.
+5. **A view in an item's label keeps its one-line width.** As [checkbox.md, NSH gaps](checkbox.md#nsh-gaps), 4: an item
+   with a description is a `Field` beside a `RadioGroupItem` without children.

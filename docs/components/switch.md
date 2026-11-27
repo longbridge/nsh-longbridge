@@ -267,3 +267,4 @@ view()
 4. **`nsh/base`'s part styles take a fixed style in Rust.** As [checkbox.md, NSH gaps](checkbox.md#nsh-gaps), 3.
    `Switch` has no slot for its track, so this library hides `nsh/base`'s track and thumb and draws its own as the
    first child.
+5. **A view in the label keeps its one-line width.** As [checkbox.md, NSH gaps](checkbox.md#nsh-gaps), 4.
