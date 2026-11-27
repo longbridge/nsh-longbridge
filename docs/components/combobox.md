@@ -11,9 +11,10 @@ exactly as [Select](select.md)'s list.
 
 - A choice from a long list the user would rather type into than scroll: a country, a framework, a time zone, an
   assignee, a stock symbol of the app's own list; with `multiple`, several of them (labels, recipients, tags from a
-  known set).
+  known set); with `creatable`, a tag input that also makes the typed text a new tag; a recent group while nothing is
+  typed (the app's items, Examples).
 - Search terms: combobox, autocomplete, typeahead, searchable select, filter select, multi-select, tag input, chips
-  input.
+  input, creatable, create option, match highlight, recent searches.
 
 ## When not to use
 
@@ -29,15 +30,16 @@ exactly as [Select](select.md)'s list.
 ## Built on
 
 `nsh/base`'s `Combobox` (`crates/nsh-base/src/combobox.rs`) and its list (`listbox.rs`, shared with `Select`). This
-library adds the field it draws around the input, the chevron and clear buttons, the chips, the look of the list and
-`size` / `invalid`; all behavior is `nsh/base`'s:
+library adds the field it draws around the input, the chevron and clear buttons, the chips, the look of the list (the
+matched part of each title emphasized), the create row (`creatable`) and `size` / `invalid`; all other behavior is
+`nsh/base`'s:
 
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
 | Value | `value: string[]` (controlled) / `defaultValue`; without `multiple` a choice replaces it and closes the list, with `multiple` it toggles the item and the list stays open; `onChange({ value })` on each change, `onConfirm({ value })` once as the list closes; Cmd+Return (Ctrl+Return off Apple's) confirms and closes |
 | Query | Typing filters the items by title (a case-insensitive substring, in order; a section without matches goes); each opening starts from `defaultQuery`, else empty; `query` / `onQueryChange({ query })` when the app filters itself |
 | The input | One value: shows the chosen title until the user types, selected when the input takes the focus (typing replaces it). Several: the query only |
-| Opening | Typing, Down or Up (Down on the first enabled item when none is chosen, Up on the last), a press on the input or on the chevron button opens it; desktops: Tab into the input does not; touch screens: the tap that focuses the input opens it once |
+| Opening | Typing, Down or Up (Down on the first enabled item when none is chosen, Up on the last), a press on the input (not in a browser: NSH gaps 12) or on the chevron button opens it; desktops: Tab into the input does not; touch screens: the tap that focuses the input opens it once |
 | List keys | Up / Down (around the ends), Home / End, Page Up / Down, Return chooses, Escape, back and a press outside close (`"cancel"`, `"pressOutside"`), Tab or Shift+Tab close (`"focus"`) and move on; a new query highlights its first enabled match |
 | Focus | The input keeps the keyboard focus while the list is open (the highlighted row is its active descendant); the clear and chevron buttons are no Tab stops |
 | Presentation | Desktops: a popup below the field (`placement`, `align`), as wide as it, never taller than the room on its side. Touch screens: a sheet at the bottom over a backdrop |
@@ -61,6 +63,7 @@ filter, highlight and typeahead run over the titles; a component cannot read its
 | The input with its trigger and clear buttons | `Combobox`'s `placeholder`, `showTrigger` (default `true`), `cleanable` (`nsh/base`'s name) |
 | The content's side and alignment | `placement`, `align`, `contentClass` / `contentStyle` |
 | The empty state | `empty` (a slot; default: "No items found.") |
+| An item that makes the typed text a new value | `creatable` and `onCreate({ query })`: the library's row (Decisions 9) |
 | Chips and their input | `multiple`: the library draws a chip per value before the input |
 | Separators | None (Select's NSH gaps 3) |
 | Value, query and open events | `onChange({ value })` / `onQueryChange({ query })` / `onOpenChange({ open, reason })` |
@@ -100,7 +103,29 @@ filter, highlight and typeahead run over the titles; a component cannot read its
   each value in the current value) and the group headings (`menu-label-*`), on `nsh/base`'s `popup*`, `list*`,
   `item*` and `group*` parts. The list's height, its padding inside, is capped at `combobox-list-max-height`; the
   popup shrinks with it.
-- **Empty**: `nsh/base`'s `empty` slot, holding the app's `empty` or the library's words, centered.
+- **The query**: the library holds it (the app's `query` when it sets one, else its own, starting empty, set to
+  `defaultQuery` at each opening and once the list is gone) and always passes it to `nsh/base` as a controlled
+  `query`, so the rows' emphasis and the create row read the very query the rows are filtered by, in the same turn
+  (`nsh/base` tells a typed query only after filtering with it: NSH gaps 10). Its own query going back to
+  `defaultQuery` is reported with `onQueryChange`, so an app watching it (a recent group, Examples) stays right.
+- **The matched part**: without `renderItem`, a row's title is drawn by `foundation::menu`'s list row as runs of
+  text, the first place the query matches it (`foundation::text_match`, the filter's own matching: ignoring case as
+  `nsh/base` folds it) in `menu-item-match-font-weight`, the rest as before. The runs share the row's color, so the
+  highlight, the disabled dimming and a theme's colors apply to them as to the title. An app's `renderItem` draws
+  its rows as it likes (it can call the same splitting in Rust).
+- **The create row** (`creatable`): while the query has text other than spaces and no item's title is the same text
+  (ignoring case and spaces at the ends), the library adds one item after the app's: a value of its own no app value
+  can be (it starts with a NUL character, and changes after each use) and the title "Create “<query>”" (`labels`'
+  `create`, translatable), which holds the query, so `nsh/base`'s filter keeps it and screen readers read it. It is a
+  row as any other for the keys, the pointer and the highlight (alone, it is highlighted as a query's first match
+  is); the library draws it (a plus, then the words with the query in the match weight), even beside an app's
+  `renderItem`. Choosing it reports `onCreate({ query })` (the query without the spaces at its ends) and no
+  `onChange`; the value never holds the row's own value (`onChange` and `onConfirm` leave it out). Without
+  `multiple` the list closes as after a choice; with `multiple` it stays open and the query is emptied (reported by
+  `onQueryChange({ query: "" })`, which an app that sets `query` follows), ready for the next one. The app adds the
+  item (and, to choose it, its value) in `onCreate`.
+- **Empty**: `nsh/base`'s `empty` slot, holding the app's `empty` or the library's words, centered, in
+  `combobox-empty-foreground` at 14, which the app's `empty` inherits (as Select's).
 - **Text styles and scope**: the popup resets inherited text styles and reads the `ThemeScope` around the
   `Combobox`, as Select's.
 - **Field**: inside a [Field](field.md) the combobox joins it (`invalid`, `disabled`, and a `FieldSet`'s `disabled`).
@@ -123,11 +148,12 @@ filter, highlight and typeahead run over the titles; a component cannot read its
 | `disabled` | `disabled` | `boolean` | `false` | It does not open, takes no focus, is dimmed |
 | `invalid` | `invalid` | `boolean` | `false` | The app rejects the value: the field look's red edge and ring; screen readers say invalid |
 | `cleanable` | `cleanable` | `boolean` | `false` | A clear button while a value is set |
+| `creatable` | `creatable` | `boolean` | `false` | A last row, "Create “<query>”", while no item's title is the query: choosing it reports `onCreate` |
 | `showTrigger` | `show_trigger` | `boolean` | `true` | The chevron button at the end, hidden while the clear button shows. Read when made |
 | `open` / `defaultOpen` | `open` / `default_open` | `boolean` | Uncontrolled / `false` | The list's open state |
 | `placement` | `placement` | `Placement` | `"bottom"` | Desktops: the side of the field |
 | `align` | `align` | `Align` | `"start"` | Desktops: the alignment along it |
-| `renderItem` | `render_item` | `(entry: SelectEntry) => element` / `Renderer<SelectEntry>` | — | A row's content in place of its title; the library still draws the row and its check |
+| `renderItem` | `render_item` | `(entry: SelectEntry) => element` / `Renderer<SelectEntry>` | — | A row's content in place of its title (then no emphasis of the matched part); the library still draws the row and its check, and the create row |
 | `empty` | `empty` | element (slot) | "No items found." | What the list shows while no item does |
 | `accessibilityLabel` | `accessibility_label` | `string` | — | What screen readers call it; set it even beside a label (Input's G1) |
 | `class` / `style` | `class` / `style` | | | The field (the root): width and layout (`w-[240px]`) |
@@ -139,7 +165,8 @@ filter, highlight and typeahead run over the titles; a component cannot read its
 | `labelClass` / `labelStyle` | `label_class` / `label_style` | | | Each group header, as Select's |
 
 Not exposed, though `nsh/base` has them: `footer` (no look for one yet; added with a look when asked for),
-`prefix` / `suffix` (the field's own icons: InputGroup, later), `renderGroup` (the header is the group's title).
+`prefix` / `suffix` (the field's own icons; [InputGroup](input-group.md) gives an `Input` its icons and buttons, not a
+combobox, which draws its own field), `renderGroup` (the header is the group's title).
 
 ### Events
 
@@ -147,11 +174,13 @@ Not exposed, though `nsh/base` has them: `footer` (no look for one yet; added wi
 |---|---|---|---|
 | `onChange` | `Change(Vec<SharedString>)` | `{ value }` | A choice, a toggle, the clear button, a chip's remove button |
 | `onConfirm` | `Confirm(Vec<SharedString>)` | `{ value }` | The list closed: the value then, once per opening |
-| `onQueryChange` | `QueryChange(SharedString)` | `{ query }` | The user typed |
+| `onQueryChange` | `QueryChange(SharedString)` | `{ query }` | The user typed; the combobox's own query went back to `defaultQuery` (the list gone, or opening); a created value emptied it (`multiple`) |
+| `onCreate` | `Create(SharedString)` | `{ query }` | The create row was chosen (`creatable`): the query, without spaces at its ends |
 | `onOpenChange` | `OpenChange(open, reason)` | `{ open, reason }` | The user asks to open or close the list |
 | `onOpen` / `onClose` / `onCancel` | `Open` / `Close` / `Cancel` | — | Shown / gone / dismissed without a choice |
 
-`nsh/base`'s events, forwarded.
+`nsh/base`'s events, forwarded; `onCreate` is the library's, and so are the query's resets (`nsh/base` makes them
+silently).
 
 ### Ref
 
@@ -210,7 +239,18 @@ as the field (at least `menu-min-width`), `popover-offset` (4) below it. Its hei
 `combobox-list-max-height` (348, its padding inside: about eight and a half rows at `md`, so a cut row shows there is
 more) and the room on its side; the popup shrinks with it.
 
-The empty state: padding 8 above and below, centered, 14, `combobox-empty-foreground` (`muted-foreground`).
+The empty state: padding 8 above and below, centered, 14, `combobox-empty-foreground` (`muted-foreground`); the app's
+`empty` inherits the color and size (Decisions 11).
+
+**The matched part.** While the query has text, the first place it matches each title (as the filter matches:
+ignoring case) is drawn in `menu-item-match-font-weight` (`font-weight-semibold`, 600), the rest of the title in the
+row's regular weight; same color, size and line, the ellipsis still at the title's end. Only the first match: the
+reason the row is there, without speckling a title with a one-letter query ("a" in "Alabama"). With an empty query,
+and for an app's `renderItem`, titles are drawn as before.
+
+**The create row** (`creatable`), the last row: a row of the list's size, a `plus` icon at the row's icon size where
+the title starts, then "Create “<query>”" with the query in the match weight, cut with an ellipsis; no check. The
+icon takes the row's color (the highlight's on the highlighted row).
 
 Its edge, offset (4) and motion (`duration`) are the popup surface's, as every list's: one popup look (Popover's "The
 popup surface"). Rows are one density step down, as Select's.
@@ -235,6 +275,8 @@ The field takes the field look's states (Input's table), its focus on the input 
 | Placeholder | Input's placeholder color |
 | Button hover (pointer) | `button-ghost-hover` fill |
 | Row highlighted, chosen, disabled, pressed on touch | Select's rows |
+| A title the query matches | The first match in `menu-item-match-font-weight`; the row's colors in every state |
+| Create row | A row as the others (highlight, press); the plus and the query's weight |
 | Chip remove hover | Icon at 100% |
 
 The field's colors, edge and ring transition over `duration` (the field look's); the rows' highlight changes at once.
@@ -247,7 +289,7 @@ The cursor is the I-beam over the input (native), the arrow on the buttons, chip
 | Field height | `input-height-<size>`: 24 / 28 / 32 / 36 | 32 / 36 / 40 / 48 (no hit slop: NSH gaps 9) |
 | Buttons | 16 / 20 / 24 / 28 | 24 / 28 / 32 / 40; the chevron a vertical hit slop to 44 (none sideways: the input is beside it), the clear button none (NSH gaps 9) |
 | Focus | The edge and the ring | The edge only |
-| Opening | Typing, the arrow keys, a press on the input or the chevron | The tap that focuses the input, typing |
+| Opening | Typing, the arrow keys, a press on the input (not in a browser: NSH gaps 12) or the chevron | The tap that focuses the input, typing |
 | List | A popup below the field, as wide as it | A sheet at the bottom (`nsh/base`'s), the menu's sheet look, rows 44 / 44 / 44 / 48 |
 | Chip remove | 22 square | 22 square, a hit slop to 44 vertically |
 
@@ -262,7 +304,9 @@ a `listbox`, rows `option`s with `selected` / `disabled`, headers `header`s; the
 descendant. `invalid` shows as the red edge only: `nsh/base`'s input takes no `invalid` state (NSH gaps 3). The
 library hides its icons, names the clear button ("Clear"; `nsh/base` hides the button from screen readers, the input
 saying whether a value is set) and each chip's remove button ("Remove" and the title: a button screen readers reach,
-not a Tab stop). `accessibilityLabel` names the combobox (Input's G1).
+not a Tab stop). `accessibilityLabel` names the combobox (Input's G1). The matched part's emphasis is the look only:
+a row is read as its title. The create row is an `option` read as its words, "Create “web”" (its item's title), and
+announced as the active descendant like any row.
 
 ## Tokens
 
@@ -287,6 +331,9 @@ declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps i
 - The group headings read the menu family's `menu-label-foreground` (`muted-foreground`) and `menu-label-font-size`
   (12), declared in `foundation::menu` (DropdownMenu's spec owns them): one owner for list looks, so a theme changing
   `menu-label-foreground` changes Select's and Combobox's headings.
+- The matched part's weight is the menu family's `menu-item-match-font-weight` (`font-weight-semibold`), declared in
+  `foundation::menu` beside the rows' other tokens, for the same reason: a searchable list of Select's would read it
+  too. A theme sets it to 400 (the rows' regular weight) to draw no emphasis.
 - Other tokens it reads: `radius-sm`, `text-xs`, `text-sm`, `font-weight-medium`, `opacity-disabled`, `icon-size-*`,
   `touch-target`, `overlay`, `shadow`, `duration`.
 
@@ -349,6 +396,41 @@ const picked = signal<string[]>(["next"]);
   placeholder="Search people"
   accessibilityLabel="Assignee"
 />
+
+// Tags: the typed text becomes a new tag when none is called that.
+const tags = signal<SelectItem[]>(knownTags);
+const chosen = signal<string[]>([]);
+<Combobox
+  multiple
+  creatable
+  items={tags()}
+  value={chosen()}
+  onChange={({ value }) => chosen.set(value)}
+  onCreate={({ query: title }) => {
+    const value = `tag-${title.toLowerCase()}`;
+    tags.set([...tags(), { value, title }]);
+    chosen.set([...chosen(), value]);
+  }}
+  placeholder="Add tags"
+  accessibilityLabel="Tags"
+/>
+
+// Recent choices while nothing is typed: the items are data, so the app gives a "Recent" group then, and the whole
+// list once a query filters it. The query is the combobox's own; the app only watches it.
+const typed = signal("");
+const recent = signal<string[]>(["sin", "hnd"]);
+<Combobox
+  items={typed().trim() === "" ? withRecent(airports, recent()) : airports}
+  onQueryChange={({ query: q }) => typed.set(q)}
+  value={airport()}
+  onChange={({ value }) => {
+    airport.set(value);
+    recent.set([...value, ...recent().filter((v) => !value.includes(v))].slice(0, 3));
+  }}
+  placeholder="Search airports"
+  accessibilityLabel="Airport"
+/>
+// withRecent: the recent items under group "Recent", then the others under "All airports" (one value, one row).
 ```
 
 With NSH 0.7.0, a string child (`empty`'s `<Text>`) is written as shown ([Button's G0](button.md#nsh-gaps)).
@@ -372,6 +454,22 @@ combobox()
     .size(Size::Sm)
     .cleanable(true)
     .accessibility_label("Framework")
+
+// Tags that can be made: the app adds the item and chooses it.
+let tags = signal(known_tags());
+let chosen = signal(Vec::<SharedString>::new());
+combobox()
+    .multiple(true)
+    .creatable(true)
+    .items(move || tags.get())
+    .value(move || Some(chosen.get()))
+    .on_change(move |value: &Vec<SharedString>| chosen.set(value.clone()))
+    .on_create(move |query: &SharedString| {
+        let value = SharedString::from(format!("tag-{}", query.to_lowercase()));
+        tags.update(|t| t.push(SelectItem::new(value.clone(), query.clone())));
+        chosen.update(|c| c.push(value));
+    })
+    .accessibility_label("Tags")
 ```
 
 `nsh/base` exports a `Combobox` too; an app using both renames one.
@@ -405,6 +503,22 @@ combobox()
 9. **No hit slop on `nsh/base`'s input part and clear button's wrapper**: their Rust props take styles, and a hit slop
    is no style. On touch screens the field and the clear button take presses in their own bounds (the field is 40
    tall at `md`); the chevron, the library's own view, has its slop. A `hitSlop` on those parts would close it.
+10. **The query is not readable.** `nsh/base`'s `Combobox` tells a typed query (`onQueryChange`) only after its
+    list filtered with it, and goes back to `defaultQuery` (opening, the list gone) without telling. Rows drawn from
+    the query (the matched part, the create row) would lag a keystroke behind and miss the resets, and the create
+    row could miss the highlight a query's only match gets. So the library holds the query and passes it controlled
+    (Implementation). A read-only query on `nsh/base`'s side (or `onQueryChange` before filtering, and on resets)
+    would let it leave the query to `nsh/base`.
+11. **No row of the list's own.** `nsh/base`'s list shows `items` only (its `footer` is below the rows, out of the
+    keys' reach), so the create row is an item the library adds, with a value of its own that the library keeps out
+    of the value it reports. An action row in `nsh/base`'s list (a row after the items that the keys reach and Return
+    runs, reported by an event of its own) would replace it.
+12. **In a browser a press on the input does not open the list.** NSH's web host keeps a press that lands in a text
+    field for the field itself (the caret, the selection) and reports no press for it, so `nsh/base`'s input never
+    hears the press that opens and closes the list: on a desktop browser the press only focuses the input. Typing,
+    Down or Up and the chevron button open it as elsewhere, and a touch screen's browser opens it on the tap's focus.
+    A press reported by the web host to a text field that listens for one (the field still placing the caret) would
+    close it.
 
 ## Decisions
 
@@ -417,9 +531,39 @@ Settled in the P3 review:
 4. **A "popup" combobox** (a button-like trigger showing the value, the search field inside the popup) is not in P3:
    noted in [select.md](select.md)'s "Later" as a future `searchable` on `Select`.
 5. **No free-text mode.** Some web comboboxes keep typed text that matches no item; `nsh/base`'s chooses only
-   items. An autocomplete field (suggestions under an Input) waits for a real need and `nsh/base` support.
+   items. An autocomplete field (suggestions under an Input) waits for a real need and `nsh/base` support. Making
+   the typed text a new item is another thing, and offered: `creatable` (Decisions 9), where the app adds the item.
 6. **Library words**: "No items found." (`empty`'s default), "Clear" and "Remove", added to
    `labels` (`Label::NoItems`, `Label::Clear`, `Label::Remove`), translatable as the others.
 7. **One list look, one owner**: Select's list drawing moved to `foundation::menu` (`list_look!`), shared by Select
    and Combobox, and the group headings' tokens moved into the menu family as `menu-label-foreground` and
    `menu-label-font-size` (renamed from `select-label-*`).
+
+Added with the match highlight, the create row and recent items:
+
+8. **The matched part is emphasized by weight, its first match only.** A list of options says why each row is there
+   by its matched letters, in a heavier weight (`menu-item-match-font-weight`, semibold), not a color: a color of
+   its own would fight the highlighted row's and the disabled dimming, while weight keeps the row's color in every
+   state, light and dark. The first match only: it is the reason the row shows, and every match of a short query
+   speckles the titles. The reverse (the typed part plain, the rest bold) suits a list of completions of what is
+   typed (search suggestions), not a list of options, and is not offered. It matches as the filter does (the same
+   case folding, including folds that change a text's length, and nothing the filter would not match), so a row
+   never shows a match the filter did not make. The splitting (`foundation::text_match`) is the library's, for any
+   list with a query (Select's search later). The library's rows only: `renderItem` is the app's drawing.
+9. **`creatable` and `onCreate`**: a flag and an event, not a part. Options are data (Decisions 1) and the row is the
+   library's own, as the empty state's words are: a part would only carry its words, which `labels` translates. The
+   row shows while no item's title is the query (ignoring case and the spaces at its ends: "react" does not create
+   a second "React"), last, so the matches come first and Return on a query with matches takes the first match; alone
+   it is highlighted, so Return creates. The app makes the item (its value, perhaps from a server), so `onCreate`
+   carries the query, not a value, and the library changes no value itself. With `multiple` the query is emptied after
+   a creation (the tag input's rhythm: type, Return, type the next); a choice of an existing item keeps it, as
+   `nsh/base` does.
+10. **Recent items are the app's items.** Nothing in the API stopped a recent group; what was missing was knowing when
+    the query is empty, since the combobox's own query went back to `defaultQuery` silently. Its resets are now
+    reported with `onQueryChange`, so an app gives a "Recent" group while the query it watches is empty, without
+    holding the query itself. An app that sets `query` resets it itself (in `onOpenChange`), as before. A value is
+    one row: the recent ones are left out of the group after them.
+11. **The app's `empty` inherits the empty state's look**: its words take `combobox-empty-foreground` and 14 as the
+    library's do (and as Select's `empty` does), so `empty={<Text>No time zone matches.</Text>}` reads as the same
+    quiet note, not as a row's text. A `<Text>` with its own color or size keeps them. Before, the app's words were the
+    popup's foreground at the inherited size.

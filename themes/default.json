@@ -177,6 +177,7 @@
       "menu-sheet-radius": "calc(var(--radius-lg))",
       "menu-sheet-padding": "calc(var(--spacing) * 2)",
       "menu-label-font-size": "12px",
+      "menu-item-match-font-weight": "calc(var(--font-weight-semibold))",
       "tabs-gap": "calc(var(--spacing) * 2)",
       "tabs-list-radius": "calc(var(--radius-lg))",
       "tabs-list-padding": "calc(var(--spacing) * 0.75)",

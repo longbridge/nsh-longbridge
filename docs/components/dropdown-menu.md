@@ -377,6 +377,7 @@ a test keeps it current.
 | `menu-sheet-padding` | length | `spacing × 2` | 8 |
 | `menu-label-foreground` | color | `muted-foreground` |  |
 | `menu-label-font-size` | length | `12` | 12 |
+| `menu-item-match-font-weight` | number | `font-weight-semibold` | 600 |
 <!-- /tokens -->
 
 - The fill and text are the semantic `popover` / `popover-foreground`, which the menu uses directly and declares no
@@ -390,9 +391,11 @@ a test keeps it current.
 - `menu-label-foreground` and `menu-label-font-size` are the group headings of a list of values (`Select`'s,
   `Combobox`'s, drawn by `foundation::menu`'s list look): muted 12-point text. `DropdownMenuLabel` keeps its own look
   (medium weight, `popover-foreground`).
+- `menu-item-match-font-weight` is the weight of the part of a list row's title a query matches (`Combobox`'s rows,
+  drawn by the list look): semibold over the rows' regular weight, the row's color kept. 400 draws no emphasis.
 
 Other tokens it reads: `popover`, `popover-foreground`, `popover-border`, `popover-radius`, `popover-shadow`,
-`popover-offset`, `popover-animate`, `overlay`, `icon-size-*`, `font-weight-medium`,
+`popover-offset`, `popover-animate`, `overlay`, `icon-size-*`, `font-weight-medium`, `font-weight-semibold`,
 `border-width`, `opacity-disabled`, `touch-target`, `shadow`, `duration`.
 
 ## Examples

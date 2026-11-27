@@ -180,6 +180,10 @@ pub enum Label {
     /// "Search": a list's search field, its placeholder and name (a
     /// searchable select's).
     Search,
+    /// "Create “{query}”": the row that makes what was typed a new value
+    /// (a creatable combobox's); `{query}` stands for it (left out, the
+    /// query follows the words).
+    Create,
 }
 
 impl Label {
@@ -240,6 +244,7 @@ impl Label {
         Label::Cancel,
         Label::Apply,
         Label::Search,
+        Label::Create,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -300,6 +305,7 @@ impl Label {
             Label::Cancel => "cancel",
             Label::Apply => "apply",
             Label::Search => "search",
+            Label::Create => "create",
         }
     }
 
@@ -361,6 +367,7 @@ impl Label {
             Label::Cancel => "Cancel",
             Label::Apply => "Apply",
             Label::Search => "Search",
+            Label::Create => "Create “{query}”",
         }
     }
 

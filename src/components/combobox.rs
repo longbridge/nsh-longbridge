@@ -4,7 +4,9 @@
 //! virtualized list, the combobox, listbox and option roles). The library
 //! draws the field around the input (the field look), its chevron and
 //! clear buttons, the chips of several values, and the list (as Select's,
-//! `foundation::menu`). API: `docs/components/combobox.md`.
+//! `foundation::menu`) with the matched part of each title emphasized and,
+//! with `creatable`, a row that makes the query a new value. API:
+//! `docs/components/combobox.md`.
 
 use std::rc::Rc;
 
@@ -19,26 +21,32 @@ use nsh_core::{
 
 use crate::{
     SelectEntry, SelectItem,
-    components::{button::BUTTON_GHOST_HOVER, input},
+    components::{
+        button::BUTTON_GHOST_HOVER,
+        input::{self, vertical_hit_slop},
+    },
     foundation::{
         class::Classes,
         field::{
-            self, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, INPUT_RADIUS, Kind, field_focus,
-            field_rest,
+            self, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, Kind, field_button_frame,
+            field_button_hover, field_button_side, field_focus, field_rest,
         },
         icon::{IconName, icon_size_token, icon_view, provide_text_color},
         labels::{self, Label},
-        menu::{ListLook, list_look},
+        menu::{
+            ListLook, MENU_ITEM_GAP, MENU_ITEM_MATCH_FONT_WEIGHT, list_look, list_row_with,
+            matched_title, title_text,
+        },
         popup::{self, POPOVER_MARGIN, POPOVER_OFFSET},
-        size::{Size, pointer},
-        typography::{line_height, medium},
+        size::Size,
+        text_match,
+        typography::{font_weight, line_height, medium},
     },
     theme::{
         Theme,
         seeds::SPACING,
         semantic::{
             FOREGROUND, MUTED, MUTED_FOREGROUND, OPACITY_DISABLED, RADIUS_SM, TEXT_SM, TEXT_XS,
-            TOUCH_TARGET,
         },
         theme,
     },
@@ -80,7 +88,9 @@ pub struct ComboboxProps {
     #[prop(default)]
     pub default_value: Prop<Vec<SharedString>>,
     /// What is typed (controlled), for an app that filters `items` itself:
-    /// it sets it in `onQueryChange`.
+    /// it sets it in `onQueryChange` (and resets it as it likes, in
+    /// `onOpenChange`). Left out, the combobox keeps its own, which each
+    /// opening starts at `defaultQuery`.
     pub query: Prop<Option<SharedString>>,
     /// The query each opening starts with.
     pub default_query: Prop<Option<SharedString>>,
@@ -101,6 +111,12 @@ pub struct ComboboxProps {
     /// A button that clears the value, while one is set.
     #[prop(default)]
     pub cleanable: Prop<bool>,
+    /// A last row, "Create “<query>”", while the query has text and no
+    /// item's title is that text (ignoring case and the spaces at its
+    /// ends): choosing it reports `onCreate` with the query, and the app
+    /// adds the item (and its value, to choose it).
+    #[prop(default)]
+    pub creatable: Prop<bool>,
     /// The chevron button at the end, which opens and closes the list
     /// (hidden while the clear button shows). Read when it is made.
     #[prop(default = true)]
@@ -119,8 +135,10 @@ pub struct ComboboxProps {
     /// default).
     #[prop(default = Align::Start)]
     pub align: Prop<Align>,
-    /// A row's content in place of its title: the library still draws the
-    /// row and the check. It gets what the item is, never its state.
+    /// A row's content in place of its title (then without the emphasis of
+    /// the part the query matches): the library still draws the row and
+    /// the check, and the create row. It gets what the item is, never its
+    /// state.
     pub render_item: Prop<Option<Renderer<SelectEntry>>>,
     /// What the list shows while no item does; left out, "No items found."
     /// (`labels`, translatable).
@@ -172,10 +190,16 @@ pub enum ComboboxEvent {
     /// The list closed: the value then, once per opening.
     #[args(value)]
     Confirm(Vec<SharedString>),
-    /// The user typed: the query, which the app makes `query` when it sets
-    /// one.
+    /// The query changed: the user typed, the combobox's own query went
+    /// back to `defaultQuery` (opening, the list gone), or a created value
+    /// emptied it (`multiple`). The app makes it `query` when it sets one.
     #[args(query)]
     QueryChange(SharedString),
+    /// The create row was chosen (`creatable`): the query, without the
+    /// spaces at its ends. The app adds the item, and its value to choose
+    /// it; the combobox changes no value itself.
+    #[args(query)]
+    Create(SharedString),
     /// The user asks to open or close the list, with why: set `open` to
     /// follow it.
     #[args(open, reason)]
@@ -230,11 +254,60 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
         }
     });
 
+    // The query: the app's, else its own, which each opening starts at
+    // `defaultQuery` and which goes back to it once the list is gone, as
+    // `nsh/base`'s would. It is always passed to `nsh/base` controlled, so
+    // the rows' emphasis and the create row read the query the rows are
+    // filtered by (the docs' NSH gaps 10).
+    let own_query = signal(SharedString::default());
+    let query = computed(move || props.query.get().unwrap_or_else(|| own_query.get()));
+    let default_query = move || props.default_query.get_untracked().unwrap_or_default();
+    // Its own query set by the combobox (not typed): reported, so an app
+    // watching it stays right.
+    let reset_query = move |next: SharedString| {
+        if props.query.get_untracked().is_some() || own_query.get_untracked() == next {
+            return;
+        }
+        own_query.set(next.clone());
+        cx.emit(ComboboxEvent::QueryChange(next));
+    };
+    // An opening the user asked for reset the query already (before what
+    // they typed to open it); any other starts at the default too.
+    let user_opened = stored(false);
+    let was_open = stored(false);
+    effect(move || {
+        let now = is_open();
+        if was_open.replace(now) || !now {
+            return;
+        }
+        if !user_opened.replace(false) {
+            untracked(|| reset_query(default_query()));
+        }
+    });
+    // The create row: an item of the library's after the app's, while the
+    // query has text no item's title is. Its value is one no app's can be
+    // (NUL first), and changes after each use, so a second creation is a
+    // change to `nsh/base` too.
+    let creations = signal(0_u32);
+    let create_value = move || SharedString::from(format!("{CREATE}{}", creations.get()));
+    let items = computed(move || {
+        if !props.creatable.get() {
+            return props.items.get();
+        }
+        let query = query.get();
+        let title = props.items.with(|items| create_title(items, &query));
+        let mut items = props.items.get();
+        if let Some(title) = title {
+            items.push(SelectItem::new(create_value(), title));
+        }
+        items
+    });
+
     let mut root = base_combobox()
-        .items(props.items)
+        .items(Prop::from(items))
         .multiple(multiple)
         .value(move || Some(current.get()))
-        .query(props.query)
+        .query(move || Some(query.get()))
         .default_query(props.default_query)
         .open(props.open)
         .default_open(props.default_open)
@@ -247,13 +320,46 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
         .offset(move || t.length(POPOVER_OFFSET))
         .margin(move || t.length(POPOVER_MARGIN))
         .clear_button_accessibility_label(move || Some(labels::text(Label::Clear)))
-        .on_change(move |value: &Vec<SharedString>| report(value.clone()))
-        .on_confirm(move |value: &Vec<SharedString>| cx.emit(ComboboxEvent::Confirm(value.clone())))
-        .on_query_change(move |query: &SharedString| {
-            cx.emit(ComboboxEvent::QueryChange(query.clone()))
+        .on_change(move |value: &Vec<SharedString>| {
+            let made = untracked(create_value);
+            if value.contains(&made) {
+                // The create row, chosen: no value of its own.
+                let typed = SharedString::from(query.get_untracked().trim().to_owned());
+                creations.update(|n| *n += 1);
+                cx.emit(ComboboxEvent::Create(typed));
+                if multiple {
+                    match props.query.get_untracked() {
+                        Some(_) => cx.emit(ComboboxEvent::QueryChange(SharedString::default())),
+                        None => reset_query(SharedString::default()),
+                    }
+                }
+                return;
+            }
+            report(without_create(value))
+        })
+        .on_confirm(move |value: &Vec<SharedString>| {
+            // After a creation `nsh/base`'s value may hold the create row's
+            // until the app's comes: the value is the app's then.
+            let value = match (value.iter().any(is_create), multiple) {
+                (false, _) => value.clone(),
+                (true, true) => without_create(value),
+                (true, false) => current.get_untracked(),
+            };
+            cx.emit(ComboboxEvent::Confirm(value))
+        })
+        .on_query_change(move |typed: &SharedString| {
+            if props.query.get_untracked().is_none() {
+                own_query.set(typed.clone());
+            }
+            cx.emit(ComboboxEvent::QueryChange(typed.clone()))
         })
         .on_open_change(move |e: &BaseComboboxEvent| {
             if let BaseComboboxEvent::OpenChange(open, reason) = e {
+                if *open {
+                    // Before what was typed to open it, which follows.
+                    user_opened.replace(true);
+                    reset_query(default_query());
+                }
                 if props.open.get_untracked().is_none() {
                     own_open.set(*open);
                 }
@@ -264,6 +370,7 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
         .on_close(move || {
             if !untracked(is_open) {
                 held.set(false);
+                reset_query(default_query());
             }
             cx.emit(ComboboxEvent::Close)
         })
@@ -343,24 +450,19 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
     if multiple {
         root = root.prefix(chip_row(props.clone(), t, current, chips, report, disabled));
     }
-    let empty_words = view()
-        .py(move || t.length(SPACING) * 2.0)
-        .items_center()
-        .child(
-            text(move || labels::text(Label::NoItems))
-                .text_size(move || t.length(TEXT_SM))
-                .line_height(move || line_height(t.length(TEXT_SM)))
-                .text_color(move || t.color(COMBOBOX_EMPTY_FOREGROUND)),
-        );
-    root = match props.empty.get_untracked() {
-        Some(_) => root.empty(
-            view()
-                .py(move || t.length(SPACING) * 2.0)
-                .items_center()
-                .child(props.empty.place(|e| e)),
-        ),
-        None => root.empty(empty_words),
-    };
+    // The app's `empty` inherits the words' color and size, as Select's.
+    root = root.empty(
+        view()
+            .py(move || t.length(SPACING) * 2.0)
+            .items_center()
+            .text_size(move || t.length(TEXT_SM))
+            .line_height(move || line_height(t.length(TEXT_SM)))
+            .text_color(move || t.color(COMBOBOX_EMPTY_FOREGROUND))
+            .child(match props.empty.get_untracked() {
+                Some(_) => props.empty.place(|e| e).into_element(),
+                None => text(move || labels::text(Label::NoItems)).into_element(),
+            }),
+    );
     let input_style = move || {
         let s = StyleRefinement::default().flex_1();
         // Beside chips, a chip's height (the chips set the field's); else
@@ -393,79 +495,109 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
             .placeholder_color(t.color(INPUT_PLACEHOLDER_FOREGROUND));
         InputPartStyle::from(Style::from(s).then(&Style::from(props.input_style.get())))
     };
-    let clear_style = move || Style::from(button_frame(StyleRefinement::default(), t, size));
+    let clear_style =
+        move || Style::from(field_button_frame(StyleRefinement::default(), t, size()));
     {
         let parts = root.__element().__props_mut();
         parts.input_class = props.input_class;
         parts.input_style = Prop::from(IntoReactive::<InputPartStyle>::into_reactive(input_style));
         parts.clear_button_style = Prop::from(IntoReactive::<Style>::into_reactive(clear_style));
         parts.clear_button_class = Prop::from(IntoReactive::<Option<SharedString>>::into_reactive(
-            move || Some(SharedString::from(hover_class(t))),
+            move || Some(field_button_hover(Classes::new(), t).build()),
         ));
     }
-    list_look!(
-        root,
-        t,
-        ListLook {
-            size: props.size,
-            chosen: Rc::new(move |value: &SharedString| current.with(|c| c.contains(value))),
-            render_item: props.render_item,
-            max_height: Some(COMBOBOX_LIST_MAX_HEIGHT),
-            content_class: props.content_class,
-            content_style: props.content_style,
-            item_class: props.item_class,
-            item_style: props.item_style,
-            label_class: props.label_class,
-            label_style: props.label_style,
+    let look = ListLook {
+        size: props.size,
+        chosen: Rc::new(move |value: &SharedString| current.with(|c| c.contains(value))),
+        render_item: props.render_item,
+        max_height: Some(COMBOBOX_LIST_MAX_HEIGHT),
+        content_class: props.content_class,
+        content_style: props.content_style,
+        item_class: props.item_class,
+        item_style: props.item_style,
+        label_class: props.label_class,
+        label_style: props.label_style,
+    };
+    // The rows: the titles with their matched part, and the create row
+    // (the library's, even beside the app's `renderItem`).
+    let row = list_row_with(t, look.clone(), matched_title(t, query));
+    let row = move |entry: &SelectEntry| {
+        if is_create(&entry.value) {
+            create_row(t, props.size, query.get_untracked())
+        } else {
+            row(entry)
         }
-    );
+    };
+    list_look!(root, t, look, row);
     root
 }
 
-/// A square button's frame inside a field of `size`: the field's height
-/// less 8, its corners concentric with the field's.
-fn button_frame(
-    s: StyleRefinement,
-    t: Theme,
-    size: impl Fn() -> Size + Copy + 'static,
-) -> StyleRefinement {
-    let side = button_side(t, size());
-    let radius = (t.length(INPUT_RADIUS) - px(4.0)).max(px(0.0));
-    s.size(side)
-        .flex_shrink_0()
+/// What the create row's value starts with: a NUL, which no app's value
+/// holds.
+const CREATE: &str = "\u{0}create:";
+
+/// Whether `value` is the create row's.
+fn is_create(value: &SharedString) -> bool {
+    value.starts_with(CREATE)
+}
+
+/// `value` without the create row's.
+fn without_create(value: &[SharedString]) -> Vec<SharedString> {
+    value.iter().filter(|v| !is_create(v)).cloned().collect()
+}
+
+/// The create row's title for `query`, while it has text no item's title
+/// is (ignoring case and the spaces at the ends): "Create “<query>”"
+/// (`labels`). It holds the query as typed, so `nsh/base`'s filter keeps
+/// it; screen readers read it.
+fn create_title(items: &[SelectItem], query: &str) -> Option<SharedString> {
+    let wanted = query.trim().to_lowercase();
+    if wanted.is_empty()
+        || items
+            .iter()
+            .any(|i| i.title.trim().to_lowercase() == wanted)
+    {
+        return None;
+    }
+    let (before, after) = create_words();
+    let title = format!("{before}{query}{after}");
+    // A translation that loses the query still keeps the row.
+    Some(if text_match::matches(&title, query) {
+        title.into()
+    } else {
+        format!("{title} {query}").into()
+    })
+}
+
+/// The create row's words before and after the query: `labels`' `create`
+/// split at `{query}`, else the words and the query in quotes.
+fn create_words() -> (String, String) {
+    let words = labels::text(Label::Create);
+    match words.split_once("{query}") {
+        Some((before, after)) => (before.to_owned(), after.to_owned()),
+        None => (format!("{words} “"), "”".to_owned()),
+    }
+}
+
+/// The create row's content: a plus where the titles start, then the
+/// words with the query (without the spaces at its ends) in the match
+/// weight, cut with an ellipsis.
+fn create_row(t: Theme, size: Prop<Size>, query: SharedString) -> View {
+    let (before, after) = create_words();
+    let side = move || t.length(icon_size_token(size.get()));
+    let words = text("")
+        .child(text(SharedString::from(before)))
+        .child(
+            text(SharedString::from(query.trim().to_owned()))
+                .font_weight(font_weight(t, MENU_ITEM_MATCH_FONT_WEIGHT)),
+        )
+        .child(text(SharedString::from(after)));
+    view()
+        .flex_row()
         .items_center()
-        .justify_center()
-        .rounded(radius)
-}
-
-/// A button's side in a field of `size`.
-fn button_side(t: Theme, size: Size) -> Points {
-    t.length(input::height_token(size)) - px(8.0)
-}
-
-/// Above and below a control `side` tall, so a finger gets `touch-target`
-/// (44) points; none with a pointer. Not at the sides: the input is beside
-/// it.
-fn touch_slop(t: Theme, side: Points) -> EdgeInsets {
-    if pointer() {
-        return EdgeInsets::default();
-    }
-    let slop = ((t.length(TOUCH_TARGET) - side) / 2.0).max(px(0.0));
-    EdgeInsets {
-        top: slop,
-        bottom: slop,
-        ..EdgeInsets::default()
-    }
-}
-
-/// The ghost button's hover fill (none pressed), as a class made from the
-/// tokens, for a part only `nsh/base` knows the states of.
-fn hover_class(t: Theme) -> String {
-    Classes::new()
-        .color("hover", "bg", t.color(BUTTON_GHOST_HOVER))
-        .push("active:bg-transparent")
-        .build()
-        .to_string()
+        .gap(move || t.length(MENU_ITEM_GAP))
+        .child(icon_view(t, || IconName::Plus, side))
+        .child(title_text(words))
 }
 
 /// The chevron button: a square of the field with the ghost button's
@@ -478,8 +610,8 @@ fn button(
     icon_style: Prop<Style>,
 ) -> View {
     view()
-        .style_with(move |s| button_frame(s, t, size))
-        .hit_slop(move || touch_slop(t, button_side(t, size())))
+        .style_with(move |s| field_button_frame(s, t, size()))
+        .hit_slop(move || vertical_hit_slop(t, field_button_side(t, size())))
         .hover(move |s| s.bg(move || t.color(BUTTON_GHOST_HOVER)))
         .active(|s| s.bg(AdaptiveColor::TRANSPARENT))
         .child(
@@ -571,7 +703,7 @@ fn chip_row(
                             .flex_shrink_0()
                             .items_center()
                             .justify_center()
-                            .hit_slop(move || touch_slop(t, chip_height()))
+                            .hit_slop(move || vertical_hit_slop(t, chip_height()))
                             .opacity(0.5)
                             .hover(|s| s.opacity(1.0))
                             .on_press(remove)
