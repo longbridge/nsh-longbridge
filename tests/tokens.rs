@@ -653,6 +653,15 @@ fn the_toggle_token_table_is_current() {
 }
 
 #[test]
+fn the_selection_bar_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/selection-bar.md"),
+        "selection-bar",
+        &token_table(nsh_longbridge::components::selection_bar::TOKENS),
+    );
+}
+
+#[test]
 fn the_toggle_group_token_table_is_current() {
     check_block(
         &root().join("docs/components/toggle-group.md"),

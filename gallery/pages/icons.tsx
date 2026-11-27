@@ -31,6 +31,10 @@ const icons: { name: IconName; for: string }[] = [
   { name: "log-out", for: "Signing out" },
   { name: "layout-dashboard", for: "A dashboard" },
   { name: "activity", for: "Activity" },
+  { name: "tag", for: "Tagging a selection" },
+  { name: "user", for: "Assigning a selection" },
+  { name: "archive", for: "Archiving" },
+  { name: "download", for: "Downloading, exporting" },
 ];
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];

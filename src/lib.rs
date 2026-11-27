@@ -146,6 +146,13 @@ pub use crate::{
             Select, SelectApi, SelectElement, SelectEntry, SelectEvent, SelectItem, SelectProps,
             SelectValue, select,
         },
+        selection_bar::{
+            SelectionBar, SelectionBarAction, SelectionBarActionElement, SelectionBarActionEvent,
+            SelectionBarActionProps, SelectionBarActionVariant, SelectionBarElement,
+            SelectionBarEvent, SelectionBarPlacement, SelectionBarProps, SelectionBarSeparator,
+            SelectionBarSeparatorElement, SelectionBarSeparatorProps, selection_bar,
+            selection_bar_action, selection_bar_separator,
+        },
         separator::{Separator, SeparatorElement, SeparatorProps, separator},
         skeleton::{Skeleton, SkeletonElement, SkeletonProps, skeleton},
         slider::{
@@ -270,6 +277,9 @@ fn native(registry: &mut Registry) {
         .register::<RadioGroup>()
         .register::<RadioGroupItem>()
         .register::<Select>()
+        .register::<SelectionBar>()
+        .register::<SelectionBarAction>()
+        .register::<SelectionBarSeparator>()
         .register::<Separator>()
         .register::<Skeleton>()
         .register::<Slider>()

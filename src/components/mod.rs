@@ -22,6 +22,7 @@ pub mod popover;
 pub mod progress;
 pub mod radio_group;
 pub mod select;
+pub mod selection_bar;
 pub mod separator;
 pub mod skeleton;
 pub mod slider;

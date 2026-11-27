@@ -12,7 +12,7 @@ mod token;
 
 pub use file::{default_theme_json, registry, token_table};
 pub use resolve::{Theme, resolve_color_in, resolve_number_in, theme};
-pub(crate) use scope::{CapturedScope, capture_scope};
+pub(crate) use scope::{CapturedScope, capture_scope, provide_over};
 pub use scope::{
     ScopeTokens, ThemeAppearance, ThemeScope, ThemeScopeElement, ThemeScopeProps, theme_scope,
 };

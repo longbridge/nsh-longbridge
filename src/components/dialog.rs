@@ -148,9 +148,10 @@ impl OpenState {
     }
 }
 
-/// A modal's presence and motion: mounted while open and while it goes;
-/// `fade` runs 0 → 1 as it comes and 1 → 0 as it goes, over
-/// `dialog-duration` (at once with reduced motion or `dialog-animate` 0).
+/// A layer's presence and motion (a modal's, a selection bar's): mounted
+/// while open and while it goes; `fade` runs 0 → 1 as it comes and 1 → 0
+/// as it goes, over its duration (a modal's `dialog-duration`; at once
+/// with reduced motion or when it does not animate: `dialog-animate` 0).
 #[derive(Clone, Copy)]
 pub(crate) struct Presence {
     pub(crate) mounted: Signal<bool>,
@@ -162,6 +163,20 @@ pub(crate) struct Presence {
 
 impl Presence {
     pub(crate) fn new(open: impl Fn() -> bool + 'static, t: Theme) -> Self {
+        Self::with_timing(
+            open,
+            move || t.number(DIALOG_ANIMATE) != 0.0,
+            move || t.number(DIALOG_DURATION),
+        )
+    }
+
+    /// A presence that moves while `animate` says so, over `ms`
+    /// milliseconds (both read as it opens or closes).
+    pub(crate) fn with_timing(
+        open: impl Fn() -> bool + 'static,
+        animate: impl Fn() -> bool + 'static,
+        ms: impl Fn() -> f32 + 'static,
+    ) -> Self {
         let presence = Self {
             mounted: signal(false),
             closing: signal(false),
@@ -171,14 +186,12 @@ impl Presence {
         let open = computed(open);
         effect(move || {
             let open = open.get();
-            untracked(|| presence.follow(open, t));
+            untracked(|| presence.follow(open, animate() && !reduce_motion(), ms().max(0.0)));
         });
         presence
     }
 
-    fn follow(self, open: bool, t: Theme) {
-        let animate = t.number(DIALOG_ANIMATE) != 0.0 && !reduce_motion();
-        let ms = t.number(DIALOG_DURATION).max(0.0);
+    fn follow(self, open: bool, animate: bool, ms: f32) {
         if open {
             let mounted = self.mounted.get_untracked();
             let closing = self.closing.get_untracked();

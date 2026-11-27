@@ -190,6 +190,30 @@ impl CapturedScope {
     }
 }
 
+/// Provides, to what the current component makes, the scope around it
+/// with `colors` over it (token names and values, read in a binding) and
+/// `appearance` forced when it gives one, and returns its theme: a part
+/// that draws the library's components in other colors (a selection bar's
+/// destructive action, a dark bar) without a `ThemeScope` view in the
+/// layout.
+pub(crate) fn provide_over(
+    colors: impl Fn() -> Vec<(&'static str, AdaptiveColor)> + 'static,
+    appearance: impl Fn() -> Option<ThemeAppearance> + 'static,
+) -> Theme {
+    let parent_scope = use_context::<ScopeContext>();
+    let merged = computed(move || {
+        let parent = parent_scope.map(|p| p.0.get());
+        let mut out = Scoped::over(parent.as_deref(), &ScopeTokens::new(), appearance());
+        for (name, color) in colors() {
+            out.numbers.remove(name);
+            out.colors.insert(name.into(), color);
+        }
+        Arc::new(out)
+    });
+    provide_context(ScopeContext(merged));
+    Theme::of_scope(merged)
+}
+
 /// The props of [`ThemeScope`].
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct ThemeScopeProps {
