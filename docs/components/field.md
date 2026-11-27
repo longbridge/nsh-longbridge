@@ -193,7 +193,7 @@ them):
 | Part | Classes | This library |
 |---|---|---|
 | `Field` vertical | `group/field flex w-full flex-col gap-3 [&>*]:w-full` | A column, children stretched to its width, `field-gap` (8: a label and its control are closely related controls) apart; a description or an error `field-content-gap` (4) under what is above it |
-| `Field` horizontal | `flex-row items-center [&>[data-slot=field-label]]:flex-auto`, `has-[>[data-slot=field-content]]:items-start` | A row, centered, `field-gap` apart; a `FieldLabel` or `FieldContent` in it and a full-width control share the row equally (`flex: 1 1 0`, so a group's rows line up in columns; the label side never narrower than its longest word, and a `FieldLabel` there stacks its children, so a long label wraps); beside a switch or a box the label side takes the room left (Implementation); with a `FieldContent`, the row aligns to the top and a choice control (Checkbox, Switch, a radio) is centered on the content's first line (Decisions 5) |
+| `Field` horizontal | `flex-row items-center [&>[data-slot=field-label]]:flex-auto`, `has-[>[data-slot=field-content]]:items-start` | A row, centered, `field-gap` apart; a `FieldLabel` or `FieldContent` in it and a full-width control share the row equally (`flex: 1 1 0`, so a group's rows line up in columns; the label side never narrower than its longest word, and a `FieldLabel` there stacks its children, so a long label wraps); beside a switch or a box the label side takes the room left (Implementation); with a `FieldContent`, the row aligns to the top and the content's first line is level with the control's: a choice control (Checkbox, Switch, a radio) or a slider's track, shorter than the line, is centered on it; beside a taller text control (Input, Textarea, DatePicker's field) the content moves down until its first line is level with the control's text (Decisions 5) |
 | `Field` responsive | vertical; `@md/field-group:` horizontal | Vertical while the enclosing `FieldGroup` is narrower than `field-responsive-width` (448, Tailwind's `@md` container, 28rem), horizontal from it; vertical outside a `FieldGroup` (no container) |
 | `FieldContent` | `flex flex-1 flex-col gap-1.5 leading-snug` | A column, `flex: 1 1 0` (as a horizontal `FieldLabel`: half the row beside a full-width control, the room left beside a switch or a box), `field-content-gap` (4: a label and its description are parts of one text) apart |
 | `FieldGroup` | `flex w-full flex-col gap-7`, a nested group `gap-4` | A column, full width, `field-group-gap` (16: separate groups of a form) apart; a `FieldGroup` directly in another (not through a `Field`) `field-group-nested-gap` (12) |
@@ -469,5 +469,9 @@ Settled in the P3 review:
    it, and a description's place no longer depends on whether a part, even an empty `FieldError`, follows it.)
 5. **A choice control in a horizontal field with content is centered on the content's first line** (the label's 20
    line), as Checkbox centers its box on its own label, rather than a fixed `mt-px`, which only fits one text size.
+   The same holds the other way: a control taller than the line tells its field where its first line of text is
+   (`field::Joined::report_first_line`: an input's middle, a textarea's first line under its padding), and the
+   `FieldContent` beside it moves down until its first line is level with it, so a label reads on the line of the text
+   it names rather than 6 above it. A slider's track, shorter than the line, is centered on it as a choice control.
 6. **`FieldLabel` uses foundation's line heights** (20), not Label's `leading-none`: field labels wrap more often
    (long settings titles), and a label that wraps under `leading-none` collides with itself.

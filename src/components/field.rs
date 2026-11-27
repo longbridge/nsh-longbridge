@@ -560,10 +560,15 @@ pub fn FieldContent(props: FieldContentProps, _cx: Scope<NoEvent>) -> impl IntoE
     // (which takes `flex: 1 1 0` there too), so the rows of a group line
     // up in columns; the room left beside a switch or a box. Never
     // narrower than its longest word (CSS's automatic minimum).
+    // Its first line level with a text control's first line beside it
+    // (an input's text, a textarea's first line).
+    let state = field::current();
+    let line = move || line_height(t.length(LABEL_FONT_SIZE));
     view()
         .flex_col()
         .flex_1()
         .min_w(nsh_core::geometry::auto())
+        .mt(move || field::text_offset(state, line()))
         .gap(move || t.length(FIELD_CONTENT_GAP))
         .child(props.children)
 }

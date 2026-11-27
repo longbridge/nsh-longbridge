@@ -208,6 +208,7 @@ pub struct FieldState {
     error: Signal<Option<ElementRef>>,
     beside_content: Signal<bool>,
     in_row: Signal<bool>,
+    first_line: Signal<Option<Points>>,
 }
 
 impl FieldState {
@@ -272,6 +273,15 @@ impl FieldState {
         self.in_row.get()
     }
 
+    /// How far below the control's top the middle of its first line of
+    /// text is (an input's text, a textarea's first line, a slider's
+    /// track), if the control said so ([`Joined::report_first_line`]): a
+    /// column of text beside it moves down to put its first line level
+    /// with it.
+    pub fn first_line(&self) -> Option<Points> {
+        self.first_line.get()
+    }
+
     /// Says whether the field lays its parts out in a row (the `Field`
     /// layer, from its orientation).
     pub fn set_in_row(&self, row: bool) {
@@ -317,6 +327,7 @@ pub fn provide(
         error: signal(None),
         beside_content: signal(false),
         in_row: signal(false),
+        first_line: signal(None),
     };
     provide_context(Some(state));
     state
@@ -397,6 +408,52 @@ impl Joined {
     /// (layout does not shrink a view unless told to).
     pub fn in_row(&self) -> bool {
         self.field.is_some_and(|f| f.in_row())
+    }
+
+    /// Tells the field how far below the control's top the middle of its
+    /// first line of text is (`middle`, read in a binding), while the
+    /// control lives: a column of text beside it in a horizontal field
+    /// moves down by what that is lower than the middle of the text's own
+    /// first line, so the two lines are level ([`FieldState::first_line`]).
+    /// Nothing outside a field.
+    pub fn report_first_line(&self, middle: impl Fn() -> Points + 'static) {
+        let Some(f) = self.field else {
+            return;
+        };
+        effect(move || {
+            let m = Some(middle());
+            if f.first_line.get_untracked() != m {
+                f.first_line.set(m);
+            }
+        });
+        cleanup(move || {
+            f.first_line.try_set(None);
+        });
+    }
+}
+
+/// How far a column of text beside a control moves down, its first line
+/// `line` tall, so that line is level with the control's first line
+/// (`field`'s [`FieldState::first_line`]): none when the control's line is
+/// not lower, or outside a horizontal field with a `FieldContent`.
+pub fn text_offset(field: Option<FieldState>, line: Points) -> Points {
+    match field {
+        Some(f) if f.beside_content() => f
+            .first_line()
+            .map_or(px(0.0), |middle| (middle - line / 2.0).max(px(0.0))),
+        _ => px(0.0),
+    }
+}
+
+/// How far a control `height` tall with its line in its middle moves down
+/// beside a column of text whose first line is `line` tall, so the two are
+/// level (a slider's track beside a label): none when it is not shorter,
+/// or outside a horizontal field with a `FieldContent`.
+pub fn control_offset(joined: Joined, line: Points, height: Points) -> Points {
+    if joined.beside_content() {
+        ((line - height) / 2.0).max(px(0.0))
+    } else {
+        px(0.0)
     }
 }
 

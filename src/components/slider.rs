@@ -21,7 +21,10 @@ use nsh_core::{
 };
 
 use crate::{
-    components::tooltip::{TOOLTIP, TOOLTIP_FONT_SIZE, TOOLTIP_FOREGROUND},
+    components::{
+        label::LABEL_FONT_SIZE,
+        tooltip::{TOOLTIP, TOOLTIP_FONT_SIZE, TOOLTIP_FOREGROUND},
+    },
     foundation::{
         class::Classes,
         field::{self, Kind},
@@ -604,6 +607,12 @@ pub fn Slider(props: SliderProps, cx: Scope<SliderEvent>) -> impl IntoElement {
                 || props.bubble.get() != SliderBubble::None
         });
 
+    // A plain horizontal track: its middle is its line (the track, taller
+    // than a label on touch screens), for a label beside it.
+    if !wrapped && !vertical {
+        joined.report_first_line(move || thickness() / 2.0);
+    }
+
     let on_change = move |value: &SliderValue| {
         let before = shown.get_untracked();
         let next = track.get_untracked().held(*value);
@@ -710,8 +719,13 @@ pub fn Slider(props: SliderProps, cx: Scope<SliderEvent>) -> impl IntoElement {
                     .min_h(move || t.length(SLIDER_VERTICAL_MIN_HEIGHT))
                     .app_class(Some(SharedString::from("h-full")))
             } else {
-                // Beside a label in a horizontal field, an equal share of the row.
-                s.app_class(move || {
+                // Beside a label in a horizontal field, an equal share of the
+                // row, the track level with the label's first line.
+                s.mt(move || {
+                    let line = line_height(t.length(LABEL_FONT_SIZE));
+                    field::control_offset(joined, line, thickness())
+                })
+                .app_class(move || {
                     Some(SharedString::from(if joined.in_row() {
                         "w-full min-w-0 flex-1"
                     } else {

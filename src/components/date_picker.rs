@@ -331,6 +331,10 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
     let joined = field::join(cx.__host(), Kind::Focus(trigger_ref), move || {
         props.disabled.get()
     });
+    // The field's one line in its middle; an app's trigger says nothing.
+    if props.trigger.with_untracked(Option::is_none) {
+        joined.report_first_line(move || t.length(input::height_token(props.size.get())) / 2.0);
+    }
     cx.methods(DatePickerApi {
         trigger: trigger_ref,
         disabled: props.disabled,

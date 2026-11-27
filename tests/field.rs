@@ -511,8 +511,9 @@ fn a_responsive_field_is_horizontal_from_448_and_never_shown_vertical_first() {
     let narrow = bounds(&app, "label:Narrow");
     let wide_label = bounds(&app, "text:Wide");
     let narrow_label = bounds(&app, "text:Narrow");
-    // Wide: beside its text; narrow: under it.
-    assert_eq!(wide.origin.y, wide_label.origin.y);
+    // Wide: beside its text, the text level with its line (32 tall, so 6
+    // down); narrow: under it.
+    assert_eq!(wide_label.origin.y, wide.origin.y + px(6.0));
     assert!(narrow.origin.y > narrow_label.origin.y);
     // Every frame the wide field's input was given puts it beside its
     // text (at the field's top, past the text), from the first: never
