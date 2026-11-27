@@ -311,7 +311,7 @@ The motion is [Popover](popover.md)'s, shared by every popup; the menu defines n
 | Destructive item | Text and icon `menu-item-destructive-foreground`; highlighted fill `menu-item-destructive-focus`, text unchanged | `text-destructive focus:bg-destructive/10 dark:…/20` |
 | Disabled item | `opacity-disabled`, no highlight; cursor stays the arrow | `data-[disabled]:opacity-50` |
 | Checked (checkbox, radio) | The check or dot shown; the row as at rest | — |
-| Sub trigger, submenu open (`expanded:`) | As highlighted | `data-[state=open]:bg-accent` |
+| Sub trigger, focused or submenu open | As highlighted, while the focus is on it or in its submenu and while the submenu is open: `nsh/base` gives the focus and `expanded` to the slot around the item, so `DropdownMenuSub` tracks them (its focus-within and open state) and lights its trigger through a context | `data-[state=open]:bg-accent` |
 | Trigger, menu open (`expanded:`) | The library's `Button` keeps its hover fill while its popup is open ([Button](button.md)'s States; Decisions 3) | none |
 
 No focus ring on items: the highlight is the focus (`outline-hidden`). The cursor is the arrow everywhere

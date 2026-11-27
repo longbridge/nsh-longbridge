@@ -22,9 +22,9 @@ use crate::{
         icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
         labels::{self, Label},
         menu::{
-            MENU_MIN_WIDTH, MENU_PADDING, MENU_SHEET_PADDING, MENU_SHEET_RADIUS, MENU_SUB_OFFSET,
-            ROW_GROUP, highlight, item_row, menu_as_sheet, menu_size, provide_menu_look,
-            row_icon_color, separator, shortcut,
+            MENU_ITEM_FOCUS_FOREGROUND, MENU_MIN_WIDTH, MENU_PADDING, MENU_SHEET_PADDING,
+            MENU_SHEET_RADIUS, MENU_SUB_OFFSET, ROW_GROUP, highlight, item_row, menu_as_sheet,
+            menu_size, provide_menu_look, row_icon_color, separator, shortcut,
         },
         popup::{self, POPOVER_BORDER, POPOVER_MARGIN, POPOVER_OFFSET, set_popup_style},
         size::Size,
@@ -250,8 +250,10 @@ fn row<B: ComponentBuilder + Styled>(
         .disabled_style(move |s| s.opacity(move || t.number(OPACITY_DISABLED)))
 }
 
-/// A row's leading part: its icon (`menu-item-icon-foreground`), else a
-/// blank of the icon's side for an `inset` row, else nothing.
+/// A row's leading part: its icon (`menu-item-icon-foreground`, the
+/// highlight's text color while `lit`), else a blank of the icon's side
+/// for an `inset` row, else nothing.
+#[allow(clippy::too_many_arguments)]
 fn leading(
     t: Theme,
     size: Memo<Size>,
@@ -260,11 +262,15 @@ fn leading(
     class: Prop<Option<SharedString>>,
     style: Prop<Style>,
     destructive: impl Fn() -> bool + Copy + 'static,
+    lit: impl Fn() -> bool + Copy + 'static,
 ) -> AnyElement {
     let side = move || t.length(icon_size_token(size.get()));
     dynamic(move || match icon.get() {
         Some(name) => Some(
             row_icon_color(icon_view(t, move || name, side), t, destructive)
+                .style_when(lit, move |s| {
+                    s.text_color(move || t.color(MENU_ITEM_FOCUS_FOREGROUND))
+                })
                 .app_class(class)
                 .inline_style(move || style.get())
                 .into_element(),
@@ -367,6 +373,7 @@ pub fn DropdownMenuItem(
         props.icon_class,
         props.icon_style,
         destructive,
+        || false,
     ));
     labels_of(el, props.children, props.label_class, props.label_style)
 }
@@ -745,7 +752,21 @@ pub fn DropdownMenuSub(
             .flex_1()
             .truncate(),
         );
+    // Its trigger item is lit while the focus is on it or inside the
+    // submenu, and while the submenu is open: `nsh/base` gives the focus
+    // and the expanded state to the slot around the item, which the item's
+    // own `focus:` and `expanded:` looks do not see.
+    let own_open = signal(false);
+    let within = signal(false);
+    let root = element_ref();
+    root.on_focus_in(move || within.set(true));
+    root.on_focus_out(move || within.set(false));
+    let open = props.open;
+    provide_context(SubTriggerLit(computed(move || {
+        within.get() || open.get().unwrap_or_else(|| own_open.get())
+    })));
     base_submenu()
+        .element_ref(&root)
         .open(props.open)
         .disabled(props.disabled)
         .offset(move || t.length(MENU_SUB_OFFSET))
@@ -753,10 +774,18 @@ pub fn DropdownMenuSub(
         .back(back)
         .on_open_change(move |e: &BaseSubmenuEvent| {
             let BaseSubmenuEvent::OpenChange(open, reason) = e;
+            if props.open.get_untracked().is_none() {
+                own_open.set(*open);
+            }
             cx.emit(DropdownMenuSubEvent::OpenChange(*open, *reason));
         })
         .child(props.children)
 }
+
+/// What a [`DropdownMenuSub`] gives its trigger item: whether it is lit
+/// (the focus on it or in the submenu, or the submenu open).
+#[derive(Clone, Copy)]
+struct SubTriggerLit(Memo<bool>);
 
 /// The props of [`DropdownMenuSubTrigger`].
 #[derive(Debug, Clone, PartialEq, Props)]
@@ -794,21 +823,33 @@ pub fn DropdownMenuSubTrigger(
     let size = menu_size();
     provide_icon_size(move || size.get());
     let side = move || t.length(icon_size_token(size.get()));
+    // Lit by its submenu (the slot `nsh/base` focuses is around it).
+    let lit = use_context::<SubTriggerLit>().map(|l| l.0);
+    let lit = move || lit.is_some_and(|l| l.get());
     let el = base_item()
         .close_on_select(false)
         .accessibility_label(props.accessibility_label);
-    let el = row(el, t, size, || false).child(leading(
-        t,
-        size,
-        props.icon,
-        props.inset,
-        props.icon_class,
-        props.icon_style,
-        || false,
-    ));
+    let el = row(el, t, size, || false)
+        .style_when(lit, move |s| highlight(s, t, || false))
+        .child(leading(
+            t,
+            size,
+            props.icon,
+            props.inset,
+            props.icon_class,
+            props.icon_style,
+            || false,
+            lit,
+        ));
     let el = labels_of(el, props.children, props.label_class, props.label_style);
     if is_terminal() {
         return el;
     }
-    el.child(row_icon_color(icon_view(t, || IconName::ChevronRight, side), t, || false).ml(auto()))
+    el.child(
+        row_icon_color(icon_view(t, || IconName::ChevronRight, side), t, || false)
+            .style_when(lit, move |s| {
+                s.text_color(move || t.color(MENU_ITEM_FOCUS_FOREGROUND))
+            })
+            .ml(auto()),
+    )
 }
