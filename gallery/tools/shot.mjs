@@ -1,7 +1,10 @@
 // Screenshots of the gallery's web build through Chrome's DevTools protocol
 // (Node's own WebSocket, no packages): `node tools/shot.mjs <url> <out.png>
 // [--dark] [--size 1280x860] [--wait 6000] [--click x,y]... [--hover x,y]
-// [--key Tab]...` (points in CSS pixels; `CHROME` names another browser).
+// [--key Tab]... [--frames 3]` (points in CSS pixels; `CHROME` names another
+// browser). With `--frames n`, n shots scrolled a screen apart, written as
+// `<out>-1.png` … `<out>-n.png` (a tall page in frames, as a very tall
+// window renders blank).
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -55,8 +58,28 @@ for (const k of all("--key")) {
 }
 const hover = opt("--hover");
 if (hover) { const [x, y] = hover.split(",").map(Number); await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y }); await sleep(500); }
-const shot = await send("Page.captureScreenshot", { format: "png" });
-writeFileSync(out, Buffer.from(shot.result.data, "base64"));
+const frames = Number(opt("--frames", "0"));
+const capture = async (path) => {
+  const shot = await send("Page.captureScreenshot", { format: "png" });
+  writeFileSync(path, Buffer.from(shot.result.data, "base64"));
+  console.log(`wrote ${path}`);
+};
+if (frames > 0) {
+  const stem = out.replace(/\.png$/, "");
+  for (let i = 1; i <= frames; i++) {
+    await capture(`${stem}-${i}.png`);
+    if (i < frames) {
+      // The pointer over the page first: the scroll view takes the wheel
+      // under the pointer.
+      const [x, y] = [width / 2 + 120, height / 2];
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+      await sleep(150);
+      await send("Input.dispatchMouseEvent", { type: "mouseWheel", x, y, deltaX: 0, deltaY: height - 120 });
+      await sleep(900);
+    }
+  }
+} else {
+  await capture(out);
+}
 ws.close();
 proc.kill();
-console.log(`wrote ${out}`);
