@@ -261,8 +261,8 @@ The builder setters follow the props; `trigger` takes any element, as `nsh/base`
 | overlay | `fixed inset-0 z-50 bg-black/50` | `inset-0`, fill `dialog-overlay` (`overlay`, black at 50%) |
 | layer | `fixed top-[50%] left-[50%] translate-…` | `inset-0`, centered both ways, `pointer-events: box-none`; bottom padding the software keyboard's height (`keyboard_height()`) so the panel stays centered above a software keyboard |
 | panel | `grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border bg-background p-6 shadow-lg sm:max-w-lg` | A column, gap `dialog-gap` (16), padding `dialog-padding` (24), width 100% of the layer up to `dialog-max-width` (512) with `dialog-margin` (16) kept on each side; corners `dialog-radius` (`radius-lg`, 10); border `border-width` × `dialog-border`; fill `dialog`; text `dialog-foreground`, 14 (`text-sm`, see Decisions 4); shadow tier `dialog-shadow` (4) |
-| close | `absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 … size-4` | An `nsh/base` `Button` with the `x` icon at `icon-size-md` (16), absolutely placed `dialog-close-offset` (16) from the panel's top and right; opacity `dialog-close-opacity` (0.7), 1 under the pointer and while focused; corners `radius-xs` (2, Tailwind's `rounded-xs`); focus ring: the library's (`ring-width` 3, `ring` at `ring-opacity`, outside), not a 2 + offset one; named "Close" (`labels`) |
-| `DialogHeader` | `flex flex-col gap-2 text-center sm:text-left` | A column, gap `dialog-header-gap` (8); text centered while the window is narrower than 640 (Tailwind's `sm`), start-aligned from 640 |
+| close | `absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 … size-4` | An `nsh/base` `Button` with the `x` icon at `icon-size-md` (16), absolutely placed with its end `dialog-close-offset` (24, `dialog-padding`) inside the panel's right edge, on the content's trailing edge, and centered on the title's first line (`dialog-close-offset` + (`dialog-title-font-size` − 16) / 2 = 25 from the top: the title's line is its font size; Decisions 9); opacity `dialog-close-opacity` (0.7), 1 under the pointer and while focused; corners `radius-xs` (2, Tailwind's `rounded-xs`); focus ring: the library's (`ring-width` 3, `ring` at `ring-opacity`, outside), not a 2 + offset one; named "Close" (`labels`) |
+| `DialogHeader` | `flex flex-col gap-2 text-center sm:text-left` | A column, gap `dialog-header-gap` (8); text centered while the window is narrower than 640 (Tailwind's `sm`), start-aligned from 640; beside the "×" (`showCloseButton`) it leaves the button's 16 and `spacing × 2` (8) at its end, at both ends while centered |
 | `DialogTitle` | `text-lg leading-none font-semibold` | Size `dialog-title-font-size` (`text-lg`, 18), line height 1 (18, `leading-none`), `font-weight-semibold` |
 | `DialogDescription` | `text-sm text-muted-foreground` | Size `dialog-description-font-size` (`text-sm`, 14), line height from foundation (20), color `dialog-description-foreground` (`muted-foreground`) |
 | `DialogFooter` | `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end` | Narrower than 640: a column in reverse order (the first button at the bottom, each as wide as the panel), gap `dialog-footer-gap` (8); from 640: a row at the end |
@@ -348,7 +348,7 @@ Values are those of `nsh/base`'s default theme.
 | `dialog-title-font-size` | length | `text-lg` | 18 |
 | `dialog-description-font-size` | length | `text-sm` | 14 |
 | `dialog-description-foreground` | color | `muted-foreground` |  |
-| `dialog-close-offset` | length | `spacing × 4` | 16 |
+| `dialog-close-offset` | length | `dialog-padding` | 24 |
 | `dialog-close-opacity` | number | `0.7` | 0.7 |
 | `dialog-duration` | number | `duration × 4 / 3` | 200 |
 | `dialog-animate` | number | `1` | 1 |
@@ -487,3 +487,7 @@ Settled in review.
 6. **`"select"` for `DialogClose`, `"cancel"` for "×"**: no reason is added to `nsh/base`'s set.
 7. **One `dialog-duration` (200) for the overlay and the panel.**
 8. **A `Button` trigger shows `expanded`** with its hover fill (button.md "States").
+9. **The "×" sits in the header's row**: placed 16 from the top and right, it sat 9 points above the title's middle
+   and 8 outside the content's trailing edge, a corner ornament rather than a part of the header. Centered on the
+   title's first line with its end on the content's edge (`dialog-close-offset` = `dialog-padding`), it shares the
+   header's row and the panel's trailing spine, and `DialogHeader` leaves its room so a long title wraps before it.
