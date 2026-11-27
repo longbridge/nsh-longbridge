@@ -48,7 +48,7 @@ the gap or the joined look, and the items' look (Toggle's).
   corners and shadow. Inside it, the toolbar fills it, with `disabled` passed through: a row, centered, the gap. The
   group holds the value (the app's `value`, else its own signal from `defaultValue`) and provides a context to its
   items: the value, the setter that reports `onChange`, `multiple`, `variant`, `size`, `disabled` (or'ed with a
-  field's) and the item look (joined, the gap, the item padding).
+  field's) and the item look (joined, the gap).
 - **`ToggleGroupItem`** is the library's [Toggle](toggle.md) drawing (`toggle::draw`: the same root,
   `nsh_base::toggle()`, and the same look), with `pressed` = the value holds its `value`, and a press setting the
   value: without `multiple`, `[value]`, or `[]` when it was pressed (a single group lets its pressed item go); with
@@ -115,7 +115,7 @@ the items of a row always match.
 | | |
 |---|---|
 | Group | A row, items centered, as wide as its items (`w-fit`); gap `spacing × spacing-prop` |
-| Item | Toggle's look for the group's `variant` and `size` (heights, type, icons, colors, focus ring, press sink), with horizontal padding `toggle-group-item-padding-x` (12) at every size, so the segments of a row read even, and no minimum width; it does not shrink |
+| Item | Toggle's look for the group's `variant` and `size` (heights, type, icons, colors, focus ring, press sink, padding `toggle-padding-x-<size>`); it does not shrink. An icon alone sits in a square: an item apart is one, as a lone Toggle; a joined item keeps the space between its dividers as wide as it is tall (an outline item draws its edges outside it), so every segment of an icon row is the same (gpui-kit's Design Guides: icon-only controls are square) |
 | Joined (`spacing` 0) | Items touch. Corners: none, but the first item's start corners and the last item's end corners (`toggle-radius`, 8): the group reads as one shape (gpui-kit's Design Guides: a segmented control's end segments follow the container's corners, its middle segments are square). Outline: no edge at an item's start but the first's, so each boundary has one line; the group carries the `xs` shadow (`toggle-outline-shadow`), the items none |
 | Apart (`spacing` > 0) | Each item is a whole Toggle: its own corners, edge and shadow |
 | Focus | A focused item is raised above its neighbors, so its ring is not covered |
@@ -152,14 +152,7 @@ toolbar takes none: NSH gaps 5).
 
 ## Tokens
 
-The items read Toggle's tokens ([toggle.md](toggle.md#tokens)); the group adds one. Generated from the code's
-declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
-
-<!-- tokens:toggle-group -->
-| Token | Type | Derived default | Value |
-|---|---|---|---|
-| `toggle-group-item-padding-x` | length | `spacing × 3` | 12 |
-<!-- /tokens -->
+The group has no tokens of its own: the items read Toggle's ([toggle.md](toggle.md#tokens)), their padding included.
 
 - The joined group's shadow is `toggle-outline-shadow`, its corners `toggle-radius`.
 - Other tokens it reads: `spacing` (the gap), `border-width`, `touch-target`, `shadow`.

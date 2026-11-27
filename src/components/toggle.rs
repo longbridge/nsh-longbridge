@@ -147,8 +147,6 @@ pub(crate) struct ItemLook {
     pub joined: Memo<bool>,
     /// The gap between the items.
     pub gap: Memo<Points>,
-    /// The item's horizontal padding.
-    pub padding_x: Token<kind::Length>,
 }
 
 /// The drawing of a toggle with `props`, alone or as a group's item
@@ -212,10 +210,11 @@ pub(crate) fn draw(
     };
     // Counted from the outer edge: an outline toggle's edge takes its width
     // off the padding, so an icon alone is as square in `outline` as in
-    // `default` (24 / 28 / 32 / 36 at any size).
-    let padding_x = move || match item {
-        Some(i) => t.length(i.padding_x),
-        None => t.length(padding_token(size())) - border(),
+    // `default` (24 / 28 / 32 / 36 at any size). A joined item counts from
+    // its dividers instead (its least width, below).
+    let padding_x = move || {
+        let base = t.length(padding_token(size()));
+        if joined() { base } else { base - border() }
     };
     let slop = move || {
         if let Some(given) = props.hit_slop.get() {
@@ -239,17 +238,28 @@ pub(crate) fn draw(
             None => around,
         }
     };
-    // A joined item's corners and start edge depend on its place in the
-    // row: `first:` and `last:` classes, made from the tokens.
+    // A joined item's corners, start edge and least width depend on its
+    // place in the row: `first:` and `last:` classes, made from the tokens.
+    // Its least width keeps the space between its dividers as wide as the
+    // item is tall, so an icon alone sits in a square, the same in every
+    // segment: an outline item draws its end edge (the first also its start
+    // edge) outside that space.
     let place_class = move || {
         if !joined() {
             return None;
         }
         let radius = t.length(TOGGLE_RADIUS).0;
+        let side = height().0;
         let mut class = format!("first:rounded-s-[{radius}px] last:rounded-e-[{radius}px]");
         if outline() {
             let width = t.length(BORDER_WIDTH).0;
-            class.push_str(&format!(" border-s-0 first:border-s-[{width}px]"));
+            class.push_str(&format!(
+                " border-s-0 first:border-s-[{width}px] min-w-[{}px] first:min-w-[{}px]",
+                side + width,
+                side + 2.0 * width
+            ));
+        } else {
+            class.push_str(&format!(" min-w-[{side}px]"));
         }
         Some(SharedString::from(class))
     };
@@ -266,7 +276,8 @@ pub(crate) fn draw(
         .flex_shrink_0()
         .gap(move || content_gap(t, size()))
         .h(height)
-        .min_w(move || if item.is_some() { px(0.0) } else { height() })
+        // A joined item's is its class's.
+        .style_when(move || !joined(), move |s| s.min_w(height))
         .px(padding_x)
         .rounded(move || {
             if joined() {

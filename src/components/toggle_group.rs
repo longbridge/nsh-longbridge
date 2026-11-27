@@ -18,13 +18,7 @@ use crate::{
         size::Size,
     },
     theme::{seeds::SPACING, theme},
-    tokens,
 };
-
-tokens! {
-    /// An item's horizontal padding, at every size.
-    TOGGLE_GROUP_ITEM_PADDING_X: Length = "toggle-group-item-padding-x" => |t| t.length(SPACING) * 3.0,
-}
 
 /// What an item finds of its group.
 #[derive(Clone, Copy)]
@@ -113,11 +107,7 @@ pub fn ToggleGroup(props: ToggleGroupProps, cx: Scope<ToggleGroupEvent>) -> impl
         variant: props.variant,
         size: props.size,
         disabled,
-        look: ItemLook {
-            joined,
-            gap,
-            padding_x: TOGGLE_GROUP_ITEM_PADDING_X,
-        },
+        look: ItemLook { joined, gap },
     });
     let label = props.accessibility_label;
     // `nsh/base`'s toolbar takes no name: the root is a group around it
