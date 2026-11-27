@@ -1,15 +1,15 @@
 # nsh-longbridge
 
-A component library for [NSH (Native Shell)](https://github.com/longbridge/nsh) apps: the look of
-[shadcn/ui](https://ui.shadcn.com), the behavior of `nsh/base`, one Rust implementation for TSX and Rust apps alike,
-and a look apps customize tier by tier, from a few seed tokens down to a single part of a single component.
+A component library for [NSH (Native Shell)](https://github.com/longbridge/nsh) apps: a quiet, neutral look, the
+behavior of `nsh/base`, one Rust implementation for TSX and Rust apps alike, and a look apps customize tier by tier,
+from a few seed tokens down to a single part of a single component.
 
 - **One package for both languages.** The library is a Rust nshm: the crate `nsh-longbridge` with
   `#[native_module("nsh-longbridge")]` at its root.
   - TSX apps add it to `nsh.json`'s `"dependencies"` and `import { Button } from "nsh-longbridge"`, with generated
     TypeScript declarations.
   - Rust apps depend on the crate and `use nsh_longbridge::{button, ..}`.
-- **shadcn/ui's `neutral` look by default.** A product's or a brand's look is a theme and tokens, never a fork of the
+- **A neutral look by default.** A product's or a brand's look is a theme and tokens, never a fork of the
   components.
 - **Platforms.** The web and the desktops come first (reviewed on macOS; Windows and Linux built and spot-checked).
   Sizes have pointer and touch values from the start; phones are reviewed later. In a terminal, NSH's own terminal
@@ -47,7 +47,7 @@ nsh-longbridge
   src/theme/               Token resolution: seed → semantic → component tokens, scopes, forced appearance
   src/foundation/          Size, radii, control heights, type, icons, focus rings, press feedback, motion, shadows
   src/components/          One component per file, drawn with theme and foundation only
-themes/                    Theme files (shadcn's cssVars), which apps reference or copy in nsh.json's "theme"
+themes/                    Theme files (CSS variables for light and dark), which apps reference or copy in nsh.json's "theme"
 gallery/                   The gallery (a TSX app, web and macOS): documentation and visual review
 docs/                      tokens.md, conventions.md, components/<component>.md
 ```
@@ -110,3 +110,8 @@ Find a component by what it is for. A change that adds or removes a public compo
 | `Textarea` | Multi-line text fields: notes, descriptions, feedback, a message draft; grows with its text | One line (`Input`), rich text or code (`nsh/base`'s editors) |
 | `Toaster`, `toast()`, `dismissToast()` | Toasts, snackbars, flash messages, notifications in the window: saved, copied, failed with "Retry", deleted with "Undo"; a loading toast replaced by its result | What must be answered (`AlertDialog`), a field's error, a lasting state of the page, system notifications outside the window |
 | `Tooltip` | Hints, hover hints: an icon button's name, a truncated label's full text, a shortcut | What the user must see (it hardly shows on touch screens), pressable content (`Popover`) |
+
+## Acknowledgments
+
+The default look and the theme variables' names draw on [shadcn/ui](https://ui.shadcn.com) (MIT), so its themes can be
+used as theme files here.

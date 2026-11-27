@@ -1,6 +1,6 @@
 [package]
 name = "nsh-longbridge"
-description = "Longbridge's shared NSH component library: shadcn/ui's look on nsh/base's behavior, for TSX and Rust apps."
+description = "A component library for NSH apps: a neutral, token-customizable look on nsh/base's behavior, for TSX and Rust apps."
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.97"
