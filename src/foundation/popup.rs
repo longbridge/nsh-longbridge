@@ -137,6 +137,12 @@ pub(crate) fn hold_open() {
     });
 }
 
+/// Whether the current component is inside the content of a library
+/// popup (a `Calendar` there drops its fill).
+pub(crate) fn in_popup() -> bool {
+    use_context::<InPopup>().is_some()
+}
+
 /// Whether a library popup is open on this surface and the current
 /// component is not inside one (tracked): a `Tooltip` here stays hidden.
 pub(crate) fn covered() -> bool {

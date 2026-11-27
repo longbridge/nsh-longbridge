@@ -186,7 +186,17 @@
       "tabs-trigger-padding-x": "calc(var(--spacing) * 2)",
       "tabs-trigger-selected-shadow": "2",
       "tabs-line-indicator-width": "2px",
-      "select-label-font-size": "12px"
+      "select-label-font-size": "12px",
+      "calendar-padding": "calc(var(--spacing) * 3)",
+      "calendar-gap": "calc(var(--spacing) * 4)",
+      "calendar-month-gap": "calc(var(--spacing) * 4)",
+      "calendar-row-gap": "calc(var(--spacing) * 2)",
+      "calendar-cell-size-xs": "calc(var(--control-height-xs))",
+      "calendar-cell-size-sm": "calc(var(--control-height-sm))",
+      "calendar-cell-size-md": "calc(var(--control-height-md))",
+      "calendar-cell-size-lg": "calc(var(--control-height-lg))",
+      "calendar-caption-font-size": "calc(var(--text-sm))",
+      "calendar-weekday-font-size": "calc(var(--font-size-xs))"
     },
     "light": {
       "background": "oklch(1 0 0)",
@@ -333,7 +343,17 @@
       "tabs-line-indicator": "var(--foreground)",
       "select-trigger-hover": "var(--input-background)",
       "select-icon-foreground": "color-mix(in oklab, var(--muted-foreground) 50%, transparent)",
-      "select-label-foreground": "var(--muted-foreground)"
+      "select-label-foreground": "var(--muted-foreground)",
+      "calendar-background": "var(--background)",
+      "calendar-weekday-foreground": "var(--muted-foreground)",
+      "calendar-day-foreground": "var(--button-ghost-foreground)",
+      "calendar-outside-foreground": "var(--muted-foreground)",
+      "calendar-today": "var(--accent)",
+      "calendar-today-foreground": "var(--accent-foreground)",
+      "calendar-selected": "var(--primary)",
+      "calendar-selected-foreground": "var(--primary-foreground)",
+      "calendar-range": "var(--accent)",
+      "calendar-range-foreground": "var(--accent-foreground)"
     },
     "dark": {
       "background": "oklch(0.145 0 0)",
@@ -480,7 +500,17 @@
       "tabs-line-indicator": "var(--foreground)",
       "select-trigger-hover": "color-mix(in oklab, var(--input) 50%, transparent)",
       "select-icon-foreground": "color-mix(in oklab, var(--muted-foreground) 50%, transparent)",
-      "select-label-foreground": "var(--muted-foreground)"
+      "select-label-foreground": "var(--muted-foreground)",
+      "calendar-background": "var(--background)",
+      "calendar-weekday-foreground": "var(--muted-foreground)",
+      "calendar-day-foreground": "var(--button-ghost-foreground)",
+      "calendar-outside-foreground": "var(--muted-foreground)",
+      "calendar-today": "var(--accent)",
+      "calendar-today-foreground": "var(--accent-foreground)",
+      "calendar-selected": "var(--primary)",
+      "calendar-selected-foreground": "var(--primary-foreground)",
+      "calendar-range": "var(--accent)",
+      "calendar-range-foreground": "var(--accent-foreground)"
     }
   }
 }

@@ -36,6 +36,16 @@ tokens! {
     CARD_DESCRIPTION_FONT_SIZE: Length = "card-description-font-size" => |t| t.px(14.0),
 }
 
+/// What a `Card` tells what is inside it: a `Calendar` there drops its
+/// fill, the card's surface showing through.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct InCard;
+
+/// Whether the current component is inside a library `Card`.
+pub(crate) fn in_card() -> bool {
+    use_context::<InCard>().is_some()
+}
+
 /// What a `CardHeader` gives its parts: how many `CardAction`s it holds, so
 /// it makes a column for them.
 #[derive(Debug, Clone, Copy)]
@@ -55,6 +65,7 @@ pub struct CardProps {
 #[component]
 pub fn Card(props: CardProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     provide_text_color();
+    provide_context(InCard);
     let t = theme();
     view()
         .flex_col()

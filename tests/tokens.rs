@@ -273,6 +273,15 @@ fn the_tabs_token_table_is_current() {
 }
 
 #[test]
+fn the_calendar_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/calendar.md"),
+        "calendar",
+        &token_table(nsh_longbridge::components::calendar::TOKENS),
+    );
+}
+
+#[test]
 fn the_menu_token_table_is_current() {
     check_block(
         &root().join("docs/components/dropdown-menu.md"),

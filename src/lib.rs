@@ -20,6 +20,10 @@ pub mod theme;
 
 use nsh_core::prelude::*;
 
+/// `chrono`, the dates of `Calendar` and `DatePicker`: the version
+/// `nsh/base` uses, so an app builds its dates with the same crate.
+pub use chrono;
+
 pub use crate::{
     components::{
         alert_dialog::{
@@ -36,6 +40,10 @@ pub use crate::{
         },
         badge::{Badge, BadgeElement, BadgeProps, BadgeVariant, badge},
         button::{Button, ButtonElement, ButtonEvent, ButtonProps, ButtonVariant, button},
+        calendar::{
+            Calendar, CalendarElement, CalendarEntry, CalendarEvent, CalendarItemKind,
+            CalendarProps, CalendarValue, Date, Matcher, YearRange, calendar,
+        },
         card::{
             Card, CardAction, CardActionElement, CardActionProps, CardContent, CardContentElement,
             CardContentProps, CardDescription, CardDescriptionElement, CardDescriptionProps,
@@ -137,6 +145,7 @@ fn native(registry: &mut Registry) {
         .register::<AlertDialogTitle>()
         .register::<Badge>()
         .register::<Button>()
+        .register::<Calendar>()
         .register::<Card>()
         .register::<CardAction>()
         .register::<CardContent>()
