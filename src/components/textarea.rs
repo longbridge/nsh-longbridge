@@ -142,6 +142,10 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
         props.disabled.get()
     });
     let disabled = move || props.disabled.get() || joined.disabled();
+    // Its first line under its edge and its padding.
+    joined.report_first_line(move || {
+        t.length(INPUT_BORDER_WIDTH) + t.length(TEXTAREA_PADDING_Y) + line_height(font_size()) / 2.0
+    });
     let invalid = move || props.invalid.get() || joined.invalid();
     let main = group.is_some_and(|g| g.join(field, invalid, disabled));
     let report_focus = move |on: bool| {

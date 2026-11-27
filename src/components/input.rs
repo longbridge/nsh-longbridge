@@ -190,6 +190,9 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
     });
     let disabled = move || props.disabled.get() || joined.disabled();
     let invalid = move || props.invalid.get() || joined.invalid();
+    // One line of text in the middle (in a group too: the group is as
+    // tall).
+    joined.report_first_line(move || height() / 2.0);
     let main = group.is_some_and(|g| g.join(field, invalid, disabled));
     cx.methods(InputApi {
         field,

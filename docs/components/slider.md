@@ -91,7 +91,9 @@ JS turn late, and would line up only while the app keeps the two equally wide (D
 - Where a value sits along the track (from 0 at `min` to 1 at `max`, linear or logarithmic) and its default text are
   `nsh/base`'s rules, repeated in the library (NSH gaps 6).
 - It joins an enclosing [Field](field.md) (`field::join`, as an inert control): `disabled` from the field (and a
-  `FieldSet`); there is nothing for a label's press to do (NSH gaps 3).
+  `FieldSet`); there is nothing for a label's press to do (NSH gaps 3). Beside a `FieldContent` in a horizontal field,
+  a plain track (no histogram, marks or bubbles) is centered on the content's first line, as a choice control is
+  (Field's Decisions 5).
 - The root: as wide as its parent (`w-full`; vertical: as tall, at least `slider-vertical-min-height`),
   `opacity-disabled` while disabled (the histogram and marks dim with the thumbs), the arrow cursor.
 
