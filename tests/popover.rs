@@ -309,3 +309,45 @@ fn an_open_popovers_button_trigger_is_lit() {
     );
     assert_ne!(open, rest);
 }
+
+/// From TSX, a library `Button` as the trigger (it takes the press before
+/// the trigger slot's view) opens and closes it, lit while open; a button
+/// in it is not its trigger; a plain view as the trigger still works.
+#[test]
+fn from_tsx_a_button_trigger_opens_and_closes_it() {
+    let mut app = common::start_tsx("tests/tsx/popover.tsx", true);
+    assert!(app.shows("Open at first"));
+    app.press("role:button[Held]").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.shows("Open at first"), "it closes one open at first");
+
+    let rest = common::fill(&app, "role:button[Share]");
+    app.press("role:button[Share]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(app.shows("Anyone with the link"));
+    app.hover("id:away").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    let open = common::fill(&app, "role:button[Share]");
+    assert_eq!(
+        open,
+        light(nsh_longbridge::components::button::BUTTON_OUTLINE_HOVER)
+    );
+    assert_ne!(open, rest);
+
+    app.press("id:copy").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(
+        app.shows("Anyone with the link"),
+        "a button in it keeps it open"
+    );
+    app.press("role:button[Share]").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(
+        !app.shows("Anyone with the link"),
+        "a second press closes it"
+    );
+
+    app.press("id:plain").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(app.shows("From a view"));
+}

@@ -388,3 +388,15 @@ fn without_motion_it_goes_at_once() {
     app.run_for(Duration::from_millis(16)).unwrap();
     assert!(!app.shows("Still"));
 }
+
+/// From TSX, a library `Button` as the trigger (it takes the press before
+/// the trigger slot's view) opens it; its `DialogClose` closes it.
+#[test]
+fn from_tsx_a_button_trigger_opens_it() {
+    let mut app = common::start_tsx("tests/tsx/dialog.tsx", true);
+    for _ in 0..2 {
+        open(&mut app);
+        app.press("role:button[Cancel]").unwrap();
+        gone(&mut app);
+    }
+}

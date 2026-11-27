@@ -330,3 +330,18 @@ fn an_icon_with_its_own_size_keeps_it_in_the_media() {
     let icon = bounds(&app, "id:icon");
     assert_eq!(icon.size.width.0, 14.0);
 }
+
+/// From TSX, a library `Button` as the trigger (it takes the press before
+/// the trigger slot's view) opens it; Cancel and the action close it.
+#[test]
+fn from_tsx_a_button_trigger_opens_it() {
+    let mut app = common::start_tsx("tests/tsx/alert_dialog.tsx", true);
+    for answer in ["Cancel", "Remove"] {
+        app.press("role:button[Delete]").unwrap();
+        app.run_for(Duration::from_millis(400)).unwrap();
+        assert!(app.shows("Delete 3 files?"), "it opens before {answer}");
+        app.press(&format!("role:button[{answer}]")).unwrap();
+        app.run_for(Duration::from_millis(400)).unwrap();
+        assert!(!app.shows("Delete 3 files?"), "{answer} closes it");
+    }
+}

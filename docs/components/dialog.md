@@ -70,8 +70,9 @@ without the overlay: a preview of the look (the gallery's scenes), its buttons c
 - **No `DialogTrigger`: a `trigger` slot on `Dialog`**, as `nsh/base`'s `Popover` and `Sheet` take theirs and this
   library's `Popover` does. NSH has no `asChild`: a `DialogTrigger` wrapping the app's `Button` would be a second
   pressable around the first, which takes the press. The slot's element gets the press listener and the
-  accessibility state (`hasPopup`, `expanded`) as `nsh/base`'s `Popover` gives its trigger. A dialog opened by the
-  app (`open`) needs no trigger.
+  accessibility state (`hasPopup`, `expanded`) as `nsh/base`'s `Popover` gives its trigger. A library `Button`
+  there takes the press itself; the dialog gives it its toggle through `foundation::trigger` (NSH gaps 7). A dialog
+  opened by the app (`open`) needs no trigger.
 - **No `DialogPortal`, no `DialogOverlay` component**: the modal is the portal, and the overlay is a part of
   `DialogContent` (`overlayClass` / `overlayStyle`), as shadcn's `DialogContent` renders its `DialogOverlay`.
 - **`DialogClose` is a `Button`** that closes the dialog (shadcn's footer `Close` is a `Button` inside a
@@ -466,6 +467,9 @@ dialog()
 6. **Inherited text styles.** The modal's content inherits the text styles where the `Dialog` is placed (as the
    tooltip's hint layer does, Tooltip's gap 7); the panel resets them (see "Text styles" above). Italics and
    alignment have no reset setter and still pass through.
+7. **A pressable in the trigger slot takes the press** (Popover's NSH gap 7): a library `Button` as the trigger, from
+   TSX, opens the dialog through `foundation::trigger`; the modal's content ends that context, so `DialogClose` and
+   the alert's buttons are not the trigger. A TSX test guards it.
 
 ## Decisions
 

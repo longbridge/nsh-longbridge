@@ -21,6 +21,7 @@ use crate::{
         labels::{self, Label},
         motion, shadow,
         size::{Size, hit_slop},
+        trigger,
         typography::{line_height, reset_inherited, semibold},
     },
     theme::{
@@ -408,6 +409,17 @@ pub(crate) fn root(
         description,
         answers,
     });
+    // A library `Button` as the trigger takes the press itself.
+    let one = trigger::OnePress::new();
+    let toggle = change.clone();
+    trigger::provide(
+        move || {
+            if one.first() {
+                toggle(!open.get_untracked(), OpenChangeReason::TriggerPress)
+            }
+        },
+        move || open.get(),
+    );
     let trigger_change = change.clone();
     let escape_change = change;
     let escape_emit = emit;
@@ -423,9 +435,14 @@ pub(crate) fn root(
                     has_popup: true,
                     ..AccessibilityState::default()
                 })
-                .on_press(move || change(!open.get_untracked(), OpenChangeReason::TriggerPress))
+                .on_press(move || {
+                    if one.first() {
+                        change(!open.get_untracked(), OpenChangeReason::TriggerPress)
+                    }
+                })
         }))
         .child(when(presence.mounted, move || {
+            trigger::clear();
             let (change, emit) = (escape_change.clone(), escape_emit.clone());
             let modal = base_modal()
                 .optional_label(move || label.get().or_else(|| title_text.get()))

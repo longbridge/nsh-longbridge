@@ -44,7 +44,8 @@ is `nsh/base`'s:
 shadcn has `Popover > PopoverTrigger + PopoverContent` (+ `PopoverAnchor`). Here, as `nsh/base`'s `Popover`:
 
 - **No `PopoverTrigger`: a `trigger` slot**. NSH has no `asChild`, and `nsh/base` needs the trigger's element to place
-  the popup against it and to give it the press and the accessibility state.
+  the popup against it and to give it the press and the accessibility state. A library `Button` there takes the press
+  itself and opens the popover through the library (NSH gaps 7).
 - **No `PopoverContent`: `Popover`'s children are the content**, and `Popover`'s `class` / `style` style the popup
   (the panel), as `Tooltip`'s style its bubble. shadcn's `PopoverContent` props `side`, `align`, `sideOffset` are
   `Popover`'s `placement`, `align` and the `popover-offset` token.
@@ -309,6 +310,17 @@ popover()
    "Implementation"). A popup drawn on `popupStyle` (a menu's) reads its surface as it opens.
 6. **The shadow on `nsh/base`'s popup**: verified headless on NSH 0.7.0, the surface's shadow reaches the panel and
    nothing around it clips (a test guards it). Whether each platform draws it is for the web and macOS screenshots.
+7. **A pressable in the trigger slot takes the press** (found on the web gallery, reproduced headless from TSX on NSH
+   0.7.0). The slot's view holds the press listener; a library `Button` given as `trigger` from TSX is a pressable
+   of its own inside it, so the press stops at the `Button` and the popover does not open (a plain view as the
+   trigger works). Workaround (`foundation::trigger`): the library keeps the open state (`nsh/base`'s popover is
+   controlled) and gives the slot's content its toggle and open state through context; a library `Button` there
+   runs the toggle after its own press and is lit while open. The content is drawn by a panel component of its own,
+   which ends the context, so a button in the popover is not its trigger. Once an alert dialog has closed, the
+   slot's view and the `Button` in it can both hear the next press; the library lets one through (presses closer
+   than 50 ms are one). Shared with `Dialog`, `AlertDialog` and `DropdownMenu`; TSX tests guard each. An app's own
+   pressable as the trigger is not covered. The NSH fix would be a slot's press listener hearing the presses of a
+   pressable inside it (as Radix's `asChild` merges them), or a way to hand a slot's press to its content.
 
 ## Decisions
 

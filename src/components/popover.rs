@@ -9,6 +9,7 @@ use nsh_core::{element::Style, prelude::*};
 use crate::{
     foundation::{
         popup::{self, POPOVER_MARGIN, POPOVER_OFFSET},
+        trigger,
         typography::{line_height, medium},
     },
     theme::{
@@ -103,24 +104,42 @@ pub fn Popover(props: PopoverProps, cx: Scope<PopoverEvent>) -> impl IntoElement
     // one until the core places it.
     let side = signal(props.placement.get_untracked());
     let animate = move || popup::animate(t);
+    // The panel's look: content `nsh/base`'s popover places takes the
+    // context of where it is, under it, not of where it was made.
+    provide_context(PanelLook {
+        class: props.class,
+        style: props.style,
+    });
     // Made on each opening: counted among the open popups while it is
     // there.
     let panel = move || {
         untracked(|| {
             popup::hold_open();
-            popup::surface(view(), t)
-                .flex_col()
-                .w(move || t.length(POPOVER_WIDTH))
-                .p(move || t.length(POPOVER_PADDING))
-                .app_class(props.class)
-                .inline_style(move || props.style.get())
-                .child(props.children)
+            popover_panel().child(props.children)
         })
     };
+    // The open state, the app's or its own: kept here (`nsh/base`'s
+    // popover is controlled) so a library `Button` as the trigger, which
+    // takes the press itself, can open it too.
+    let own_open = signal(props.default_open.get_untracked());
+    let is_open = move || props.open.get().unwrap_or_else(|| own_open.get());
+    let one = trigger::OnePress::new();
+    let change = move |open: bool, reason: OpenChangeReason| {
+        if reason == OpenChangeReason::TriggerPress && !one.first() {
+            return;
+        }
+        if props.open.get_untracked().is_none() {
+            own_open.set(open);
+        }
+        cx.emit(PopoverEvent::OpenChange(open, reason));
+    };
+    trigger::provide(
+        move || change(!untracked(is_open), OpenChangeReason::TriggerPress),
+        is_open,
+    );
     base_popover()
         .trigger(props.trigger.place(|trigger| trigger))
-        .open(props.open)
-        .default_open(props.default_open)
+        .open(move || Some(is_open()))
         .placement(props.placement)
         .align(props.align)
         .offset(move || t.length(POPOVER_OFFSET))
@@ -135,7 +154,7 @@ pub fn Popover(props: PopoverProps, cx: Scope<PopoverEvent>) -> impl IntoElement
         .popup_ending_class(move || popup::ending_class(animate()))
         .on_open_change(move |e: &BaseEvent| {
             if let BaseEvent::OpenChange(open, reason) = e {
-                cx.emit(PopoverEvent::OpenChange(*open, *reason));
+                change(*open, *reason);
             }
         })
         .on_open(move || cx.emit(PopoverEvent::Open))
@@ -151,6 +170,37 @@ pub fn Popover(props: PopoverProps, cx: Scope<PopoverEvent>) -> impl IntoElement
             }
         })
         .child(dynamic(panel))
+}
+
+/// The popover's `class` and `style`, for its panel.
+#[derive(Clone, Copy)]
+struct PanelLook {
+    class: Prop<Option<SharedString>>,
+    style: Prop<Style>,
+}
+
+/// The props of [`PopoverPanel`].
+#[derive(Debug, Clone, PartialEq, Props)]
+struct PopoverPanelProps {
+    /// The popover's content.
+    children: Prop<Children>,
+}
+
+/// A popover's panel: a component of its own so that the app's content,
+/// under it, is not the popover's trigger (`trigger::clear`), as it would
+/// be under `nsh/base`'s popover alone (the trigger is under it too).
+#[component]
+fn PopoverPanel(props: PopoverPanelProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    let t = theme();
+    let look = use_context::<PanelLook>().expect("a popover's panel is in a popover");
+    trigger::clear();
+    popup::surface(view(), t)
+        .flex_col()
+        .w(move || t.length(POPOVER_WIDTH))
+        .p(move || t.length(POPOVER_PADDING))
+        .app_class(look.class)
+        .inline_style(move || look.style.get())
+        .child(props.children)
 }
 
 /// The props of [`PopoverHeader`].

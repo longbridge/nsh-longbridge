@@ -1,6 +1,7 @@
 //! What every component shares: sizes, text, focus, press feedback,
 //! motion, shadows, icons, the field look, the choice controls' label and
-//! hit area, the popup surface, and the library's own words.
+//! hit area, the popup surface, a trigger slot's press, and the library's
+//! own words.
 //! Each rule reads tokens; components use these instead of writing their
 //! own.
 
@@ -16,6 +17,7 @@ pub mod popup;
 pub mod press;
 pub mod shadow;
 pub mod size;
+pub mod trigger;
 pub mod typography;
 
 pub use field::field_look;

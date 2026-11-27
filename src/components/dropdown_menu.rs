@@ -28,6 +28,7 @@ use crate::{
         },
         popup::{self, POPOVER_BORDER, POPOVER_OFFSET},
         size::Size,
+        trigger,
         typography::medium,
     },
     theme::{
@@ -104,16 +105,34 @@ pub fn DropdownMenu(props: DropdownMenuProps, cx: Scope<DropdownMenuEvent>) -> i
     // The side the popup went on, for its entrance's slide.
     let side = signal(props.placement.get_untracked());
     let terminal = is_terminal();
+    // The open state, the app's or its own: kept here (`nsh/base`'s menu
+    // is controlled) so a library `Button` as the trigger, which takes the
+    // press itself, can open it too.
+    let own_open = signal(props.default_open.get_untracked());
+    let is_open = move || props.open.get().unwrap_or_else(|| own_open.get());
+    let one = trigger::OnePress::new();
+    let change = move |open: bool, reason: OpenChangeReason| {
+        if reason == OpenChangeReason::TriggerPress && !one.first() {
+            return;
+        }
+        if props.open.get_untracked().is_none() {
+            own_open.set(open);
+        }
+        cx.emit(DropdownMenuEvent::OpenChange(open, reason));
+    };
+    trigger::provide(
+        move || change(!untracked(is_open), OpenChangeReason::TriggerPress),
+        is_open,
+    );
     let mut root = base_menu()
-        .open(props.open)
-        .default_open(props.default_open)
+        .open(move || Some(is_open()))
         .placement(props.placement)
         .align(props.align)
         .offset(move || t.length(POPOVER_OFFSET))
         .trigger(props.trigger.place(|slot| slot))
         .on_open_change(move |e: &BaseMenuEvent| {
             if let BaseMenuEvent::OpenChange(open, reason) = e {
-                cx.emit(DropdownMenuEvent::OpenChange(*open, *reason));
+                change(*open, *reason);
             }
         })
         .on_open(move || cx.emit(DropdownMenuEvent::Open))
@@ -144,9 +163,25 @@ pub fn DropdownMenu(props: DropdownMenuProps, cx: Scope<DropdownMenuEvent>) -> i
     root.child(dynamic(move || {
         untracked(|| {
             popup::hold_open();
-            props.children
+            dropdown_menu_items().child(props.children)
         })
     }))
+}
+
+/// The props of [`DropdownMenuItems`].
+#[derive(Debug, Clone, PartialEq, Props)]
+struct DropdownMenuItemsProps {
+    /// The menu's items.
+    children: Prop<Children>,
+}
+
+/// A menu's items: a component of their own so that they are not the
+/// menu's trigger (`trigger::clear`), as they would be under `nsh/base`'s
+/// menu alone (the trigger is under it too).
+#[component]
+fn DropdownMenuItems(props: DropdownMenuItemsProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    trigger::clear();
+    props.children
 }
 
 /// The menu's popup: the popup surface, `menu-padding` inside, at least

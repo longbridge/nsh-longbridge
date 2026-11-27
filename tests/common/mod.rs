@@ -22,6 +22,24 @@ pub fn start<C: Component<Props = ()>>(desktop: bool) -> Headless {
     app
 }
 
+/// The TSX app at `entry` (from the crate's root), with `nsh/base` and
+/// the library as its UI sets, as [`start`] makes it.
+pub fn start_tsx(entry: &str, desktop: bool) -> Headless {
+    let sets = vec![nsh_base::registry(), nsh_longbridge::registry()];
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(entry);
+    let bundle = nsh_testing::compile_tsx(&path, &sets).unwrap();
+    let mut config = EngineConfig {
+        viewport: Viewport::new(px(800.0), px(600.0)),
+        clock: nsh_engine::Clock::manual(std::time::SystemTime::now()),
+        ui_sets: sets,
+        ..EngineConfig::new(bundle)
+    };
+    config.environment.os = if desktop { Os::MacOs } else { Os::Ios };
+    let mut app = Headless::start(config).unwrap();
+    app.first_render().unwrap();
+    app
+}
+
 /// Where `selector` is.
 pub fn bounds(app: &Headless, selector: &str) -> nsh_core::geometry::Bounds<Points> {
     app.screen()

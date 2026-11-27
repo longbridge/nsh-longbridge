@@ -56,7 +56,8 @@ of `Menu`** (`trigger`), which the menu binds (its press, keys, `expanded`, the 
 and its children are the items; a component cannot route a child component into its parent's slot. So:
 
 - No `DropdownMenuTrigger`: the trigger is the `trigger` prop, any element (`trigger={<Button>Open</Button>}`), as
-  shadcn's `<DropdownMenuTrigger asChild>`.
+  shadcn's `<DropdownMenuTrigger asChild>`. A library `Button` there takes the press itself and opens the menu
+  through the library (NSH gaps 8).
 - No `DropdownMenuContent`: its props are `DropdownMenu`'s (`placement`, `align`, `contentClass`, `contentStyle`), and
   `DropdownMenu`'s children are the items.
 - No `DropdownMenuPortal`: NSH's overlays are above everything already.
@@ -514,6 +515,9 @@ dropdown_menu()
 6. **No descendant selectors** (shadcn's `[&_svg]:size-4 text-muted-foreground`): an `Icon` child gets its size from the
    item's context (`provide_icon_size`) but the item's text color. Workaround: the `icon` prop.
 7. **String children** (Button's G0): until NSH releases its fix, the gallery wraps them in `<Text>`.
+8. **A pressable in the trigger slot takes the press** (Popover's NSH gap 7): the library keeps the open state
+   (`nsh/base`'s menu is controlled) and a library `Button` as the trigger opens it through `foundation::trigger`;
+   the items are drawn under a component of their own that ends the context. A TSX test guards it.
 
 ## Decisions
 

@@ -420,3 +420,22 @@ fn a_triggers_tooltip_stays_out_of_its_open_menu() {
     app.run_for(Duration::from_millis(400)).unwrap();
     assert!(!app.shows("Profile"), "the first Escape closes the menu");
 }
+
+/// From TSX, a library `Button` as the trigger (it takes the press before
+/// the trigger slot's view) opens and closes it; an item closes it.
+#[test]
+fn from_tsx_a_button_trigger_opens_and_closes_it() {
+    let mut app = common::start_tsx("tests/tsx/dropdown_menu.tsx", true);
+    let open = |app: &mut Headless| {
+        app.press("role:button[Account]").unwrap();
+        app.run_for(Duration::from_millis(400)).unwrap();
+    };
+    open(&mut app);
+    assert!(app.shows("Settings"));
+    open(&mut app);
+    assert!(!app.shows("Settings"), "a second press closes it");
+    open(&mut app);
+    app.press("role:menuitem[Settings]").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.shows("Settings"), "an item closes it");
+}

@@ -14,6 +14,7 @@ use crate::{
         press::{BUTTON_SCALE, press},
         shadow,
         size::{Size, hit_slop},
+        trigger,
         typography::{font_size_token, line_height, medium},
     },
     theme::{
@@ -244,6 +245,27 @@ pub(crate) fn draw(
     };
 
     let link = props.variant.get_untracked() == ButtonVariant::Link;
+    // An overlay's trigger: the press stops here, not at the slot's view,
+    // so it opens the overlay from here (`foundation::trigger`).
+    let trigger = trigger::current();
+    let expanded = trigger.clone();
+    // Its overlay is open: lit as under the pointer, until it closes (the
+    // slot's view has the trigger's state, not this one).
+    let lit = computed(move || expanded.as_ref().is_some_and(|t| t.open()));
+    let fill = move || {
+        if lit.get() {
+            hover_fill(t, variant())
+        } else {
+            rest_fill(t, variant())
+        }
+    };
+    let foreground = move || {
+        if lit.get() {
+            hover_foreground(t, variant())
+        } else {
+            rest_foreground(t, variant())
+        }
+    };
     let root = base_button()
         .disabled(props.disabled)
         .busy(props.loading)
@@ -257,6 +279,9 @@ pub(crate) fn draw(
         .on_press(move || {
             if !props.loading.get_untracked() {
                 on_press();
+                if let Some(trigger) = &trigger {
+                    trigger.toggle();
+                }
             }
         })
         .flex_row()
@@ -282,8 +307,8 @@ pub(crate) fn draw(
                 t.color(BUTTON_OUTLINE_BORDER)
             }
         })
-        .bg(move || rest_fill(t, variant()))
-        .text_color(move || rest_foreground(t, variant()))
+        .bg(fill)
+        .text_color(foreground)
         .text_size(font_size)
         .line_height(move || line_height(font_size()))
         .font_weight(medium(t))
@@ -332,7 +357,8 @@ pub(crate) fn draw(
             )
         })
         // The popup it opens is open (a dialog's, a popover's, a menu's):
-        // lit as under the pointer, until it closes.
+        // lit as under the pointer, until it closes. (Its own state when
+        // the trigger slot's view is laid out as it; else `lit`.)
         .expanded(move |s| {
             s.bg(move || hover_fill(t, variant()))
                 .text_color(move || hover_foreground(t, variant()))

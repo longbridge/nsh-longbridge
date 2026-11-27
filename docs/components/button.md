@@ -119,7 +119,7 @@ States).
 | invalid | The outline variant's edge is `button-border-invalid`; the focus ring `button-ring-invalid` | Not announced (a button holds no form value) |
 | disabled | `opacity-disabled` (0.5), no hover, no sink | No presses, no focus |
 | loading | The spinner replaces the leading icon, **not dimmed**, no hover, no sink | No `onPress`, from the keyboard either; announced as busy; still focusable |
-| expanded (P2) | The hover fill (and text color) of its variant, held while the popup it opens is open (a `Dialog`, `AlertDialog`, `Popover` or menu trigger); no sink | Set by the popup on its trigger (`accessibilityState.expanded`); drawn with NSH's `expanded` styles (Rust `.expanded_style(..)`, Tailwind `aria-expanded:`); announced as expanded |
+| expanded (P2) | The hover fill (and text color) of its variant, held while the popup it opens is open (a `Dialog`, `AlertDialog`, `Popover` or menu trigger); no sink | Set by the popup on its trigger (`accessibilityState.expanded`); drawn with NSH's `expanded` styles (Rust `.expanded_style(..)`, Tailwind `aria-expanded:`); announced as expanded. When the trigger slot's view holds that state instead (a TSX trigger), the overlay's open state reaches the button through `foundation::trigger` (popover.md, NSH gaps 7) |
 
 Colors, shadow and the sink transition over `duration` (150ms, `cubic-bezier(0.4, 0, 0.2, 1)`), as shadcn's
 `transition-all`; with reduced motion they take no time. The spinner keeps turning with reduced motion: it says that
