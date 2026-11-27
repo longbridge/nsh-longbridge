@@ -127,11 +127,16 @@ export function DropdownMenuPage() {
   );
 }
 
-/** An app's header: the workspace, its navigation and the account menu at the end. */
+/**
+ * An app's header: the workspace, its navigation and the account menu at the
+ * end, held open as the page opens (it closes as any menu does) in a frame
+ * tall enough for it.
+ */
 function AppHeader() {
   const last = signal("");
+  const open = signal(true);
   return (
-    <View class="w-full gap-6">
+    <View class="w-full min-h-[400px] justify-between">
       <View class="flex-row items-center gap-4 rounded-xl border border-border bg-background px-4 py-3">
         <View class="flex-row items-center gap-2">
           <View class="size-7 items-center justify-center rounded-md bg-primary">
@@ -147,18 +152,18 @@ function AppHeader() {
             <Text>Deployments</Text>
           </Button>
         </View>
-        <AccountMenu onSelect={(what) => last.set(what)} />
+        <AccountMenu open={open()} onOpenChange={(o) => open.set(o)} onSelect={(what) => last.set(what)} />
       </View>
-      <Text class="self-center text-xs text-muted-foreground">
-        {last() === "" ? "Open the account menu, or focus it and press ↓." : `Chose: ${last()}`}
-      </Text>
+      <Text class="text-xs text-muted-foreground">{last() === "" ? "Choose an item: the menu reports it and closes." : `Chose: ${last()}`}</Text>
     </View>
   );
 }
 
-function AccountMenu(props: { onSelect: (what: string) => void }) {
+function AccountMenu(props: { open: boolean; onOpenChange: (open: boolean) => void; onSelect: (what: string) => void }) {
   return (
     <DropdownMenu
+      open={props.open}
+      onOpenChange={(e) => props.onOpenChange(e.open)}
       align="end"
       contentClass="w-56"
       trigger={
