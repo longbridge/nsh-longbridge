@@ -10,7 +10,10 @@ use nsh_core::{
 };
 
 use crate::{
-    components::label::{LABEL_FONT_WEIGHT, LABEL_FOREGROUND},
+    components::{
+        label::{LABEL_FONT_WEIGHT, LABEL_FOREGROUND},
+        table,
+    },
     foundation::{
         choice::{choice_hit_slop, choice_label, choice_offset},
         field::{self, Joined, Kind},
@@ -168,6 +171,8 @@ impl CheckboxApi {
 #[component(methods = CheckboxApi)]
 pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElement {
     provide_text_color();
+    // In a `TableHead` / `TableCell`: the cell drops its end padding.
+    table::register_cell_control();
     let t = theme();
     let size = move || props.size.get();
     let side = move || t.length(size_token(size()));

@@ -39,6 +39,11 @@ pub fn registry() -> Vec<TokenDecl> {
         crate::components::select::TOKENS,
         crate::components::calendar::TOKENS,
         crate::components::date_picker::TOKENS,
+        crate::components::table::TOKENS,
+        crate::components::data_table::TOKENS,
+        crate::components::avatar::TOKENS,
+        crate::components::progress::TOKENS,
+        crate::components::pagination::TOKENS,
     ]
     .concat()
 }

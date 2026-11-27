@@ -35,6 +35,7 @@ use crate::{
         },
         popup::{self, POPOVER_MARGIN, POPOVER_OFFSET, set_popup_style},
         size::Size,
+        trigger,
         typography::line_height,
     },
     theme::{
@@ -216,6 +217,8 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
     // library's on each opening, so the select follows its open state.
     let own_open = signal(props.default_open.get_untracked());
     let is_open = move || props.open.get().unwrap_or_else(|| own_open.get());
+    // A `TableRow` holding it stays lit while it is open.
+    trigger::report_open(is_open);
     let held = signal(false);
     effect(move || {
         if is_open() {

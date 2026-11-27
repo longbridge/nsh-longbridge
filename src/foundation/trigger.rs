@@ -13,6 +13,11 @@
 //! The slot's view can hear the same press as the `Button` in it (seen
 //! once an alert dialog has closed), so the overlay lets one of them
 //! through ([`OnePress`]).
+//!
+//! A container that looks different while an overlay inside it is open (a
+//! `TableRow` holding an open menu; NSH has no `:has()`) counts them
+//! ([`provide_open_inside`]): each overlay reports its open state to the
+//! nearest one ([`report_open`]).
 
 use std::{rc::Rc, time::Duration};
 
@@ -71,9 +76,12 @@ impl Trigger {
 /// JS, takes the context of the component it is in, not of where its slot
 /// is placed. Its content then [`clear`]s it.
 pub(crate) fn provide(toggle: impl Fn() + 'static, open: impl Fn() -> bool + 'static) {
+    let open: Rc<dyn Fn() -> bool> = Rc::new(open);
+    let reported = open.clone();
+    report_open(move || reported());
     provide_context(Some(Trigger {
         toggle: Rc::new(toggle),
-        open: Rc::new(open),
+        open,
     }));
 }
 
@@ -86,4 +94,41 @@ pub(crate) fn clear() {
 /// The overlay whose trigger slot the caller is in, if any.
 pub(crate) fn current() -> Option<Trigger> {
     use_context::<Option<Trigger>>().flatten()
+}
+
+/// How many overlays are open inside a container that shows it.
+#[derive(Clone, Copy)]
+struct OpenInside(Signal<u32>);
+
+/// Counts, in `count`, the overlays below that are open (a `TableRow`
+/// lights while one is). Call it in the container's body.
+pub(crate) fn provide_open_inside(count: Signal<u32>) {
+    provide_context(Some(OpenInside(count)));
+}
+
+/// Reports `open`, an overlay's open state, to the nearest container
+/// counting open overlays ([`provide_open_inside`]), while the overlay is
+/// mounted: nothing outside one. Call it in the overlay's body; overlays
+/// with a trigger slot do through [`provide`].
+pub(crate) fn report_open(open: impl Fn() -> bool + 'static) {
+    let Some(OpenInside(count)) = use_context::<Option<OpenInside>>().flatten() else {
+        return;
+    };
+    let counted = stored(false);
+    effect(move || {
+        let now = open();
+        untracked(|| {
+            if now != counted.get() {
+                counted.replace(now);
+                count.update(|n| {
+                    *n = if now { *n + 1 } else { n.saturating_sub(1) };
+                });
+            }
+        });
+    });
+    cleanup(move || {
+        if counted.get() {
+            count.update(|n| *n = n.saturating_sub(1));
+        }
+    });
 }

@@ -300,6 +300,51 @@ fn the_menu_token_table_is_current() {
 }
 
 #[test]
+fn the_table_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/table.md"),
+        "table",
+        &token_table(nsh_longbridge::components::table::TOKENS),
+    );
+}
+
+#[test]
+fn the_data_table_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/data-table.md"),
+        "data-table",
+        &token_table(nsh_longbridge::components::data_table::TOKENS),
+    );
+}
+
+#[test]
+fn the_avatar_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/avatar.md"),
+        "avatar",
+        &token_table(nsh_longbridge::components::avatar::TOKENS),
+    );
+}
+
+#[test]
+fn the_progress_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/progress.md"),
+        "progress",
+        &token_table(nsh_longbridge::components::progress::TOKENS),
+    );
+}
+
+#[test]
+fn the_pagination_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/pagination.md"),
+        "pagination",
+        &token_table(nsh_longbridge::components::pagination::TOKENS),
+    );
+}
+
+#[test]
 fn names_are_unique_and_kebab_case() {
     let decls = registry();
     let mut seen = std::collections::HashSet::new();

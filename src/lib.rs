@@ -38,6 +38,12 @@ pub use crate::{
             alert_dialog_cancel, alert_dialog_content, alert_dialog_description,
             alert_dialog_footer, alert_dialog_header, alert_dialog_media, alert_dialog_title,
         },
+        avatar::{
+            Avatar, AvatarBadge, AvatarBadgeElement, AvatarBadgeProps, AvatarElement, AvatarEvent,
+            AvatarGroup, AvatarGroupCount, AvatarGroupCountElement, AvatarGroupElement,
+            AvatarGroupProps, AvatarProps, AvatarStatus, avatar, avatar_badge, avatar_group,
+            avatar_group_count,
+        },
         badge::{Badge, BadgeElement, BadgeProps, BadgeVariant, badge},
         button::{Button, ButtonElement, ButtonEvent, ButtonProps, ButtonVariant, button},
         calendar::{
@@ -54,6 +60,14 @@ pub use crate::{
         },
         checkbox::{
             Checkbox, CheckboxApi, CheckboxElement, CheckboxEvent, CheckboxProps, checkbox,
+        },
+        data_table::{
+            DataTable, DataTableAlign, DataTableApi, DataTableCell, DataTableCellClass,
+            DataTableClasses, DataTableColumn, DataTableColumnGroup, DataTableColumnMove,
+            DataTableColumnPress, DataTableContextMenu, DataTableDump, DataTableElement,
+            DataTableEvent, DataTableHeaderCell, DataTablePress, DataTableProps, DataTableRange,
+            DataTableRows, DataTableSelection, DataTableSort, DataTableSortDirection,
+            DataTableStyles, DataTableTarget, data_table,
         },
         date_picker::{
             DatePicker, DatePickerApi, DatePickerElement, DatePickerEvent, DatePickerProps,
@@ -92,12 +106,17 @@ pub use crate::{
             Kbd, KbdElement, KbdGroup, KbdGroupElement, KbdGroupProps, KbdProps, kbd, kbd_group,
         },
         label::{Label, LabelElement, LabelProps, label},
+        pagination::{
+            Pagination, PaginationElement, PaginationEvent, PaginationItemKind,
+            PaginationItemState, PaginationProps, pagination, pagination_items,
+        },
         popover::{
             Popover, PopoverDescription, PopoverDescriptionElement, PopoverDescriptionProps,
             PopoverElement, PopoverEvent, PopoverHeader, PopoverHeaderElement, PopoverHeaderProps,
             PopoverProps, PopoverTitle, PopoverTitleElement, PopoverTitleProps, popover,
             popover_description, popover_header, popover_title,
         },
+        progress::{Progress, ProgressElement, ProgressProps, progress},
         radio_group::{
             RadioGroup, RadioGroupElement, RadioGroupEvent, RadioGroupItem, RadioGroupItemElement,
             RadioGroupItemProps, RadioGroupProps, radio_group, radio_group_item,
@@ -110,6 +129,14 @@ pub use crate::{
         skeleton::{Skeleton, SkeletonElement, SkeletonProps, skeleton},
         spinner::{Spinner, SpinnerElement, SpinnerProps, spinner},
         switch::{Switch, SwitchApi, SwitchElement, SwitchEvent, SwitchProps, switch},
+        table::{
+            Table, TableBody, TableBodyElement, TableBodyProps, TableCaption, TableCaptionElement,
+            TableCaptionProps, TableCell, TableCellElement, TableCellProps, TableElement,
+            TableFooter, TableFooterElement, TableHead, TableHeadElement, TableHeader,
+            TableHeaderElement, TableHeaderProps, TableProps, TableRow, TableRowElement,
+            TableRowProps, table, table_body, table_caption, table_cell, table_footer, table_head,
+            table_header, table_row,
+        },
         tabs::{
             Tabs, TabsContent, TabsContentElement, TabsContentProps, TabsElement, TabsEvent,
             TabsList, TabsListElement, TabsListProps, TabsProps, TabsTrigger, TabsTriggerElement,
@@ -148,6 +175,10 @@ fn native(registry: &mut Registry) {
         .register::<AlertDialogHeader>()
         .register::<AlertDialogMedia>()
         .register::<AlertDialogTitle>()
+        .register::<Avatar>()
+        .register::<AvatarBadge>()
+        .register::<AvatarGroup>()
+        .register::<AvatarGroupCount>()
         .register::<Badge>()
         .register::<Button>()
         .register::<Calendar>()
@@ -159,6 +190,7 @@ fn native(registry: &mut Registry) {
         .register::<CardHeader>()
         .register::<CardTitle>()
         .register::<Checkbox>()
+        .register::<DataTable>()
         .register::<DatePicker>()
         .register::<Dialog>()
         .register::<DialogClose>()
@@ -183,10 +215,12 @@ fn native(registry: &mut Registry) {
         .register::<Kbd>()
         .register::<KbdGroup>()
         .register::<Label>()
+        .register::<Pagination>()
         .register::<Popover>()
         .register::<PopoverDescription>()
         .register::<PopoverHeader>()
         .register::<PopoverTitle>()
+        .register::<Progress>()
         .register::<RadioGroup>()
         .register::<RadioGroupItem>()
         .register::<Select>()
@@ -194,6 +228,14 @@ fn native(registry: &mut Registry) {
         .register::<Skeleton>()
         .register::<Spinner>()
         .register::<Switch>()
+        .register::<Table>()
+        .register::<TableBody>()
+        .register::<TableCaption>()
+        .register::<TableCell>()
+        .register::<TableFooter>()
+        .register::<TableHead>()
+        .register::<TableHeader>()
+        .register::<TableRow>()
         .register::<Tabs>()
         .register::<TabsContent>()
         .register::<TabsList>()
