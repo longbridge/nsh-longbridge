@@ -173,12 +173,12 @@ fn Sizes() -> impl IntoElement {
 fn touch_screens_get_taller_lists() {
     let desktop = start::<Sizes>(true);
     assert_eq!(size(&desktop, "role:tablist[Medium]").1, 32.0);
-    assert_eq!(size(&desktop, "role:tab[Medium]").1, 25.0);
+    assert_eq!(size(&desktop, "role:tab[Medium]").1, 28.0);
     assert_eq!(size(&desktop, "role:tablist[Small]").1, 24.0);
-    assert_eq!(size(&desktop, "role:tab[Small]").1, 17.0);
+    assert_eq!(size(&desktop, "role:tab[Small]").1, 20.0);
     let touch = start::<Sizes>(false);
     assert_eq!(size(&touch, "role:tablist[Medium]").1, 40.0);
-    assert_eq!(size(&touch, "role:tab[Medium]").1, 33.0);
+    assert_eq!(size(&touch, "role:tab[Medium]").1, 36.0);
     assert_eq!(size(&touch, "role:tablist[Small]").1, 32.0);
 }
 
@@ -272,7 +272,7 @@ fn a_vertical_list_is_a_column_of_full_width_tabs() {
     assert_eq!(general.origin.x, appearance.origin.x);
     assert_eq!(general.size.width, appearance.size.width);
     assert!(appearance.origin.y > general.origin.y);
-    assert_eq!(general.size.height.0, 25.0);
+    assert_eq!(general.size.height.0, 28.0);
     // The panel is beside the list.
     let panel = common::bounds(&app, "text:General panel");
     assert!(panel.origin.x > general.origin.x + general.size.width);

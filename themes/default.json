@@ -181,7 +181,7 @@
       "menu-item-match-font-weight": "calc(var(--font-weight-semibold))",
       "tabs-gap": "calc(var(--spacing) * 2)",
       "tabs-list-radius": "calc(var(--radius-lg))",
-      "tabs-list-padding": "calc(var(--spacing) * 0.75)",
+      "tabs-list-padding": "calc(var(--spacing) * 0.5)",
       "tabs-list-height-xs": "calc(var(--control-height-xs))",
       "tabs-list-height-sm": "calc(var(--control-height-sm))",
       "tabs-list-height-md": "calc(var(--control-height-md))",
