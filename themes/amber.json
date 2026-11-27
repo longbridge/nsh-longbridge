@@ -1,0 +1,33 @@
+{
+  "name": "nsh-longbridge amber",
+  "cssVars": {
+    "light": {
+      "primary": "oklch(0.7 0.14 70)",
+      "primary-foreground": "oklch(0.25 0.05 70)",
+      "secondary": "oklch(0.967 0.001 286.375)",
+      "secondary-foreground": "oklch(0.21 0.006 285.885)",
+      "destructive": "oklch(0.58 0.17 25)",
+      "chart-1": "oklch(0.86 0.059 70)",
+      "chart-2": "oklch(0.75 0.105 70)",
+      "chart-3": "oklch(0.65 0.133 70)",
+      "chart-4": "oklch(0.55 0.12 70)",
+      "chart-5": "oklch(0.45 0.096 70)",
+      "sidebar-primary": "oklch(0.7 0.14 70)",
+      "sidebar-primary-foreground": "oklch(0.25 0.05 70)"
+    },
+    "dark": {
+      "primary": "oklch(0.79 0.13 70)",
+      "primary-foreground": "oklch(0.22 0.04 70)",
+      "secondary": "oklch(0.274 0.006 286.033)",
+      "secondary-foreground": "oklch(0.985 0 0)",
+      "destructive": "oklch(0.68 0.14 22)",
+      "chart-1": "oklch(0.88 0.055 70)",
+      "chart-2": "oklch(0.79 0.098 70)",
+      "chart-3": "oklch(0.7 0.123 70)",
+      "chart-4": "oklch(0.61 0.13 70)",
+      "chart-5": "oklch(0.52 0.112 70)",
+      "sidebar-primary": "oklch(0.79 0.13 70)",
+      "sidebar-primary-foreground": "oklch(0.22 0.04 70)"
+    }
+  }
+}

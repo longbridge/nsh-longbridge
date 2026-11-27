@@ -174,7 +174,7 @@ view().bg(move || t.color(BUTTON_DEFAULT)).rounded(move || t.length(BUTTON_RADIU
   Derived lengths are written as `calc(...)`, even a single reference (`calc(var(--x))`): NSH skips `calc()`, so
   this library derives them, and NSH would read a bare `var()` as a color. Derived colors are written as `var()` and
   `color-mix()`, which NSH reads. So an app's Tailwind classes see the derived colors, not the derived lengths.
-- `themes/*.json`: presets (zinc, blue or rose colors, a compact density)
+- `themes/*.json`: presets (zinc, indigo, blue, green, amber or rose colors, a compact density)
 .
 - An app points `nsh.json`'s `"theme"` at its own file and writes only the tokens it changes; to use this library's
   tokens in its Tailwind classes, it copies their entries too.
