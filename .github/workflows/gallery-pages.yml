@@ -1,0 +1,86 @@
+# Builds the gallery for the web and publishes it on GitHub Pages. Pull
+# requests only build it; pushes to main also deploy.
+name: Gallery Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "themes/**"
+      - "gallery/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/gallery-pages.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "themes/**"
+      - "gallery/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/gallery-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to a pull request replaces its build; a deploy runs to the end.
+concurrency:
+  group: gallery-pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NSH_VERSION: v0.7.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The web runtime's C code: clang compiles it for wasm32, llvm-ar archives it.
+      - name: Install clang and LLVM
+        run: sudo apt-get update && sudo apt-get install -y clang llvm libclang-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: gallery -> target
+
+      - name: Install nsh
+        run: |
+          curl -fsSL https://nsh.dev/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build the gallery for the web
+        working-directory: gallery
+        env:
+          AR_wasm32_unknown_unknown: llvm-ar
+        run: |
+          nsh package --target web App.tsx -o "$RUNNER_TEMP/web"
+          site="$RUNNER_TEMP/web/nsh-longbridge Gallery"
+          # Pages compresses on its own; the precompressed copies only add weight.
+          find "$site" \( -name '*.br' -o -name '*.gz' \) -delete
+          mv "$site" "$RUNNER_TEMP/site"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
