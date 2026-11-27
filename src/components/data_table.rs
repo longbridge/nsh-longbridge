@@ -773,7 +773,7 @@ fn part_classes(t: Theme, app: DataTableClasses) -> DataTableClasses {
     c.empty = merge(
         Classes::new()
             .push("items-center justify-center")
-            .length("", "h", t.length(SPACING) * 24.0)
+            .length("", "min-h", t.length(SPACING) * 24.0)
             .color("", "text", t.color(TABLE_CAPTION_FOREGROUND))
             .length("", "text", t.length(TEXT_SM)),
         &app.empty,
