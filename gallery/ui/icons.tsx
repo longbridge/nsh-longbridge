@@ -4,25 +4,16 @@
 
 import { Icon } from "nsh-icon";
 export {
-  ArrowUpRight,
-  Bell,
   Check,
   Copy,
-  CreditCard,
   FileText,
-  House,
   Info,
-  Lock,
-  Mail,
   Menu,
   Monitor,
   Moon,
-  Palette,
   RotateCcw,
   Search,
-  SlidersHorizontal,
   Sun,
-  X,
 } from "nsh-icon-lucide";
 
 /** GitHub's mark (a filled path, in the text color). */
