@@ -129,11 +129,12 @@ In classes (the list's `h-9` is `lg`):
 - Root: `flex gap-2`, a column when horizontal.
 - List: `inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground h-9` (horizontal),
   `h-fit flex-col` (vertical); `default`: `bg-muted`; `line`: `gap-1 bg-transparent rounded-none`.
-- Trigger: `h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2
+- Trigger: `h-[calc(100%-1px)] flex-1 items-center justify-center gap-2 rounded-md border border-transparent px-2
   py-1 text-sm font-medium whitespace-nowrap text-foreground/60 hover:text-foreground transition-all`, icons `size-4`;
   vertical `w-full justify-start`; selected `bg-background text-foreground shadow-sm`, dark `border-input
   bg-input/30 text-foreground`; dark rest `text-muted-foreground`. `line`: selected has no fill, border or shadow, and
-  an underline (`after:`) `bg-foreground h-0.5` at `bottom-[-5px]` (vertical: `w-0.5` at `-right-1`), fading in.
+  an underline (`after:`) `bg-foreground h-0.5` at `bottom-[-5px]` (vertical: `w-0.5` at `-right-1`), fading in. `gap-1` at
+  `xs` and `sm`.
 - Content: `flex-1 outline-none`.
 
 ### Variants
@@ -159,7 +160,7 @@ In classes (the list's `h-9` is `lg`):
   as every control here. A vertical list sizes to its triggers instead, each as tall as in a row.
 - A trigger fills the list's height inside its padding, less 1 (`calc(100%-1px)`), its content centered; it
   has no vertical padding (a fixed `py-1` would fit one size only). Horizontal padding `tabs-trigger-padding-x` (8),
-  icon-to-label gap `spacing × 1.5` (6), text `font-size-<size>` at `font-weight-medium`, one line.
+  icon-to-label gap 4 at `xs` and `sm`, 8 at `md` and `lg` (Button's), text `font-size-<size>` at `font-weight-medium`, one line.
 - Triggers share the list's width, each growing from its content (`flex: 1 1 auto`; see [NSH gaps](#nsh-gaps) 5); the
   list is as wide as its content (`w-fit`, and `h-fit` beside vertical panels: a root that stretches its children does
   not stretch the list, and a row's `items-center` still centers it), or as the app's `class` sets (`w-full`,

@@ -95,13 +95,14 @@ States).
 | `size` | Height (pointer / touch) | Horizontal padding (with an icon) | Gap | Type | Icon | Classes |
 |---|---|---|---|---|---|---|
 | `xs` | 24 / 32 | 8 (6) | 4 | 12 | 12 | `h-6 px-2 has-[>svg]:px-1.5 gap-1 text-xs` |
-| `sm` | 28 / 36 | 12 (10) | 6 | 13 | 14 | `h-7 px-3 has-[>svg]:px-2.5 gap-1.5` |
+| `sm` | 28 / 36 | 12 (10) | 4 | 13 | 14 | `h-7 px-3 has-[>svg]:px-2.5 gap-1` |
 | `md` | 32 / 40 | 16 (12) | 8 | 14 | 16 | `h-8 px-4 has-[>svg]:px-3 gap-2 text-sm` |
 | `lg` | 36 / 48 | 24 (16) | 8 | 14 | 16 | `h-9 px-6 has-[>svg]:px-4 gap-2 text-sm` |
 
 - Heights are `control-height-*` (pointer) and `control-height-touch-*` (touch), 32 at `md`: a medium desktop
   density. For roomier controls, set `control-height: 36`.
-- Paddings and gaps are multiples of `spacing`. With an icon (`icon`, `iconEnd` or loading) both sides shrink
+- Paddings and gaps are multiples of `spacing`. The gap between the icon and the label is 4 at `xs` and `sm`, 8 at
+  `md` and `lg` (gpui-kit's Design Guides), shared with Toggle, a tab and Pagination's Previous and Next. With an icon (`icon`, `iconEnd` or loading) both sides shrink
   (`has-[>svg]`), so the icon and the text sit balanced.
 - Type is `font-size-*`, its line height from foundation's `line_height`; weight `font-weight-medium` (500).
 - Icons are `icon-size-*` (12 / 14 / 16 / 16), paired with the type. The button puts its `size` in context, so an
