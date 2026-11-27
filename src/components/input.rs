@@ -14,12 +14,12 @@ use nsh_core::{
 use crate::{
     foundation::{
         field::{
-            INPUT_FONT_SIZE_LG, INPUT_FONT_SIZE_MD, INPUT_FONT_SIZE_SM, INPUT_FONT_SIZE_XS,
+            self, INPUT_FONT_SIZE_LG, INPUT_FONT_SIZE_MD, INPUT_FONT_SIZE_SM, INPUT_FONT_SIZE_XS,
             INPUT_HEIGHT_LG, INPUT_HEIGHT_MD, INPUT_HEIGHT_SM, INPUT_HEIGHT_XS, INPUT_PADDING_X_LG,
             INPUT_PADDING_X_MD, INPUT_PADDING_X_SM, INPUT_PADDING_X_XS,
-            INPUT_PLACEHOLDER_FOREGROUND, field_look,
+            INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_look,
         },
-        field_ref::{FieldRef, register_field},
+        field_ref::FieldRef,
         size::{Size, pointer},
     },
     theme::{Theme, Token, kind, semantic::TOUCH_TARGET, theme},
@@ -76,7 +76,8 @@ pub struct InputProps {
     /// together.
     #[prop(default)]
     pub size: Prop<Size>,
-    /// No editing and no focus, out of the Tab order, at half opacity.
+    /// No editing and no focus, out of the Tab order, at half opacity. Or'ed
+    /// with an enclosing `Field`'s or `FieldSet`'s.
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// Its text can be focused, selected and copied, not changed; it looks
@@ -84,7 +85,8 @@ pub struct InputProps {
     #[prop(default)]
     pub readonly: Prop<bool>,
     /// The app's checks reject the value: a destructive edge (and ring
-    /// while focused); screen readers say it is invalid.
+    /// while focused); screen readers say it is invalid. Or'ed with an
+    /// enclosing `Field`'s.
     #[prop(default)]
     pub invalid: Prop<bool>,
     /// Hides what is typed: a password field.
@@ -137,6 +139,7 @@ pub enum InputEvent {
 pub struct InputApi {
     field: ElementRef,
     disabled: Prop<bool>,
+    joined: Joined,
 }
 
 #[methods]
@@ -144,7 +147,7 @@ impl InputApi {
     /// Takes the keyboard focus (showing the software keyboard); nothing
     /// while disabled.
     pub fn focus(&self) {
-        if !self.disabled.get_untracked() {
+        if !self.disabled.get_untracked() && !untracked(|| self.joined.disabled()) {
             self.field.focus();
         }
     }
@@ -174,11 +177,16 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
     let size = move || props.size.get();
     let height = move || t.length(height_token(size()));
     let field = element_ref();
+    let joined = field::join(cx.__host(), Kind::Focus(field), move || {
+        props.disabled.get()
+    });
+    let disabled = move || props.disabled.get() || joined.disabled();
+    let invalid = move || props.invalid.get() || joined.invalid();
     cx.methods(InputApi {
         field,
         disabled: props.disabled,
+        joined,
     });
-    register_field(cx.__host(), field, props.disabled);
 
     let controlled = props.value.get_untracked().is_some();
     let el = host_input()
@@ -209,17 +217,18 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
         .when(props.max_length.get_untracked().is_some(), |el| {
             el.max_length(move || props.max_length.get().unwrap_or(u32::MAX))
         })
-        .auto_focus(move || props.auto_focus.get() && !props.disabled.get())
+        .auto_focus(move || props.auto_focus.get() && !disabled())
         .select_text_on_focus(props.select_text_on_focus)
         // A disabled field takes no edits either (the platforms' text
         // fields stay editable under a disabled view), as `NumberInput`.
-        .readonly(move || props.readonly.get() || props.disabled.get())
-        .disabled(props.disabled)
+        .readonly(move || props.readonly.get() || disabled())
+        .disabled(disabled)
         .optional_label(props.accessibility_label)
         .accessibility_state(move || AccessibilityState {
-            invalid: props.invalid.get(),
+            invalid: invalid(),
             ..AccessibilityState::default()
         })
+        .accessibility_described_by_target(move || joined.described_by())
         .on_change(move |text: &str| cx.emit(InputEvent::Change(text.to_owned())))
         .on_submit(move |text: &str| cx.emit(InputEvent::Submit(text.to_owned())))
         .on_focus(move || cx.emit(InputEvent::Focus))
@@ -234,7 +243,7 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
             s.placeholder_color(move || t.color(INPUT_PLACEHOLDER_FOREGROUND))
         })
         .disabled_style(|s| s.cursor(Cursor::Default));
-    field_look(el, t, move || props.invalid.get())
+    field_look(el, t, invalid)
 }
 
 /// Rust: `label().html_for(email)` with `email` this input's ref.

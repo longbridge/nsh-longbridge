@@ -23,9 +23,10 @@ use crate::{
     },
     foundation::{
         field::{
-            INPUT_BACKGROUND, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID, INPUT_FOREGROUND,
-            INPUT_PLACEHOLDER_FOREGROUND, field_look,
+            self, INPUT_BACKGROUND, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID, INPUT_FOREGROUND,
+            INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_look,
         },
+        field_ref::FieldRef,
         icon::{IconName, icon_size_token, icon_view, provide_text_color},
         menu::{
             MENU_ITEM_FOCUS, MENU_ITEM_FOCUS_FOREGROUND, MENU_ITEM_GAP, MENU_ITEM_PADDING_X,
@@ -78,11 +79,13 @@ pub struct SelectProps {
     /// padding and chevron, as an `Input` of that size, and the rows'.
     #[prop(default)]
     pub size: Prop<Size>,
-    /// It does not open, takes no focus, and is dimmed.
+    /// It does not open, takes no focus, and is dimmed. Or'ed with an
+    /// enclosing `Field`'s or `FieldSet`'s.
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// The app's checks reject the value: a red edge (and ring while
-    /// focused); screen readers say it is invalid.
+    /// focused); screen readers say it is invalid. Or'ed with an enclosing
+    /// `Field`'s.
     #[prop(default)]
     pub invalid: Prop<bool>,
     /// Open (controlled): the app sets it in `onOpenChange`. Left out, the
@@ -162,16 +165,45 @@ pub enum SelectEvent {
     Close,
 }
 
+/// The methods of a [`Select`]'s ref.
+pub struct SelectApi {
+    trigger: ElementRef,
+    disabled: Prop<bool>,
+    joined: Joined,
+}
+
+#[methods]
+impl SelectApi {
+    /// Moves the keyboard focus to the trigger (the list stays closed);
+    /// nothing while disabled.
+    pub fn focus(&self) {
+        if !self.disabled.get_untracked() && !untracked(|| self.joined.disabled()) {
+            self.trigger.focus();
+        }
+    }
+}
+
 /// A select: one value chosen from a list. A trigger drawn as
 /// a field shows the chosen item's title (or the placeholder) and opens the
 /// list: a popup at the trigger on desktops (over it on macOS), a sheet at
 /// the bottom on touch screens. Its options are data (`items`), so a list
 /// of thousands makes only the rows in view.
-#[component]
+#[component(methods = SelectApi)]
 pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
     provide_text_color();
     let t = theme();
     let size = move || props.size.get();
+    // A label's press focuses the trigger, as a browser's label does.
+    let trigger_ref = element_ref();
+    let joined = field::join(cx.__host(), Kind::Focus(trigger_ref), move || {
+        props.disabled.get()
+    });
+    cx.methods(SelectApi {
+        trigger: trigger_ref,
+        disabled: props.disabled,
+        joined,
+    });
+    let disabled = move || props.disabled.get() || joined.disabled();
     // The value the trigger and the checks show: the app's, else its own.
     let own = signal(props.default_value.get_untracked());
     let current = computed(move || match props.value.get() {
@@ -202,7 +234,7 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
         .open(props.open)
         .default_open(props.default_open)
         .placeholder(props.placeholder)
-        .disabled(props.disabled)
+        .disabled(disabled)
         .accessibility_label(props.accessibility_label)
         .placement(props.placement)
         .align(props.align)
@@ -242,7 +274,7 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
     }
 
     root = root
-        .trigger(trigger(props.clone(), t, current))
+        .trigger(trigger(props.clone(), t, current, trigger_ref, joined))
         .popup_class(props.content_class)
         // No `onPosition` on a select: no slide, zooming from the middle.
         .popup_starting_class(move || popup::ending_class(popup::animate(t)))
@@ -302,11 +334,20 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
 /// The trigger: a field showing the chosen title or the placeholder, and
 /// the chevron. `nsh/base` makes it the combobox (its role, value, states,
 /// keys and press) and places the list against it.
-fn trigger(props: SelectProps, t: Theme, current: Memo<Option<SharedString>>) -> impl IntoElement {
+/// The trigger's view carries `trigger_ref` and the field's described-by
+/// target: `nsh/base`'s slot binds them to the combobox element it makes of
+/// it.
+fn trigger(
+    props: SelectProps,
+    t: Theme,
+    current: Memo<Option<SharedString>>,
+    trigger_ref: ElementRef,
+    joined: Joined,
+) -> impl IntoElement {
     let size = move || props.size.get();
     let height = move || t.length(input::height_token(size()));
     let font_size = move || t.length(input::font_size_token(size()));
-    let invalid = move || props.invalid.get();
+    let invalid = move || props.invalid.get() || joined.invalid();
     let title = computed(move || {
         current.with(|value| {
             let value = value.as_ref()?;
@@ -319,6 +360,8 @@ fn trigger(props: SelectProps, t: Theme, current: Memo<Option<SharedString>>) ->
         })
     });
     let el = view()
+        .element_ref(&trigger_ref)
+        .accessibility_described_by_target(move || joined.described_by())
         .flex_row()
         .items_center()
         .justify_between()
@@ -377,6 +420,15 @@ fn trigger(props: SelectProps, t: Theme, current: Memo<Option<SharedString>>) ->
         .child(value)
         .child(chevron)
 }
+
+/// Rust: `label().html_for(country)` with `country` this select's ref.
+impl From<ComponentRef<Select>> for FieldRef {
+    fn from(r: ComponentRef<Select>) -> Self {
+        FieldRef::lazy(move || r.node())
+    }
+}
+
+nsh_core::static_reactive!(FieldRef: ComponentRef<Select>);
 
 /// The rows' classes: the highlight (`focus:`, and `active:` for a finger)
 /// from the tokens, which an inline style cannot take, then the app's.

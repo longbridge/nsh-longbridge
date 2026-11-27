@@ -14,6 +14,7 @@ use crate::{
     components::label::{LABEL_FONT_WEIGHT, LABEL_FOREGROUND},
     foundation::{
         choice::{choice_hit_slop, choice_label, choice_offset},
+        field::{self, Kind},
         focus::focus_ring,
         icon::provide_text_color,
         motion,
@@ -77,8 +78,8 @@ tokens! {
 #[derive(Clone, Copy)]
 struct GroupContext {
     value: Prop<Option<SharedString>>,
-    disabled: Prop<bool>,
-    invalid: Prop<bool>,
+    disabled: Memo<bool>,
+    invalid: Memo<bool>,
     size: Prop<Size>,
     cx: Scope<RadioGroupEvent>,
 }
@@ -91,11 +92,13 @@ pub struct RadioGroupProps {
     /// with `onChange`.
     pub value: Prop<Option<SharedString>>,
     /// Disables every item (with each item's own `disabled`); the arrows
-    /// skip disabled items.
+    /// skip disabled items. Or'ed with an enclosing `Field`'s or
+    /// `FieldSet`'s.
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// The app's checks reject the choice (a required choice left empty):
-    /// every item's circle takes a destructive edge. Not announced.
+    /// every item's circle takes a destructive edge. Not announced. Or'ed
+    /// with an enclosing `Field`'s.
     #[prop(default)]
     pub invalid: Prop<bool>,
     /// Every item's size (`xs`, `sm`, `md`, `lg`): its circle and its
@@ -126,10 +129,12 @@ pub enum RadioGroupEvent {
 #[component]
 pub fn RadioGroup(props: RadioGroupProps, cx: Scope<RadioGroupEvent>) -> impl IntoElement {
     let t = theme();
+    // A label's press reaches no item: the group is no one control.
+    let joined = field::join(cx.__host(), Kind::Inert, move || props.disabled.get());
     provide_context(GroupContext {
         value: props.value,
-        disabled: props.disabled,
-        invalid: props.invalid,
+        disabled: computed(move || props.disabled.get() || joined.disabled()),
+        invalid: computed(move || props.invalid.get() || joined.invalid()),
         size: props.size,
         cx,
     });
@@ -148,7 +153,8 @@ pub struct RadioGroupItemProps {
     #[prop(default)]
     pub value: Prop<SharedString>,
     /// No presses and no press feedback, the circle and its label at half
-    /// opacity; the arrows skip it.
+    /// opacity; the arrows skip it. Or'ed with its group's, and with an
+    /// enclosing `Field`'s (a choice card's).
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// What screen readers say, when the children have no text that says
@@ -186,7 +192,7 @@ pub struct RadioGroupItemProps {
 /// around it. Outside a `RadioGroup` it is never checked and reports
 /// nothing.
 #[component]
-pub fn RadioGroupItem(props: RadioGroupItemProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+pub fn RadioGroupItem(props: RadioGroupItemProps, cx: Scope<NoEvent>) -> impl IntoElement {
     provide_text_color();
     let t = theme();
     let group = use_context::<GroupContext>();
@@ -203,8 +209,29 @@ pub fn RadioGroupItem(props: RadioGroupItemProps, _cx: Scope<NoEvent>) -> impl I
                 .is_some_and(|value| value == props.value.get())
         })
     };
-    let disabled = move || props.disabled.get() || group.is_some_and(|g| g.disabled.get());
-    let invalid = move || group.is_some_and(|g| g.invalid.get());
+    let choose = move || {
+        if let Some(g) = group {
+            g.cx.emit(RadioGroupEvent::Change(props.value.get_untracked()));
+        }
+    };
+    // The control of a choice card (a `Field` inside a `FieldLabel`): the
+    // card's press checks it, as its own press does.
+    let joined = field::join(
+        cx.__host(),
+        Kind::activate(
+            move || {
+                if !untracked(checked) {
+                    choose();
+                }
+            },
+            checked,
+        ),
+        move || props.disabled.get() || group.is_some_and(|g| g.disabled.get()),
+    );
+    let disabled = move || {
+        props.disabled.get() || group.is_some_and(|g| g.disabled.get()) || joined.disabled()
+    };
+    let invalid = move || group.is_some_and(|g| g.invalid.get()) || joined.invalid();
     let labelled = move || !props.children.get().is_empty();
 
     let dot = move || {
@@ -270,11 +297,7 @@ pub fn RadioGroupItem(props: RadioGroupItemProps, _cx: Scope<NoEvent>) -> impl I
                 .get()
                 .unwrap_or_else(|| choice_hit_slop(t, labelled(), side(), side()))
         })
-        .on_change(move |_: &bool| {
-            if let Some(g) = group {
-                g.cx.emit(RadioGroupEvent::Change(props.value.get_untracked()));
-            }
-        })
+        .on_change(move |_: &bool| choose())
         .group_named(GROUP)
         .flex_row()
         .items_start()

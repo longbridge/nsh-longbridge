@@ -17,7 +17,7 @@ Single-line text entry: a name, an email, a password, a search term, short text 
 | A choice from a fixed list | Select (P2) / Combobox (P3) |
 | Icons, units or buttons before or after the field | InputGroup (later); P1 gives `Input` no prefix / suffix |
 | A verification code, one character per cell | `nsh/base`'s `OtpInput` |
-| A field's label, description, error line | The label is a [Label](label.md); descriptions and errors wait for Form / Field (P3) |
+| A field's label, description, error line | [Field](field.md) around it (or a [Label](label.md) alone) |
 | Picking a file (HTML's `type="file"`) | Not supported: NSH has no file input; use the system's file dialog |
 
 ## Built on
@@ -96,6 +96,12 @@ it, so it takes a signal (`htmlFor={email()}`): see Label's API.
 | `blur()` | Gives up the focus |
 | `setSelection(start, end)` | The selection in UTF-16 indices, as the host's |
 | `insertText(text)` | Inserts at the caret, as the host's |
+
+### Inside a `Field`
+
+A [Field](field.md) around it hands it its `invalid` and `disabled` (or'ed with its own: a field cannot enable an
+input the app disabled), and its `FieldError` while that shows, else its `FieldDescription`, as what describes it for
+screen readers. Its `FieldLabel` focuses it. Outside a `Field` nothing changes.
 
 ### Parts
 

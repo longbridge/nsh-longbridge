@@ -7,8 +7,8 @@ use nsh_core::{element::input as host_input, prelude::*};
 use super::input::{font_size_token, padding_token};
 use crate::{
     foundation::{
-        field::{INPUT_BORDER_WIDTH, INPUT_PLACEHOLDER_FOREGROUND, field_look},
-        field_ref::{FieldRef, register_field},
+        field::{self, INPUT_BORDER_WIDTH, INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_look},
+        field_ref::FieldRef,
         size::Size,
         typography::line_height,
     },
@@ -40,7 +40,8 @@ pub struct TextareaProps {
     /// height follows its text.
     #[prop(default)]
     pub size: Prop<Size>,
-    /// No editing and no focus, out of the Tab order, at half opacity.
+    /// No editing and no focus, out of the Tab order, at half opacity. Or'ed
+    /// with an enclosing `Field`'s or `FieldSet`'s.
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// Its text can be focused, selected and copied, not changed; it looks
@@ -48,7 +49,8 @@ pub struct TextareaProps {
     #[prop(default)]
     pub readonly: Prop<bool>,
     /// The app's checks reject the value: a destructive edge (and ring
-    /// while focused); screen readers say it is invalid.
+    /// while focused); screen readers say it is invalid. Or'ed with an
+    /// enclosing `Field`'s.
     #[prop(default)]
     pub invalid: Prop<bool>,
     /// What Return does: a line break (the default), or submit
@@ -89,6 +91,7 @@ pub enum TextareaEvent {
 pub struct TextareaApi {
     field: ElementRef,
     disabled: Prop<bool>,
+    joined: Joined,
 }
 
 #[methods]
@@ -96,7 +99,7 @@ impl TextareaApi {
     /// Takes the keyboard focus (showing the software keyboard); nothing
     /// while disabled.
     pub fn focus(&self) {
-        if !self.disabled.get_untracked() {
+        if !self.disabled.get_untracked() && !untracked(|| self.joined.disabled()) {
             self.field.focus();
         }
     }
@@ -126,11 +129,16 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
     let size = move || props.size.get();
     let font_size = move || t.length(font_size_token(size()));
     let field = element_ref();
+    let joined = field::join(cx.__host(), Kind::Focus(field), move || {
+        props.disabled.get()
+    });
+    let disabled = move || props.disabled.get() || joined.disabled();
+    let invalid = move || props.invalid.get() || joined.invalid();
     cx.methods(TextareaApi {
         field,
         disabled: props.disabled,
+        joined,
     });
-    register_field(cx.__host(), field, props.disabled);
 
     let controlled = props.value.get_untracked().is_some();
     let el = host_input()
@@ -159,14 +167,15 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
         .when(props.max_length.get_untracked().is_some(), |el| {
             el.max_length(move || props.max_length.get().unwrap_or(u32::MAX))
         })
-        .auto_focus(move || props.auto_focus.get() && !props.disabled.get())
-        .readonly(move || props.readonly.get() || props.disabled.get())
-        .disabled(props.disabled)
+        .auto_focus(move || props.auto_focus.get() && !disabled())
+        .readonly(move || props.readonly.get() || disabled())
+        .disabled(disabled)
         .optional_label(props.accessibility_label)
         .accessibility_state(move || AccessibilityState {
-            invalid: props.invalid.get(),
+            invalid: invalid(),
             ..AccessibilityState::default()
         })
+        .accessibility_described_by_target(move || joined.described_by())
         .on_change(move |text: &str| cx.emit(TextareaEvent::Change(text.to_owned())))
         .on_submit(move |text: &str| cx.emit(TextareaEvent::Submit(text.to_owned())))
         .on_focus(move || cx.emit(TextareaEvent::Focus))
@@ -186,7 +195,7 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
             s.placeholder_color(move || t.color(INPUT_PLACEHOLDER_FOREGROUND))
         })
         .disabled_style(|s| s.cursor(Cursor::Default));
-    field_look(el, t, move || props.invalid.get())
+    field_look(el, t, invalid)
 }
 
 /// Rust: `label().html_for(notes)` with `notes` this textarea's ref.

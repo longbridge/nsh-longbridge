@@ -66,6 +66,17 @@ nor `accessibilityDescribedBy`. An option that needs validating is a `Checkbox`.
 
 The name and payload are NSH's, the same as `nsh/base`'s `Switch` and this library's `Checkbox`.
 
+### Ref
+
+TSX: `ref={wifi}` gives a `SwitchRef`; Rust: a `ComponentRef<Switch>` (`api::<SwitchApi>()`), with `focus()` (nothing
+while `disabled`). A [Label](label.md)'s `htmlFor` takes it: a press on the label toggles the switch.
+
+### Inside a `Field`
+
+A [Field](field.md) around it hands it its `disabled` (or'ed with its own); its `FieldLabel` toggles it. Its
+description is not read with it: `nsh/base`'s `Switch` takes no `accessibilityDescribedBy` ([Field's NSH
+gaps](field.md#nsh-gaps)). Outside a `Field` nothing changes.
+
 ### Parts
 
 ```

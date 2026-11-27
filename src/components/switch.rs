@@ -13,6 +13,8 @@ use crate::{
     components::label::{LABEL_FONT_WEIGHT, LABEL_FOREGROUND},
     foundation::{
         choice::{choice_hit_slop, choice_label, choice_offset},
+        field::{self, Joined, Kind},
+        field_ref::FieldRef,
         focus::focus_ring,
         icon::provide_text_color,
         motion, shadow,
@@ -78,7 +80,7 @@ pub struct SwitchProps {
     #[prop(default)]
     pub checked: Prop<bool>,
     /// No presses and no press feedback, the track and its label at half
-    /// opacity.
+    /// opacity. Or'ed with an enclosing `Field`'s or `FieldSet`'s.
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// Its size (`xs`, `sm`, `md`, `lg`): the track, the thumb and the
@@ -124,19 +126,51 @@ pub enum SwitchEvent {
     Change(bool),
 }
 
+/// The methods of a [`Switch`]'s ref.
+pub struct SwitchApi {
+    root: ElementRef,
+    disabled: Prop<bool>,
+    joined: Joined,
+}
+
+#[methods]
+impl SwitchApi {
+    /// Takes the keyboard focus; nothing while disabled.
+    pub fn focus(&self) {
+        if !self.disabled.get_untracked() && !untracked(|| self.joined.disabled()) {
+            self.root.focus();
+        }
+    }
+}
+
 /// A switch: a setting on or off that takes effect at once, a
 /// thumb moving along a track, with its label beside it. Four sizes; a
 /// press on the label toggles it too, and the thumb stretches while it is
 /// held (not with reduced motion). The keyboard focus draws a ring around
 /// the track; on touch screens it is larger, and without a label it takes
 /// presses up to 44 points around it.
-#[component]
+#[component(methods = SwitchApi)]
 pub fn Switch(props: SwitchProps, cx: Scope<SwitchEvent>) -> impl IntoElement {
     provide_text_color();
     let t = theme();
     let size = move || props.size.get();
     let checked = props.checked;
-    let disabled = props.disabled;
+    // A label's press toggles it, as its own press does.
+    let joined = field::join(
+        cx.__host(),
+        Kind::activate(
+            move || cx.emit(SwitchEvent::Change(!checked.get_untracked())),
+            move || checked.get(),
+        ),
+        move || props.disabled.get(),
+    );
+    let disabled = move || props.disabled.get() || joined.disabled();
+    let root = element_ref();
+    cx.methods(SwitchApi {
+        root,
+        disabled: props.disabled,
+        joined,
+    });
     let labelled = move || !props.children.get().is_empty();
     let thumb = move || t.length(thumb_token(size()));
     let border = move || t.length(BORDER_WIDTH);
@@ -171,7 +205,7 @@ pub fn Switch(props: SwitchProps, cx: Scope<SwitchEvent>) -> impl IntoElement {
         .style_when(from_right, |s| s.origin_right())
         .group_active_named(GROUP, move |s| {
             s.scale_x(move || {
-                if disabled.get() || reduce_motion() {
+                if disabled() || reduce_motion() {
                     1.0_f32
                 } else {
                     STRETCH
@@ -216,6 +250,7 @@ pub fn Switch(props: SwitchProps, cx: Scope<SwitchEvent>) -> impl IntoElement {
     let track = motion::transition_all(track, t);
 
     base_switch()
+        .element_ref(&root)
         .checked(checked)
         .disabled(disabled)
         .accessibility_label(props.accessibility_label)
@@ -250,6 +285,15 @@ pub fn Switch(props: SwitchProps, cx: Scope<SwitchEvent>) -> impl IntoElement {
             props.children,
         ))
 }
+
+/// Rust: `label().html_for(wifi)` with `wifi` this switch's ref.
+impl From<ComponentRef<Switch>> for FieldRef {
+    fn from(r: ComponentRef<Switch>) -> Self {
+        FieldRef::lazy(move || r.node())
+    }
+}
+
+nsh_core::static_reactive!(FieldRef: ComponentRef<Switch>);
 
 /// The thumb's side token of `size`.
 pub fn thumb_token(size: Size) -> Token<kind::Length> {

@@ -1,6 +1,6 @@
 //! `Label`: a label, the text naming a field; pressing it moves
-//! the focus into the field `htmlFor` names. API:
-//! `docs/components/label.md`.
+//! the focus into the field `htmlFor` names (or presses a checkbox-like
+//! control). API: `docs/components/label.md`.
 
 use nsh_core::prelude::*;
 
@@ -28,7 +28,9 @@ tokens! {
 /// The props of [`Label`].
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct LabelProps {
-    /// The field a press focuses: an `Input`'s or a `Textarea`'s ref.
+    /// The control a press reaches: a text control's ref (an `Input`'s, a
+    /// `Textarea`'s, a `Select`'s), which it focuses, or a `Checkbox`'s or a
+    /// `Switch`'s, which it toggles.
     #[prop(default)]
     pub html_for: Prop<FieldRef>,
     /// Dimmed, and a press focuses nothing: pass the field's `disabled`.
@@ -39,8 +41,9 @@ pub struct LabelProps {
 }
 
 /// A label: medium 14-point text in a row with what it holds.
-/// Pressing it moves the focus into the field `htmlFor` names. It is no
-/// control: no focus, no press feedback, its text not selectable.
+/// Pressing it moves the focus into the field `htmlFor` names, or toggles
+/// the checkbox or switch it names. It is no control: no focus, no press
+/// feedback, its text not selectable.
 #[component]
 pub fn Label(props: LabelProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     provide_text_color();
@@ -52,7 +55,7 @@ pub fn Label(props: LabelProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         .role(AccessibilityRole::Text)
         .on_press(move || {
             if !props.disabled.get_untracked() {
-                props.html_for.get_untracked().focus();
+                props.html_for.get_untracked().press();
             }
         })
         .flex_row()

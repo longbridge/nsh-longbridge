@@ -13,6 +13,8 @@ use crate::{
     components::label::{LABEL_FONT_WEIGHT, LABEL_FOREGROUND},
     foundation::{
         choice::{choice_hit_slop, choice_label, choice_offset},
+        field::{self, Joined, Kind},
+        field_ref::FieldRef,
         focus::focus_ring,
         icon::{IconName, icon_view, provide_text_color},
         motion,
@@ -87,11 +89,12 @@ pub struct CheckboxProps {
     #[prop(default)]
     pub indeterminate: Prop<bool>,
     /// No presses and no press feedback, the box and its label at half
-    /// opacity.
+    /// opacity. Or'ed with an enclosing `Field`'s or `FieldSet`'s.
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// The app's checks reject it (a required box left unchecked): a
     /// destructive edge and focus ring; screen readers say it is invalid.
+    /// Or'ed with an enclosing `Field`'s.
     #[prop(default)]
     pub invalid: Prop<bool>,
     /// Its size (`xs`, `sm`, `md`, `lg`): the box and the label's text.
@@ -103,7 +106,8 @@ pub struct CheckboxProps {
     /// What checking it does, for screen readers.
     pub accessibility_hint: Prop<Option<SharedString>>,
     /// The element whose text describes it for screen readers (its error or
-    /// help line), read after its name.
+    /// help line), read after its name. Inside a `Field`, the field's error
+    /// or description when left out.
     pub accessibility_described_by: Prop<Option<ElementTarget>>,
     /// How far outside its bounds presses still count. Left out: on touch
     /// screens a box without a label takes presses up to 44 points around
@@ -139,12 +143,29 @@ pub enum CheckboxEvent {
     Change(bool),
 }
 
+/// The methods of a [`Checkbox`]'s ref.
+pub struct CheckboxApi {
+    root: ElementRef,
+    disabled: Prop<bool>,
+    joined: Joined,
+}
+
+#[methods]
+impl CheckboxApi {
+    /// Takes the keyboard focus; nothing while disabled.
+    pub fn focus(&self) {
+        if !self.disabled.get_untracked() && !untracked(|| self.joined.disabled()) {
+            self.root.focus();
+        }
+    }
+}
+
 /// A checkbox: a box that is checked, unchecked or
 /// indeterminate (a dash), with its label beside it. Four sizes; a press on
 /// the label checks it too. The keyboard focus draws a ring around the box;
 /// on touch screens the box is larger, and without a label it takes presses
 /// up to 44 points around it.
-#[component]
+#[component(methods = CheckboxApi)]
 pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElement {
     provide_text_color();
     let t = theme();
@@ -152,8 +173,29 @@ pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElem
     let side = move || t.length(size_token(size()));
     let checked = props.checked;
     let indeterminate = props.indeterminate;
-    let invalid = props.invalid;
     let on = move || checked.get() || indeterminate.get();
+    // A label's press asks for what the box's own press does: checked from
+    // unchecked and from indeterminate.
+    let joined = field::join(
+        cx.__host(),
+        Kind::activate(
+            move || {
+                cx.emit(CheckboxEvent::Change(
+                    indeterminate.get_untracked() || !checked.get_untracked(),
+                ))
+            },
+            on,
+        ),
+        move || props.disabled.get(),
+    );
+    let disabled = move || props.disabled.get() || joined.disabled();
+    let invalid = move || props.invalid.get() || joined.invalid();
+    let root = element_ref();
+    cx.methods(CheckboxApi {
+        root,
+        disabled: props.disabled,
+        joined,
+    });
     let labelled = move || !props.children.get().is_empty();
 
     let mark = move || {
@@ -177,7 +219,7 @@ pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElem
         .justify_center()
         .rounded(move || t.length(CHECKBOX_RADIUS).max(px(0.0)).min(side() / 4.0))
         .border(move || t.length(BORDER_WIDTH))
-        .border_color(move || border(t, on(), invalid.get()))
+        .border_color(move || border(t, on(), invalid()))
         .bg(move || {
             if on() {
                 t.color(CHECKBOX_CHECKED)
@@ -191,7 +233,7 @@ pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElem
                 s,
                 t,
                 move || {
-                    if invalid.get() {
+                    if invalid() {
                         t.color(CHECKBOX_RING_INVALID)
                     } else {
                         t.color(CHECKBOX_RING)
@@ -199,11 +241,9 @@ pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElem
                 },
                 None,
             )
-            .border_color(move || focus_border(t, on(), invalid.get()))
+            .border_color(move || focus_border(t, on(), invalid()))
         })
-        .group_active_named(GROUP, move |s| {
-            press(s, SMALL_SCALE, move || props.disabled.get())
-        })
+        .group_active_named(GROUP, move |s| press(s, SMALL_SCALE, disabled))
         .transition_shadow()
         .app_class(props.indicator_class)
         .inline_style(move || {
@@ -214,13 +254,19 @@ pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElem
     let indicator = motion::timing(indicator, t);
 
     base_checkbox()
+        .element_ref(&root)
         .checked(checked)
         .indeterminate(indeterminate)
-        .disabled(props.disabled)
+        .disabled(disabled)
         .invalid(invalid)
         .accessibility_label(props.accessibility_label)
         .accessibility_hint(props.accessibility_hint)
-        .accessibility_described_by(props.accessibility_described_by)
+        .accessibility_described_by(move || {
+            props
+                .accessibility_described_by
+                .get()
+                .or_else(|| joined.described_by())
+        })
         .hit_slop(move || {
             props
                 .hit_slop
@@ -247,6 +293,15 @@ pub fn Checkbox(props: CheckboxProps, cx: Scope<CheckboxEvent>) -> impl IntoElem
             props.children,
         ))
 }
+
+/// Rust: `label().html_for(terms)` with `terms` this checkbox's ref.
+impl From<ComponentRef<Checkbox>> for FieldRef {
+    fn from(r: ComponentRef<Checkbox>) -> Self {
+        FieldRef::lazy(move || r.node())
+    }
+}
+
+nsh_core::static_reactive!(FieldRef: ComponentRef<Checkbox>);
 
 /// The box's side token of `size`.
 pub fn size_token(size: Size) -> Token<kind::Length> {

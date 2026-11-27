@@ -44,7 +44,9 @@ pub use crate::{
             CardTitleProps, card, card_action, card_content, card_description, card_footer,
             card_header, card_title,
         },
-        checkbox::{Checkbox, CheckboxElement, CheckboxEvent, CheckboxProps, checkbox},
+        checkbox::{
+            Checkbox, CheckboxApi, CheckboxElement, CheckboxEvent, CheckboxProps, checkbox,
+        },
         dialog::{
             Dialog, DialogClose, DialogCloseElement, DialogCloseProps, DialogContent,
             DialogContentElement, DialogContentProps, DialogDescription, DialogDescriptionElement,
@@ -88,13 +90,13 @@ pub use crate::{
             RadioGroupItemProps, RadioGroupProps, radio_group, radio_group_item,
         },
         select::{
-            Select, SelectElement, SelectEntry, SelectEvent, SelectItem, SelectProps, SelectValue,
-            select,
+            Select, SelectApi, SelectElement, SelectEntry, SelectEvent, SelectItem, SelectProps,
+            SelectValue, select,
         },
         separator::{Separator, SeparatorElement, SeparatorProps, separator},
         skeleton::{Skeleton, SkeletonElement, SkeletonProps, skeleton},
         spinner::{Spinner, SpinnerElement, SpinnerProps, spinner},
-        switch::{Switch, SwitchElement, SwitchEvent, SwitchProps, switch},
+        switch::{Switch, SwitchApi, SwitchElement, SwitchEvent, SwitchProps, switch},
         tabs::{
             Tabs, TabsContent, TabsContentElement, TabsContentProps, TabsElement, TabsEvent,
             TabsList, TabsListElement, TabsListProps, TabsProps, TabsTrigger, TabsTriggerElement,

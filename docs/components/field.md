@@ -69,24 +69,28 @@ The field integration (`foundation::field`, the widened `foundation::field_ref`,
 existing control's `field::join`) lands first, in one self-contained commit (as `popup::surface` did in P2), so other
 components (DatePicker) take it before the Field parts exist.
 
-- **Context.** `Field` provides a `FieldContext`: its `orientation` (resolved: responsive becomes vertical or
-  horizontal), `invalid` and `disabled` (its own, or an enclosing `FieldSet`'s `disabled`), and three registers it
-  fills while its parts are mounted: its control (the host node, as `foundation::field_ref` keys it), its
-  description's element and its error's element. Parts read it with `field::current()` (`None` outside a `Field`).
-  `FieldSet` provides its `disabled`; `FieldGroup` its measured width; a `FieldLabel` holding a `Field` provides a
-  card context the inner `Field` reports its control's checked state to.
-- **Joining a field.** Every control of the library calls `field::join(host, kind)` in its body, once: inside a
-  `Field` whose control slot is empty, it takes it, and it gets back the field's `invalid`, `disabled` and described-by
-  target, which it combines with its own props:
+- **Context.** `Field` starts a field with `field::provide(invalid, disabled)`, which gives what is made inside it a
+  `FieldState`: its `invalid` and `disabled` (its own, or an enclosing `FieldSet`'s `disabled`), and three registers
+  filled while their parts are mounted: its control (the host node, as `foundation::field_ref` keys it), its
+  description's element and its error's element (`register_description`, `register_error`). Parts read it with
+  `field::current()` (`None` outside a `Field`). `FieldSet` provides its `disabled` (`field::provide_set`); an overlay's
+  content placed in a field ends it (`field::clear`). The component layer adds the `orientation` (responsive resolved
+  to vertical or horizontal), `FieldGroup`'s measured width and the choice card, which reads its field's control's
+  checked state through `FieldRef`.
+- **Joining a field.** Every control of the library calls `field::join(host, kind, disabled)` in its body, once (with
+  its own `disabled`): it registers what a label's press does to it, and inside a `Field` whose control slot is empty,
+  it takes it, and it gets back the field's `invalid`, `disabled` and described-by target (a `Joined`; inside a
+  `FieldSet` alone, the set's `disabled`), which it combines with its own props:
   - `invalid` = the control's `invalid` or the field's; `disabled` = the control's `disabled` or the field's (a field
     cannot re-enable a control the app disabled).
-  - The described-by target goes on the element screen readers reach (Input's and Textarea's host field, Select's
-    trigger, Checkbox's root through `nsh/base`'s `accessibilityDescribedBy`, Switch's and a `RadioGroup`'s root,
-    `ToggleGroup`'s root, DatePicker's trigger); a control's own `accessibilityDescribedBy`, where it has one, wins.
-  - `kind` says what a label's press does: `focus` (Input, Textarea, Select's trigger, Combobox's input, DatePicker's
-    trigger) or `activate` (Checkbox, Switch, a RadioGroupItem: the control's own press, reporting its `onChange`).
-    ToggleGroup joins for `disabled` and the description, Slider for `disabled` alone (NSH gaps 5); a label's press
-    does nothing for either.
+  - The described-by target goes on the element screen readers reach where the library can set it: Input's and
+    Textarea's host field, Select's trigger (the view `nsh/base` makes the combobox), Checkbox's root through
+    `nsh/base`'s `accessibilityDescribedBy`, DatePicker's trigger; a control's own `accessibilityDescribedBy`, where it
+    has one, wins. Switch, RadioGroup, ToggleGroup, Combobox and Slider cannot carry it (NSH gaps 5).
+  - `kind` says what a label's press does: `Focus` (Input, Textarea, Select's trigger, Combobox's input, DatePicker's
+    trigger), `Activate` (Checkbox, Switch, a RadioGroupItem: the control's own press, reporting its `onChange`) or
+    `Inert` (a RadioGroup, ToggleGroup, Slider, which a label's press does not reach; they join for `invalid` where
+    they have it and `disabled`).
   The controls that join: Input, Textarea, Select, Checkbox, Switch, RadioGroup (and its items in choice cards),
   Combobox, Slider, ToggleGroup, DatePicker. Joining changes nothing outside a `Field`: the P1 and P2 controls behave
   as today.
@@ -424,11 +428,14 @@ field_group()
    `Field` in a label, a checkbox group in a set) is told through context instead; `FieldSet`'s tighter gap around a
    checkbox or radio group is the app's `class="gap-3"`; `FieldDescription`'s pull toward the label is "not last"
    (`last:`), which matches shadcn's `nth-last-2` in the orders shadcn's examples use.
-5. **Controls of `nsh/base` without a described-by prop.** `Combobox`'s input and `Slider`'s thumbs are `nsh/base`'s
-   elements, and those components take no `accessibilityDescribedBy` (only `Checkbox` does): inside a `Field`, a
-   Combobox joins for `invalid`, `disabled` and the label's press, a Slider for `disabled`, but screen readers do not
-   read the field's description with them. Workaround: none; the description is still read in reading order. The prop on `nsh/base`'s `Combobox`, `Slider`, `Switch` and `Radio`, passed to the element screen readers
-   reach, would close it (Switch and a radio work today because their root is that element).
+5. **Controls of `nsh/base` without a described-by prop.** The element screen readers reach is `nsh/base`'s in
+   `Switch` and `RadioGroup` (their root), `ToggleGroup` (its root), `Combobox` (its input) and `Slider` (its thumbs),
+   and those components take no `accessibilityDescribedBy` (only `Checkbox` does); a described-by set on a component
+   from outside does not reach its root (verified headless). Inside a `Field` they join for `invalid`, `disabled` and
+   the label's press as above, but screen readers do not read the field's description or error with them.
+   Workaround: none; the description is still read in reading order, and `FieldError` announces itself. The prop on
+   `nsh/base`'s `Switch`, `RadioGroup`, `ToggleGroup`, `Combobox` and `Slider`, passed to that element, would close
+   it.
 6. **String children** (Button's G0) in TSX until NSH's fix is released.
 
 ## Decisions

@@ -135,6 +135,20 @@ choice), `cleanable` and its clear button (added later with a look), `empty`, `l
 
 `nsh/base`'s events, forwarded; `onChange` is NSH's name (conventions), not `onValueChange`.
 
+### Ref
+
+TSX: `ref={country}` gives a `SelectRef`; Rust: a `ComponentRef<Select>`, whose `api::<SelectApi>()` has the method.
+A [Label](label.md)'s `htmlFor` takes it: a press on the label focuses the trigger, as a browser's label does.
+
+| Method | Notes |
+|---|---|
+| `focus()` | Moves the keyboard focus to the trigger, the list staying closed; does nothing while `disabled` |
+
+### Inside a `Field`
+
+A [Field](field.md) around it hands it its `invalid` and `disabled` (or'ed with its own) and its error or description,
+which describes the trigger for screen readers; its `FieldLabel` focuses the trigger. Outside a `Field` nothing changes.
+
 ### Parts
 
 | Part | What | Customize with |

@@ -15,7 +15,7 @@ Input's frame, growing with its content (`field-sizing-content`) from a least he
 | One line is enough (a name, an email, a search term) | [Input](input.md) |
 | Rich text, Markdown editing, code | `nsh/base`'s `RichEditor` / `Editor` |
 | A chat composer (a send button, attachments, Return sends) | A later composer block (`src/blocks/`), not in P1; until then a Textarea with `submitBehavior="submit"` |
-| A character count, a description, an error line | Form / Field (P3) |
+| A character count, a description, an error line | [Field](field.md) around it |
 
 ## Built on
 
@@ -59,6 +59,11 @@ As Input: `onChange({ value })`, `onSubmit({ value })` (only when `submitBehavio
 
 As Input: `TextareaRef` / `ComponentRef<TextareaApi>`, with `focus()`, `blur()`, `setSelection(start, end)`,
 `insertText(text)`.
+
+### Inside a `Field`
+
+As Input ([Input's](input.md#inside-a-field)): the field's `invalid`, `disabled` and description or error; its
+`FieldLabel` focuses it.
 
 ### Parts
 

@@ -20,7 +20,7 @@ takes effect when the form is submitted or confirmed.
 | Exactly one of a set | `RadioGroup`; `Select` (P2) for a long set |
 | A toggle or formatting button in a toolbar | `Toggle` / `ToggleGroup` (later) |
 | A checkable menu item | `DropdownMenu`'s checkbox item (P2); never a `Checkbox` inside a menu |
-| A whole card that is the option, a form item with a description and an error line | `Checkbox` inside `Field` (P3); this component has no card variant |
+| A whole card that is the option, a form item with a description and an error line | `Checkbox` inside a [Field](field.md); this component has no card variant |
 
 ## Built on
 
@@ -70,6 +70,18 @@ colored with `markClass` / `markStyle`, and the state colors are the tokens in T
 | `onChange({ checked })` | `CheckboxEvent::Change(bool)` (`#[args(checked)]`); builder `.on_change(\|checked: &bool\| ..)` | `nsh/base` reports `Change(next)`, forwarded as is |
 
 The name and payload are NSH's (conventions, "Controlled"), the same as `nsh/base`'s `Checkbox`.
+
+### Ref
+
+TSX: `ref={terms}` gives a `CheckboxRef`; Rust: a `ComponentRef<Checkbox>` (`api::<CheckboxApi>()`), with `focus()`
+(nothing while `disabled`). A [Label](label.md)'s `htmlFor` takes it: a press on the label toggles the checkbox and
+reports `onChange`, as a browser's `<label>` does.
+
+### Inside a `Field`
+
+A [Field](field.md) around it hands it its `invalid` and `disabled` (or'ed with its own) and its error or description,
+which describes it for screen readers unless the app's `accessibilityDescribedBy` is set; its `FieldLabel` toggles it.
+Outside a `Field` nothing changes.
 
 ### Parts
 

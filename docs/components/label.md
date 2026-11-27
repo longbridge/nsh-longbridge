@@ -24,8 +24,9 @@ No `nsh/base` component and no host element: a Label is a `view` in a row around
 library. It does what a web `<label>` does, and only that: pressing it focuses the control its `for` names, and a
 double click selects no text:
 
-- With `htmlFor` naming a field, pressing the Label focuses the field (as its ref's `focus()`); not while the Label or
-  the field is disabled.
+- With `htmlFor` naming a control, pressing the Label focuses a text control (an `Input`, a `Textarea`, a `Select`'s
+  trigger: as its ref's `focus()`) and presses a checkbox-like one (a `Checkbox` or a `Switch` toggles and reports
+  `onChange`, as a browser's `<label>` does); not while the Label or the control is disabled.
 - Its text is not selectable (`select-none`), so a double click selects nothing.
 
 ## API
@@ -35,7 +36,7 @@ double click selects no text:
 | TSX | Rust | Type | Default | Notes |
 |---|---|---|---|---|
 | `children` | `.child(..)` / `.children(..)` | elements / text | — | The label: text, possibly with an icon or a Badge (spaced by `gap`) |
-| `htmlFor` | `html_for` | TSX: `InputRef \| TextareaRef`; Rust: `FieldRef`, from a `ComponentRef<Input>` or `ComponentRef<Textarea>` | — | What a press focuses. Named as React's `htmlFor`. A Label before its field gets the ref through a signal (below) |
+| `htmlFor` | `html_for` | TSX: `InputRef \| TextareaRef \| SelectRef \| CheckboxRef \| SwitchRef`; Rust: `FieldRef`, from a `ComponentRef` of one of those | — | What a press focuses or presses. Named as React's `htmlFor`. A Label before its control gets the ref through a signal (below). Inside a [Field](field.md), `FieldLabel` names the field's control without it |
 | `disabled` | `disabled` | `boolean` | `false` | Dimmed (`opacity-disabled`), presses do nothing. Following the field would need CSS's `peer-disabled` / `group-data-[disabled]`; NSH has no `peer-*`, so the app passes it (G3) |
 | `class` | `class` | `string` | — | The root's classes, merged last |
 | `style` | `style` | `StyleProp<ViewStyle>` / `Style` | — | The root's style; a text `color` or `fontSize` here reaches the text inside |
@@ -58,7 +59,7 @@ text on errors belong to Field (P3; its label turns `text-destructive` when inva
 
 ### Events
 
-None. (Focusing on a press is `htmlFor`'s built-in behavior and reports nothing; an app that wants something else uses
+None. (Focusing or pressing on a press is `htmlFor`'s built-in behavior and reports nothing; an app that wants something else uses
 a `View` with `onPress`.)
 
 ### Parts
@@ -192,13 +193,14 @@ With NSH 0.7.0, write a string child inside `<Text>` for now ([Button's G0](butt
 - **G1 No labelledby**: [Input's NSH gaps](input.md#nsh-gaps). To screen readers a Label is text.
 - **G2 A component prop taking another component's ref** (verified when building). A TSX ref of a Rust component is
   an object carrying its host node as `node`; `htmlFor` takes it (`FieldRef`) and keeps the node. Rust cannot reach a
-  component's methods from its node, so each field registers itself under its host while it is mounted, and a press
-  focuses the field found there ([Input's G2](input.md#nsh-gaps)). Rust converts a `ComponentRef<Input>` /
-  `ComponentRef<Textarea>`, resolved on each press, so a ref put on the field after the Label is made works. In TSX a
-  ref read before the field sets it is empty: the API above passes it through a signal.
+  component's methods from its node, so each control registers itself under its host while it is mounted
+  (`foundation::field`'s `join`), with what a label's press does to it, and a press does that to the control found
+  there ([Input's G2](input.md#nsh-gaps)). Rust converts a `ComponentRef` of each control, resolved on each press, so a
+  ref put on the control after the Label is made works. In TSX a ref read before the control sets it is empty: the API
+  above passes it through a signal.
 - **G3 No `peer-*`.** NSH does not support `peer-*` variants, so a Label cannot learn its field's `disabled` by itself.
-  Workaround: `disabled` is passed explicitly; later, Field (P3) hands `disabled` to both the label and the control, so
-  the app writes it once.
+  Workaround: `disabled` is passed explicitly; inside a [Field](field.md), `FieldLabel` takes the field's `disabled`,
+  which the control takes too, so the app writes it once.
 
 ## Decisions
 

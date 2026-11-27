@@ -19,7 +19,7 @@ A radio group: exactly one of a small set of options, all visible (a plan, a sor
 | One setting on or off | `Switch` |
 | Switching pages or views | `Tabs` (P2) |
 | One of two or more as buttons (a segmented control) | A later `ToggleGroup` / segmented control; this component has no button variant |
-| A whole card that is the option | `RadioGroupItem` inside `Field` (P3); this component has no card variant |
+| A whole card that is the option | `RadioGroupItem` inside a [Field](field.md)'s choice card; this component has no card variant |
 
 ## Built on
 
@@ -86,6 +86,14 @@ is only layout, set with `class`); `required` / `name` (NSH has no form submissi
 
 `RadioGroupItem` has no events. The name and payload follow NSH's value state (`value` with `onChange({ value })`),
 not `onValueChange`.
+
+### Inside a `Field`
+
+A [Field](field.md) around the group hands it its `invalid` and `disabled` (or'ed with its own); its `FieldLabel`
+presses no item. A `RadioGroupItem` that is a choice card's control (a `Field` inside a `FieldLabel`) takes that
+field's `disabled`, and a press on the card checks it. The field's description is not read with the group:
+`nsh/base`'s `RadioGroup` takes no `accessibilityDescribedBy` ([Field's NSH gaps](field.md#nsh-gaps)). Outside a
+`Field` nothing changes.
 
 ### Parts
 
