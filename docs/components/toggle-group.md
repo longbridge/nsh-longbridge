@@ -239,7 +239,7 @@ page) is `nsh/base`'s `ToggleGroup` drawn as a tab list (a muted track, the chos
 `ToggleGroup` with one value: `options` become `ToggleGroupItem`s (`label` as children; `icon` as an icon child with
 `name` as `accessibilityLabel`), `value` / `onChange` as above, `class` passes through, and its height
 (`control-height-sm`) is `size="sm"`. Its look becomes shadcn's toggle group (`variant="outline"`, joined), not the tab
-list's: the tab-list look belongs to [Tabs](tabs.md), whose `tablist` role would be wrong for a setting. See Decisions 3.
+list's: the tab-list look belongs to [Tabs](tabs.md), whose `tablist` role would be wrong for a setting (Decisions 3).
 
 ## NSH gaps
 
@@ -250,18 +250,18 @@ list's: the tab-list look belongs to [Tabs](tabs.md), whose `tablist` role would
 2. **Font weight and cursor are read once** (Button's G2).
 3. **String children** (Button's G0).
 4. ★ **A shadow on a view without a fill.** The joined outline group carries the `xs` shadow while its items carry
-   the fills; a platform that draws a view's shadow from its fill (a layer with no background) may draw none. To check
-   on macOS when building; the fallback is the shadow on each item (a line of shadow at each boundary, faint at `xs`).
+   the fills; a platform that draws a view's shadow from its fill (a layer with no background) may draw none. First
+   headless test: the group's shadow reaches the drawn tree. Fallback: the shadow on each item (a faint line of shadow
+   at each boundary, at `xs`).
 
 ## Decisions
 
-To settle in review:
+Settled in the P3 review:
 
 1. **The value is a list in both forms** (`value: string[]`, `multiple`), as `nsh/base`'s `Combobox` holds its
    value, rather than shadcn's `type` with a string or a list: one TypeScript type that the Rust props can generate,
    and one name with `Combobox`. A single group's app writes `[x]` and reads `value[0]`.
 2. **Items stay toggle buttons for screen readers** (`nsh/base`'s), not radios as in Radix's single group.
-3. **The gallery's Segmented takes the toggle group's look** (outline, joined): no "segmented" variant is added,
-   which neither shadcn's toggle group nor `nsh/base` has. The alternative, keeping the muted track, is the gallery's
-   own `class` on the group and its items.
+3. **The gallery's Segmented becomes a `ToggleGroup`** (`variant="outline"`, `size="sm"`, joined): no "segmented"
+   variant is added, which neither shadcn's toggle group nor `nsh/base` has.
 4. **Logical corners** (start / end), so the joined group mirrors in a right-to-left layout.

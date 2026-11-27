@@ -379,3 +379,8 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
 5. **As wide as its content through `w-fit`, not `align-self: flex-start`**: an `align-self` of its own would override
    the cross-axis alignment of a row it sits in (a filter bar), putting it at the top instead of the middle (as
    `Badge`'s decision 3).
+
+## Later
+
+- **A search field in the list** (`searchable`, `nsh/base`'s): shadcn's "popup" combobox, a trigger showing the value
+  with the search field inside the layer. Not in P3; [Combobox](combobox.md) is the searchable choice until then.

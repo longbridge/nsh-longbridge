@@ -56,14 +56,12 @@ thumb, a pair for two. `nsh/base` draws no more than two thumbs.
 
 - `#[component] fn Slider` whose root is `nsh_base::slider()`, the value, bounds, `step`, `scale`, `axis`,
   `disabled` and labels passed through, its events forwarded.
-- The parts' looks go on `nsh/base`'s part props as bound styles (the library writes the props struct's
-  `track_style`, `indicator_style`, `range_style` and `thumb_style` itself, as Select writes its rows': Select's NSH
-  gaps 1): geometry, fills, the edge and the thumb's shadow, following the tokens, the scope and the appearance, the
-  app's `<part>Style` merged after the library's.
-- The thumb's ring under the pointer, while dragged and with the keyboard focus is a `thumbClass` the library
-  generates in a binding from the resolved `slider-thumb-ring` and `slider-thumb-ring-width` (`hover:`, `active:`,
-  `focus-visible:`, each appearance's color under `dark:`), the app's `thumbClass` appended: an inline style has no
-  states (Select's NSH gaps 1).
+- The parts' looks follow conventions.md's rule for `nsh/base` parts styled once ("Drawing"): each part (`nsh/base`'s
+  `track`, `indicator`, `range`, `thumb`) gets a class generated from the resolved tokens (geometry, fills, the edge,
+  the thumb's shadow and, on the thumb, the ring under `hover:`, `active:` and `focus-visible:`), placed before the
+  app's `<part>Class`; the app's `<part>Style` is merged last.
+- It joins an enclosing [Field](field.md) (`field::join`): `disabled` from the field; there is nothing for a label's
+  press to do (NSH gaps 3).
 - The root: as wide as its parent (`w-full`; vertical: as tall, at least `slider-vertical-min-height`),
   `opacity-disabled` while disabled, the arrow cursor.
 
@@ -87,9 +85,8 @@ thumb, a pair for two. `nsh/base` draws no more than two thumbs.
 | `rangeClass` / `rangeStyle` | `range_class` / `range_style` | | | The filled stretch |
 | `thumbClass` / `thumbStyle` | `thumb_class` / `thumb_style` | | | Each thumb |
 
-The part looks are inline styles (Implementation): a part's `<part>Style` wins over them, its `<part>Class` adds only
-what the look does not set (as Select's `contentClass`), so a different rail color goes in `trackStyle` or the tokens.
-`nsh/base`'s `children` (content after the track) is not exposed: shadcn's slider has none, and a value label is the
+A part's `<part>Class` follows the library's generated class and overrides it (`trackClass="bg-secondary"`); its
+`<part>Style` is merged last. `nsh/base`'s `children` (content after the track) is not exposed: shadcn's slider has none, and a value label is the
 app's, beside it.
 
 ### Events
@@ -271,9 +268,8 @@ which this library wraps later; it stays local until then.
 
 ## NSH gaps
 
-1. **Part styles built once, inline styles without states** (Select's NSH gaps 1): the library writes the part props
-   bound, and the thumb's ring is a generated class. The same accepted limits: an app's `<part>Class` cannot override
-   the look (its `<part>Style` can).
+1. **Part styles built once** (`nsh/base`'s `*_style` setters in Rust): the look is a generated class, by
+   conventions.md's rule ("Drawing").
 2. **No hit slop on `nsh/base`'s parts**: the press area takes layout on touch screens (44 across) rather than a slop
    around a thinner slider. A `hitSlop` on `nsh/base`'s track would let the touch slider stay 20 tall.
 3. **No focus method on a thumb and no described-by**: a `FieldLabel`'s press cannot focus the slider, and a field's
@@ -282,12 +278,11 @@ which this library wraps later; it stays local until then.
 
 ## Decisions
 
-To settle in review:
+Settled in the P3 review:
 
 1. **No `size`.** shadcn's slider has one size, and a slider's size is its length (the app's width); its thickness
    follows the `control-height` seed through `slider-thumb-size`, as a checkbox's box. A dense toolbar slider uses the
-   tokens in a scope. If `size` is wanted for consistency with the other controls, the thumb would be
-   `control-height-<size>` / 2 (12 / 14 / 16 / 18) and the rail scale with it.
+   tokens in a scope.
 2. **The press area is the thumb's size with a pointer, 44 on touch** (taking layout), rather than shadcn's 6-tall
    root with overflowing thumbs.
 3. **shadcn's white thumb in both appearances**, through `light_dark(background, foreground)`.

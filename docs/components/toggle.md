@@ -248,7 +248,7 @@ toggle()
 
 ## Decisions
 
-To settle in review:
+Settled in the P3 review:
 
 1. **Heights one step below shadcn's**, padding kept per shadcn size, as Button: toggles sit in desktop toolbars
    beside buttons.

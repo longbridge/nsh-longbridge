@@ -65,6 +65,10 @@ The parts and their nesting are shadcn's: `FieldSet > FieldLegend + FieldDescrip
 
 ### Implementation
 
+The field integration (`foundation::field`, the widened `foundation::field_ref`, `SelectRef`, `ComboboxRef` and each
+existing control's `field::join`) lands first, in one self-contained commit (as `popup::surface` did in P2), so other
+components (DatePicker) take it before the Field parts exist.
+
 - **Context.** `Field` provides a `FieldContext`: its `orientation` (resolved: responsive becomes vertical or
   horizontal), `invalid` and `disabled` (its own, or an enclosing `FieldSet`'s `disabled`), and three registers it
   fills while its parts are mounted: its control (the host node, as `foundation::field_ref` keys it), its
@@ -78,14 +82,19 @@ The parts and their nesting are shadcn's: `FieldSet > FieldLegend + FieldDescrip
     cannot re-enable a control the app disabled).
   - The described-by target goes on the element screen readers reach (Input's and Textarea's host field, Select's
     trigger, Checkbox's root through `nsh/base`'s `accessibilityDescribedBy`, Switch's and a `RadioGroup`'s root,
-    `ToggleGroup`'s root); a control's own `accessibilityDescribedBy`, where it has one, wins.
-  - `kind` says what a label's press does: `focus` (Input, Textarea, Select's trigger, Combobox's input) or
-    `activate` (Checkbox, Switch, a RadioGroupItem: the control's own press, reporting its `onChange`).
-  Joining changes nothing outside a `Field`: the P1 and P2 controls behave as today.
+    `ToggleGroup`'s root, DatePicker's trigger); a control's own `accessibilityDescribedBy`, where it has one, wins.
+  - `kind` says what a label's press does: `focus` (Input, Textarea, Select's trigger, Combobox's input, DatePicker's
+    trigger) or `activate` (Checkbox, Switch, a RadioGroupItem: the control's own press, reporting its `onChange`).
+    ToggleGroup joins for `disabled` and the description, Slider for `disabled` alone (NSH gaps 5); a label's press
+    does nothing for either.
+  The controls that join: Input, Textarea, Select, Checkbox, Switch, RadioGroup (and its items in choice cards),
+  Combobox, Slider, ToggleGroup, DatePicker. Joining changes nothing outside a `Field`: the P1 and P2 controls behave
+  as today.
 - **`foundation::field_ref`** grows from "a field to focus" to "a field's control": each entry keeps the element to
   focus and, for a choice control, its activation and its checked state. `FieldRef`'s TSX type widens to the refs of
-  every control that joins (`InputRef | TextareaRef | SelectRef | CheckboxRef | SwitchRef | ComboboxRef`). This is a
-  change to an implemented module (Label's `htmlFor` keeps working); see Decisions 3.
+  every control a label can focus or press (`InputRef | TextareaRef | SelectRef | CheckboxRef | SwitchRef |
+  ComboboxRef | DatePickerRef`; `SelectRef`, `ComboboxRef` and `DatePickerRef` are new, each with `focus()`). Label's
+  `htmlFor` keeps working and takes the new refs (Decisions 3).
 - **Parts are views of this library's**, styled with bindings on the tokens, the app's `class` / `style` merged last.
   String children are wrapped in a text that takes the part's text style (Button's G1).
 
@@ -361,9 +370,9 @@ const nameError = () => (name().trim() === "" ? "Enter your name." : null);
 ```
 
 With NSH 0.7.0, a string child is written inside `<Text>` for now ([Button's G0](button.md#nsh-gaps)). A
-`FieldError` whose child is `null` (no error) makes nothing. ★ To check when building: a reactive TSX child that
-evaluates to `null` must count as no content (a component sees its children as nodes); if it does not, the examples
-use `errors` (`errors={nameError() ? [{ message: nameError() }] : []}`) or an `<If>` around the part.
+`FieldError` whose child is `null` (no error) makes nothing. ★ A first headless test: a reactive TSX child that
+evaluates to `null` counts as no content (a component sees its children as nodes). Fallback: the examples use
+`errors` (`errors={nameError() ? [{ message: nameError() }] : []}`) or an `<If>` around the part.
 
 Rust:
 
@@ -408,35 +417,34 @@ field_group()
    it shows, else the description (the error is what the user must act on). A list of targets, or a target whose text
    is the joined text of several, would let both be read.
 3. **No container queries.** `responsive` reads the `FieldGroup`'s width from its layout (`on_layout`), so it is known
-   one layout pass after the group is first laid out. ★ To check: a wide group's responsive fields must not show one
-   vertical frame first (if they do, the group lays out hidden until its first width is known). A `@container` variant
-   in NSH's Tailwind would make it a class.
+   one layout pass after the group is first laid out. ★ A first headless test: a wide group's responsive fields show
+   no vertical frame first. Fallback: the group is laid out hidden (`opacity: 0`) until its first width is known. A
+   `@container` variant in NSH's Tailwind would make it a class.
 4. **No `has-`, `peer-` or `nth-last-` variants.** What shadcn selects by the children (a `FieldContent` in a field, a
    `Field` in a label, a checkbox group in a set) is told through context instead; `FieldSet`'s tighter gap around a
    checkbox or radio group is the app's `class="gap-3"`; `FieldDescription`'s pull toward the label is "not last"
    (`last:`), which matches shadcn's `nth-last-2` in the orders shadcn's examples use.
 5. **Controls of `nsh/base` without a described-by prop.** `Combobox`'s input and `Slider`'s thumbs are `nsh/base`'s
-   elements, and those components take no `accessibilityDescribedBy` (only `Checkbox` does): inside a `Field`, they
-   join for `invalid`, `disabled` and the label's press, but screen readers do not read the field's description with
-   them. The prop on `nsh/base`'s `Combobox`, `Slider`, `Switch` and `Radio`, passed to the element screen readers
+   elements, and those components take no `accessibilityDescribedBy` (only `Checkbox` does): inside a `Field`, a
+   Combobox joins for `invalid`, `disabled` and the label's press, a Slider for `disabled`, but screen readers do not
+   read the field's description with them. Workaround: none; the description is still read in reading order. The prop on `nsh/base`'s `Combobox`, `Slider`, `Switch` and `Radio`, passed to the element screen readers
    reach, would close it (Switch and a radio work today because their root is that element).
 6. **String children** (Button's G0) in TSX until NSH's fix is released.
 
 ## Decisions
 
-To settle in review:
+Settled in the P3 review:
 
 1. **No `Form`**: shadcn's `Form` binds react-hook-form; NSH apps keep form state in signals or their own library.
    `Field` takes `invalid` and the error text from it, as shadcn's Field does.
 2. **`Field`'s `invalid` and `disabled` reach the control** (they are or'ed with the control's own). shadcn makes the
-   app write both; Label's G3 already promised this. The alternative, a layout-only `Field`, keeps two sources the app
-   must keep in step.
-3. **`FieldRef` grows to every control** (`foundation::field_ref`): a press on a label focuses a text control and
-   presses a choice control, as a browser's `<label>`; Label's `htmlFor` takes the new refs too. This changes Label's
-   TSX type (`InputRef | TextareaRef` widens) and each control's body (one `field::join` call): additive.
-4. **Spacing is shadcn's** (28 between fields, 24 in a set) rather than a denser desktop step. They derive from
-   `spacing`, so a compact theme (`spacing: 3`) gives 21 / 18. Whether the default should be denser (gpui-kit's form
-   groups are 16 apart) is open.
+   app write both; Label's G3 already promised this.
+3. **`FieldRef` grows to every control** (`foundation::field_ref`, `kind` focus or activate): a press on a label
+   focuses a text control and presses a checkbox-like one, as a browser's `<label>`; Label's `htmlFor` takes the new
+   refs too. Additive: Label's TSX type widens, each control's body gains one `field::join` call. p3-forms owns it
+   and lands it first.
+4. **Spacing is shadcn's** (28 between fields, 24 in a set), as tokens derived from `spacing`: the compact preset
+   and apps tighten them (`spacing: 3` gives 21 / 18). No separate desktop values.
 5. **A choice control in a horizontal field with content is centered on the content's first line** (the label's 20
    line), as Checkbox centers its box on its own label, rather than shadcn's fixed `mt-px`.
 6. **`FieldLabel` uses foundation's line heights** (20), not Label's `leading-none`: field labels wrap more often

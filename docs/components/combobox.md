@@ -20,7 +20,7 @@ exactly as [Select](select.md)'s list. Reference: shadcn/ui new-york v4 `combobo
 | Need | Use instead |
 |---|---|
 | A choice from a short fixed list, no typing | [Select](select.md) |
-| A button that opens a list with a search field inside it (shadcn's "popup" combobox) | `Select` with a search field: not exposed yet (Decisions 4) |
+| A button that opens a list with a search field inside it (shadcn's "popup" combobox) | Not in P3: a later `searchable` on [Select](select.md) (its "Later") |
 | Free text with suggestions the user need not take | An [Input](input.md); a suggestion list is not offered yet (Decisions 5) |
 | Commands, searched | Command (later) |
 | Two to five options, all worth seeing | [RadioGroup](radio-group.md), [ToggleGroup](toggle-group.md) |
@@ -81,10 +81,11 @@ highlight and typeahead run over the titles; a component cannot read its childre
   `focus-within:` (the input inside has the focus, shadcn's `InputGroup`), the edge only on touch screens. This needs
   `foundation::field_look` to take where its focus comes from (`focus_visible` or `focus_within`): an addition to
   foundation. Height (`min-h`) `input-height-<size>`.
-- **The input**: `nsh/base`'s, styled by a bound `inputStyle` (as Select's rows: the props struct written by the
-  library): no edge, no fill, no ring, `flex: 1`, `min-width: 0`, padding `input-padding-x-<size>` at the start (none
-  at the end when a button follows), text `input-font-size-<size>` in `input-foreground`, placeholder
-  `input-placeholder-foreground`; the app's `inputStyle` merged after.
+- **The input**: `nsh/base`'s part, styled by conventions.md's rule for `nsh/base` parts styled once ("Drawing": a
+  class generated from the resolved tokens before the app's `inputClass`, the app's `inputStyle` last): no edge, no
+  fill, no ring, `flex: 1`, `min-width: 0`, padding `input-padding-x-<size>` at the start (none at the end when a
+  button follows), text `input-font-size-<size>` in `input-foreground`, placeholder `input-placeholder-foreground`.
+  The clear button's wrapper (`clearButtonClass`) and the list's parts follow the same rule.
 - **The buttons** (shadcn's `InputGroupButton variant="ghost" size="icon-xs"`): the chevron goes in `nsh/base`'s
   `triggerButton` slot and the cross in its `clearButton` slot, each a view of this library's (not a library `Button`,
   which would take the press from `nsh/base`'s wrapper: Popover's NSH gaps 7) holding the icon, with the ghost
@@ -92,11 +93,11 @@ highlight and typeahead run over the titles; a component cannot read its childre
   clear button). `clearButtonAccessibilityLabel` is the library's "Clear" (`labels`, translatable).
 - **The chips** (`multiple`): a row of this library's in `nsh/base`'s `prefix` slot, one chip per value (its title
   from `items`), each with a remove button; it wraps within the room left of the input (NSH gaps 2).
-- **The list**: Select's, shared: `foundation::popup::surface` on `popupStyle` (bound), `menu-padding` on `listStyle`,
-  rows through the same bound `itemStyle`, the generated highlight `itemClass` and the library's `renderItem` with
-  the check (shown for each value in the current value), headers through `groupStyle`. The implementation moves
-  Select's list helpers into `foundation::menu` (a `list` module) so both call the same code. The list's height is
-  capped at `combobox-list-max-height`.
+- **The list**: Select's list drawing, extracted to `foundation::menu` (`menu::list`) so Select and Combobox call the
+  same code: the popup surface, `menu-padding`, the rows' look and highlight, the library's `renderItem` with the
+  check (here shown for each value in the current value) and the group headings (`menu-label-*`), on `nsh/base`'s
+  `popup*`, `list*`, `item*` and `group*` parts by conventions.md's rule. The list's height is capped at
+  `combobox-list-max-height`.
 - **Empty**: `nsh/base`'s `empty` slot, holding the app's `empty` or the library's words, centered.
 - **Text styles and scope**: the popup resets inherited text styles and reads the `ThemeScope` around the
   `Combobox`, as Select's.
@@ -212,7 +213,7 @@ hover:opacity-100`, an `XIcon`; `ComboboxChipsInput` `min-w-16 flex-1`.
 
 Select's list, the same parts and values (Select's "The list"): the popup surface (`popover`, `popover-border`,
 `popover-radius`, shadow tier 3), padding `menu-padding`, rows `menu-item-height-<size>` with the title and the check
-at the end (each chosen value checked), group headers in `select-label-font-size` / `select-label-foreground`, as wide
+at the end (each chosen value checked), group headings in `menu-label-font-size` / `menu-label-foreground`, as wide
 as the field (at least `menu-min-width`), `popover-offset` (4) below it. Its height is at most
 `combobox-list-max-height` (348, shadcn's `--spacing(96) − --spacing(9)`) and the room on its side.
 
@@ -260,8 +261,9 @@ The cursor is the I-beam over the input (native), the arrow on the buttons, chip
 | List | A popup below the field, as wide as it | A sheet at the bottom (`nsh/base`'s), the menu's sheet look, rows 44 / 44 / 44 / 48 |
 | Chip remove | 22 square | 22 square, a hit slop to 44 vertically |
 
-★ On a phone the sheet and the software keyboard share the bottom of the screen with the input typed into: whether
-the input stays visible above both is `nsh/base`'s placement, to check when phones are reviewed.
+On a phone the sheet and the software keyboard share the bottom of the screen with the input typed into: whether
+the input stays visible above both is `nsh/base`'s placement, checked when phones are reviewed (the README's
+platforms); the library adds nothing there.
 
 ## Accessibility
 
@@ -276,7 +278,7 @@ not a Tab stop). `accessibilityLabel` names the combobox (Input's G1).
 
 The field reads the `input-*` tokens ([Input](input.md#tokens)), the rows and surface the `menu-*` and `popover-*`
 tokens ([DropdownMenu](dropdown-menu.md#tokens), [Popover](popover.md#tokens)), the headers Select's
-`select-label-*`, the buttons' hover `button-ghost-hover`. Its own tokens are what shadcn's combobox adds. Generated
+`menu-label-*`, the buttons' hover `button-ghost-hover`. Its own tokens are what shadcn's combobox adds. Generated
 from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
 
 <!-- tokens:combobox -->
@@ -292,8 +294,9 @@ from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`)
 
 - `combobox-icon-foreground` is shadcn's `text-muted-foreground` (Select's chevron is `select-icon-foreground`, muted
   at 50%: shadcn's two differ).
-- The group headers read Select's tokens rather than declaring their own: Select owns the list header look of the
-  lists `nsh/base`'s listbox draws (Select and Combobox); a theme changing `select-label-foreground` changes both.
+- The group headings read the menu family's `menu-label-foreground` (`muted-foreground`) and `menu-label-font-size`
+  (12), renamed from Select's `select-label-*` and declared in `foundation::menu` (DropdownMenu's spec owns them): one
+  owner for list looks, so a theme changing `menu-label-foreground` changes Select's and Combobox's headings.
 - Other tokens it reads: `radius-sm`, `text-xs`, `text-sm`, `font-weight-medium`, `opacity-disabled`, `icon-size-*`,
   `touch-target`, `overlay`, `shadow`, `duration`.
 
@@ -385,8 +388,8 @@ combobox()
 
 ## NSH gaps
 
-1. **The rows and the popup are `nsh/base`'s parts** (Select's NSH gaps 1, the same accepted limits and the same
-   workaround: bound part props, a generated highlight class).
+1. **The input, the rows and the popup are `nsh/base`'s parts**, whose Rust styles are built once: their look is a
+   generated class, by conventions.md's rule ("Drawing").
 2. **Chips wrap inside the prefix, not around the input.** `nsh/base` places the app's `prefix` as one element before
    the input, so the chips wrap among themselves within the room the input leaves, where shadcn's input flows after
    the last chip on the same line. With few chips both look the same; with many, the input keeps a column at the end.
@@ -400,21 +403,24 @@ combobox()
    has neither. Chips are removed by their buttons or by choosing the item again in the list.
 5. **No separators in the list** (Select's NSH gaps 3).
 6. **No described-by** on `nsh/base`'s combobox (Field's NSH gaps 5).
-7. ★ **The list's maximum height** goes on `nsh/base`'s `listStyle` (the scroll view of the rows); to check that the
-   popup then shrinks to the list rather than keeping the room's height.
+7. ★ **The list's maximum height** goes on `nsh/base`'s list part (the scroll view of the rows). A first headless
+   test: the popup shrinks to the capped list rather than keeping the room's height. Fallback: the cap goes on the
+   popup part instead (`combobox-list-max-height` + `menu-padding` × 2 + the edges).
 
 ## Decisions
 
-To settle in review:
+Settled in the P3 review:
 
 1. **Options are data, the value a list** (`nsh/base`'s): as Select's Decisions 1; one value is `[value]`.
 2. **One popup look**: the popup surface and offset shared with Select, not shadcn's combobox ring and 6 offset.
 3. **The buttons are concentric with the field** (`input-radius − 4`), not shadcn's `radius − 5`.
-4. **shadcn's "popup" combobox** (a button-like trigger showing the value, the search field inside the popup) is
-   `nsh/base`'s `Select` with `searchable`, which Select's spec did not expose in P2. Proposed: expose `searchable` on
-   `Select` with the search field drawn as shadcn's (`m-1 mb-0 h-8`, `input` at 30% fill and edge, no shadow), in a
-   change to [select.md](select.md); not part of this component.
+4. **shadcn's "popup" combobox** (a button-like trigger showing the value, the search field inside the popup) is not
+   in P3: noted in [select.md](select.md)'s "Later" as a future `searchable` on `Select`.
 5. **No free-text mode.** Base UI's combobox can keep typed text that matches no item; `nsh/base`'s chooses only
    items. An autocomplete field (suggestions under an Input) waits for a real need and `nsh/base` support.
 6. **Library words**: "No items found." (`empty`'s default, shadcn's examples' words), "Clear" and "Remove", added to
    `labels` (`Label::NoItems`, `Label::Clear`, `Label::Remove`), translatable as the others.
+7. **One list look, one owner**: Select's list drawing moves to `foundation::menu` (`menu::list`), shared by Select
+   and Combobox, and the group headings' tokens move into the menu family as `menu-label-foreground` and
+   `menu-label-font-size` (renamed from `select-label-*`; Select's and DropdownMenu's token tables follow when the
+   code lands).
