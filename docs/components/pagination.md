@@ -114,7 +114,7 @@ No variants: the items' looks are fixed by their kind.
 |---|---|---|
 | Page | `buttonVariants({ variant: "ghost", size: "icon" })`: `size-9 rounded-md`, `hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50` | A square of `button-height-<size>`, corners `button-radius`, text `button-ghost-foreground` at `font-size-<size>`, `font-weight-medium`, centered; hover fill `button-ghost-hover`, text `button-ghost-hover-foreground` |
 | Current page | `variant: "outline"`, `aria-current="page"`: `border bg-background shadow-xs hover:bg-accent … dark:border-input dark:bg-input/30 dark:hover:bg-input/50` | The same square: fill `button-outline`, edge `border-width` × `button-outline-border`, shadow `button-outline-shadow` (1, `xs`), text `button-outline-foreground`; hover fill `button-outline-hover` |
-| Previous / Next | `variant: "ghost", size: "default"`, `gap-1 px-2.5`, `ChevronLeftIcon` + "Previous" (`hidden sm:block`), "Next" + `ChevronRightIcon` | Height `button-height-<size>`, padding `pagination-step-padding-x` (10) at the sides, `pagination-step-gap` (4) between the icon and the word; the ghost look; the word hidden in a window narrower than 640 (then a square) |
+| Previous / Next | `variant: "ghost", size: "default"`, `gap-1 px-2.5`, `ChevronLeftIcon` + "Previous" (`hidden sm:block`), "Next" + `ChevronRightIcon` | Height `button-height-<size>`; a ghost Button with an icon of that size: its padding at the sides (6 / 10 / 12 / 16, `button-padding-x-<size>` less the icon's share) and its gap between the icon and the word (4 at `xs` and `sm`, 8 at `md` and `lg`), so a step changes with `size` as a Button does; the word hidden in a window narrower than 640 (then no padding: a square) |
 | Ellipsis | `flex size-9 items-center justify-center`, `MoreHorizontalIcon size-4`, `aria-hidden` | A square of `button-height-<size>`, the `ellipsis` icon at `icon-size-<size>`, no press, hidden from screen readers; it takes the items' hover fill (NSH gaps 4) |
 | Row | `nav`: `mx-auto flex w-full justify-center`; `ul`: `flex flex-row items-center gap-1` | A row, `w-full`, centered, `pagination-gap` (4) between items |
 
@@ -156,15 +156,14 @@ are translated with `setTranslator` / `labels::set_translator`.
 ## Tokens
 
 The items read Button's tokens ([Button](button.md#tokens)): `button-height-<size>`, `button-radius`,
-`button-ghost-*`, `button-outline-*`, `button-ring`, `button-border-focus`; a theme that changes `button-radius`
+`button-ghost-*`, `button-outline-*`, `button-ring`, `button-border-focus`, and Previous's and Next's padding
+`button-padding-x-<size>`; a theme that changes `button-radius`
 changes the pagination with every button. Its own are the row's spacing. Generated (`<!-- tokens:pagination -->`).
 
 <!-- tokens:pagination -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `pagination-gap` | length | `spacing` | 4 |
-| `pagination-step-padding-x` | length | `spacing × 2.5` | 10 |
-| `pagination-step-gap` | length | `spacing` | 4 |
 <!-- /tokens -->
 
 - Other tokens it reads: `font-size-*`, `icon-size-*`, `font-weight-medium`, `border-width`, `ring-width`,
