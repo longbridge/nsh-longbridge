@@ -234,7 +234,7 @@ export function PlanCard(props: { class?: string } = {}) {
             <Field orientation="horizontal">
               <RadioGroupItem value={p.id} accessibilityLabel={p.title} />
               <FieldContent>
-                <FieldLabel class="flex-row items-center gap-2">
+                <FieldLabel class="flex-row items-center justify-start gap-2">
                   <Text>{p.title}</Text>
                   <If when={p.badge}>
                     <Badge>
