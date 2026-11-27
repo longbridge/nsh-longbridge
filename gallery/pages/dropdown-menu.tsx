@@ -65,7 +65,7 @@ export function DropdownMenuPage() {
 
       <Section
         title="Sizes"
-        description="size is set on the menu: its rows' height and text, as a Button of that size. Touch screens get 44 point rows whatever it is."
+        description="The size is set on the menu: its rows' height and text, as a Button of that size. Touch screens get 44 point rows whatever it is."
       >
         <Demo row>
           {sizes.map((size) => (
@@ -94,7 +94,7 @@ export function DropdownMenuPage() {
 
       <Section
         title="Sides"
-        description="placement and align put the menu on a side of its trigger; it goes to the other side when only that one has room, and slides in from it."
+        description="The placement and align props put the menu on a side of its trigger; it goes to the other side when only that one has room, and slides in from it."
       >
         <Demo row class="gap-6 py-16">
           {sides.map((side) => (
@@ -102,7 +102,7 @@ export function DropdownMenuPage() {
               placement={side}
               align="start"
               trigger={
-                <Button variant="secondary">
+                <Button variant="outline">
                   <Text>{side[0].toUpperCase() + side.slice(1)}</Text>
                 </Button>
               }
@@ -188,7 +188,7 @@ function AccountMenu(props: { open: boolean; onOpenChange: (open: boolean) => vo
             <Text>{keymap.label("mod+b")}</Text>
           </DropdownMenuShortcut>
         </DropdownMenuItem>
-        <DropdownMenuItem icon="settings" onSelect={() => props.onSelect("Settings")}>
+        <DropdownMenuItem onSelect={() => props.onSelect("Settings")}>
           <Text>Settings</Text>
           <DropdownMenuShortcut>
             <Text>{keymap.label("mod+,")}</Text>
@@ -233,7 +233,7 @@ function AccountMenu(props: { open: boolean; onOpenChange: (open: boolean) => vo
         <Text>API</Text>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem icon="log-out" onSelect={() => props.onSelect("Log out")}>
+      <DropdownMenuItem onSelect={() => props.onSelect("Log out")}>
         <Text>Log out</Text>
         <DropdownMenuShortcut>
           <Text>{keymap.label("shift+mod+q")}</Text>

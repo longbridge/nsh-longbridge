@@ -58,7 +58,7 @@ export function InputPage() {
         </Demo>
       </Section>
 
-      <Section title="Kinds of field" description="masked hides what is typed; keyboardType and autoComplete tell the keyboard and autofill what the field holds.">
+      <Section title="Kinds of field" description="The masked prop hides what is typed; keyboardType and autoComplete tell the keyboard and autofill what the field holds.">
         <Demos>
           <Demo label="A password, masked">
             <View class="w-full max-w-72 gap-2">

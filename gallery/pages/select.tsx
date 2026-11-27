@@ -143,18 +143,18 @@ export function SelectPage() {
 
       <Section
         title="The app's rows"
-        description="renderItem draws a row's content; the library still draws the row, its highlight and the check on the chosen one."
+        description="The renderItem prop draws a row's content; the library still draws the row, its highlight and the check on the chosen one."
       >
         <StatusDemo />
       </Section>
 
       <Section
         title="Over the trigger or beside it"
-        description="cover left out takes the platform's way: on macOS the list opens with the chosen row over the trigger, elsewhere below it. cover sets either everywhere."
+        description="Without cover, the list takes the platform's way: on macOS the list opens with the chosen row over the trigger, elsewhere below it. cover sets either everywhere."
       >
         <Demos>
           {[true, false].map((cover) => (
-            <Demo label={cover ? "cover: the chosen row on the trigger" : "cover={false}: below the trigger"} class="pt-24">
+            <Demo label={cover ? "cover={true}: the chosen row over the trigger" : "cover={false}: below the trigger"} class="pt-24">
               <View class="w-48">
                 <Select class="w-full" items={fruits} defaultValue="blueberry" cover={cover} accessibilityLabel={cover ? "Covering" : "Below"} />
               </View>

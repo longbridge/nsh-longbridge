@@ -78,11 +78,11 @@ export function TooltipPage() {
         </Demos>
       </Section>
 
-      <Section title="Delay" description="tooltip-delay (500) by default. Once one shows, the next shows at once as the pointer moves along. 0 for what the user is there to read.">
+      <Section title="Delay" description="The tooltip-delay token (500) by default. Once one shows, the next shows at once as the pointer moves along. 0 for what the user is there to read.">
         <Demo row>
           {delays.map((d) => (
             <Button
-              variant="secondary"
+              variant="outline"
               tooltip={
                 <Tooltip delay={d}>
                   <Text>{`Shown after ${d} ms`}</Text>

@@ -3,6 +3,7 @@
 
 import { Text, View } from "nsh";
 import { Badge, Button } from "nsh-longbridge";
+import { componentPages } from "../catalog";
 import { navigate } from "../router";
 import { contentWidth } from "../ui/screen";
 import { Showcase } from "../ui/showcase";
@@ -14,7 +15,7 @@ export function HomePage() {
     <View class="gap-14">
       <View class="items-start gap-5 pt-4">
         <Badge variant="outline">
-          <Text>14 components · light and dark</Text>
+          <Text>{`${componentPages.length} components · light and dark`}</Text>
         </Badge>
         <Text class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">nsh-longbridge</Text>
         <Text class="max-w-[600px] text-lg leading-7 text-muted-foreground">
@@ -22,7 +23,7 @@ export function HomePage() {
           few seed tokens down to a single part.
         </Text>
         <View class="flex-row flex-wrap gap-2 pt-1">
-          <Button iconEnd="arrow-right" onPress={() => navigate("badge")}>
+          <Button iconEnd="arrow-right" onPress={() => navigate(componentPages[0].id)}>
             <Text>Browse components</Text>
           </Button>
           <Button variant="outline" onPress={() => navigate("customize")}>

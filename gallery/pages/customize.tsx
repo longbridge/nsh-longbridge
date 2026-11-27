@@ -80,7 +80,7 @@ export function CustomizePage() {
         description="Tokens for one part of a screen. The library's components inside take the scope's values, and what derives from them follows; scopes nest, the inner one winning."
       >
         <Demos>
-          <Demo label="appearance dark, with its own surface" class="p-6">
+          <Demo label="The dark appearance, with its own surface" class="p-6">
             <ThemeScope appearance="dark" surface class="w-full max-w-[360px] rounded-xl p-4">
               <NotificationsCard />
             </ThemeScope>

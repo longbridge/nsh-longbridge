@@ -65,7 +65,7 @@ export function TabsPage() {
         </Demos>
       </Section>
 
-      <Section title="Sizes" description="size is set on the list: its height, the triggers' text and padding, as a Button of that size.">
+      <Section title="Sizes" description="The size is set on the list: its height, the triggers' text and padding, as a Button of that size.">
         <Demo class="items-stretch">
           {sizes.map((size) => (
             <Row label={size}>

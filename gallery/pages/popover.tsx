@@ -42,7 +42,7 @@ export function PopoverPage() {
 
       <Section title="Sides and alignment" description="On the trigger's side, flipped to the other when only that one has room; aligned to its start, center or end. Press each.">
         <Demos>
-          <Demo row label="placement">
+          <Demo row label="Placement">
             {sides.map((p) => (
               <Popover placement={p} trigger={<Button variant="outline"><Text>{title(p)}</Text></Button>}>
                 <PopoverHeader>
@@ -56,9 +56,9 @@ export function PopoverPage() {
               </Popover>
             ))}
           </Demo>
-          <Demo row label="align">
+          <Demo row label="Align">
             {aligns.map((a) => (
-              <Popover align={a} class="w-56" trigger={<Button variant="secondary"><Text>{title(a)}</Text></Button>}>
+              <Popover align={a} class="w-56" trigger={<Button variant="outline"><Text>{title(a)}</Text></Button>}>
                 <Text class="text-sm">{`Aligned to the trigger's ${a}.`}</Text>
               </Popover>
             ))}
@@ -235,7 +235,7 @@ function ControlledDemo() {
   const open = signal(false);
   const reason = signal("—");
   return (
-    <Demo row class="gap-6 pb-40 justify-start pt-12" label={`open: ${open()} · last change: ${reason()}`}>
+    <Demo row class="gap-6 pb-40 pt-12" label={`open: ${open()} · last change: ${reason()}`}>
       <Popover
         open={open()}
         onOpenChange={(e) => {

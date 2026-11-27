@@ -84,7 +84,7 @@ export function RadioGroupPage() {
         <TierDemo />
       </Section>
 
-      <Section title="Parts" description="indicatorClass styles the circle, dotClass the dot, labelClass the label.">
+      <Section title="Parts" description="The indicatorClass prop styles the circle, dotClass the dot, labelClass the label.">
         <Demos>
           <Demo row label="A destructive dot">
             <RadioGroup accessibilityLabel="Parts" value="a" class="flex-row gap-6">

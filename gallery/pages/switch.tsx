@@ -59,7 +59,7 @@ export function SwitchPage() {
         <FlagsDemo />
       </Section>
 
-      <Section title="Parts" description="trackClass styles the track, thumbClass the thumb, labelClass the label; class styles the row.">
+      <Section title="Parts" description="The trackClass prop styles the track, thumbClass the thumb, labelClass the label; class styles the row.">
         <Demos>
           <Demo row label="A muted label, a raised thumb">
             <Switch checked labelClass="font-normal text-muted-foreground" thumbClass="shadow-md">

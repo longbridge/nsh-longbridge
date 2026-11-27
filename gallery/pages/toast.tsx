@@ -48,11 +48,11 @@ export function ToastPage() {
       title="Toast"
       description="Brief messages at a corner of the window that stack and go by themselves. Place one Toaster at the app's root; call toast() from anywhere."
     >
-      <Demo hero>
+      <Demo hero label="Add it to the calendar: the toast shows at the corner of the window, with Undo.">
         <EventCard />
       </Demo>
 
-      <Section title="Kinds" description="kind sets the icon before the text, nothing else. A loading toast spins and never times out. The pointer on the stack spreads it out and pauses the time.">
+      <Section title="Kinds" description="The kind sets the icon before the text, nothing else. A loading toast spins and never times out. The pointer on the stack spreads it out and pauses the time.">
         <Demo row>
           {kinds.map((k) => (
             <Button
@@ -68,7 +68,7 @@ export function ToastPage() {
         </Demo>
       </Section>
 
-      <Section title="Answers and changes" description="toast() resolves once the toast is gone, with the button that closed it. A toast shown again with its id changes in place: a loading toast becomes its result.">
+      <Section title="Answers and changes" description="A toast() call resolves once the toast is gone, with the button that closed it. A toast shown again with its id changes in place: a loading toast becomes its result.">
         <Demos>
           <AnswerDemo />
           <UploadDemo />
@@ -192,7 +192,7 @@ function PlacementDemo() {
           <Switch checked={toasterCloseButton()} onChange={(e) => toasterCloseButton.set(e.checked)}>
             <Text>Every toast shows ×</Text>
           </Switch>
-          <Button variant="secondary" onPress={() => toast("Here", { description: "With the Toaster's current options." })}>
+          <Button variant="outline" onPress={() => toast("Here", { description: "With the Toaster's current options." })}>
             <Text>Show a toast</Text>
           </Button>
         </View>

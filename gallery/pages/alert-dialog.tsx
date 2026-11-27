@@ -49,7 +49,7 @@ export function AlertDialogPage() {
 
       <Section
         title="Sizes and media"
-        description="size sm (and xs) is 320 wide, centered, its two buttons side by side at every width. A media tile sits above the title, or beside it in a wide md alert."
+        description="At size sm (and xs) it is 320 wide, centered, its two buttons side by side at every width. A media tile sits above the title, or beside it in a wide md alert."
       >
         <Demos>
           <Demo label="sm, with media" class="bg-muted/40">
