@@ -1,6 +1,6 @@
 // The Select page: a report's schedule, sizes beside fields and buttons,
-// states, groups and a long list, the app's rows, over the trigger or
-// beside it.
+// states, groups and a long list, a search field and a clear button, the
+// app's rows, over the trigger or beside it.
 
 import { signal, Text, View } from "nsh";
 import { Badge, type BadgeVariant, Button, Input, Label, Select, type SelectItem, type Size } from "nsh-longbridge";
@@ -42,6 +42,47 @@ const fruits: SelectItem[] = [
   { value: "pineapple", title: "Pineapple" },
 ];
 
+// Countries by region, for a searchable list in groups.
+const regions: Record<string, string[]> = {
+  Africa: ["Algeria", "Egypt", "Ethiopia", "Ghana", "Kenya", "Morocco", "Nigeria", "Rwanda", "Senegal", "South Africa", "Tanzania", "Tunisia", "Uganda"],
+  Americas: ["Argentina", "Brazil", "Canada", "Chile", "Colombia", "Costa Rica", "Ecuador", "Mexico", "Panama", "Peru", "United States", "Uruguay"],
+  Asia: ["China", "India", "Indonesia", "Israel", "Japan", "Malaysia", "Nepal", "Philippines", "Saudi Arabia", "Singapore", "South Korea", "Thailand", "Turkey", "United Arab Emirates", "Vietnam"],
+  Europe: ["Austria", "Belgium", "Denmark", "Finland", "France", "Germany", "Greece", "Iceland", "Ireland", "Italy", "Netherlands", "Norway", "Poland", "Portugal", "Spain", "Sweden", "Switzerland", "United Kingdom"],
+  Oceania: ["Australia", "Fiji", "New Zealand", "Papua New Guinea", "Samoa"],
+};
+const countries: SelectItem[] = Object.entries(regions).flatMap(([region, names]) =>
+  names.map((name) => ({ value: name.toLowerCase().replaceAll(" ", "-"), title: name, group: region })),
+);
+
+const people: SelectItem[] = [
+  { value: "ada", title: "Ada Lovelace" },
+  { value: "alan", title: "Alan Turing" },
+  { value: "barbara", title: "Barbara Liskov" },
+  { value: "edsger", title: "Edsger Dijkstra" },
+  { value: "grace", title: "Grace Hopper" },
+  { value: "ken", title: "Ken Thompson" },
+  { value: "margaret", title: "Margaret Hamilton" },
+  { value: "radia", title: "Radia Perlman" },
+];
+
+const issueStatuses: SelectItem[] = [
+  { value: "backlog", title: "Backlog" },
+  { value: "todo", title: "Todo" },
+  { value: "progress", title: "In progress" },
+  { value: "done", title: "Done" },
+  { value: "canceled", title: "Canceled" },
+];
+
+const priorities: SelectItem[] = [
+  { value: "urgent", title: "Urgent" },
+  { value: "high", title: "High" },
+  { value: "medium", title: "Medium" },
+  { value: "low", title: "Low" },
+];
+
+// Ten thousand rows: the search narrows them, only those in view are made.
+const many: SelectItem[] = Array.from({ length: 10000 }, (_, i) => ({ value: String(i + 1), title: `Item ${i + 1}` }));
+
 // Enough rows to scroll: only those in view are made.
 const years: SelectItem[] = Array.from({ length: 120 }, (_, i) => {
   const year = String(2026 - i);
@@ -55,11 +96,11 @@ const statuses: { value: string; title: string; variant: BadgeVariant; note: str
   { value: "canceled", title: "Canceled", variant: "destructive", note: "Will not be done" },
 ];
 
-const states: { label: string; note: string; value?: string; invalid?: boolean; disabled?: boolean }[] = [
+const states: { label: string; note: string; value?: string; invalid?: boolean; disabled?: boolean; cleanable?: boolean }[] = [
   { label: "Fruit", note: "Placeholder" },
-  { label: "Favorite", note: "With a value", value: "banana" },
+  { label: "Favorite", note: "With a value, cleanable", value: "banana", cleanable: true },
   { label: "Snack", note: "Invalid", invalid: true },
-  { label: "Dessert", note: "Disabled", value: "apple", disabled: true },
+  { label: "Dessert", note: "Disabled, cleanable", value: "apple", disabled: true, cleanable: true },
 ];
 
 export function SelectPage() {
@@ -96,7 +137,7 @@ export function SelectPage() {
 
       <Section
         title="States"
-        description="The placeholder is muted until a value is chosen. Invalid turns the edge and the ring destructive; disabled dims and does not open; an item can be disabled alone (Grapes)."
+        description="The placeholder is muted until a value is chosen. Invalid turns the edge and the ring destructive; disabled dims and does not open; an item can be disabled alone (Grapes). With cleanable, a cross takes the chevron's place while a value is set; disabled dims it too."
       >
         <Demo class="items-stretch">
           <View class="w-full flex-row flex-wrap gap-x-6 gap-y-6">
@@ -112,6 +153,7 @@ export function SelectPage() {
                   placeholder="Select a fruit"
                   invalid={s.invalid}
                   disabled={s.disabled}
+                  cleanable={s.cleanable}
                   accessibilityLabel={s.label}
                 />
                 <Text class={`text-xs ${s.invalid ? "text-destructive" : "text-muted-foreground"}`}>
@@ -139,6 +181,23 @@ export function SelectPage() {
             </View>
           </Demo>
         </Demos>
+      </Section>
+
+      <Section
+        title="Search and clear"
+        description="searchable puts a search field at the top of the list, focused on opening: typing narrows the options by title, groups without a match go, the arrows move the highlight and Return chooses. cleanable adds a cross while a value is set; Delete or Backspace on the focused trigger clears it too."
+      >
+        <Demos>
+          <Demo label="Countries in groups: type to narrow">
+            <CountryDemo />
+          </Demo>
+          <Demo label="10 000 items: only the rows in view are made">
+            <View class="w-56">
+              <Select class="w-full" items={many} searchable searchPlaceholder="Search items" placeholder="Select an item" accessibilityLabel="Item" />
+            </View>
+          </Demo>
+        </Demos>
+        <FilterBar />
       </Section>
 
       <Section
@@ -220,6 +279,61 @@ function ScheduleForm() {
         </Button>
       </View>
     </View>
+  );
+}
+
+/** A country from a searchable list in groups, with the app's empty state. */
+function CountryDemo() {
+  const country = signal<string | null>("japan");
+  return (
+    <View class="w-64 gap-2">
+      <Select
+        class="w-full"
+        items={countries}
+        value={country()}
+        onChange={(e) => country.set(e.value)}
+        searchable
+        searchPlaceholder="Search countries"
+        empty={<Text>No country matches.</Text>}
+        placeholder="Select a country"
+        accessibilityLabel="Country"
+      />
+      <Text class="text-xs text-muted-foreground">{`country: ${country() ?? "none"}`}</Text>
+    </View>
+  );
+}
+
+/** A list's filters: each an optional choice the cross takes back to any. */
+function FilterBar() {
+  const owner = signal<string | null>("grace");
+  const status = signal<string | null>(null);
+  const priority = signal<string | null>("high");
+  const shown = () =>
+    [owner(), status(), priority()].filter((v) => v !== null).length === 0
+      ? "Showing all issues"
+      : `Filtered by ${[owner() && "owner", status() && "status", priority() && "priority"].filter(Boolean).join(", ")}`;
+  return (
+    <Demo label="A filter bar: optional choices, cleared with the cross" class="items-stretch">
+      <View class="w-full gap-3">
+        <View class="flex-row flex-wrap items-center gap-2">
+          <Select
+            class="w-44"
+            size="sm"
+            items={people}
+            value={owner()}
+            onChange={(e) => owner.set(e.value)}
+            searchable
+            searchPlaceholder="Search people"
+            cleanable
+            placeholder="Owner"
+            accessibilityLabel="Owner"
+          />
+          <Select class="w-36" size="sm" items={issueStatuses} value={status()} onChange={(e) => status.set(e.value)} cleanable placeholder="Status" accessibilityLabel="Status" />
+          <Select class="w-36" size="sm" items={priorities} value={priority()} onChange={(e) => priority.set(e.value)} cleanable placeholder="Priority" accessibilityLabel="Priority" />
+        </View>
+        <Text class="text-xs text-muted-foreground">{shown()}</Text>
+      </View>
+    </Demo>
   );
 }
 

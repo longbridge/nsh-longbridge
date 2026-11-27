@@ -177,6 +177,9 @@ pub enum Label {
     /// "Apply": the button that commits a pending choice (a date picker's
     /// `confirm`).
     Apply,
+    /// "Search": a list's search field, its placeholder and name (a
+    /// searchable select's).
+    Search,
 }
 
 impl Label {
@@ -236,6 +239,7 @@ impl Label {
         Label::Date,
         Label::Cancel,
         Label::Apply,
+        Label::Search,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -295,6 +299,7 @@ impl Label {
             Label::Date => "date",
             Label::Cancel => "cancel",
             Label::Apply => "apply",
+            Label::Search => "search",
         }
     }
 
@@ -355,6 +360,7 @@ impl Label {
             Label::Date => "Date",
             Label::Cancel => "Cancel",
             Label::Apply => "Apply",
+            Label::Search => "Search",
         }
     }
 

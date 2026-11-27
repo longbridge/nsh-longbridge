@@ -12,6 +12,11 @@
 //!   registers what a label's press does to it (`foundation::field_ref`)
 //!   and gets back what the field gives it. Outside a `Field` and a
 //!   `FieldSet` it gets nothing, and behaves as on its own.
+//! - **A button in a field**: the square a select's or combobox's clear
+//!   button and a combobox's chevron take at the field's end, with the
+//!   ghost button's hover ([`field_button_frame`], [`field_button_hover`]);
+//!   an input group's buttons take its height and corners
+//!   ([`field_button_side`], [`field_button_radius`]).
 
 use std::rc::Rc;
 
@@ -22,10 +27,13 @@ use nsh_core::{
 };
 
 use super::{
+    class::Classes,
     field_ref::{Press, register_control},
     focus, motion, shadow,
+    size::Size,
 };
 use crate::{
+    components::{button::BUTTON_GHOST_HOVER, input},
     theme::{
         TRANSPARENT, Theme,
         seeds::SPACING,
@@ -430,4 +438,36 @@ pub fn join(host: NodeId, kind: Kind, disabled: impl Fn() -> bool + 'static) -> 
         });
     }
     joined
+}
+
+/// The side of a square button in a field of `size`: the field's height
+/// less 4 above and below.
+pub(crate) fn field_button_side(t: Theme, size: Size) -> Points {
+    t.length(input::height_token(size)) - px(8.0)
+}
+
+/// The corners of a button in a field: concentric with the field's
+/// (`input-radius` less 4).
+pub(crate) fn field_button_radius(t: Theme) -> Points {
+    (t.length(INPUT_RADIUS) - px(4.0)).max(px(0.0))
+}
+
+/// A square button's frame in a field of `size` (a select's or combobox's
+/// clear button, a combobox's chevron): [`field_button_side`],
+/// [`field_button_radius`], its icon centered.
+pub(crate) fn field_button_frame(s: StyleRefinement, t: Theme, size: Size) -> StyleRefinement {
+    s.size(field_button_side(t, size))
+        .flex_shrink_0()
+        .items_center()
+        .justify_center()
+        .rounded(field_button_radius(t))
+}
+
+/// The ghost button's hover fill (none while pressed) on `classes`, as
+/// classes made from the tokens: for a button whose states only `nsh/base`
+/// knows (a clear button).
+pub(crate) fn field_button_hover(classes: Classes, t: Theme) -> Classes {
+    classes
+        .color("hover", "bg", t.color(BUTTON_GHOST_HOVER))
+        .push("active:bg-transparent")
 }

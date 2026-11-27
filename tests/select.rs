@@ -2,7 +2,9 @@
 //! chooses, controlled and uncontrolled, what screen readers get, the
 //! check on the chosen row, the highlight from the tokens (and a scope's),
 //! group headers and disabled items, the popup surface, the trigger's
-//! states, pointer and touch sizes (a sheet), and the app's `renderItem`.
+//! states, pointer and touch sizes (a sheet), the app's `renderItem`, the
+//! search field (filtering, its keys, the empty state, a list of thousands)
+//! and the clear button (its place, Delete and Backspace, disabled).
 
 mod common;
 
@@ -543,4 +545,296 @@ fn a_row_centers_it_beside_taller_content() {
 fn a_width_class_goes_over_its_own_width() {
     let app = start::<Layouts>(true);
     assert_eq!(size(&app, "id:classed").0, 180.0);
+}
+
+/// A searchable, cleanable select (controlled, nothing chosen), a plain
+/// one with a value, a disabled cleanable one, writing down what they
+/// report.
+#[component]
+fn Filter() -> impl IntoElement {
+    let fruit = signal(None::<SharedString>);
+    let log = signal(Vec::<String>::new());
+    let note = move |s: String| log.update(|l| l.push(s));
+    view()
+        .pt(px(40.0))
+        .pl(px(40.0))
+        .child(
+            select()
+                .test_id("fruit")
+                .items(fruits())
+                .value(move || fruit.get())
+                .searchable(true)
+                .cleanable(true)
+                .placeholder("Any fruit")
+                .accessibility_label("Fruit")
+                .app_class(Some("w-[200px]".into()))
+                .on_change(move |value: &Option<SharedString>| {
+                    note(format!(
+                        "change:{}",
+                        value.clone().unwrap_or_else(|| "null".into())
+                    ));
+                    fruit.set(value.clone());
+                }),
+        )
+        .child(
+            select()
+                .items(fruits())
+                .default_value(Some(SharedString::from("apple")))
+                .accessibility_label("Plain")
+                .on_change(move |value: &Option<SharedString>| {
+                    note(format!(
+                        "plain:{}",
+                        value.clone().unwrap_or_else(|| "null".into())
+                    ));
+                }),
+        )
+        .child(
+            select()
+                .items(fruits())
+                .default_value(Some(SharedString::from("banana")))
+                .cleanable(true)
+                .disabled(true)
+                .accessibility_label("Locked"),
+        )
+        .child(text(move || format!("log:{}", log.get().join(","))))
+}
+
+#[test]
+fn typing_in_the_search_field_filters_the_rows_and_their_groups() {
+    let mut app = start::<Filter>(true);
+    open(&mut app, "Fruit");
+    // Its placeholder and name: the library's word.
+    assert!(app.screen().matches("text:Search").unwrap());
+    assert_eq!(app.screen().count("role:option").unwrap(), 4);
+    app.type_text("text:Search", "an").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    let screen = app.screen();
+    assert_eq!(screen.count("role:option").unwrap(), 1);
+    assert!(screen.matches("role:option[Banana]").unwrap());
+    assert!(screen.matches("role:header[Fruits]").unwrap());
+    // A group without a match goes.
+    assert!(!screen.matches("role:header[Vegetables]").unwrap());
+}
+
+#[test]
+fn the_search_field_has_the_keys_and_moves_the_highlight() {
+    let mut app = start::<Filter>(true);
+    open(&mut app, "Fruit");
+    // Focused on opening: a key types into it. Every title holds an `a`;
+    // the first enabled match is highlighted.
+    app.press_key("a").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert_eq!(app.screen().count("role:option").unwrap(), 4);
+    let first = app.screen().view_style("role:option[Apple]").unwrap();
+    assert_eq!(first.unwrap().background_color, light(MENU_ITEM_FOCUS));
+    // Down moves the highlight while the field keeps the focus; Return
+    // chooses.
+    app.press_key("ArrowDown").unwrap();
+    app.press_key("Enter").unwrap();
+    app.wait_for("text:/log:change:banana/").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.screen().matches("role:listbox").unwrap());
+}
+
+#[test]
+fn a_search_that_matches_nothing_says_so() {
+    let mut app = start::<Filter>(true);
+    open(&mut app, "Fruit");
+    app.type_text("text:Search", "zzz").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert_eq!(app.screen().count("role:option").unwrap(), 0);
+    assert!(app.shows("No items found."));
+}
+
+#[test]
+fn escape_closes_the_list_and_the_next_opening_starts_empty() {
+    let mut app = start::<Filter>(true);
+    open(&mut app, "Fruit");
+    app.type_text("text:Search", "an").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    app.press_key("Escape").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.screen().matches("role:listbox").unwrap());
+    open(&mut app, "Fruit");
+    assert_eq!(app.screen().count("role:option").unwrap(), 4);
+}
+
+#[test]
+fn the_search_field_is_a_band_as_tall_as_the_trigger() {
+    let mut app = start::<Filter>(true);
+    open(&mut app, "Fruit");
+    let popup = popup_of(&app, "role:option[Apple]");
+    let surface = bounds(&app, &format!("view:{popup}"));
+    let field = bounds(&app, "text:Search");
+    // `input-height-md`, across the surface inside its edge, at its top.
+    assert_eq!(field.size.height.0, 32.0);
+    assert_eq!(field.size.width.0, surface.size.width.0 - 2.0);
+    assert_eq!(field.origin.y.0, surface.origin.y.0 + 1.0);
+    let row = bounds(&app, "role:option[Apple]");
+    assert!(row.origin.y.0 >= field.origin.y.0 + 32.0);
+}
+
+/// The searchable select's clear button.
+const CLEAR: &str = "id:fruit >> role:button[Clear]";
+
+#[test]
+fn the_clear_button_shows_with_a_value_and_clears_it() {
+    let mut app = start::<Filter>(true);
+    assert!(!app.screen().matches(CLEAR).unwrap());
+    open(&mut app, "Fruit");
+    app.press("role:option[Carrot]").unwrap();
+    app.wait_for("text:/log:change:carrot/").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    // A square of the trigger's height less 8 at its end, inset 4.
+    let trigger = bounds(&app, "role:combobox[Fruit]");
+    let clear = bounds(&app, CLEAR);
+    assert_eq!((clear.size.width.0, clear.size.height.0), (24.0, 24.0));
+    let end = |b: nsh_core::geometry::Bounds<Points>| (b.origin.x + b.size.width).0;
+    assert_eq!(end(trigger) - end(clear), 4.0);
+    assert_eq!(clear.origin.y.0 - trigger.origin.y.0, 4.0);
+    // The chevron gives it its place.
+    assert_eq!(last_opacity(&app, "role:combobox[Fruit]"), 0.0);
+    app.press(CLEAR).unwrap();
+    app.wait_for("text:/change:carrot,change:null/").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(app.shows("Any fruit"));
+    assert!(!app.screen().matches("role:listbox").unwrap());
+    assert!(!app.screen().matches(CLEAR).unwrap());
+    assert_eq!(last_opacity(&app, "role:combobox[Fruit]"), 1.0);
+    // The focus went to the trigger: Down opens the list.
+    app.press_key("ArrowDown").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(app.screen().matches("role:listbox").unwrap());
+}
+
+#[test]
+fn delete_and_backspace_clear_the_focused_trigger_when_cleanable() {
+    let mut app = start::<Filter>(true);
+    app.press_key("Tab").unwrap();
+    // Typeahead on the closed trigger chooses.
+    app.press_key("b").unwrap();
+    app.wait_for("text:/log:change:banana/").unwrap();
+    app.press_key("Backspace").unwrap();
+    app.wait_for("text:/change:banana,change:null/").unwrap();
+    // Nothing chosen: nothing to clear.
+    app.press_key("Delete").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(app.shows("log:change:banana,change:null"));
+    // A select that is not cleanable ignores them.
+    app.press_key("Tab").unwrap();
+    app.press_key("Backspace").unwrap();
+    app.press_key("Delete").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(!app.shows("plain:null"));
+}
+
+#[test]
+fn a_disabled_selects_clear_button_is_dimmed_and_does_nothing() {
+    let mut app = start::<Filter>(true);
+    // Only the disabled select has a value, so one clear button.
+    let screen = app.screen();
+    assert_eq!(screen.count("role:button[Clear]").unwrap(), 1);
+    let style = screen.view_style("role:button[Clear]").unwrap().unwrap();
+    assert_eq!(style.opacity, 0.5);
+    let _ = app.press("role:button[Clear]");
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(app.shows("Banana"));
+}
+
+/// The opacity of `selector`'s deepest last descendant (a trigger's
+/// chevron).
+fn last_opacity(app: &Headless, selector: &str) -> f32 {
+    let screen = app.screen();
+    let nodes = screen.layout_nodes();
+    let mut at = screen.id(selector).unwrap();
+    let mut opacity = 1.0;
+    loop {
+        let Some(last) = nodes.iter().rfind(|n| n.parent == at) else {
+            return opacity;
+        };
+        if let Some(style) = screen.view_style(&format!("view:{}", last.id)).unwrap() {
+            opacity = style.opacity;
+        }
+        at = last.id;
+    }
+}
+
+/// Thousands of options, searchable, one chosen in the middle, with room
+/// above it.
+#[component]
+fn Thousands() -> impl IntoElement {
+    let items: Vec<SelectItem> = (0..5000)
+        .map(|i| SelectItem::new(i.to_string(), format!("Item {i}")))
+        .collect();
+    view().pt(px(200.0)).pl(px(40.0)).child(
+        select()
+            .items(items)
+            .default_value(Some(SharedString::from("2500")))
+            .searchable(true)
+            .search_placeholder("Search items")
+            .empty(text("No item matches."))
+            .accessibility_label("Item"),
+    )
+}
+
+#[test]
+fn a_searchable_list_of_thousands_opens_below_capped_and_virtualized() {
+    let mut app = start::<Thousands>(true);
+    open(&mut app, "Item");
+    let trigger = bounds(&app, "role:combobox[Item]");
+    let popup = popup_of(&app, "role:option[Item 2500]");
+    let b = bounds(&app, &format!("view:{popup}"));
+    // Below the trigger on macOS too, not over it.
+    assert!(
+        b.origin.y > trigger.origin.y + trigger.size.height,
+        "{b:?} {trigger:?}"
+    );
+    // The search field, the capped list (`select-list-max-height`) and the
+    // edge.
+    assert!(b.size.height.0 <= 32.0 + 348.0 + 2.0, "{b:?}");
+    assert!(app.screen().count("role:option").unwrap() < 60);
+    app.type_text("text:Search items", "4999").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert_eq!(app.screen().count("role:option").unwrap(), 1);
+    assert!(app.screen().matches("role:option[Item 4999]").unwrap());
+    app.type_text("text:4999", "x").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(app.shows("No item matches."));
+}
+
+/// A searchable select open from the start.
+#[component]
+fn SearchSheet() -> impl IntoElement {
+    view().child(
+        select()
+            .items(fruits())
+            .searchable(true)
+            .default_open(true)
+            .accessibility_label("Sheet"),
+    )
+}
+
+#[test]
+fn a_touch_screens_search_field_is_a_rows_height_and_the_list_is_not_capped() {
+    let mut touch = start::<SearchSheet>(false);
+    touch.run_for(Duration::from_millis(600)).unwrap();
+    // `menu-item-height-md` on a touch screen.
+    assert_eq!(size(&touch, "text:Search").1, 44.0);
+    let sheet = popup_of(&touch, "role:option[Apple]");
+    assert_eq!(size(&touch, &format!("view:{sheet}")).0, 800.0);
+}
+
+/// TSX apps' declarations have the search and clear props.
+#[test]
+fn tsx_gets_the_search_and_clear_props() {
+    let registry = nsh_longbridge::registry();
+    let ts = nsh_core::element::declarations(&registry, &[]);
+    for wanted in [
+        "searchable?: boolean;",
+        "searchPlaceholder?: string",
+        "cleanable?: boolean;",
+        "searchClass?: string",
+    ] {
+        assert!(ts.contains(wanted), "{wanted} in:\n{ts}");
+    }
 }
