@@ -30,7 +30,7 @@ two (see "When not to use").
 | Content | Elements the app writes: any view in any cell | Data (`columns`, `data`); a cell is its text, or what `renderCell` draws |
 | Rows made | All of them | Only those in view, reused while scrolling |
 | Good for | Up to a few hundred rows | Any number, a million included |
-| Scrolling | The page's (the app's `ScrollView` around it) | Its own, both ways |
+| Scrolling | The page's (the app's `Scroll` around it) | Its own, both ways |
 | Header while scrolling | `sticky` on `TableHeader` | Always stays |
 | Column widths | Each cell's classes (`w-24 flex-none`, `flex-1`) | `width`, `grow`, `minWidth`; resize, move, fit, fixed at a side |
 | Sorting | The app's own button in a `TableHead` | A sort button in sortable titles; the app sorts its data |
@@ -172,17 +172,17 @@ const col = {
 #### Wide tables
 
 No scroll container is built in (Decisions 1). A table wider than its place gets a min width and sits in the app's
-horizontal `ScrollView`; its fixed columns keep their widths, its shares divide the min width:
+horizontal `Scroll`; its fixed columns keep their widths, its shares divide the min width:
 
 ```tsx
-<ScrollView horizontal class="w-full">
+<Scroll horizontal class="w-full">
   <Table class="min-w-[720px]" accessibilityLabel="Orders">
     …
   </Table>
-</ScrollView>
+</Scroll>
 ```
 
-A table that scrolls both ways (a long and wide one) nests the horizontal `ScrollView` inside the page's vertical one,
+A table that scrolls both ways (a long and wide one) nests the horizontal `Scroll` inside the page's vertical one,
 with `<TableHeader sticky>` keeping its titles; past a few hundred rows, or with columns that must stay at a side,
 it is a [DataTable](data-table.md).
 
@@ -226,7 +226,7 @@ centers its content, so it is not needed.
 
 ### Sticky header
 
-`<TableHeader sticky>` inside the app's scroll view (`ScrollView`, or the page's) is `position: sticky; top: 0` (NSH
+`<TableHeader sticky>` inside the app's scroll view (`Scroll`, or the page's) is `position: sticky; top: 0` (NSH
 pins it natively on every scroll); it is filled with `table-sticky-header` (`background`) and draws above the rows. In
 a `Card` or a surface of another color, set `table-sticky-header` in a scope or the header's `class`. For a long
 table, prefer [DataTable](data-table.md), which keeps its header by construction.
@@ -252,7 +252,7 @@ transition over `duration` (`transition-colors`), none with reduced motion. The 
 | Row heights | `table-row-height-<size>`: 24 / 28 / 32 / 36 | 32 / 36 / 40 / 48, as the controls in them |
 | Hover | The hover fill | None |
 | Controls in cells | Their own pointer sizes | Their own touch sizes and hit slop (a `Checkbox` alone gets 44 points, which may reach the next row at `xs` / `sm`: use `md` rows on touch screens) |
-| Wide tables | A min width on the `Table` (`class="min-w-[640px]"`) in a horizontal `ScrollView` | The same; phones usually show fewer columns (`hidden md:flex` on a column's cells) |
+| Wide tables | A min width on the `Table` (`class="min-w-[640px]"`) in a horizontal `Scroll` | The same; phones usually show fewer columns (`hidden md:flex` on a column's cells) |
 
 ## Accessibility
 
@@ -302,7 +302,7 @@ titles and cells, and declares only what it alone has.
 TSX:
 
 ```tsx
-import { ScrollView, signal, Text, View } from "nsh";
+import { Scroll, signal, Text, View } from "nsh";
 import { Badge, Checkbox, Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "nsh-longbridge";
 
 const invoices = [
@@ -383,12 +383,12 @@ const all = () => picked().length === invoices.length;
 </Table>
 
 // A long table in a scroll view: the titles stay.
-<ScrollView class="h-80">
+<Scroll class="h-80">
   <Table accessibilityLabel="Members">
     <TableHeader sticky>…</TableHeader>
     <TableBody>…</TableBody>
   </Table>
-</ScrollView>
+</Scroll>
 ```
 
 With NSH 0.7.0, write a string child inside `<Text>` for now (see [button.md, NSH gaps](button.md#nsh-gaps), G0).
@@ -456,7 +456,7 @@ Settled in review.
 
 1. **No scroll container.** A web table usually sits in an `overflow-x-auto` wrapper. A scroll view in NSH is a native one that
    takes the wheel and nests with the page's; a table that fits needs none. A wide table goes in the app's
-   horizontal `ScrollView` with a min width on `Table` ("Wide tables").
+   horizontal `Scroll` with a min width on `Table` ("Wide tables").
 2. **Column widths by classes, no `columns` prop** (NSH gaps 1): per-cell width classes ("Column widths, worked"),
    and `DataTable` for real column management. A `columns` template is revisited when an app needs it.
 3. **Header rows have no hover** (a web table's often do, as a side effect of `tr:hover`): a title row lit under the pointer
