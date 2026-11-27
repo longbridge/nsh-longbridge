@@ -156,7 +156,7 @@ A `FieldLabel` around a `Field` is a **choice card** (see Variants): a press any
 | Component | Props | Notes |
 |---|---|---|
 | `FieldDescription` | `children`, `class` / `style` | Registers its element as the field's description (the first one, if several) |
-| `FieldError` | `children`, `errors`, `class` / `style` | Shows `children` if any, else `errors` (below); with neither it makes nothing. Registers its element as the field's error while it shows |
+| `FieldError` | `children`, `errors`, `class` / `style` | Shows `children` if any, else `errors` (below); with neither it is hidden, taking no room and no gap. Registers its element as the field's error while it shows |
 | `FieldContent` | `children`, `class` / `style` | Tells its `Field` it is there (the row aligns to the top) |
 | `FieldTitle` | `children`, `class` / `style` | Follows the field's `invalid` and `disabled` as `FieldLabel` |
 
