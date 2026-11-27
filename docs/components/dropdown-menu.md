@@ -1,6 +1,6 @@
 # DropdownMenu
 
-Status: spec (P2), not implemented. A menu of commands and settings that a trigger (usually a `Button`) opens: items,
+Status: implemented (P2). A menu of commands and settings that a trigger (usually a `Button`) opens: items,
 checkbox and radio items, labels, separators, shortcuts, submenus and destructive items. Reference: shadcn/ui
 new-york v4 `dropdown-menu.tsx` (Radix DropdownMenu).
 
@@ -78,8 +78,9 @@ Every other part keeps shadcn's name and place: `DropdownMenuItem`, `DropdownMen
   and the text-style reset, on the `popover-*` tokens; defined in [Popover](popover.md), "The popup surface"). The
   menu adds its padding (`menu-padding`) and minimum width (`menu-min-width`). Both go on `nsh/base`'s `popupClass` /
   `popupStyle`, because the items' scroll view is inside the popup and the surface must stay put around it (a view of
-  this library's inside would scroll with the items and clip the shadow). The surface is built on each opening, so
-  its tokens are read as the menu opens (see [NSH gaps](#nsh-gaps) 1); the app's `contentStyle` is merged after it.
+  this library's inside would scroll with the items and clip the shadow). The library sets `popupStyle` as a bound
+  prop (see [NSH gaps](#nsh-gaps) 1), so the surface follows the tokens while the menu is open and the app's
+  `contentStyle` is merged after it.
 - **Popup or sheet**: `nsh/base` takes one `popupClass` / `popupStyle` for both. The library builds them for the
   presentation, computed as `menu.rs`'s private `as_sheet()` (`!is_desktop()`, except an iPad, not Catalyst, whose
   `horizontal_size_class()` is regular), from public functions (NSH gaps 2).
@@ -196,7 +197,7 @@ unchecked and logs a warning in development builds.
 |---|---|---|
 | `DropdownMenuLabel` | `children`, `inset` | A text, not an item: not focusable, passed over by the keys and typeahead |
 | `DropdownMenuSeparator` | — | `nsh/base`'s `MenuSeparator`, styled: shown with its level's items |
-| `DropdownMenuShortcut` | `children` | A text at the end of its item (`ml-auto`); its children may be `Kbd`s instead (see Examples) |
+| `DropdownMenuShortcut` | `children` | A text at the end of its item; its children may be `Kbd`s instead (see Examples) |
 | `DropdownMenuGroup` | `children` | A view in a column, no look, no role |
 
 ### `DropdownMenuSub` and `DropdownMenuSubTrigger`
@@ -253,7 +254,7 @@ shadcn's classes:
 | Indicator column | Checkbox and radio items, and `inset`, start their label at `menu-item-padding-x` + `icon-size-<size>` + `menu-item-gap` (32 at `md`, shadcn's `pl-8`): the indicator is a box `icon-size-<size>` square before the label, the check `icon-size-<size>`, the dot `icon-size-<size>` / 2 (8) round, in the item's text color |
 | Label | As an item's geometry, `font-weight-medium`, `popover-foreground`; not highlighted |
 | Separator | `border-width` high, `menu-separator`, across the surface's padding (`-mx` `menu-padding`), `menu-padding` above and below |
-| Shortcut | `margin-left: auto`, `menu-shortcut-font-size` (12), letter spacing 0.1 em (`tracking-widest`), `menu-shortcut-foreground` |
+| Shortcut | At the row's end (the item's first child takes the room left), `menu-shortcut-font-size` (12), letter spacing 0.1 em (`tracking-widest`), `menu-shortcut-foreground` |
 | Sub trigger | An item, with `chevron-right` at its end (`icon-size-<size>`, `menu-item-icon-foreground`) |
 
 Differences from shadcn:
@@ -343,14 +344,15 @@ The menu look's tokens are declared once, in `foundation::menu` (`tokens!`), and
 ContextMenu, Combobox and Command); a theme that changes `menu-item-focus` changes them all. The surface's tokens are
 Popover's (`popover-border`, `popover-radius`, `popover-shadow`, `popover-offset`, `popover-animate`), read directly: a
 theme that changes `popover-radius` changes popovers, menus and Select's list together. Values are those of
-`nsh/base`'s default theme. When implemented, this table is generated (`<!-- tokens:menu -->`).
+`nsh/base`'s default theme. Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`);
+a test keeps it current.
 
 <!-- tokens:menu -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `menu-padding` | length | `spacing` | 4 |
 | `menu-min-width` | length | `128` | 128 |
-| `menu-sub-offset` | length | `−(menu-padding + border-width)` | −5 |
+| `menu-sub-offset` | length | `−(menu-padding + border-width)` | -5 |
 | `menu-item-height-xs` | length | `pointer_touch(control-height-xs − 4, touch-target)` | 20 (touch 44) |
 | `menu-item-height-sm` | length | `pointer_touch(control-height-sm − 4, touch-target)` | 24 (touch 44) |
 | `menu-item-height-md` | length | `pointer_touch(control-height-md − 4, touch-target)` | 28 (touch 44) |
@@ -488,26 +490,27 @@ dropdown_menu()
 
 1. **The popup surface is `nsh/base`'s part, styled through `popupClass` / `popupStyle`** (accepted limits, shared with
    Popover). The items' scroll view is inside the popup, so the surface cannot be a view of this library's
-   (conventions' rule for parts the app restyles). `popupStyle`'s Rust setter builds a style once: the surface is built
-   on each opening, so its tokens are read as the menu opens, and a theme switched while it is open applies at the next
-   opening. The library's look is an inline style, which wins over the app's `contentClass`: an app changes the
-   surface with tokens or `contentStyle` (merged after the look). ★ The first headless test checks that the shadow
-   survives this path; if it does not, the surface has no shadow, only its edge, and this is reported. A popup that
-   accepted a reactive `Style`, or a surface slot around the scroll view, would lift these limits.
+   (conventions' rule for parts the app restyles). `popupStyle`'s Rust setter takes only a style built once, which
+   could neither follow the tokens nor merge the app's `contentStyle`, a prop. Workaround: the library writes the
+   `popupStyle` prop itself, bound, through the component element's props (what the generated setter writes, a
+   hidden but public part of `nsh-core`'s builder API). The library's look is an inline style, which wins over the
+   app's `contentClass`: an app changes the surface with tokens or `contentStyle` (merged after the look). ★ Checked:
+   the shadow (two layers of tier 3) reaches the popup and nothing around it clips it. A public setter for a bound
+   `Style` prop, or a surface slot around the scroll view, would remove the workaround.
 2. **Whether a menu is a sheet is private** (`menu.rs`'s `as_sheet()`), and `popupClass` serves both forms.
    Workaround: the library computes the same condition from public functions (`is_desktop`, `os`, `idiom`,
-   `is_catalyst`, `horizontal_size_class`), guarded by a test per platform idiom. Read as the surface is built, so an
-   iPad window resized across its size class while the menu is open keeps the other form's look until the next
-   opening. `nsh/base` exporting it, or taking separate `sheetClass` / `sheetStyle`, would remove the copy (asked of
+   `is_catalyst`, `horizontal_size_class`) in the bound popup style, so it follows an iPad window resized across its
+   size class. `nsh/base` exporting it, or taking separate `sheetClass` / `sheetStyle`, would remove the copy (asked of
    NSH).
 3. **Submenus take their menu's popup class and style**, so a submenu cannot have shadcn's `shadow-lg` while the menu
    has `shadow-md`: both use `popover-shadow` (3). A per-level popup look in `nsh/base` would allow the `lg` tier.
 4. ★ **The slide follows the side only if `onPosition` comes before the first frame.** `Menu` reports its placement,
-   but the starting look is applied as the popup is made. One of the first headless tests (shared with Popover); if it
-   comes later, the slide is dropped and only fade and zoom stay, as Tooltip (its gap 3).
+   but the starting look is applied as the popup is made. Checked with Popover's headless test: it comes before the
+   first frame, so the slide is kept. Submenus take the menu's starting look, so they slide from the menu's side,
+   not from their own (NSH gaps 3).
 5. ★ **The popup reads the `ThemeScope` around the `DropdownMenu`**: it is made under the menu, so the context reaches
-   it. A headless test checks it first (a menu in a dark scope is dark); if it does not, the menu passes its scope to
-   the surface and items through its own context.
+   it. Checked by a headless test: a menu in a dark scope that changes `menu-item-focus` has a dark popup and the
+   scope's highlight.
 6. **No descendant selectors** (shadcn's `[&_svg]:size-4 text-muted-foreground`): an `Icon` child gets its size from the
    item's context (`provide_icon_size`) but the item's text color. Workaround: the `icon` prop.
 7. **String children** (Button's G0): until NSH releases its fix, the gallery wraps them in `<Text>`.

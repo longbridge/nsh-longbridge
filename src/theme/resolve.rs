@@ -239,6 +239,8 @@ impl<'a> Cx<'a> {
             NumExpr::Value { value, .. } => *value,
             NumExpr::Add(a, b) => self.eval_num(a) + b,
             NumExpr::Mul(a, b) => self.eval_num(a) * b,
+            NumExpr::Diff(a, b) => self.eval_num(a) - self.eval_num(b),
+            NumExpr::Sum(a, b) => self.eval_num(a) + self.eval_num(b),
             NumExpr::PointerTouch(p, t) => {
                 if self.pointer {
                     self.eval_num(p)

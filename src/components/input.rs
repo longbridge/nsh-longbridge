@@ -280,7 +280,7 @@ pub fn font_size_token(size: Size) -> Token<kind::Length> {
 /// Above and below a field `height` tall, so a finger gets `touch-target`
 /// (44) points; none with a pointer. Not at the sides: a field is wide
 /// already, and fields side by side would take each other's presses.
-fn vertical_hit_slop(t: Theme, height: Points) -> EdgeInsets {
+pub(crate) fn vertical_hit_slop(t: Theme, height: Points) -> EdgeInsets {
     if pointer() {
         return EdgeInsets::default();
     }

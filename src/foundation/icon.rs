@@ -52,6 +52,27 @@ pub enum IconName {
     /// `octagon-x`: an error.
     #[prop(rename = "octagon-x")]
     OctagonX,
+    /// `chevron-right`: a submenu's mark, a next page.
+    #[prop(rename = "chevron-right")]
+    ChevronRight,
+    /// `chevron-left`: a sheet's back row.
+    #[prop(rename = "chevron-left")]
+    ChevronLeft,
+    /// `ellipsis`: an overflow menu's trigger.
+    #[prop(rename = "ellipsis")]
+    Ellipsis,
+    /// `settings`.
+    #[prop(rename = "settings")]
+    Settings,
+    /// `log-out`.
+    #[prop(rename = "log-out")]
+    LogOut,
+    /// `layout-dashboard`.
+    #[prop(rename = "layout-dashboard")]
+    LayoutDashboard,
+    /// `activity`.
+    #[prop(rename = "activity")]
+    Activity,
 }
 
 nsh_core::static_reactive!(IconName: IconName);
@@ -72,6 +93,13 @@ impl IconName {
             IconName::Info => include_str!("icons/info.svg"),
             IconName::TriangleAlert => include_str!("icons/triangle-alert.svg"),
             IconName::OctagonX => include_str!("icons/octagon-x.svg"),
+            IconName::ChevronRight => include_str!("icons/chevron-right.svg"),
+            IconName::ChevronLeft => include_str!("icons/chevron-left.svg"),
+            IconName::Ellipsis => include_str!("icons/ellipsis.svg"),
+            IconName::Settings => include_str!("icons/settings.svg"),
+            IconName::LogOut => include_str!("icons/log-out.svg"),
+            IconName::LayoutDashboard => include_str!("icons/layout-dashboard.svg"),
+            IconName::Activity => include_str!("icons/activity.svg"),
         }
     }
 }

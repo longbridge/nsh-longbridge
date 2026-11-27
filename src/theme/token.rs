@@ -11,7 +11,7 @@
 use std::{
     fmt,
     marker::PhantomData,
-    ops::{Add, Mul, Sub},
+    ops::{Add, Mul, Neg, Sub},
 };
 
 use nsh_core::element::AdaptiveColor;
@@ -272,6 +272,11 @@ pub enum NumExpr {
     Add(Box<NumExpr>, f32),
     /// A product.
     Mul(Box<NumExpr>, f32),
+    /// The difference of two expressions (`tabs-list-radius −
+    /// tabs-list-padding`).
+    Diff(Box<NumExpr>, Box<NumExpr>),
+    /// The sum of two expressions.
+    Sum(Box<NumExpr>, Box<NumExpr>),
     /// One value with a pointer, another on touch screens.
     PointerTouch(Box<NumExpr>, Box<NumExpr>),
     /// The larger of two.
@@ -299,6 +304,30 @@ impl Sub<f32> for NumExpr {
 
     fn sub(self, rhs: f32) -> NumExpr {
         NumExpr::Add(Box::new(self), -rhs)
+    }
+}
+
+impl Sub for NumExpr {
+    type Output = NumExpr;
+
+    fn sub(self, rhs: NumExpr) -> NumExpr {
+        NumExpr::Diff(Box::new(self), Box::new(rhs))
+    }
+}
+
+impl Add for NumExpr {
+    type Output = NumExpr;
+
+    fn add(self, rhs: NumExpr) -> NumExpr {
+        NumExpr::Sum(Box::new(self), Box::new(rhs))
+    }
+}
+
+impl Neg for NumExpr {
+    type Output = NumExpr;
+
+    fn neg(self) -> NumExpr {
+        NumExpr::Mul(Box::new(self), -1.0)
     }
 }
 

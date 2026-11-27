@@ -1,6 +1,6 @@
 # Select
 
-Status: spec (P2), not implemented. One value chosen from a list: a trigger that shows the chosen item (or a
+Status: implemented (P2). One value chosen from a list: a trigger that shows the chosen item (or a
 placeholder) and opens the list. The trigger is drawn by foundation's **field look** (the `input-*` tokens, as
 [Input](input.md)); the list by the **menu look** (the `menu-*` tokens, owned by [DropdownMenu](dropdown-menu.md)).
 Reference: shadcn/ui new-york v4 `select.tsx` (Radix Select).
@@ -72,15 +72,21 @@ component cannot read its children's props. So:
   fill, shadow, focus ring, invalid, disabled), `input-height-<size>`, `input-padding-x-<size>`, the value or the
   placeholder and the chevron.
 - **The rows**: each row is `nsh/base`'s view (it carries the `option` role, the presses and the `focus:` /
-  `selected:` / `disabled:` states), styled through its `itemStyle` with the item look; its content is the library's
-  `renderItem`: the title (or the app's `renderItem`, which it calls) and the check, shown while the row's value is
-  the current value (a binding on the value, so moving the highlight or choosing draws nothing again, as
-  `nsh/base` intends).
-- **The headers**: the library's `renderGroup`.
+  `selected:` / `disabled:` states). Its geometry and text are a bound `itemStyle` (the item look, the app's
+  `itemStyle` merged after it); its highlight is an `itemClass` the library generates in a binding from the resolved
+  `menu-item-focus` / `menu-item-focus-foreground` (`focus:` and `active:`, each appearance's value under `dark:`),
+  the app's `itemClass` appended (NSH gaps 1). Its content is the library's `renderItem`: the title (or the app's
+  `renderItem`, which it calls) and the check, shown while the row's value is the current value (a binding on the
+  value, so moving the highlight or choosing draws nothing again, as `nsh/base` intends). The row lays its one child
+  across its width (a column), and the content lays out the title and the check; a disabled item's content is at
+  `opacity-disabled` (a disabled row is never highlighted, so the row itself needs no state).
+- **The headers**: `nsh/base`'s (the group's title), drawn through a bound `groupStyle` (the app's `labelStyle` merged
+  after it) and `groupClass` (the app's `labelClass`).
 - **The popup and the sheet**: `foundation::popup::surface(t)` (Popover's, shared by every popup) on `nsh/base`'s
-  `popupClass` / `popupStyle`, built on each opening (DropdownMenu's NSH gaps 1, the same accepted limits); `listStyle`
-  gives the list the menu's padding (`menu-padding`). The sheet is `!is_desktop()` here
-  (`popup::dropdown`), unlike a menu's, which stays a popup on an iPad in a regular width.
+  `popupClass` / `popupStyle`, set as a bound prop as DropdownMenu's (its NSH gaps 1, the same accepted limits), so it
+  follows the tokens while open; `listStyle` (bound too) gives the list the menu's padding (`menu-padding`;
+  `menu-sheet-padding` in the sheet, whose panel has none but the bottom safe area). The sheet is `!is_desktop()`
+  here (`popup::dropdown`), unlike a menu's, which stays a popup on an iPad in a regular width.
 - **Text styles and scope**: as DropdownMenu's: the popup resets inherited text styles and reads the `ThemeScope`
   around the `Select`.
 
@@ -113,7 +119,7 @@ is an entry `{ value, title }` of `items`, and a `<SelectGroup>` with its `<Sele
 | `valueClass` / `valueStyle` | `value_class` / `value_style` | | | The trigger's text (the title or the placeholder) |
 | `iconClass` / `iconStyle` | `icon_class` / `icon_style` | | | The trigger's chevron |
 | `contentClass` / `contentStyle` | `content_class` / `content_style` | | | The popup or sheet surface, as DropdownMenu's: `contentStyle` wins over the library's look, `contentClass` only adds to it |
-| `itemClass` / `itemStyle` | `item_class` / `item_style` | | | Each row: `itemStyle` is merged after the item look and wins; `itemClass` only adds to it (NSH gaps 1) |
+| `itemClass` / `itemStyle` | `item_class` / `item_style` | | | Each row: `itemStyle` is merged after the item look and wins; `itemClass` follows the library's highlight classes (NSH gaps 1) |
 | `labelClass` / `labelStyle` | `label_class` / `label_style` | | | Each group header |
 
 Not exposed in P2, though `nsh/base` has them: `searchable` and its search field (Combobox, P3, is the searchable
@@ -230,7 +236,7 @@ select (Input's G1: no labelledby between elements).
 
 The trigger reads the `input-*` tokens ([Input](input.md#tokens)) and the rows and surface the `menu-*` tokens
 ([DropdownMenu](dropdown-menu.md#tokens)); a theme that changes `input-border` or `menu-item-focus` changes Select with
-them. Its own tokens are what shadcn's select adds. When implemented, this table is generated (`<!-- tokens:select -->`).
+them. Its own tokens are what shadcn's select adds. The table is generated (`<!-- tokens:select -->`).
 
 <!-- tokens:select -->
 | Token | Type | Derived default | Value |
@@ -327,23 +333,26 @@ select()
     .accessibility_label("Fruit")
 ```
 
-`SelectItem` and `SelectEntry` are `nsh/base`'s types, re-exported by this library. Whether the generated TypeScript
-declarations can name `nsh/base`'s interfaces is checked first in the implementation; if not, the library declares
-types of the same shape under the same names.
+`SelectItem` and `SelectEntry` are `nsh/base`'s types, re-exported by this library (with `SelectValue`, the `value`
+prop's type). The library's generated TypeScript declarations declare `SelectItem` and `SelectEntry` themselves (the
+same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge`.
 
 ## NSH gaps
 
 1. **The rows and the popup are `nsh/base`'s parts** (accepted limits, as DropdownMenu's gap 1). The row (its role,
    presses and `focus:` / `selected:` states) and the popup surface are `nsh/base`'s views, styled through `itemStyle` /
-   `popupStyle`, whose Rust setters build a style once: they are built on each opening, so their tokens are read as
-   the list opens and a theme switched while it is open applies at the next opening. The library's look is an inline
-   style, which wins over the app's `itemClass` / `contentClass`: an app changes it with tokens or `itemStyle` /
-   `contentStyle` (merged after it). ★ The shadow is checked first, with Popover's (DropdownMenu's gap 1). nsh-core's typed styles have
-   no `group_focus` / `group_selected` / `group_disabled` (only `group_active`, `group_hover`, `group_focus_within`,
-   `group_focus_visible`), so the library's row content cannot take the row's states itself as Checkbox's box does.
-   Workaround: the look on `itemStyle` with bound values; the check bound to the value the library holds. Named
-   `group_focus_named` / `group_selected_named` / `group_disabled_named` in nsh-core would let the library draw the
-   whole row in `renderItem` and merge the app's `itemClass` normally.
+   `popupStyle`, whose Rust setters build a style once. Workaround: the library writes those props itself, bound
+   (DropdownMenu's gap 1), so they follow the tokens and merge the app's `itemStyle` / `contentStyle`. The library's
+   look is an inline style, which wins over the app's `contentClass`: an app changes the surface with tokens or
+   `contentStyle` (merged after it). ★ Checked: the shadow (two layers of tier 3) reaches the popup and nothing around
+   it clips it. An inline style has no states, and nsh-core's typed styles have no `group_focus` / `group_selected` /
+   `group_disabled` (only `group_active`, `group_hover`, `group_focus_within`, `group_focus_visible`), so neither
+   `itemStyle` nor the library's row content can take the row's highlight. Workaround: the highlight is an
+   `itemClass` the library generates in a binding from the resolved tokens (`focus:bg-[…] dark:focus:bg-[…]
+   focus:text-[…]`, `active:` the same; a scope's tokens and forced appearance reach it, checked), the app's
+   `itemClass` appended (its classes follow the library's, so an app's `focus:` fill wins); the check is bound to the
+   value the library holds. Named `group_focus_named` / `group_selected_named` / `group_disabled_named` in nsh-core, or
+   states in an inline style, would let the library draw the highlight without generated classes.
 2. **The trigger shows the title only**: shadcn's `SelectValue` repeats the chosen item's children (an icon too).
    `nsh/base` gives the trigger nothing but the value; the library shows the chosen item's title. A `renderValue`
    would follow `renderItem` later, if asked for.

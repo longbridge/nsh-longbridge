@@ -1,6 +1,6 @@
 # Tabs
 
-Status: spec (P2), not implemented. A set of views of one page, one shown at a time, switched by a row of tabs:
+Status: implemented (P2). A set of views of one page, one shown at a time, switched by a row of tabs:
 shadcn's segmented tab list, and its underlined `line` variant. Reference: shadcn/ui new-york v4 `tabs.tsx` (Radix
 Tabs).
 
@@ -106,6 +106,7 @@ No events of its own: the root reports `onChange`.
 | TSX | Rust | Type | Description |
 |---|---|---|---|
 | `value` | `value` | `string` | The tab it belongs to |
+| `accessibilityLabel` | `accessibility_label` | `string` | What screen readers call the panel, when its first heading does not name it (Accessibility) |
 | `children` | `.child(..)` | elements | Made while selected, released otherwise |
 | `class` / `style` | `class` / `style` | | The panel (`flex: 1`) |
 
@@ -187,7 +188,7 @@ motion; the `line` underline fades over `duration`. The cursor is the arrow (a t
 | | Pointer | Touch |
 |---|---|---|
 | List height | 24 / 28 / 32 / 36 | 32 / 36 / 40 / 48 |
-| Hit area | The trigger | Below `touch-target` (44) the trigger gets a vertical hit slop of (44 − list height) / 2, none at the sides (neighbors keep their presses), as Input |
+| Hit area | The trigger | The trigger (no hit slop: NSH gaps 5) |
 | Focus | Edge and ring | Edge only |
 | Hover | Yes | No |
 | Many tabs | — | The app puts the `TabsList` in a horizontal scroll view (`nsh/base` keeps the arrow pair across the row for the page) |
@@ -206,7 +207,8 @@ The same look on every platform; a phone app that wants the system's segmented c
 
 ## Tokens
 
-When implemented, this table is generated (`<!-- tokens:tabs -->`). Values are those of `nsh/base`'s default theme.
+Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps it current.
+Values are those of `nsh/base`'s default theme.
 
 <!-- tokens:tabs -->
 | Token | Type | Derived default | Value |
@@ -319,6 +321,9 @@ tabs()
    elements (Input's G1). Workaround: the panel's own `accessibilityLabel` when needed.
 3. **No `w-fit`** (Select's gap 4): `align-self: flex-start`.
 4. **String children** (Button's G0): the gallery wraps them in `<Text>` until NSH's fix is released.
+5. **No hit slop on a tab.** `nsh/base`'s `Tab` takes no `hitSlop`, and a component's element takes none from its
+   parent, so a trigger on a touch screen is hit within its own bounds (33 tall in a 40 list at `md`), not the
+   vertical (44 − list height) / 2 Input has. A `hitSlop` prop on `Tab` would add it.
 
 ## Decisions
 

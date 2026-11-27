@@ -20,17 +20,20 @@ pub enum Label {
     Loading,
     /// "Close": the button that closes a dialog or a toast.
     Close,
+    /// "Back": the row that goes back up from a submenu in a sheet.
+    Back,
 }
 
 impl Label {
     /// Every word, in a stable order.
-    pub const ALL: &'static [Label] = &[Label::Loading, Label::Close];
+    pub const ALL: &'static [Label] = &[Label::Loading, Label::Close, Label::Back];
 
     /// Its key, which a translator is given (`"loading"`).
     pub fn key(self) -> &'static str {
         match self {
             Label::Loading => "loading",
             Label::Close => "close",
+            Label::Back => "back",
         }
     }
 
@@ -39,6 +42,7 @@ impl Label {
         match self {
             Label::Loading => "Loading",
             Label::Close => "Close",
+            Label::Back => "Back",
         }
     }
 }

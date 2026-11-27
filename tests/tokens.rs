@@ -255,6 +255,33 @@ fn the_toast_token_table_is_current() {
 }
 
 #[test]
+fn the_select_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/select.md"),
+        "select",
+        &token_table(nsh_longbridge::components::select::TOKENS),
+    );
+}
+
+#[test]
+fn the_tabs_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/tabs.md"),
+        "tabs",
+        &token_table(nsh_longbridge::components::tabs::TOKENS),
+    );
+}
+
+#[test]
+fn the_menu_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/dropdown-menu.md"),
+        "menu",
+        &token_table(nsh_longbridge::foundation::menu::TOKENS),
+    );
+}
+
+#[test]
 fn names_are_unique_and_kebab_case() {
     let decls = registry();
     let mut seen = std::collections::HashSet::new();

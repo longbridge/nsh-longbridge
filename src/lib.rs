@@ -53,6 +53,25 @@ pub use crate::{
             DialogTitle, DialogTitleElement, DialogTitleProps, dialog, dialog_close,
             dialog_content, dialog_description, dialog_footer, dialog_header, dialog_title,
         },
+        dropdown_menu::{
+            DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuCheckboxItemElement,
+            DropdownMenuCheckboxItemEvent, DropdownMenuCheckboxItemProps, DropdownMenuElement,
+            DropdownMenuEvent, DropdownMenuGroup, DropdownMenuGroupElement, DropdownMenuGroupProps,
+            DropdownMenuItem, DropdownMenuItemElement, DropdownMenuItemEvent,
+            DropdownMenuItemProps, DropdownMenuLabel, DropdownMenuLabelElement,
+            DropdownMenuLabelProps, DropdownMenuProps, DropdownMenuRadioGroup,
+            DropdownMenuRadioGroupElement, DropdownMenuRadioGroupEvent,
+            DropdownMenuRadioGroupProps, DropdownMenuRadioItem, DropdownMenuRadioItemElement,
+            DropdownMenuRadioItemProps, DropdownMenuSeparator, DropdownMenuSeparatorElement,
+            DropdownMenuSeparatorProps, DropdownMenuShortcut, DropdownMenuShortcutElement,
+            DropdownMenuShortcutProps, DropdownMenuSub, DropdownMenuSubElement,
+            DropdownMenuSubEvent, DropdownMenuSubProps, DropdownMenuSubTrigger,
+            DropdownMenuSubTriggerElement, DropdownMenuSubTriggerProps, MenuItemVariant,
+            dropdown_menu, dropdown_menu_checkbox_item, dropdown_menu_group, dropdown_menu_item,
+            dropdown_menu_label, dropdown_menu_radio_group, dropdown_menu_radio_item,
+            dropdown_menu_separator, dropdown_menu_shortcut, dropdown_menu_sub,
+            dropdown_menu_sub_trigger,
+        },
         input::{AutoComplete, Input, InputApi, InputElement, InputEvent, InputProps, input},
         kbd::{
             Kbd, KbdElement, KbdGroup, KbdGroupElement, KbdGroupProps, KbdProps, kbd, kbd_group,
@@ -68,10 +87,19 @@ pub use crate::{
             RadioGroup, RadioGroupElement, RadioGroupEvent, RadioGroupItem, RadioGroupItemElement,
             RadioGroupItemProps, RadioGroupProps, radio_group, radio_group_item,
         },
+        select::{
+            Select, SelectElement, SelectEntry, SelectEvent, SelectItem, SelectProps, SelectValue,
+            select,
+        },
         separator::{Separator, SeparatorElement, SeparatorProps, separator},
         skeleton::{Skeleton, SkeletonElement, SkeletonProps, skeleton},
         spinner::{Spinner, SpinnerElement, SpinnerProps, spinner},
         switch::{Switch, SwitchElement, SwitchEvent, SwitchProps, switch},
+        tabs::{
+            Tabs, TabsContent, TabsContentElement, TabsContentProps, TabsElement, TabsEvent,
+            TabsList, TabsListElement, TabsListProps, TabsProps, TabsTrigger, TabsTriggerElement,
+            TabsTriggerProps, TabsVariant, tabs, tabs_content, tabs_list, tabs_trigger,
+        },
         textarea::{
             Textarea, TextareaApi, TextareaElement, TextareaEvent, TextareaProps, textarea,
         },
@@ -122,6 +150,17 @@ fn native(registry: &mut Registry) {
         .register::<DialogFooter>()
         .register::<DialogHeader>()
         .register::<DialogTitle>()
+        .register::<DropdownMenu>()
+        .register::<DropdownMenuCheckboxItem>()
+        .register::<DropdownMenuGroup>()
+        .register::<DropdownMenuItem>()
+        .register::<DropdownMenuLabel>()
+        .register::<DropdownMenuRadioGroup>()
+        .register::<DropdownMenuRadioItem>()
+        .register::<DropdownMenuSeparator>()
+        .register::<DropdownMenuShortcut>()
+        .register::<DropdownMenuSub>()
+        .register::<DropdownMenuSubTrigger>()
         .register::<Icon>()
         .register::<Input>()
         .register::<Kbd>()
@@ -133,10 +172,15 @@ fn native(registry: &mut Registry) {
         .register::<PopoverTitle>()
         .register::<RadioGroup>()
         .register::<RadioGroupItem>()
+        .register::<Select>()
         .register::<Separator>()
         .register::<Skeleton>()
         .register::<Spinner>()
         .register::<Switch>()
+        .register::<Tabs>()
+        .register::<TabsContent>()
+        .register::<TabsList>()
+        .register::<TabsTrigger>()
         .register::<Textarea>()
         .register::<ThemeScope>()
         .register::<Tooltip>()

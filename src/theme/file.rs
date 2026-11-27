@@ -34,6 +34,9 @@ pub fn registry() -> Vec<TokenDecl> {
         crate::components::dialog::TOKENS,
         crate::components::alert_dialog::TOKENS,
         crate::components::toast::TOKENS,
+        crate::foundation::menu::TOKENS,
+        crate::components::tabs::TOKENS,
+        crate::components::select::TOKENS,
     ]
     .concat()
 }
@@ -110,14 +113,28 @@ fn num_css(expr: &NumExpr, pointer: bool) -> String {
             format!("{} {sign} {}", num_css(a, pointer), unit(b.abs(), is_px(a)))
         }
         NumExpr::Mul(a, k) => match **a {
-            NumExpr::Add(..) => format!("({}) * {}", num_css(a, pointer), number(*k)),
+            NumExpr::Add(..) | NumExpr::Diff(..) | NumExpr::Sum(..) => {
+                format!("({}) * {}", num_css(a, pointer), number(*k))
+            }
             _ => format!("{} * {}", num_css(a, pointer), number(*k)),
         },
+        NumExpr::Diff(a, b) => format!("{} - {}", num_css(a, pointer), num_css_operand(b, pointer)),
+        NumExpr::Sum(a, b) => format!("{} + {}", num_css(a, pointer), num_css_operand(b, pointer)),
         // A theme file is the same on every device: it writes the
         // pointer's value (`<name>-touch` sets the touch one).
         NumExpr::PointerTouch(p, t) => num_css(if pointer { p } else { t }, pointer),
         NumExpr::Max(a, b) => format!("max({}, {})", num_css(a, pointer), num_css(b, pointer)),
         NumExpr::Min(a, b) => format!("min({}, {})", num_css(a, pointer), num_css(b, pointer)),
+    }
+}
+
+/// The right operand of a sum or a difference: a sum in parentheses.
+fn num_css_operand(expr: &NumExpr, pointer: bool) -> String {
+    match expr {
+        NumExpr::Add(..) | NumExpr::Diff(..) | NumExpr::Sum(..) => {
+            format!("({})", num_css(expr, pointer))
+        }
+        _ => num_css(expr, pointer),
     }
 }
 
@@ -128,7 +145,9 @@ fn is_px(expr: &NumExpr) -> bool {
         | NumExpr::Mul(a, _)
         | NumExpr::PointerTouch(a, _)
         | NumExpr::Max(a, _)
-        | NumExpr::Min(a, _) => is_px(a),
+        | NumExpr::Min(a, _)
+        | NumExpr::Diff(a, _)
+        | NumExpr::Sum(a, _) => is_px(a),
     }
 }
 
@@ -264,7 +283,17 @@ fn num_expr(expr: &NumExpr, inner: bool) -> String {
             let sum = format!("{} {sign} {}", num_expr(a, false), number(b.abs()));
             if inner { format!("({sum})") } else { sum }
         }
+        // A negation: `−(a + b)`.
+        NumExpr::Mul(a, k) if *k == -1.0 => format!("−{}", num_expr(a, true)),
         NumExpr::Mul(a, k) => format!("{} × {}", num_expr(a, true), number(*k)),
+        NumExpr::Diff(a, b) => {
+            let diff = format!("{} − {}", num_expr(a, false), num_expr(b, true));
+            if inner { format!("({diff})") } else { diff }
+        }
+        NumExpr::Sum(a, b) => {
+            let sum = format!("{} + {}", num_expr(a, false), num_expr(b, true));
+            if inner { format!("({sum})") } else { sum }
+        }
         NumExpr::PointerTouch(p, t) => {
             format!(
                 "pointer_touch({}, {})",

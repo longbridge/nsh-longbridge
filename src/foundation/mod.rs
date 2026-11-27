@@ -10,6 +10,7 @@ pub mod field_ref;
 pub mod focus;
 pub mod icon;
 pub mod labels;
+pub mod menu;
 pub mod motion;
 pub mod popup;
 pub mod press;
