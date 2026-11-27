@@ -9,6 +9,7 @@ use std::time::Duration;
 use nsh_base::progress as base_progress;
 use nsh_core::{
     element::{Style, StyleRefinement},
+    element::layout_rtl,
     prelude::*,
 };
 
@@ -133,12 +134,14 @@ pub fn Progress(props: ProgressProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     root
 }
 
-/// The indicator's classes: the track's height, its fill, scaled from its
-/// start; while indeterminate the segment's width (the whole track,
-/// dimmed, with reduced motion).
+/// The indicator's classes: the track's height, its fill, the track's
+/// corners (nested with no gap, so its end is as round as the track's);
+/// while indeterminate the segment's width (the whole track, dimmed, with
+/// reduced motion).
 fn indicator_class(t: Theme, indeterminate: bool, still: bool) -> Classes {
     let c = Classes::new()
-        .push("h-full origin-left rtl:origin-right")
+        .push("h-full")
+        .length("", "rounded", t.length(PROGRESS_RADIUS))
         .color("", "bg", t.color(PROGRESS_INDICATOR));
     match (indeterminate, still) {
         (true, false) => c.push(&format!(
@@ -150,8 +153,10 @@ fn indicator_class(t: Theme, indeterminate: bool, still: bool) -> Classes {
     }
 }
 
-/// The indicator's transform and its transition: scaled to `value` from
-/// its start; while indeterminate the segment from fully before the track
+/// The indicator's transform and its transition: the whole track's width,
+/// moved back from its start by what `value` leaves (the track clips the
+/// rest, and its rounded end stays round, which a scale would flatten);
+/// while indeterminate the segment from fully before the track
 /// to fully past it (`running`), or back at the start without a transition.
 fn indicator_motion(
     t: Theme,
@@ -181,7 +186,8 @@ fn indicator_motion(
     } else {
         value.clamp(0.0, 100.0)
     };
-    s.scale_x(v / 100.0)
+    let back = v / 100.0 - 1.0;
+    s.translate_x(relative(if layout_rtl() { -back } else { back }))
         .duration(motion::duration(t))
         .ease_bezier(0.4, 0.0, 0.2, 1.0)
 }
