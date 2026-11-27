@@ -101,20 +101,20 @@ fn Layouts() -> impl IntoElement {
 }
 
 #[test]
-fn a_vertical_field_stacks_its_parts_12_apart() {
+fn a_vertical_field_stacks_its_parts_8_apart() {
     let app = start::<Layouts>(true);
     let label = bounds(&app, "text:Name");
     let field = bounds(&app, "label:Name box");
     assert_eq!(label.origin.x, field.origin.x);
     // The label's line (20), then the gap.
-    assert_eq!(field.origin.y - label.origin.y, px(20.0 + 12.0));
+    assert_eq!(field.origin.y - label.origin.y, px(20.0 + 8.0));
     // The control as wide as the field.
     assert_eq!(size(&app, "label:Name box").0, 360.0);
-    // The description closer to the control: it ends the field (no pull).
+    // The description closer to the control, as a part of it.
     let description = bounds(&app, "text:Your full name.");
     assert_eq!(
         description.origin.y,
-        field.origin.y + field.size.height + px(12.0)
+        field.origin.y + field.size.height + px(4.0)
     );
 }
 
@@ -210,7 +210,7 @@ fn a_label_beside_a_full_width_control_shares_the_row_and_wraps() {
     // The control shrank to share the row; the label wraps rather than
     // running under it.
     assert!(
-        label.origin.x + label.size.width + px(12.0) <= input.origin.x + px(0.5),
+        label.origin.x + label.size.width + px(8.0) <= input.origin.x + px(0.5),
         "{label:?} {input:?}"
     );
     assert!(label.size.height > px(20.0), "{label:?}");
@@ -434,13 +434,10 @@ fn a_set_disables_its_fields_and_spaces_its_parts() {
     assert!(!app.screen().enabled("label:Card box").unwrap());
     let legend = bounds(&app, "text:Payment");
     let description = bounds(&app, "text:Secure.");
-    // The legend's line (24), its margin (12), the set's gap (24), pulled
-    // up 6.
+    // The legend's line (24), then `field-content-gap` (4): the set's gap
+    // (12) less the description's pull (8).
     assert_eq!(legend.size.height, px(24.0));
-    assert_eq!(
-        description.origin.y - legend.origin.y,
-        px(24.0 + 12.0 + 24.0 - 6.0)
-    );
+    assert_eq!(description.origin.y - legend.origin.y, px(24.0 + 4.0));
     assert_eq!(size(&app, "text:Small legend").1, 20.0);
 }
 

@@ -192,17 +192,17 @@ them):
 
 | Part | Classes | This library |
 |---|---|---|
-| `Field` vertical | `group/field flex w-full flex-col gap-3 [&>*]:w-full` | A column, children stretched to its width, `field-gap` (12) apart |
+| `Field` vertical | `group/field flex w-full flex-col gap-3 [&>*]:w-full` | A column, children stretched to its width, `field-gap` (8: a label and its control are closely related controls) apart; a description or an error `field-content-gap` (4) under what is above it |
 | `Field` horizontal | `flex-row items-center [&>[data-slot=field-label]]:flex-auto`, `has-[>[data-slot=field-content]]:items-start` | A row, centered, `field-gap` apart; a `FieldLabel` or `FieldContent` in it and a full-width control share the row equally (`flex: 1 1 0`, so a group's rows line up in columns; the label side never narrower than its longest word, and a `FieldLabel` there stacks its children, so a long label wraps); beside a switch or a box the label side takes the room left (Implementation); with a `FieldContent`, the row aligns to the top and a choice control (Checkbox, Switch, a radio) is centered on the content's first line (Decisions 5) |
 | `Field` responsive | vertical; `@md/field-group:` horizontal | Vertical while the enclosing `FieldGroup` is narrower than `field-responsive-width` (448, Tailwind's `@md` container, 28rem), horizontal from it; vertical outside a `FieldGroup` (no container) |
-| `FieldContent` | `flex flex-1 flex-col gap-1.5 leading-snug` | A column, `flex: 1 1 0` (as a horizontal `FieldLabel`: half the row beside a full-width control, the room left beside a switch or a box), `field-content-gap` (6) apart |
-| `FieldGroup` | `flex w-full flex-col gap-7`, a nested group `gap-4` | A column, full width, `field-group-gap` (28) apart; a `FieldGroup` directly in another (not through a `Field`) `field-group-nested-gap` (16) |
-| `FieldSet` | `flex flex-col gap-6` | A column, `field-set-gap` (24) apart. A tighter `gap-3` around a checkbox or radio group is the app's `class="gap-3"` (NSH gaps 4) |
-| `FieldLegend` | `mb-3 font-medium`, `text-base` / `text-sm` | Margin below `field-legend-margin-bottom` (12), `font-weight-medium`, `field-legend-font-size` (16) or `label-font-size` (14) with `variant="label"`, color `field-legend-foreground`, line height from foundation (24 / 20) |
+| `FieldContent` | `flex flex-1 flex-col gap-1.5 leading-snug` | A column, `flex: 1 1 0` (as a horizontal `FieldLabel`: half the row beside a full-width control, the room left beside a switch or a box), `field-content-gap` (4: a label and its description are parts of one text) apart |
+| `FieldGroup` | `flex w-full flex-col gap-7`, a nested group `gap-4` | A column, full width, `field-group-gap` (16: separate groups of a form) apart; a `FieldGroup` directly in another (not through a `Field`) `field-group-nested-gap` (12) |
+| `FieldSet` | `flex flex-col gap-6` | A column, `field-set-gap` (12) apart: the legend is closer to its fields than the fields are to each other. A tighter `gap-3` around a checkbox or radio group is the app's `class="gap-3"` (NSH gaps 4) |
+| `FieldLegend` | `mb-3 font-medium`, `text-base` / `text-sm` | Margin below `field-legend-margin-bottom` (0: the set's gap is the legend's space), `font-weight-medium`, `field-legend-font-size` (16) or `label-font-size` (14) with `variant="label"`, color `field-legend-foreground`, line height from foundation (24 / 20) |
 | `FieldLabel` | Label + `flex w-fit gap-2 leading-snug` | Label's look; as wide as its content (`w-fit`) in a vertical field, line height from foundation (20, rather than `leading-snug`'s 19.25, which is off the 4-point grid; Label's own `leading-none` is dropped here so wrapped labels do not collide) |
 | `FieldTitle` | `flex w-fit items-center gap-2 text-sm leading-snug font-medium` | `label-font-size`, `label-font-weight`, `label-foreground`, line height 20, `w-fit` |
-| `FieldDescription` | `text-sm leading-normal font-normal text-muted-foreground`, `last:mt-0 nth-last-2:-mt-1`, after a legend `-mt-1.5` | `field-description-font-size` (14), line height 20, regular, `field-description-foreground`; `-mt-1` (−4: closer to the label above it) unless it is the last child (`last:mt-0`); directly in a `FieldSet` after the legend −6 |
-| `FieldError` | `text-sm font-normal text-destructive`; several: `ml-4 flex list-disc flex-col gap-1` | `field-error-font-size` (14), line height 20, regular, `field-error-foreground`; several: a column 4 apart, each row a bullet (`•`) in a 16-wide column, then the message |
+| `FieldDescription` | `text-sm leading-normal font-normal text-muted-foreground`, `last:mt-0 nth-last-2:-mt-1`, after a legend `-mt-1.5` | `field-description-font-size` (14), line height 20, regular, `field-description-foreground`; `field-content-gap` (4) under what is above it, a label, a control or a legend (a negative top margin of the parent's gap less `field-content-gap`), wherever it stands, as the first child none |
+| `FieldError` | `text-sm font-normal text-destructive`; several: `ml-4 flex list-disc flex-col gap-1` | `field-error-font-size` (14), line height 20, regular, `field-error-foreground`; `field-content-gap` (4) under what is above it, as a description; several: a column 4 apart, each row a bullet (`•`) in a 16-wide column, then the message |
 | `FieldSeparator` | `relative -my-2 h-5 text-sm`; the line `absolute inset-0 top-1/2`; the word `mx-auto w-fit bg-background px-2 text-muted-foreground` | 20 tall (`spacing × 5`), `-my-2`; a `Separator` across its middle; the word centered on it, `w-fit`, padding 8 at the sides, fill `field-separator-content-background` (`background`), text 14 `field-separator-content-foreground` |
 
 Text in `FieldDescription` is not balanced (`text-balance` has no NSH counterpart); links in it are
@@ -271,13 +271,13 @@ Values are those of `nsh/base`'s default theme.
 <!-- tokens:field -->
 | Token | Type | Derived default | Value |
 |---|---|---|---|
-| `field-gap` | length | `spacing × 3` | 12 |
-| `field-content-gap` | length | `spacing × 1.5` | 6 |
-| `field-group-gap` | length | `spacing × 7` | 28 |
-| `field-group-nested-gap` | length | `spacing × 4` | 16 |
-| `field-set-gap` | length | `spacing × 6` | 24 |
+| `field-gap` | length | `spacing × 2` | 8 |
+| `field-content-gap` | length | `spacing` | 4 |
+| `field-group-gap` | length | `spacing × 4` | 16 |
+| `field-group-nested-gap` | length | `spacing × 3` | 12 |
+| `field-set-gap` | length | `spacing × 3` | 12 |
 | `field-responsive-width` | length | `448` | 448 |
-| `field-legend-margin-bottom` | length | `spacing × 3` | 12 |
+| `field-legend-margin-bottom` | length | `0` | 0 |
 | `field-legend-font-size` | length | `text-base` | 16 |
 | `field-legend-foreground` | color | `foreground` |  |
 | `field-label-foreground-invalid` | color | `destructive` |  |
@@ -434,9 +434,8 @@ field_group()
    hiding is needed. A `@container` variant in NSH's Tailwind would make it a class.
 4. **No `has-`, `peer-` or `nth-last-` variants.** What would be selected by the children (a `FieldContent` in a
    field, a `Field` in a label, a checkbox group in a set) is told through context instead; `FieldSet`'s tighter gap
-   around a checkbox or radio group is the app's `class="gap-3"`; `FieldDescription`'s pull toward the label is "not
-   last" (`last:`), which matches "second to last" (`nth-last-2`) in the usual orders (label, control, description;
-   label, description, control).
+   around a checkbox or radio group is the app's `class="gap-3"`; `FieldDescription`'s and `FieldError`'s pull toward
+   the part above is the same wherever they stand (`first:` drops it), so no `nth-last-` is needed.
 5. **Controls of `nsh/base` without a described-by prop.** The element screen readers reach is `nsh/base`'s in
    `Switch` and `RadioGroup` (their root), `ToggleGroup` (its root), `Combobox` (its input) and `Slider` (its thumbs),
    and those components take no `accessibilityDescribedBy` (only `Checkbox` does); a described-by set on a component
@@ -462,8 +461,12 @@ Settled in the P3 review:
    focuses a text control and presses a checkbox-like one, as a browser's `<label>`; Label's `htmlFor` takes the new
    refs too. Additive: Label's TSX type widens, each control's body gains one `field::join` call. It lands first.
    Combobox cannot take part yet (NSH gaps 7).
-4. **The reference spacing** (28 between fields, 24 in a set), as tokens derived from `spacing`: the compact preset
-   and apps tighten them (`spacing: 3` gives 21 / 18). No separate desktop values.
+4. **The spacing follows the spatial grammar of gpui-kit's Design Guides**, as tokens derived from `spacing`: 4 between
+   the parts of one text (a label or a legend and its description, a control and its description or error), 8 between
+   a label and its control, 12 between a legend and its fields, 16 between fields (12 in a nested group). Apps tighten
+   them with `spacing` (`spacing: 3` gives 3 / 6 / 9 / 12). No separate desktop values. (The P3 review settled the
+   reference's 12 / 6 / 28 / 24, which are off the 4 / 8 / 12 / 16 / 24 scale; the sweep of the fields moved them onto
+   it, and a description's place no longer depends on whether a part, even an empty `FieldError`, follows it.)
 5. **A choice control in a horizontal field with content is centered on the content's first line** (the label's 20
    line), as Checkbox centers its box on its own label, rather than a fixed `mt-px`, which only fits one text size.
 6. **`FieldLabel` uses foundation's line heights** (20), not Label's `leading-none`: field labels wrap more often
