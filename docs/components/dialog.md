@@ -351,7 +351,7 @@ Values are those of `nsh/base`'s default theme.
 | `dialog-description-foreground` | color | `muted-foreground` |  |
 | `dialog-close-offset` | length | `spacing × 4` | 16 |
 | `dialog-close-opacity` | number | `0.7` | 0.7 |
-| `dialog-duration` | number | `duration × 1.3333` | 200 |
+| `dialog-duration` | number | `duration × 4 / 3` | 200 |
 | `dialog-animate` | number | `1` | 1 |
 <!-- /tokens -->
 - `dialog` is not a semantic token, so the panel's fill is the component's (`background`, shadcn's `bg-background`)

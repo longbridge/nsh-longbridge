@@ -322,6 +322,47 @@ fn nsh_reads_the_default_theme_file_as_the_library_resolves_it() {
     }
 }
 
+/// A duration or a delay is whole milliseconds on the default theme, also
+/// a derived one (`dialog-duration`: 4/3 of 150 is 200, not 199.99).
+#[test]
+fn durations_are_whole_milliseconds() {
+    let app = default_tokens();
+    let mut seen = 0;
+    for decl in registry() {
+        let nsh_longbridge::theme::DeclDefault::Number(default) = decl.default else {
+            continue;
+        };
+        if !(decl.name.contains("duration") || decl.name.contains("delay")) {
+            continue;
+        }
+        seen += 1;
+        let token = nsh_longbridge::theme::Token::<nsh_longbridge::theme::kind::Number>::new(
+            decl.name, default,
+        );
+        for pointer in [true, false] {
+            let ms = resolve_number_in(&app, &[], pointer, token);
+            assert_eq!(ms, ms.round(), "`{}` is {ms} ms", decl.name);
+        }
+    }
+    assert!(seen > 0, "no durations in the registry");
+    // The theme file writes it so CSS arithmetic gets 200 too (a product by
+    // 1.3333 gave 199.99).
+    let json: serde_json::Value = serde_json::from_str(&default_theme_json()).unwrap();
+    assert_eq!(
+        json["cssVars"]["theme"]["dialog-duration"],
+        "calc(var(--duration) * 4 / 3)"
+    );
+    assert_eq!(
+        resolve_number_in(
+            &app,
+            &[],
+            true,
+            nsh_longbridge::components::dialog::DIALOG_DURATION
+        ),
+        200.0
+    );
+}
+
 #[test]
 fn derived_defaults_follow_their_sources() {
     let app = default_tokens();

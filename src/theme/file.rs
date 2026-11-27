@@ -118,6 +118,12 @@ fn num_css(expr: &NumExpr, pointer: bool) -> String {
             }
             _ => format!("{} * {}", num_css(a, pointer), number(*k)),
         },
+        NumExpr::Div(a, k) => match **a {
+            NumExpr::Add(..) | NumExpr::Diff(..) | NumExpr::Sum(..) => {
+                format!("({}) / {}", num_css(a, pointer), number(*k))
+            }
+            _ => format!("{} / {}", num_css(a, pointer), number(*k)),
+        },
         NumExpr::Diff(a, b) => format!("{} - {}", num_css(a, pointer), num_css_operand(b, pointer)),
         NumExpr::Sum(a, b) => format!("{} + {}", num_css(a, pointer), num_css_operand(b, pointer)),
         // A theme file is the same on every device: it writes the
@@ -143,6 +149,7 @@ fn is_px(expr: &NumExpr) -> bool {
         NumExpr::Token { px, .. } | NumExpr::Value { px, .. } => *px,
         NumExpr::Add(a, _)
         | NumExpr::Mul(a, _)
+        | NumExpr::Div(a, _)
         | NumExpr::PointerTouch(a, _)
         | NumExpr::Max(a, _)
         | NumExpr::Min(a, _)
@@ -286,6 +293,7 @@ fn num_expr(expr: &NumExpr, inner: bool) -> String {
         // A negation: `−(a + b)`.
         NumExpr::Mul(a, k) if *k == -1.0 => format!("−{}", num_expr(a, true)),
         NumExpr::Mul(a, k) => format!("{} × {}", num_expr(a, true), number(*k)),
+        NumExpr::Div(a, k) => format!("{} / {}", num_expr(a, true), number(*k)),
         NumExpr::Diff(a, b) => {
             let diff = format!("{} − {}", num_expr(a, false), num_expr(b, true));
             if inner { format!("({diff})") } else { diff }

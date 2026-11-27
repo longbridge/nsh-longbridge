@@ -11,7 +11,7 @@
 use std::{
     fmt,
     marker::PhantomData,
-    ops::{Add, Mul, Neg, Sub},
+    ops::{Add, Div, Mul, Neg, Sub},
 };
 
 use nsh_core::element::AdaptiveColor;
@@ -272,6 +272,9 @@ pub enum NumExpr {
     Add(Box<NumExpr>, f32),
     /// A product.
     Mul(Box<NumExpr>, f32),
+    /// A quotient (`duration × 4 / 3`: whole where a product by 1.3333 is
+    /// not).
+    Div(Box<NumExpr>, f32),
     /// The difference of two expressions (`tabs-list-radius −
     /// tabs-list-padding`).
     Diff(Box<NumExpr>, Box<NumExpr>),
@@ -336,6 +339,14 @@ impl Mul<f32> for NumExpr {
 
     fn mul(self, rhs: f32) -> NumExpr {
         NumExpr::Mul(Box::new(self), rhs)
+    }
+}
+
+impl Div<f32> for NumExpr {
+    type Output = NumExpr;
+
+    fn div(self, rhs: f32) -> NumExpr {
+        NumExpr::Div(Box::new(self), rhs)
     }
 }
 

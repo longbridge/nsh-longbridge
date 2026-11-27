@@ -73,7 +73,7 @@ tokens! {
     DIALOG_CLOSE_OPACITY: Number = "dialog-close-opacity" => |t| t.value(0.7),
     /// How long the overlay and the panel take to come and go, in
     /// milliseconds.
-    DIALOG_DURATION: Number = "dialog-duration" => |t| t.number(DURATION) * (4.0 / 3.0),
+    DIALOG_DURATION: Number = "dialog-duration" => |t| t.number(DURATION) * 4.0 / 3.0,
     /// Whether dialogs fade and zoom in and out (1) or show and go in one
     /// frame (0).
     DIALOG_ANIMATE: Number = "dialog-animate" => |t| t.value(1.0),
