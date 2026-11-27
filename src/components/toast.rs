@@ -19,17 +19,19 @@ use std::{
 
 use nsh_base::{
     Anchor, SwipeDirection, ToastManager, ToastMotion, ToastOptions as ManagerOptions,
-    ToastStackState, ToastTransitionStatus, toast as base_toast, toast_stack,
+    ToastStackState, ToastTransitionStatus, terminal::is_terminal, toast as base_toast,
+    toast_stack,
 };
 use nsh_core::{
-    element::{Style, TextPartStyle, global, module, try_global},
+    element::{Style, TextPartStyle, global, layout_rtl, module, try_global},
     prelude::*,
-    time::now,
+    time::{Instant, now},
 };
 
 use super::button::{ButtonVariant, button};
 use crate::{
     foundation::{
+        class::Classes,
         icon::{IconName, icon_view, provide_text_color},
         labels::{self, Label},
         motion, shadow,
@@ -40,7 +42,8 @@ use crate::{
         CapturedScope, Theme, capture_scope,
         seeds::SPACING,
         semantic::{
-            ACCENT, BORDER, BORDER_WIDTH, MUTED_FOREGROUND, POPOVER, POPOVER_FOREGROUND, RADIUS_LG,
+            ACCENT, BORDER, BORDER_WIDTH, MUTED_FOREGROUND, POPOVER, POPOVER_FOREGROUND, PRIMARY,
+            RADIUS_LG,
         },
         theme,
     },
@@ -78,6 +81,10 @@ tokens! {
     TOAST_DURATION: Number = "toast-duration" => |t| t.value(4000.0),
     /// Whether toasts slide in and out (1) or show and go in one frame (0).
     TOAST_ANIMATE: Number = "toast-animate" => |t| t.value(1.0),
+    /// The remaining-time bar's fill (`primary`, the action's).
+    TOAST_TIMER: Color = "toast-timer" => |t| t.color(PRIMARY),
+    /// The remaining-time bar's height.
+    TOAST_TIMER_HEIGHT: Length = "toast-timer-height" => |t| t.px(2.0),
 }
 
 /// Narrower than this, the stack spans the window (the phone layout).
@@ -152,6 +159,10 @@ pub struct ToastOptions {
     pub cancel: Option<ToastButton>,
     /// The "×" at its corner; left out, the `Toaster`'s `closeButton`.
     pub close_button: Option<bool>,
+    /// The remaining-time bar along its edge; left out, the `Toaster`'s
+    /// `timer`, and left out there too, shown when it has an `action` or a
+    /// `cancel`. Never on a toast that does not time out.
+    pub timer: Option<bool>,
 }
 
 /// What `toast()` resolves with once the toast is gone.
@@ -217,11 +228,56 @@ impl Future for ToastAnswerFuture {
     }
 }
 
+/// A toast's time as `nsh/base`'s manager counts it down, which it keeps
+/// private (NSH gaps 7): the library keeps the same count beside it for
+/// the remaining-time bar.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Clock {
+    /// The whole time.
+    total: Duration,
+    /// What was left when it last started or stopped.
+    left: Duration,
+    /// Counting down since then (the toast fully in, the stack collapsed).
+    since: Option<Instant>,
+}
+
+impl Clock {
+    fn new(total: Duration) -> Self {
+        Self {
+            total,
+            left: total,
+            since: None,
+        }
+    }
+
+    /// What is left at `now`.
+    fn left(&self, now: Instant) -> Duration {
+        self.since.map_or(self.left, |since| {
+            self.left
+                .saturating_sub(now.saturating_duration_since(since))
+        })
+    }
+
+    /// Counts down from `now` on, or stands still.
+    fn run(&mut self, running: bool, now: Instant) {
+        match (running, self.since) {
+            (true, None) => self.since = Some(now),
+            (false, Some(_)) => {
+                self.left = self.left(now);
+                self.since = None;
+            }
+            _ => {}
+        }
+    }
+}
+
 // The queue: a surface global.
 
 /// The surface's toasts, and what reads them.
 struct Inner {
     manager: ToastManager<SharedString, Shown>,
+    /// The time of the toasts that time out, by toast.
+    clocks: HashMap<SharedString, Clock>,
     /// The pending answers, by toast.
     answers: HashMap<SharedString, Vec<Rc<RefCell<AnswerSlot>>>>,
     /// The button that closed a toast on its way out.
@@ -247,6 +303,7 @@ impl Default for Queue {
         Self {
             inner: Rc::new(RefCell::new(Inner {
                 manager: ToastManager::new(ToastMotion::sonner()),
+                clocks: HashMap::new(),
                 answers: HashMap::new(),
                 chosen: HashMap::new(),
                 next: 0,
@@ -303,8 +360,12 @@ fn show(title: SharedString, options: ToastOptions) -> ToastAnswer {
                 .map(|ms| Duration::from_secs_f64(ms.max(0.0) / 1000.0))
         };
         // Shown again with its id: a button pressed on its way out no
-        // longer closes it.
+        // longer closes it, and its time starts over.
         inner.chosen.remove(&id);
+        match timeout {
+            Some(total) => inner.clocks.insert(id.clone(), Clock::new(total)),
+            None => inner.clocks.remove(&id),
+        };
         inner.manager.push(
             id.clone(),
             Shown { title, options },
@@ -337,21 +398,37 @@ pub fn dismiss_toast(id: Option<&str>) {
     }
 }
 
-/// Advances the lifecycle; whether toasts are left.
-fn tick(paused: bool) -> bool {
+/// Advances the lifecycle, the time since the last advance counted as
+/// `paused` was; from now on the time stands still while `pausing`.
+/// Whether toasts are left.
+fn tick(paused: bool, pausing: bool) -> bool {
     change(|inner| {
-        let advance = inner.manager.advance(now(), paused);
+        let at = now();
+        let advance = inner.manager.advance(at, paused);
         let gone = advance
             .removed
             .into_iter()
             .map(|(id, _)| {
+                inner.clocks.remove(&id);
                 let action = inner.chosen.remove(&id);
                 (id, action)
             })
             .collect();
         answer(gone, inner);
+        // The manager counts a toast's time down while it is fully in and
+        // the stack is collapsed.
+        for (id, _, status) in inner.manager.iter() {
+            if let Some(clock) = inner.clocks.get_mut(id) {
+                clock.run(status == ToastTransitionStatus::Present && !pausing, at);
+            }
+        }
         (!inner.manager.is_empty(), advance.changed)
     })
+}
+
+/// Toast `id`'s clock (`None`: it does not time out).
+fn clock(id: &SharedString) -> Option<Clock> {
+    global::<Queue>().with_untracked(|q| q.inner.borrow().clocks.get(id).copied())
 }
 
 /// A toast to show, set up by its methods and shown by
@@ -419,6 +496,13 @@ impl ToastBuilder {
     /// The "×" at its corner; left out, the `Toaster`'s `closeButton`.
     pub fn close_button(mut self, close_button: bool) -> Self {
         self.options.close_button = Some(close_button);
+        self
+    }
+
+    /// The remaining-time bar; left out, the `Toaster`'s `timer`, then
+    /// shown when it has an action or a cancel.
+    pub fn timer(mut self, timer: bool) -> Self {
+        self.options.timer = Some(timer);
         self
     }
 
@@ -565,6 +649,10 @@ pub struct ToasterProps {
     /// Every toast shows the "×" (default false).
     #[prop(default)]
     pub close_button: Prop<bool>,
+    /// `true`: every toast that times out shows the remaining-time bar;
+    /// `false`: none does; left out, toasts with an action or a cancel do.
+    /// A toast's own `timer` wins.
+    pub timer: Prop<Option<bool>>,
     /// Tailwind classes of the stack.
     pub class: Prop<Option<SharedString>>,
     /// The inline style of the stack.
@@ -605,6 +693,11 @@ pub struct ToasterProps {
     /// The inline style of the "×".
     #[prop(default)]
     pub close_style: Prop<Style>,
+    /// Tailwind classes of the remaining-time bar (its fill, its height).
+    pub timer_class: Prop<Option<SharedString>>,
+    /// The inline style of the remaining-time bar.
+    #[prop(default)]
+    pub timer_style: Prop<Style>,
 }
 
 /// Draws the toasts `toast()` shows: place one at the app's root. Brief
@@ -656,7 +749,8 @@ pub fn Toaster(props: ToasterProps, _cx: Scope<NoEvent>) -> impl IntoElement {
             (true, None) => {
                 let ticker = owner.run(|| {
                     set_interval(TICK, move || {
-                        tick(state.is_expanded());
+                        let paused = state.is_expanded();
+                        tick(paused, paused);
                     })
                 });
                 ticking.replace(Some(ticker));
@@ -667,6 +761,16 @@ pub fn Toaster(props: ToasterProps, _cx: Scope<NoEvent>) -> impl IntoElement {
             (false, Some(ticker)) => ticker.cancel(),
             (false, None) => {}
         });
+    });
+    // The pause starts and ends the moment the stack expands and
+    // collapses, not at the next tick.
+    let expanded = stored(false);
+    effect(move || {
+        let now_expanded = state.is_expanded();
+        let was = expanded.replace(now_expanded);
+        if was != now_expanded {
+            untracked(|| tick(was, now_expanded));
+        }
     });
     let scope = capture_scope();
     let draw: Rc<dyn Fn() -> AnyElement> =
@@ -807,7 +911,7 @@ fn one(
         .swiping_class(move || Some(SharedString::from("transition-none")))
         .transition_all()
         .duration(400.0)
-        .child(boxed(t, props, id, behind, toast))
+        .child(boxed(t, props, state, id, behind, item))
 }
 
 /// `el` hidden while its toast is `behind` the front layer.
@@ -821,10 +925,12 @@ fn veiled<E: Styled>(el: E, behind: Memo<bool>) -> E {
 fn boxed(
     t: Theme,
     props: ToasterProps,
+    state: ToastStackState,
     id: SharedString,
     behind: Memo<bool>,
-    toast: impl Fn() -> Shown + Copy + 'static,
+    item: impl Fn() -> Item + Copy + 'static,
 ) -> impl IntoElement {
+    let toast = move || item().1;
     let font_size = move || t.length(TOAST_FONT_SIZE);
     let close_shown = move || {
         toast()
@@ -833,6 +939,7 @@ fn boxed(
             .unwrap_or_else(|| props.close_button.get())
     };
     let kind = move || toast().options.kind;
+    let countdown = countdown(props, state, id.clone(), item);
     let (close_id, cancel_id, action_id) = (id.clone(), id.clone(), id);
     let el = reset_inherited(view())
         .relative()
@@ -856,7 +963,11 @@ fn boxed(
         })
         .app_class(props.toast_class)
         .inline_style(move || props.toast_style.get());
-    el.child(when(close_shown, move || {
+    el.child(when(
+        move || countdown.with(Option::is_some),
+        move || vec![timer(t, props, behind, countdown).into_element()],
+    ))
+    .child(when(close_shown, move || {
         vec![close(t, props, close_id.clone(), behind).into_element()]
     }))
     .child(when(
@@ -946,6 +1057,120 @@ fn boxed(
             ]
         },
     ))
+}
+
+/// What a toast's remaining-time bar shows.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Countdown {
+    /// The share of the time left, from 1 to 0.
+    left: f32,
+    /// While the time runs: the milliseconds left, over which the bar
+    /// shrinks to nothing.
+    running: Option<f32>,
+}
+
+/// The remaining-time bar of toast `id`: `None` when it shows none (it
+/// does not time out, `timer` says no, reduced motion, the terminal).
+/// Computed again only as the toast changes phase or content and as the
+/// stack expands or collapses; in between the bar's transition moves it.
+fn countdown(
+    props: ToasterProps,
+    state: ToastStackState,
+    id: SharedString,
+    item: impl Fn() -> Item + 'static,
+) -> Memo<Option<Countdown>> {
+    computed(move || {
+        let (_, shown, status) = item();
+        let wanted = shown
+            .options
+            .timer
+            .or_else(|| props.timer.get())
+            .unwrap_or(shown.options.action.is_some() || shown.options.cancel.is_some());
+        if !wanted || reduce_motion() || is_terminal() {
+            return None;
+        }
+        let paused = state.is_expanded();
+        let clock = clock(&id)?;
+        let left = clock.left(now());
+        let share = if clock.total.is_zero() {
+            0.0
+        } else {
+            (left.as_secs_f64() / clock.total.as_secs_f64()) as f32
+        };
+        let runs = status == ToastTransitionStatus::Present && !paused && !left.is_zero();
+        Some(Countdown {
+            left: share,
+            running: runs.then_some((left.as_secs_f64() * 1000.0) as f32),
+        })
+    })
+}
+
+/// The remaining-time bar: at the placement's edge, inside the border,
+/// clipped by the toast's inner corners; it shrinks toward the inline
+/// start with one linear transition per run. Decorative.
+fn timer(
+    t: Theme,
+    props: ToasterProps,
+    behind: Memo<bool>,
+    countdown: Memo<Option<Countdown>>,
+) -> impl IntoElement {
+    let top = move || props.placement.get().top();
+    let inner_radius = move || px((t.length(TOAST_RADIUS).0 - t.length(BORDER_WIDTH).0).max(0.0));
+    // A view's first style does not transition: mounted while the time
+    // runs (the stack moved into a dialog), the bar first stands at what
+    // is left, then runs from there.
+    let ready = signal(false);
+    set_timeout(Duration::ZERO, move || ready.set(true));
+    // The fill and the height are classes, so `timerClass` changes them.
+    let bar = view()
+        .app_class(move || {
+            Some(
+                Classes::new()
+                    .push("w-full shrink-0")
+                    .length("", "h", t.length(TOAST_TIMER_HEIGHT))
+                    .color("", "bg", t.color(TOAST_TIMER))
+                    .then(props.timer_class.get()),
+            )
+        })
+        .style_with(move |s| {
+            let s = if layout_rtl() {
+                s.origin_right()
+            } else {
+                s.origin_left()
+            };
+            let s = s.transition_transform();
+            match countdown.get() {
+                Some(Countdown {
+                    running: Some(ms), ..
+                }) if ready.get() => s.scale_x(0.0).duration(ms).ease_linear(),
+                // Full again (shown again by `id`): it fills over
+                // `duration`; otherwise it stands at what is left.
+                Some(Countdown {
+                    left,
+                    running: None,
+                }) if left >= 1.0 => s.scale_x(1.0).duration(motion::duration(t)).ease_out(),
+                Some(Countdown { left, .. }) => s.scale_x(left).duration(0.0),
+                None => s,
+            }
+        })
+        .inline_style(move || props.timer_style.get());
+    veiled(view(), behind)
+        .absolute()
+        .inset_0()
+        .rounded(inner_radius)
+        .overflow_hidden()
+        .flex_col()
+        .style_with(move |s| {
+            if top() {
+                s.justify_start()
+            } else {
+                s.justify_end()
+            }
+        })
+        .pointer_events(PointerEvents::None)
+        .accessible(false)
+        .accessibility_elements_hidden(true)
+        .child(bar)
 }
 
 /// A toast's "×": a circle on its top-start corner, moved out by 35%.

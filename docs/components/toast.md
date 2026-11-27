@@ -46,6 +46,11 @@ the per-toast duration and the answer (`toast()` resolves with the button that c
 - `Toaster` reads the global and renders `manager.visible(visibleToasts)`. While a toast is mounted it advances the
   lifecycle on a 50 ms timer (`nsh/base`'s pattern), paused while the stack is expanded, and stops when the queue is
   empty.
+- The pause starts and ends the moment the stack expands and collapses: the lifecycle advances once then, so the
+  time counted is the time the stack was collapsed, not rounded to a tick.
+- A toast's remaining time is kept beside `nsh/base`'s manager, which counts it down without telling it (NSH gaps 7):
+  the library's count starts, stops and starts over at the same moments as the manager's, and the remaining-time
+  bar reads it.
 - Toasts pushed before a `Toaster` is mounted wait in the queue and show once one is; their default time is
   `toast-duration`'s default (4000), as the `Toaster`'s `duration` is not known yet. A second `Toaster` logs a
   warning in development builds and draws nothing.
@@ -93,6 +98,7 @@ TSX: `toast(title: string, options?: ToastOptions): Promise<{ action: string | n
 | `action` | `{ id: string, label: string }` | — | A button after the text (`Button` `xs`, default variant); a press closes the toast and resolves `{ action: id }` |
 | `cancel` | `{ id: string, label: string }` | — | A secondary button before the action (`Button` `xs`, secondary); a press closes it and resolves `{ action: id }` |
 | `closeButton` | `boolean` | `Toaster`'s `closeButton` | The small "×" at its corner |
+| `timer` | `boolean` | `Toaster`'s `timer`; left out there too, shown when the toast has an `action` or a `cancel` | The remaining-time bar along its edge; never on a toast that does not time out (`loading`, `Infinity`) |
 
 The promise resolves with `{ action: null }` when the toast goes any other way (its time ran out, a swipe, the "×",
 `dismissToast`). Every call that showed or changed the same `id` resolves with the same answer.
@@ -136,7 +142,7 @@ dismiss_toast(Some("upload"));
 ```
 
 Builder methods: `id`, `description`, `kind`, `duration(Option<Duration>)` (`None`: until dismissed), `action(id,
-label)`, `cancel(id, label)`, `close_button(bool)`, then `show()`. Dropping the answer does not dismiss the toast.
+label)`, `cancel(id, label)`, `close_button(bool)`, `timer(bool)`, then `show()`. Dropping the answer does not dismiss the toast.
 `ToastAnswer` is `IntoFuture`, not a `Future` itself, so a toast shown for its message alone is a plain statement
 (`toast("Copied").show();`) without an unused-future warning.
 
@@ -148,6 +154,7 @@ label)`, `cancel(id, label)`, `close_button(bool)`, then `show()`. Dropping the 
 | `visibleToasts` | `visible_toasts` | `number` (`u32`) | `3` | How many are mounted at once; older ones wait |
 | `duration` | `duration` | `number` (ms; Rust `Option<f64>`) | `toast-duration` (4000) | The default time a toast stays |
 | `closeButton` | `close_button` | `boolean` | `false` | Every toast shows the "×" |
+| `timer` | `timer` | `boolean` (Rust `Option<bool>`) | left out: shown on toasts with a button | `true`: every toast that times out shows the remaining-time bar; `false`: none does. A toast's own `timer` wins |
 | `class` / `style` | `class` / `style` | | | The stack |
 | `toastClass` / `toastStyle` | `toast_class` / `toast_style` | | | Each toast's box |
 | `iconClass` / `iconStyle` | `icon_class` / `icon_style` | | | The kind's icon |
@@ -156,8 +163,9 @@ label)`, `cancel(id, label)`, `close_button(bool)`, then `show()`. Dropping the 
 | `actionClass` / `actionStyle` | `action_class` / `action_style` | | | The action button |
 | `cancelClass` / `cancelStyle` | `cancel_class` / `cancel_style` | | | The cancel button |
 | `closeClass` / `closeStyle` | `close_class` / `close_style` | | | The "×" button |
+| `timerClass` / `timerStyle` | `timer_class` / `timer_style` | | | The remaining-time bar (its fill, its height); its scale and transition are the library's |
 
-Each part (`toast`, `icon`, `title`, `description`, `action`, `cancel`, `close`) has the conventions' `<part>Class` /
+Each part (`toast`, `icon`, `title`, `description`, `action`, `cancel`, `close`, `timer`) has the conventions' `<part>Class` /
 `<part>Style`. The appearance is the `ThemeScope` (or the app's), the offset and the gap are tokens; rich colors, an
 always-expanded stack, `invert`, a hotkey and a text direction are not offered (see "Decisions" and NSH gaps 3).
 
@@ -172,6 +180,8 @@ Toaster
 └─ overlay                       at the placement's edge, `toast-offset` (plus the safe area) from it; pointer-events box-none
    └─ stack (nsh/base ToastStack) `toast-width` wide; `class` / `style`
       └─ toast (nsh/base Toast)    a row; `toastClass` / `toastStyle`
+         ├─ timer clip             absolute over the box, the box's inner corners, clipping; hidden from accessibility
+         │  └─ timer               the remaining-time bar at the placement's edge (`timerClass`)
          ├─ close                  the "×", at the top-start corner (`closeClass`)
          ├─ icon                   the kind's icon (`iconClass`)
          ├─ content                a column: title (`titleClass`), description (`descriptionClass`)
@@ -198,6 +208,7 @@ A toast is a popup surface (`popover`, `popover-foreground`, `border`) with `rad
 | action | The library's `Button` `size="xs"` `variant="default"` (24 high, 8 padding, 12 / medium), pushed to the end (`ml-auto` when it is the first button) |
 | cancel | `Button` `size="xs"` `variant="secondary"` |
 | close | A 20 square circle (`toast-close-size`), border `toast-border`, fill `toast`, `x` icon 12, at the toast's top-start corner moved out by 35% of its size (7, from inside the toast's edge); opacity 1; under the pointer the fill turns `accent` |
+| timer | A bar `toast-timer-height` (2) high along the toast's edge on the placement's side (the bottom edge of a bottom stack, the top edge of a top one), just inside the border, filled `toast-timer`; the full width when the time starts, shrinking toward the inline start (the left, the right in a right-to-left layout) at a constant pace to nothing as the time runs out. It is clipped by the toast's inner corners (`toast-radius` less `border-width`), so its ends follow the curve. No track: the toast's fill is what is left |
 
 The action and cancel are the library's buttons (corners `button-radius`, 8; colors `primary` / `secondary`), so a
 brand theme colors a toast's action as its other main buttons; the shadow is the library's tier 3 (`md`).
@@ -222,6 +233,7 @@ shown).
 | Exit | `endingClass="opacity-0 translate-y-full"` (`-translate-y-full` at the top), over the stack's exit (200 ms) |
 | Swipe | Follows the finger, out past the threshold: `nsh/base`'s swipe; `swipingClass="transition-none"` |
 | Reduced motion | No starting / ending classes: toasts show and go at once; the stack's layers are set at once (`nsh/base`'s, see NSH gaps 4) |
+| Remaining-time bar | One linear transition of its horizontal scale, from what is left to nothing over the time left, started when the toast is fully in (its time starts then) and again as the stack collapses; while paused it stands at what is left; a toast changed in place by `id` fills it again over `duration` (150) and it starts again once the toast is in. With reduced motion there is no bar (Decisions 8) |
 
 `toast-animate: 0` turns the entrance and exit off.
 
@@ -236,14 +248,17 @@ Swipe direction: right for `*Right`, left for `*Left`, down for
 | Expanded stack | `nsh/base`'s layout; timeouts paused |
 | "×" hover | Fill `accent` (pointer only) |
 | Buttons | `Button`'s states |
-| Loading | The spinning icon; no timeout until changed to another kind |
+| Loading | The spinning icon; no timeout until changed to another kind, so no remaining-time bar |
+| Time running | The remaining-time bar shrinks (toasts with a button, or `timer`) |
+| Paused (stack expanded) | The bar stands still at what is left; every toast's time stands still |
+| Changed in place (`id`) | The bar fills again; the time starts over once the toast is in |
 
 ## Pointer and touch
 
 | | Desktops and desktop browsers | Phones and tablets |
 |---|---|---|
 | Where | A corner (default bottom right), 356 wide | Full width less 16, at the placement's top or bottom |
-| Pause | Pointer over the stack (expands it) | A finger down on it (expands it) |
+| Pause | Pointer over the stack (expands it); the remaining-time bar stops | A finger down on it (expands it); the bar stops |
 | Dismiss | "×", a button, a swipe with the mouse, its time | A swipe, "×", a button, its time |
 | Hit areas | Buttons 24 high | The buttons take their touch heights (`control-height-touch-xs`, 32) and hit slop; the "×" gets a hit slop to 44 |
 
@@ -259,6 +274,12 @@ matches them.
 - The "×" is a `button` named "Close" (`labels`, shared with `Dialog`).
 - A toast with an action stays long enough to reach: an action toast's default `duration` is still 4000;
   apps give important actions `Infinity` or a longer time.
+- The remaining-time bar is decorative: hidden from accessibility (`accessible(false)`,
+  `accessibilityElementsHidden`), no role, no live value. A screen reader hears the toast once as it shows, and
+  reaching its buttons expands the stack only for a pointer or a finger; a bar that announced its value would
+  interrupt what the user is doing for something the time itself already decides. Apps whose action matters give it
+  a longer `duration`, as above.
+- The bar does not change the timing: a toast goes when its time runs out whether the bar is shown or not.
 - Escape does not dismiss toasts (Escape belongs to the dialog or popup in front): the stack's
   `closeOnEscape` is false.
 
@@ -285,6 +306,8 @@ Values are those of `nsh/base`'s default theme.
 | `toast-offset` | length | `pointer_touch(spacing × 6, spacing × 4)` | 24 (touch 16) |
 | `toast-duration` | number | `4000` | 4000 |
 | `toast-animate` | number | `1` | 1 |
+| `toast-timer` | color | `primary` |  |
+| `toast-timer-height` | length | `2` | 2 |
 <!-- /tokens -->
 - `toast` and `toast-foreground` follow the popup surface (`popover`) but are the
   toast's own, so a theme can make toasts inverted or colored without touching popovers.
@@ -292,6 +315,9 @@ Values are those of `nsh/base`'s default theme.
 - `toast-width` and `toast-font-size` are fixed values (356, 13), not derived.
 - A window narrower than 600 spans the stack across it (a fixed breakpoint); with a pointer it keeps the
   pointer's `toast-offset` (24), so a theme's offset holds there too (a fixed 16 would ignore the token).
+- `toast-timer` is `primary`, the action button's fill, so the bar reads as the action's time and a brand theme
+  colors both; `toast-timer-height` is a fixed 2, thin enough not to read as a progress bar of the toast's own
+  task. A calmer bar is `toast-timer: var(--muted-foreground)`.
 
 ## Examples
 
@@ -326,6 +352,19 @@ try {
 }
 
 dismissToast("upload");
+
+// A retry: the bar shows how long "Retry" stays (it has an action).
+const { action } = await toast("Message not sent", {
+  kind: "error",
+  description: "The connection dropped.",
+  action: { id: "retry", label: "Retry" },
+  duration: 8000,
+});
+if (action === "retry") resend();
+
+// No bar on this one; a bar on a toast without buttons.
+toast("Archived", { action: { id: "undo", label: "Undo" }, timer: false });
+toast("Copied", { timer: true });
 ```
 
 With NSH 0.7.0, write a string child inside `<Text>` for now (see [button.md, NSH gaps](button.md#nsh-gaps), G0).
@@ -375,6 +414,11 @@ spawn(async move {
    library hides the content of the layers behind the newest while the stack is collapsed (fading in as it spreads out;
    a test guards it); a taller layer behind still peeks further. A collapsed height option on the stack would close the
    gap.
+7. **The manager does not tell a toast's remaining time.** `nsh/base`'s `ToastManager` counts each toast's timeout
+   down but keeps it private. Workaround: the library keeps its own count beside it, started and stopped as the
+   manager's is (when the toast is fully in, while the stack is collapsed), started over when the toast is shown
+   again by `id`; a test checks that the bar runs out as the toast goes. A `remaining(id)` (and the total) on the
+   manager would remove the second count.
 
 ## Decisions
 
@@ -389,3 +433,19 @@ Settled in review.
 5. **Escape does not dismiss toasts.**
 6. **Toasts move into the topmost library dialog** while one is open; under `nsh/base`'s own `Dialog` and `Sheet`
    they stay hidden (NSH gaps 1, accepted).
+7. **The remaining-time bar shows by default on toasts with a button** (`action` or `cancel`) that time out. On
+   such a toast the time is the window to act ("Undo", "Retry"), and without the bar the user cannot tell how long
+   it stays; on a plain message ("Copied") the time only clears the screen, and a moving line would draw the eye to
+   something that needs nothing. `timer` forces it on or off, per toast or for the `Toaster`. This adds a visual
+   to existing action toasts in 0.1.x (no behavior or timing changes); `timer={false}` on the `Toaster` restores
+   the old look.
+8. **No bar with reduced motion.** NSH runs no transitions then, so a shrinking bar would have to be redrawn on
+   every tick, which is the motion the user asked to avoid; a bar standing still would say the time is not
+   running. The timeout is unchanged. (A spinner keeps turning because a still one looks stuck; a missing bar does
+   not look broken.)
+9. **The bar is on the placement's edge** (the bottom of a bottom stack): the opposite edge is where the layers
+   behind peek out of a collapsed stack, and a line there would read as a seam between the cards. It shrinks toward
+   the inline start, as reading order runs, with no track, inside the border, clipped by the inner corners.
+10. **A transition, not a tick.** The bar is one linear transform transition per run (no layout, the renderer's own
+    interpolation), restyled only when the toast is fully in, as the stack expands or collapses and when it is
+    changed in place: nothing runs on the lifecycle's 50 ms timer for it, and a paused bar costs nothing.

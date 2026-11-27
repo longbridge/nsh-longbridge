@@ -3,7 +3,9 @@
 //! answers with the button that closed it, changes in place by `id`, keeps
 //! `visibleToasts` mounted; `dismissToast`; the stack's place and width;
 //! it shows above an open dialog, in the `Toaster`'s theme scope; reduced
-//! motion skips the entrance.
+//! motion skips the entrance; the remaining-time bar runs, stands still
+//! while the stack is expanded, starts over by `id` and runs out as the
+//! toast goes.
 
 mod common;
 
@@ -455,4 +457,298 @@ fn a_collapsed_stacks_back_layers_hide_their_content() {
     app.hover("role:alert[Newer]").unwrap();
     app.run_for(Duration::from_millis(600)).unwrap();
     assert_eq!(opacity(&app), 1.0, "spread out");
+}
+
+// The remaining-time bar.
+
+/// The styles applied to each view, with the app's time when they were.
+type Timed = Arc<Mutex<Vec<(std::time::Duration, NodeId, nsh_core::ViewStyle)>>>;
+
+fn watch_timed(app: &mut Headless) -> Timed {
+    let styles = Timed::default();
+    let seen = styles.clone();
+    let clock = app.clock().clone();
+    let start = clock.now();
+    app.observe(move |_, batch| {
+        let at = clock.now().saturating_duration_since(start);
+        for item in &batch.items {
+            if let MountItem::ViewStyle { id, style } = item {
+                seen.lock().unwrap().push((at, *id, (**style).clone()));
+            }
+        }
+    });
+    styles
+}
+
+/// The remaining-time bar of the toast `label`: the 2-high view inside
+/// it.
+fn timer_bar(app: &Headless, label: &str) -> Option<NodeId> {
+    let alert = app.screen().id(&format!("role:alert[{label}]")).unwrap();
+    let nodes = app.screen().layout_nodes();
+    let inside = |mut at: NodeId| loop {
+        if at == alert {
+            return true;
+        }
+        match nodes.iter().find(|n| n.id == at) {
+            Some(n) if n.parent != at => at = n.parent,
+            _ => return false,
+        }
+    };
+    nodes
+        .iter()
+        .find(|n| n.id != alert && n.bounds.size.height.0 == 2.0 && inside(n.id))
+        .map(|n| n.id)
+}
+
+/// What the bar shows: its horizontal scale and the time its transition
+/// takes, as last styled.
+fn bar_look(styles: &Timed, bar: NodeId) -> (f32, f32) {
+    let styles = styles.lock().unwrap();
+    let (_, _, style) = styles.iter().rev().find(|(_, id, _)| *id == bar).unwrap();
+    let scale = style
+        .transform
+        .ops()
+        .iter()
+        .find(|op| op.kind == nsh_core::TransformKind::ScaleX)
+        .map_or(1.0, |op| op.value);
+    (scale, style.transition.map_or(0.0, |t| t.duration))
+}
+
+const LONG: Duration = Duration::from_secs(20);
+
+fn make_archived(_: u32) -> nsh_longbridge::ToastBuilder {
+    toast("Archived")
+        .id("archived")
+        .action("undo", "Undo")
+        .duration(Some(LONG))
+}
+
+#[component]
+fn Archived() -> impl IntoElement {
+    app(make_archived, toaster().into_element())
+}
+
+/// A toast with a button shows its remaining time: a bar along its bottom
+/// edge, inside the border, shrinking to nothing at a constant pace over
+/// the time left once the toast is in. Decorative: no accessible element.
+#[test]
+fn a_toast_with_a_button_shows_its_remaining_time() {
+    let mut app = start::<Archived>(true);
+    let styles = watch_timed(&mut app);
+    show(&mut app);
+    let bar = timer_bar(&app, "Archived").expect("a bar");
+    let alert = bounds(&app, "role:alert[Archived]");
+    let b = app
+        .screen()
+        .layout_nodes()
+        .into_iter()
+        .find(|n| n.id == bar)
+        .unwrap()
+        .bounds;
+    assert_eq!(
+        b.size.width.0,
+        alert.size.width.0 - 2.0,
+        "inside the border"
+    );
+    assert_eq!(
+        b.origin.y.0 + 2.0,
+        alert.origin.y.0 + alert.size.height.0 - 1.0,
+        "on the bottom edge, inside the border"
+    );
+    let (scale, ms) = bar_look(&styles, bar);
+    assert_eq!(scale, 0.0, "running to nothing");
+    assert!(ms > 15_000.0 && ms <= 20_000.0, "over the time left: {ms}");
+    let style = styles
+        .lock()
+        .unwrap()
+        .iter()
+        .rev()
+        .find(|(_, id, _)| *id == bar)
+        .map(|(_, _, s)| s.clone())
+        .unwrap();
+    let transition = style.transition.unwrap();
+    assert_eq!(
+        transition.easing,
+        [0.0, 0.0, 1.0, 1.0],
+        "at a constant pace"
+    );
+    assert!(
+        app.screen().matches("role:alert[Archived]").unwrap(),
+        "read as before: the bar adds nothing"
+    );
+}
+
+/// Expanding the stack stops the bar where the time is; collapsing it
+/// runs it again over exactly what is left; the time stood still.
+#[test]
+fn the_bar_stands_still_while_the_stack_is_expanded() {
+    let mut app = start::<Archived>(true);
+    let styles = watch_timed(&mut app);
+    show(&mut app);
+    app.run_for(Duration::from_millis(3000)).unwrap();
+    let bar = timer_bar(&app, "Archived").unwrap();
+    app.hover("role:alert[Archived]").unwrap();
+    let (paused, ms) = bar_look(&styles, bar);
+    assert!(paused > 0.5 && paused < 0.95, "what is left: {paused}");
+    assert_eq!(ms, 0.0, "stands at once");
+    app.run_for(LONG + Duration::from_secs(5)).unwrap();
+    assert!(app.shows("Archived"), "its time stood still");
+    assert_eq!(bar_look(&styles, bar), (paused, 0.0), "the bar too");
+    app.hover("role:button[Show]").unwrap();
+    let (scale, ms) = bar_look(&styles, bar);
+    assert_eq!(scale, 0.0);
+    let left = paused * LONG.as_secs_f32() * 1000.0;
+    assert!((ms - left).abs() < 1.0, "over what is left: {ms} vs {left}");
+}
+
+/// Shown again with its `id`, a toast's bar fills again: its time starts
+/// over.
+#[test]
+fn showing_a_toast_again_by_id_starts_its_bar_over() {
+    let mut app = start::<Archived>(true);
+    let styles = watch_timed(&mut app);
+    show(&mut app);
+    app.run_for(Duration::from_millis(3000)).unwrap();
+    let bar = timer_bar(&app, "Archived").unwrap();
+    app.hover("role:alert[Archived]").unwrap();
+    let (before, _) = bar_look(&styles, bar);
+    assert!(before < 0.95, "{before}");
+    // Shown again while the stack is expanded: full, and standing still.
+    app.press("role:button[Show]").unwrap();
+    app.hover("role:alert[Archived]").unwrap();
+    app.run_for(Duration::from_millis(1000)).unwrap();
+    let bar = timer_bar(&app, "Archived").unwrap();
+    assert_eq!(bar_look(&styles, bar).0, 1.0, "full again");
+}
+
+/// The bar runs out as the toast goes: they read the same time.
+#[test]
+fn the_bar_runs_out_as_the_toast_goes() {
+    let mut app = start::<Archived>(true);
+    let styles = watch_timed(&mut app);
+    show(&mut app);
+    let bar = timer_bar(&app, "Archived").unwrap();
+    let alert = app.screen().id("role:alert[Archived]").unwrap();
+    app.run_for(LONG + Duration::from_secs(3)).unwrap();
+    assert!(!app.shows("Archived"));
+    let styles = styles.lock().unwrap();
+    let (started, _, run) = styles
+        .iter()
+        .find(|(_, id, s)| *id == bar && s.transition.is_some_and(|t| t.duration > 1000.0))
+        .unwrap();
+    let ends = *started + Duration::from_secs_f32(run.transition.unwrap().duration / 1000.0);
+    let (gone, _, _) = styles
+        .iter()
+        .find(|(at, id, s)| *id == alert && *at > *started && s.opacity < 1.0)
+        .unwrap();
+    let off = gone.as_secs_f32() - ends.as_secs_f32();
+    assert!(
+        off.abs() <= 0.1,
+        "the toast went {off} s after the bar ran out"
+    );
+}
+
+fn make_mixed(n: u32) -> nsh_longbridge::ToastBuilder {
+    let long = Some(LONG);
+    match n {
+        1 => toast("Copied").duration(long),
+        2 => toast("Pinned").timer(true).duration(long),
+        3 => toast("Moved")
+            .action("undo", "Undo")
+            .timer(false)
+            .duration(long),
+        4 => toast("Syncing")
+            .kind(ToastKind::Loading)
+            .action("stop", "Stop"),
+        5 => toast("Kept").action("undo", "Undo").duration(None),
+        _ => toast("Sent").cancel("open", "Open").duration(long),
+    }
+}
+
+#[component]
+fn Mixed() -> impl IntoElement {
+    app(make_mixed, toaster().visible_toasts(6).into_element())
+}
+
+/// No bar on a plain message, a loading toast or one that stays until
+/// dismissed; `timer` forces it on or off; a cancel counts as a button.
+#[test]
+fn which_toasts_show_the_bar() {
+    let mut app = start::<Mixed>(true);
+    for _ in 0..6 {
+        show(&mut app);
+    }
+    // Spread out, every layer's content shows.
+    app.hover("role:alert[Sent]").unwrap();
+    let shown: Vec<(&str, bool)> = ["Copied", "Pinned", "Moved", "Syncing", "Kept", "Sent"]
+        .into_iter()
+        .map(|label| (label, timer_bar(&app, label).is_some()))
+        .collect();
+    assert_eq!(
+        shown,
+        vec![
+            ("Copied", false),
+            ("Pinned", true),
+            ("Moved", false),
+            ("Syncing", false),
+            ("Kept", false),
+            ("Sent", true),
+        ]
+    );
+}
+
+#[component]
+fn NoTimers() -> impl IntoElement {
+    app(make_archived, toaster().timer(Some(false)).into_element())
+}
+
+/// The `Toaster`'s `timer: false` turns the bars off.
+#[test]
+fn the_toaster_turns_the_bars_off() {
+    let mut app = start::<NoTimers>(true);
+    show(&mut app);
+    assert!(app.shows("Archived"));
+    assert!(timer_bar(&app, "Archived").is_none());
+}
+
+/// With reduced motion there is no bar; the time is unchanged.
+#[test]
+fn reduced_motion_shows_no_bar() {
+    let mut config = nsh_engine::EngineConfig {
+        viewport: nsh_core::Size::new(px(800.0), px(600.0)),
+        clock: nsh_engine::Clock::manual(std::time::SystemTime::now()),
+        ..nsh_engine::EngineConfig::new(nsh_testing::windowed_root::<Archived>())
+    };
+    config.environment.os = nsh_core::platform::Os::MacOs;
+    config.environment.reduce_motion = true;
+    let mut app = Headless::start(config).unwrap();
+    app.first_render().unwrap();
+    show(&mut app);
+    assert!(app.shows("Archived"));
+    assert!(timer_bar(&app, "Archived").is_none());
+}
+
+#[component]
+fn TopArchived() -> impl IntoElement {
+    app(
+        make_archived,
+        toaster().placement(ToastPlacement::TopRight).into_element(),
+    )
+}
+
+/// At the top, the bar is on the toast's top edge.
+#[test]
+fn at_the_top_the_bar_is_on_the_top_edge() {
+    let mut app = start::<TopArchived>(true);
+    show(&mut app);
+    let bar = timer_bar(&app, "Archived").unwrap();
+    let alert = bounds(&app, "role:alert[Archived]");
+    let b = app
+        .screen()
+        .layout_nodes()
+        .into_iter()
+        .find(|n| n.id == bar)
+        .unwrap()
+        .bounds;
+    assert_eq!(b.origin.y.0, alert.origin.y.0 + 1.0);
 }

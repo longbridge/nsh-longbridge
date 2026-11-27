@@ -1,5 +1,6 @@
 // The Toast page: an event created with Undo, the kinds, a loading toast
-// replaced by its result, the answer of each button, where the stack is.
+// replaced by its result, the answer of each button, the remaining-time
+// bar (an undo, a retry), where the stack is.
 
 import { signal, Text, View } from "nsh";
 import {
@@ -21,7 +22,7 @@ import {
 } from "nsh-longbridge";
 import { Demo, Demos, Page, Section } from "../ui/layout";
 import { TokensSection } from "../ui/tokens";
-import { toasterCloseButton, toasterPlacement } from "../ui/toaster";
+import { toasterCloseButton, toasterPlacement, toasterTimer } from "../ui/toaster";
 
 const kinds: { kind: ToastKind; label: string; title: string; description?: string }[] = [
   { kind: "default", label: "Default", title: "Event has been created", description: "Sunday, December 03, 2023 at 9:00 AM" },
@@ -73,6 +74,14 @@ export function ToastPage() {
           <AnswerDemo />
           <UploadDemo />
         </Demos>
+      </Section>
+
+      <Section title="Remaining time" description="A toast with a button shows how long the button stays: a thin bar along its edge that runs out with its time. The pointer on the stack stops it; a toast changed in place starts it over. With reduced motion there is none.">
+        <Demos>
+          <UndoDemo />
+          <RetryDemo />
+        </Demos>
+        <TimerDemo />
       </Section>
 
       <Section title="Where the stack is" description="The Toaster's placement; on touch screens and windows narrower than 600 the stack spans the window at that edge. Toasts show above an open dialog.">
@@ -165,6 +174,95 @@ function UploadDemo() {
       <Button variant="outline" disabled={busy()} onPress={() => upload(true)}>
         <Text>Upload, failing</Text>
       </Button>
+    </Demo>
+  );
+}
+
+/** A project deleted with Undo: the bar is the window to take it back. */
+function UndoDemo() {
+  const projects = signal(3);
+  const remove = async () => {
+    projects.set(projects() - 1);
+    const { action } = await toast("Project deleted", {
+      description: "“Website redesign” and its 12 tasks.",
+      action: { id: "undo", label: "Undo" },
+      duration: 6000,
+    });
+    if (action === "undo") projects.set(projects() + 1);
+  };
+  return (
+    <Demo row label={`An undo: ${projects()} projects`}>
+      <Button variant="outline" disabled={projects() === 0} onPress={remove}>
+        <Text>Delete project</Text>
+      </Button>
+      <Button variant="ghost" disabled={projects() === 3} onPress={() => projects.set(3)}>
+        <Text>Reset</Text>
+      </Button>
+    </Demo>
+  );
+}
+
+/** A message that failed to send, with Retry; a retry changes the same toast. */
+function RetryDemo() {
+  const state = signal("—");
+  const send = async (): Promise<void> => {
+    state.set("failed");
+    const { action } = await toast("Message not sent", {
+      id: "send",
+      kind: "error",
+      description: "The connection dropped.",
+      action: { id: "retry", label: "Retry" },
+      duration: 8000,
+    });
+    if (action !== "retry") return;
+    state.set("sending…");
+    toast("Sending…", { id: "send", kind: "loading" });
+    setTimeout(() => {
+      state.set("sent");
+      toast("Message sent", { id: "send", kind: "success" });
+    }, 1500);
+  };
+  return (
+    <Demo row label={`A retry: ${state()}`}>
+      <Button variant="outline" onPress={send}>
+        <Text>Send, failing</Text>
+      </Button>
+    </Demo>
+  );
+}
+
+const timers: { id: string; label: string; value: boolean | undefined }[] = [
+  { id: "auto", label: "On toasts with a button", value: undefined },
+  { id: "on", label: "On every toast that times out", value: true },
+  { id: "off", label: "Off", value: false },
+];
+
+/** The `Toaster`'s `timer`. */
+function TimerDemo() {
+  return (
+    <Demo class="items-stretch" label="The Toaster's timer; a toast's own timer wins">
+      <View class="flex-row flex-wrap items-start gap-x-12 gap-y-6 self-center">
+        <RadioGroup
+          accessibilityLabel="Remaining-time bar"
+          value={timers.find((t) => t.value === toasterTimer())?.id ?? "auto"}
+          onChange={(e) => toasterTimer.set(timers.find((t) => t.id === e.value)?.value)}
+          class="gap-3"
+        >
+          {timers.map((t) => (
+            <RadioGroupItem value={t.id}>
+              <Text>{t.label}</Text>
+            </RadioGroupItem>
+          ))}
+        </RadioGroup>
+        <View class="gap-3">
+          <Button variant="outline" onPress={() => toast("Link copied", { duration: 6000 })}>
+            <Text>Without a button</Text>
+          </Button>
+          <Button variant="outline" onPress={() => toast("Moved to Archive", { action: { id: "undo", label: "Undo" }, duration: 6000 })}>
+            <Text>With Undo</Text>
+          </Button>
+        </View>
+      </View>
     </Demo>
   );
 }
