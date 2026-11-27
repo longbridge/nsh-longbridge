@@ -235,7 +235,18 @@
       "progress-indeterminate-duration": "calc(var(--duration) * 10)",
       "pagination-gap": "calc(var(--spacing))",
       "pagination-step-padding-x": "calc(var(--spacing) * 2.5)",
-      "pagination-step-gap": "calc(var(--spacing))"
+      "pagination-step-gap": "calc(var(--spacing))",
+      "toggle-radius": "calc(var(--radius-md))",
+      "toggle-height-xs": "calc(var(--control-height-xs))",
+      "toggle-height-sm": "calc(var(--control-height-sm))",
+      "toggle-height-md": "calc(var(--control-height-md))",
+      "toggle-height-lg": "calc(var(--control-height-lg))",
+      "toggle-padding-x-xs": "calc(var(--spacing))",
+      "toggle-padding-x-sm": "calc(var(--spacing) * 1.5)",
+      "toggle-padding-x-md": "calc(var(--spacing) * 2)",
+      "toggle-padding-x-lg": "calc(var(--spacing) * 2.5)",
+      "toggle-outline-shadow": "1",
+      "toggle-group-item-padding-x": "calc(var(--spacing) * 3)"
     },
     "light": {
       "background": "oklch(1 0 0)",
@@ -416,7 +427,17 @@
       "avatar-badge-foreground": "var(--primary-foreground)",
       "avatar-ring": "var(--background)",
       "progress": "color-mix(in oklab, var(--primary) 20%, transparent)",
-      "progress-indicator": "var(--primary)"
+      "progress-indicator": "var(--primary)",
+      "toggle-foreground": "var(--foreground)",
+      "toggle-hover": "var(--muted)",
+      "toggle-hover-foreground": "var(--muted-foreground)",
+      "toggle-pressed": "var(--accent)",
+      "toggle-pressed-foreground": "var(--accent-foreground)",
+      "toggle-outline-border": "var(--input)",
+      "toggle-outline-hover": "var(--accent)",
+      "toggle-outline-hover-foreground": "var(--accent-foreground)",
+      "toggle-border-focus": "var(--ring)",
+      "toggle-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
     },
     "dark": {
       "background": "oklch(0.145 0 0)",
@@ -597,7 +618,17 @@
       "avatar-badge-foreground": "var(--primary-foreground)",
       "avatar-ring": "var(--background)",
       "progress": "color-mix(in oklab, var(--primary) 20%, transparent)",
-      "progress-indicator": "var(--primary)"
+      "progress-indicator": "var(--primary)",
+      "toggle-foreground": "var(--foreground)",
+      "toggle-hover": "var(--muted)",
+      "toggle-hover-foreground": "var(--muted-foreground)",
+      "toggle-pressed": "var(--accent)",
+      "toggle-pressed-foreground": "var(--accent-foreground)",
+      "toggle-outline-border": "var(--input)",
+      "toggle-outline-hover": "var(--accent)",
+      "toggle-outline-hover-foreground": "var(--accent-foreground)",
+      "toggle-border-focus": "var(--ring)",
+      "toggle-ring": "color-mix(in oklab, var(--ring) 50%, transparent)"
     }
   }
 }

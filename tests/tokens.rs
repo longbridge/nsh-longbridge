@@ -606,3 +606,21 @@ fn nsh_reads_every_preset_whole() {
         );
     }
 }
+
+#[test]
+fn the_toggle_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/toggle.md"),
+        "toggle",
+        &token_table(nsh_longbridge::components::toggle::TOKENS),
+    );
+}
+
+#[test]
+fn the_toggle_group_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/toggle-group.md"),
+        "toggle-group",
+        &token_table(nsh_longbridge::components::toggle_group::TOKENS),
+    );
+}

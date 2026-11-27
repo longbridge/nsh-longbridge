@@ -1,10 +1,10 @@
 # ToggleGroup
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
 A row of toggles that holds one value or several: an alignment (left, center, right), a view switcher, a set of
-formatting options, a segmented control. The look is shadcn/ui new-york v4's `toggle-group.tsx` (Radix ToggleGroup),
-whose items take [Toggle](toggle.md)'s look; the behavior is `nsh/base`'s `ToggleGroup` and `Toggle`.
+formatting options, a segmented control. Its items take [Toggle](toggle.md)'s look; the behavior is `nsh/base`'s
+`ToggleGroup` and `Toggle`.
 
 ## Usage
 
@@ -27,13 +27,13 @@ whose items take [Toggle](toggle.md)'s look; the behavior is `nsh/base`'s `Toggl
 ## Built on
 
 `nsh/base`'s `ToggleGroup` and `Toggle` (`crates/nsh-base/src/toggle.rs`, keys in `roving.rs`). `nsh/base`'s group
-holds no value: each toggle is told whether it is pressed and reports its press. This library adds what shadcn's
-ToggleGroup has around them: the value (one or several, controlled or not), the variant and size handed to the items,
+holds no value: each toggle is told whether it is pressed and reports its press. This library adds around them: the
+value (one or several, controlled or not), the variant and size handed to the items,
 the gap or the joined look, and the items' look (Toggle's).
 
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
-| Keyboard | Where pressables take the focus (macOS, the web): the group is one Tab stop, at the first pressed toggle (else the first enabled); Left / Right and Up / Down move the focus around the ends, Home / End to the ends, past disabled toggles, **without pressing** (WAI-ARIA's toolbar pattern, as Radix's roving focus); Space and Return press the focused toggle |
+| Keyboard | Where pressables take the focus (macOS, the web): the group is one Tab stop, at the first pressed toggle (else the first enabled); Left / Right and Up / Down move the focus around the ends, Home / End to the ends, past disabled toggles, **without pressing** (WAI-ARIA's toolbar pattern); Space and Return press the focused toggle |
 | Presses | Each toggle's press, from the pointer, touch, the keyboard and screen readers |
 | Disabled | The group's `disabled` disables every toggle |
 | Accessibility | The group a `toolbar` (a `group` inside a `Toolbar`, whose stop it then shares); each toggle a `button` with its pressed state |
@@ -41,19 +41,23 @@ the gap or the joined look, and the items' look (Toggle's).
 
 ### Implementation
 
-- **`ToggleGroup`** is a `#[component]` whose root is `nsh_base::toggle_group()`, `disabled` passed through,
-  `accessibilityLabel` set on its root element. It holds the value (the app's `value`, else its own signal from
-  `defaultValue`) and provides a `ToggleGroupContext`: the value, the setter that reports `onChange`, `multiple`,
-  `variant`, `size` and `spacing`. Its layout is set on the root with bindings: a row, centered, as wide as its
-  content (`w-fit`), the gap.
-- **`ToggleGroupItem`** is the library's [Toggle](toggle.md) drawing (the same root, `nsh_base::toggle()`, and the
-  same look functions), with `pressed` = the value holds its `value`, and a press setting the value: without
-  `multiple`, `[value]`, or `[]` when it was pressed (Radix's single group lets the pressed item go); with `multiple`,
-  its `value` added or removed. `onChange` is reported only when the value changes. Its `variant` and `size` are the
-  group's. An item outside a `ToggleGroup` renders unpressed and logs a warning in development builds (as
-  `TabsTrigger`).
+- **`ToggleGroup`** is a `#[component]` whose root is a view around `nsh_base::toggle_group()`: `nsh/base`'s group
+  takes no `accessibilityLabel`, and a name or a description set on the component does not reach its toolbar (NSH
+  gaps 5), so the root is a `group` named by `accessibilityLabel` (no role without one) and described by an enclosing
+  [Field](field.md). The root is as wide as its content (`w-fit`) and carries the shape: a joined outline row's
+  corners and shadow. Inside it, the toolbar fills it, with `disabled` passed through: a row, centered, the gap. The
+  group holds the value (the app's `value`, else its own signal from `defaultValue`) and provides a context to its
+  items: the value, the setter that reports `onChange`, `multiple`, `variant`, `size`, `disabled` (or'ed with a
+  field's) and the item look (joined, the gap, the item padding).
+- **`ToggleGroupItem`** is the library's [Toggle](toggle.md) drawing (`toggle::draw`: the same root,
+  `nsh_base::toggle()`, and the same look), with `pressed` = the value holds its `value`, and a press setting the
+  value: without `multiple`, `[value]`, or `[]` when it was pressed (a single group lets its pressed item go); with
+  `multiple`, its `value` added or removed. `onChange` is reported only when the value changes. Its `variant` and
+  `size` are the group's. An item outside a `ToggleGroup` renders unpressed and logs a warning in development builds
+  (as `TabsTrigger`).
 - **The joined look** (`spacing` 0): the items' corners and edges depend on their place, from NSH's `first:` / `last:`
-  variants on the item's root (an item wrapped in a view of the app's loses its place: see NSH gaps 1).
+  variants on the item's root, as a class made from the tokens (`toggle-radius`, `border-width`) so a scope's values
+  reach it (an item wrapped in a view of the app's loses its place: see NSH gaps 1).
 
 ## API
 
@@ -70,19 +74,19 @@ the gap or the joined look, and the items' look (Toggle's).
 
 | TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `multiple` | `multiple` | `boolean` | `false` | Several values (shadcn's `type="multiple"`); without it one value at most (`type="single"`). Read when made |
+| `multiple` | `multiple` | `boolean` | `false` | Several values; without it one value at most. Read when made |
 | `value` | `value` | `string[]` / `Prop<Option<Vec<SharedString>>>` | Uncontrolled | The pressed items' values (controlled): one at most without `multiple`. The app sets it in `onChange` |
 | `defaultValue` | `default_value` | `string[]` | `[]` | The first value while uncontrolled |
 | `variant` | `variant` | `"default"` \| `"outline"` (`ToggleVariant`) | `"default"` | The items' look ([Toggle](toggle.md)'s variants) |
 | `size` | `size` | `Size` | `"md"` | The items' height, type and icon |
-| `spacing` | `spacing` | `number` | `0` | The gap between items in `spacing` units (shadcn's: `2` is 8); `0` joins them into one shape |
-| `disabled` | `disabled` | `boolean` | `false` | Every item disabled |
+| `spacing` | `spacing` | `number` | `0` | The gap between items in `spacing` units (`2` is 8); `0` joins them into one shape |
+| `disabled` | `disabled` | `boolean` | `false` | Every item disabled; or'ed with an enclosing `Field`'s or `FieldSet`'s |
 | `accessibilityLabel` | `accessibility_label` | `string` | — | What screen readers call the set ("Text alignment") |
 | `children` | `.child(..)` | `ToggleGroupItem`s | — | The items, direct children for the joined look |
-| `class` / `style` | `class` / `style` | | | The root, merged last |
+| `class` / `style` | `class` / `style` | | | The root (the group around the row), merged last |
 
 Event: `onChange({ value })` (`ToggleGroupEvent::Change(Vec<SharedString>)`, `#[args(value)]`), when the user presses
-an item and the value changes. NSH's name (conventions), shadcn's `onValueChange`. A group that must always have one
+an item and the value changes (NSH's event name, as the conventions ask). A group that must always have one
 value (a segmented control) ignores `[]` (see Examples).
 
 ### `ToggleGroupItem`
@@ -95,45 +99,37 @@ value (a segmented control) ignores `[]` (see Examples).
 | `children` | `.child(..)` | string, elements | — | An icon (the app's), a word, or both, each in a `label` part |
 | `class` / `style`, `labelClass` / `labelStyle` | | | | As Toggle's |
 
-No events of its own: the group reports `onChange`. No `variant` or `size` of its own: shadcn lets an item's apply
-only where the group sets none, which here it always does.
+No events of its own: the group reports `onChange`. No `variant` or `size` of its own: the group always sets them, so
+the items of a row always match.
 
 ### Parts
 
 | Part | What | Customize with |
 |---|---|---|
-| root | `nsh/base`'s toggle group: the row | `ToggleGroup`'s `class` / `style` |
+| root | A group around `nsh/base`'s toggle group (the row): its name and shape | `ToggleGroup`'s `class` / `style` |
 | item | `nsh/base`'s toggle | `ToggleGroupItem`'s `class` / `style` |
 | `label` | A text wrapping each of an item's children | `labelClass` / `labelStyle` |
 
 ## Variants and sizes
 
-shadcn:
-
-- Group: `flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md`, and `shadow-xs` on an outline group of
-  joined items.
-- Item: `toggleVariants` for the group's variant and size, then `w-auto min-w-0 shrink-0 px-3 focus:z-10
-  focus-visible:z-10`; joined (`spacing` 0): `rounded-none shadow-none first:rounded-l-md last:rounded-r-md`, outline:
-  `border-l-0 first:border-l`.
-
-| | This library |
+| | |
 |---|---|
 | Group | A row, items centered, as wide as its items (`w-fit`); gap `spacing × spacing-prop` |
-| Item | Toggle's look for the group's `variant` and `size` (heights, type, icons, colors, focus ring, press sink), with horizontal padding `toggle-group-item-padding-x` (12, shadcn's `px-3`) at every size and no minimum width; it does not shrink |
+| Item | Toggle's look for the group's `variant` and `size` (heights, type, icons, colors, focus ring, press sink), with horizontal padding `toggle-group-item-padding-x` (12) at every size, so the segments of a row read even, and no minimum width; it does not shrink |
 | Joined (`spacing` 0) | Items touch. Corners: none, but the first item's start corners and the last item's end corners (`toggle-radius`, 8): the group reads as one shape (gpui-kit's Design Guides: a segmented control's end segments follow the container's corners, its middle segments are square). Outline: no edge at an item's start but the first's, so each boundary has one line; the group carries the `xs` shadow (`toggle-outline-shadow`), the items none |
 | Apart (`spacing` > 0) | Each item is a whole Toggle: its own corners, edge and shadow |
-| Focus | A focused item is raised above its neighbors (shadcn's `z-10`), so its ring is not covered |
+| Focus | A focused item is raised above its neighbors, so its ring is not covered |
 
-Corners and edges follow the layout direction (start and end), where shadcn's are left and right: in a right-to-left
-layout the first item is on the right.
+Corners and edges follow the layout direction (start and end): in a right-to-left layout the first item is on the
+right.
 
-Sizes: Toggle's (24 / 28 / 32 / 36, touch 32 / 36 / 40 / 48), one step below shadcn's as Button's.
+Sizes: Toggle's (24 / 28 / 32 / 36, touch 32 / 36 / 40 / 48), Button's heights.
 
 ## States
 
 The items take Toggle's states (rest, hover, pressed down, on, focus-visible, disabled), with the group's variant. On
 a joined outline group, a focused item turns the edges it draws `toggle-border-focus` (not the start line, which is
-its neighbor's), and its ring, raised above the neighbors, goes around all of it (shadcn's look). The group itself has
+its neighbor's), and its ring, raised above the neighbors, goes around all of it. The group itself has
 no state but `disabled`, which disables its items (each at `opacity-disabled`).
 
 ## Pointer and touch
@@ -147,11 +143,12 @@ no state but `disabled`, which disables its items (each at `opacity-disabled`).
 
 ## Accessibility
 
-`nsh/base`'s: the group is a `toolbar` named by `accessibilityLabel` (a `group` inside a `Toolbar`); items are
-`button`s with their pressed state; the arrow keys move between them without pressing; Space and Return press.
-Radix's single group gives its items the `radio` role instead; `nsh/base` keeps toggle buttons, which screen readers
-announce as pressed or not. An app whose set is a form's choice uses `RadioGroup`, which has the radio roles. Inside a
-[Field](field.md) the group joins it: `disabled`, and its description read with the group.
+The root is a `group` named by `accessibilityLabel`, around `nsh/base`'s `toolbar` (a `group` inside a `Toolbar`);
+items are `button`s with their pressed state; the arrow keys move between them without pressing; Space and Return
+press. A single group's items stay toggle buttons, not radios, which screen readers announce as pressed or not
+(Decisions 2). An app whose set is a form's choice uses `RadioGroup`, which has the radio roles. Inside a
+[Field](field.md) the group joins it: `disabled`, and its description read with the group (on the root, as the
+toolbar takes none: NSH gaps 5).
 
 ## Tokens
 
@@ -238,7 +235,7 @@ The gallery's local `Segmented` (`gallery/ui/controls.tsx`: Density and Appearan
 page) is `nsh/base`'s `ToggleGroup` drawn as a tab list (a muted track, the chosen option raised). It maps to
 `ToggleGroup` with one value: `options` become `ToggleGroupItem`s (`label` as children; `icon` as an icon child with
 `name` as `accessibilityLabel`), `value` / `onChange` as above, `class` passes through, and its height
-(`control-height-sm`) is `size="sm"`. Its look becomes shadcn's toggle group (`variant="outline"`, joined), not the tab
+(`control-height-sm`) is `size="sm"`. Its look becomes the toggle group's (`variant="outline"`, joined), not the tab
 list's: the tab-list look belongs to [Tabs](tabs.md), whose `tablist` role would be wrong for a setting (Decisions 3).
 
 ## NSH gaps
@@ -249,19 +246,24 @@ list's: the tab-list look belongs to [Tabs](tabs.md), whose `tablist` role would
    its place through context instead.
 2. **Font weight and cursor are read once** (Button's G2).
 3. **String children** (Button's G0).
-4. ★ **A shadow on a view without a fill.** The joined outline group carries the `xs` shadow while its items carry
-   the fills; a platform that draws a view's shadow from its fill (a layer with no background) may draw none. First
-   headless test: the group's shadow reaches the drawn tree. Fallback: the shadow on each item (a faint line of shadow
-   at each boundary, at `xs`).
+4. **A shadow on a view without a fill.** The joined outline group carries the `xs` shadow while its items carry
+   the fills; a platform that draws a view's shadow from its fill (a layer with no background) may draw none. The
+   headless test passes (the group's shadow, with its corners, reaches the drawn tree); the native platforms are to be
+   checked by eye. Fallback, if one draws none: the shadow on each item (a faint line of shadow at each boundary).
+5. **A component's name and description do not reach `nsh/base`'s toolbar**, and its `ToggleGroup` has no
+   `accessibilityLabel`: the root is a named `group` around it, so screen readers meet a group, then the toolbar.
+   If `nsh/base`'s group took `accessibilityLabel` (and a described-by), the wrapper would go.
 
 ## Decisions
 
 Settled in the P3 review:
 
 1. **The value is a list in both forms** (`value: string[]`, `multiple`), as `nsh/base`'s `Combobox` holds its
-   value, rather than shadcn's `type` with a string or a list: one TypeScript type that the Rust props can generate,
-   and one name with `Combobox`. A single group's app writes `[x]` and reads `value[0]`.
-2. **Items stay toggle buttons for screen readers** (`nsh/base`'s), not radios as in Radix's single group.
+   value, rather than a `type` switching between a string and a list: one TypeScript type that the Rust props can
+   generate, and one name with `Combobox`. A single group's app writes `[x]` and reads `value[0]`.
+2. **Items stay toggle buttons for screen readers** (`nsh/base`'s), not radios, even in a single group: the row is a
+   set of options applied at once, and a form's choice has `RadioGroup`, which has the radio roles.
 3. **The gallery's Segmented becomes a `ToggleGroup`** (`variant="outline"`, `size="sm"`, joined): no "segmented"
-   variant is added, which neither shadcn's toggle group nor `nsh/base` has.
+   variant is added: the outline joined row already reads as a segmented control, and a second look would need its
+   own tokens.
 4. **Logical corners** (start / end), so the joined group mirrors in a right-to-left layout.

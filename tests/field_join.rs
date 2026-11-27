@@ -15,7 +15,8 @@ use nsh_core::{Checked, Command, prelude::*};
 use nsh_longbridge::{
     Checkbox, FieldRef, SelectItem, Switch, checkbox,
     foundation::field::{self, FieldState},
-    input, label, radio_group, radio_group_item, select, switch, textarea,
+    input, label, radio_group, radio_group_item, select, switch, textarea, toggle_group,
+    toggle_group_item,
 };
 use nsh_testing::Headless;
 
@@ -445,6 +446,11 @@ fn Set() -> impl IntoElement {
         .child(input().accessibility_label("Street box"))
         .child(checkbox().accessibility_label("Gift"))
         .child(
+            toggle_group()
+                .accessibility_label("Wrap")
+                .child(toggle_group_item().value("box").accessibility_label("Box")),
+        )
+        .child(
             test_field()
                 .name("City")
                 .child(input().accessibility_label("City box")),
@@ -457,6 +463,7 @@ fn a_sets_disabled_reaches_every_control() {
     let screen = app.screen();
     assert!(!screen.enabled("label:Street box").unwrap());
     assert!(!screen.enabled("role:checkbox[Gift]").unwrap());
+    assert!(!screen.enabled("role:button[Box]").unwrap());
     assert!(!screen.enabled("label:City box").unwrap());
 }
 

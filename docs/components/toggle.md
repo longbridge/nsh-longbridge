@@ -1,10 +1,10 @@
 # Toggle
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
-A button that is on or off: bold in a text toolbar, a favorite star, a view option, a mute. Its look is shadcn/ui
-new-york v4's `toggle.tsx` (Radix Toggle); its behavior is `nsh/base`'s `Toggle`. This spec also owns the **toggle
-look** (the `toggle-*` tokens), which [ToggleGroup](toggle-group.md)'s items share.
+A button that is on or off: bold in a text toolbar, a favorite star, a view option, a mute. Its behavior is
+`nsh/base`'s `Toggle`; this library draws it. This spec also owns the **toggle look** (the `toggle-*` tokens), which
+[ToggleGroup](toggle-group.md)'s items share.
 
 ## Usage
 
@@ -40,7 +40,8 @@ This library adds the look (tokens), `variant`, `size`, the label part and the p
 
 ### Implementation
 
-- `#[component] fn Toggle` whose root is `nsh_base::toggle()`, `pressed`, `disabled`, `accessibilityLabel` and
+- `#[component] fn Toggle` whose root is `nsh_base::toggle()` (drawn by `toggle::draw`, which `ToggleGroupItem`
+  shares), `pressed`, `disabled`, `accessibilityLabel` and
   `hitSlop` passed through. The look is set on the root element with bindings (as Checkbox's root): the fill and text
   color read `pressed` (not `nsh/base`'s projected `aria-pressed:`, which holds only while not disabled, so a disabled
   pressed toggle would look off: Checkbox's NSH gap 2).
@@ -76,7 +77,7 @@ library draws the press feedback).
 
 | TSX | Rust | When |
 |---|---|---|
-| `onChange({ pressed })` | `ToggleEvent::Change(bool)` (`#[args(pressed)]`); `.on_change(\|pressed: &bool\| ..)` | Pressed: the value it asks for. shadcn's `onPressedChange` |
+| `onChange({ pressed })` | `ToggleEvent::Change(bool)` (`#[args(pressed)]`); `.on_change(\|pressed: &bool\| ..)` | Pressed: the value it asks for |
 
 ### Parts
 
@@ -87,34 +88,31 @@ library draws the press feedback).
 
 ## Variants and sizes
 
-shadcn: `inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap
-transition-[color,box-shadow] hover:bg-muted hover:text-muted-foreground focus-visible:border-ring
-focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 data-[state=on]:bg-accent
-data-[state=on]:text-accent-foreground [&_svg]:size-4`.
+A row, centered, its content on one line at `font-weight-medium`, corners `toggle-radius`. Under the pointer it takes
+a muted fill; on, the `accent` fill; the keyboard focus draws a ring; disabled, it is dimmed.
 
 ### Variants
 
-| `variant` | At rest | Hover (pointer) | Pressed (on) | shadcn |
-|---|---|---|---|---|
-| `default` | No fill, text `toggle-foreground` | Fill `toggle-hover` (`muted`), text `toggle-hover-foreground` (`muted-foreground`) | Fill `toggle-pressed` (`accent`), text `toggle-pressed-foreground` (`accent-foreground`) | `bg-transparent` |
-| `outline` | As `default`, and an edge `border-width` × `toggle-outline-border` (`input`), shadow tier `toggle-outline-shadow` (1, `xs`) | Fill `toggle-outline-hover` (`accent`), text `toggle-outline-hover-foreground` (`accent-foreground`) | As `default` | `border border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground` |
+| `variant` | At rest | Hover (pointer) | Pressed (on) |
+|---|---|---|---|
+| `default` | No fill, text `toggle-foreground` | Fill `toggle-hover` (`muted`), text `toggle-hover-foreground` (`muted-foreground`) | Fill `toggle-pressed` (`accent`), text `toggle-pressed-foreground` (`accent-foreground`) |
+| `outline` | As `default`, and an edge `border-width` × `toggle-outline-border` (`input`), shadow tier `toggle-outline-shadow` (1, `xs`) | Fill `toggle-outline-hover` (`accent`), text `toggle-outline-hover-foreground` (`accent-foreground`) | As `default` |
 
-Pressed wins over hover (shadcn's `data-[state=on]:` follows `hover:` in Tailwind 4's order), so an on toggle under
-the pointer keeps its pressed fill. shadcn's toggle has no `dark:` classes: dark takes the same roles in their dark
-values.
+Pressed wins over hover, so an on toggle under the pointer keeps its pressed fill: the pointer never hides the value.
+Dark has no values of its own: it takes the same roles in their dark values.
 
 ### Sizes
 
-| `size` | Height (pointer / touch) | Min width | Horizontal padding | Gap | Type | Icon | shadcn |
-|---|---|---|---|---|---|---|---|
-| `xs` | 24 / 32 | = height | 4 (`spacing`) | 4 | 12 | 12 | — |
-| `sm` | 28 / 36 | = height | 6 (`spacing × 1.5`) | 6 | 13 | 14 | `sm`: `h-8 min-w-8 px-1.5` |
-| `md` | 32 / 40 | = height | 8 (`spacing × 2`) | 8 | 14 | 16 | `default`: `h-9 min-w-9 px-2` |
-| `lg` | 36 / 48 | = height | 10 (`spacing × 2.5`) | 8 | 14 | 16 | `lg`: `h-10 min-w-10 px-2.5` |
+| `size` | Height (pointer / touch) | Min width | Horizontal padding | Gap | Type | Icon |
+|---|---|---|---|---|---|---|
+| `xs` | 24 / 32 | = height | 4 (`spacing`) | 4 | 12 | 12 |
+| `sm` | 28 / 36 | = height | 6 (`spacing × 1.5`) | 6 | 13 | 14 |
+| `md` | 32 / 40 | = height | 8 (`spacing × 2`) | 8 | 14 | 16 |
+| `lg` | 36 / 48 | = height | 10 (`spacing × 2.5`) | 8 | 14 | 16 |
 
-- Heights are one step below shadcn's, as Button's (`md` is 32, a medium desktop density); padding keeps shadcn's for
-  the size it stands in for (`md` takes `default`'s `px-2`). A Toggle and a Button of one `size` line up in a toolbar.
-- The minimum width is the height, so an icon alone makes a square (shadcn's `min-w-9`).
+- Heights are Button's (`md` is 32, a medium desktop density), so a Toggle and a Button of one `size` line up in a
+  toolbar; the padding grows by half a `spacing` unit a size, tighter than Button's, as an icon toggle is a square.
+- The minimum width is the height, so an icon alone makes a square.
 - Gap and icon sizes are Button's (foundation's gap by size, `icon-size-<size>`); type `font-size-<size>` at
   `font-weight-medium`, one line.
 - Corners `toggle-radius` (`radius-md`, 8) at every size.
@@ -128,10 +126,10 @@ values.
 | on (`pressed`) | Variants | Announced as pressed |
 | focus-visible | A `ring-width` (3) ring of `toggle-ring` (`ring` at 50%) outside, no layout; the outline variant's edge `toggle-border-focus` (`ring`). Touch: the edge only | Keyboard focus only |
 | disabled | `opacity-disabled` (0.5), no hover, no sink; the on look kept if pressed | No presses, no focus |
-| invalid, loading | Not offered | shadcn's toggle carries the shared `aria-invalid:` classes but no form value; a toggle group in a form shows its error through [Field](field.md) |
+| invalid, loading | Not offered | A toggle holds no form value; a toggle group in a form shows its error through [Field](field.md) |
 
-Colors, the edge and the ring transition over `duration` (shadcn's `transition-[color,box-shadow]`; NSH groups colors
-and shadows, so the fill transitions too); none with reduced motion. The sink changes at once (Checkbox's note: one
+Colors, the edge and the ring transition over `duration` (NSH groups colors and shadows, so the fill transitions
+too); none with reduced motion. The sink changes at once (Checkbox's note: one
 set of transitioned properties per view).
 
 ## Pointer and touch
@@ -250,8 +248,8 @@ toggle()
 
 Settled in the P3 review:
 
-1. **Heights one step below shadcn's**, padding kept per shadcn size, as Button: toggles sit in desktop toolbars
-   beside buttons.
+1. **Button's heights** (`md` 32), a desktop density: toggles sit in toolbars beside buttons, and a row of both
+   lines up.
 2. **Controlled only**, as `nsh/base`'s `Toggle` and the library's `Checkbox` and `Switch`.
 3. **No `icon` prop** (Button and `TabsTrigger` have one): the library's `IconName` has only its own components'
    icons, and a toggle's icon is the app's. If `IconName` grows into a general icon set, an `icon` prop follows.

@@ -150,6 +150,12 @@ pub use crate::{
             ToastPlacement, ToastResult, Toaster, ToasterElement, ToasterProps, dismiss_toast,
             toast, toaster,
         },
+        toggle::{Toggle, ToggleElement, ToggleEvent, ToggleProps, ToggleVariant, toggle},
+        toggle_group::{
+            ToggleGroup, ToggleGroupElement, ToggleGroupEvent, ToggleGroupItem,
+            ToggleGroupItemElement, ToggleGroupItemProps, ToggleGroupProps, toggle_group,
+            toggle_group_item,
+        },
         tooltip::{Tooltip, TooltipElement, TooltipEvent, TooltipProps, tooltip},
     },
     foundation::{
@@ -242,6 +248,9 @@ fn native(registry: &mut Registry) {
         .register::<TabsTrigger>()
         .register::<Textarea>()
         .register::<ThemeScope>()
+        .register::<Toggle>()
+        .register::<ToggleGroup>()
+        .register::<ToggleGroupItem>()
         .register::<Tooltip>()
         .register::<Toaster>()
         .module::<foundation::labels::Labels>()
