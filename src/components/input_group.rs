@@ -26,8 +26,8 @@ use crate::{
     foundation::{
         class::Classes,
         field::{
-            self, INPUT_BORDER_WIDTH, field_button_radius, field_button_side, field_focus,
-            field_rest,
+            self, INPUT_BORDER_WIDTH, field_button_inner_inset, field_button_radius,
+            field_button_side, field_focus, field_rest,
         },
         focus::focus_ring,
         icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
@@ -274,12 +274,16 @@ pub fn InputGroupAddon(props: InputGroupAddonProps, _cx: Scope<NoEvent>) -> impl
     let pad = move || t.length(padding_token(size()));
     let gap = move || gap(t, size());
     let font_size = move || t.length(font_size_token(size()));
-    let (start, end, top, bottom) = match align {
-        InputGroupAlign::InlineStart => (true, false, false, false),
-        InputGroupAlign::InlineEnd => (false, true, false, false),
-        InputGroupAlign::BlockStart => (true, true, true, false),
-        InputGroupAlign::BlockEnd => (true, true, false, true),
+    let (start, end) = match align {
+        InputGroupAlign::InlineStart => (true, false),
+        InputGroupAlign::InlineEnd => (false, true),
+        InputGroupAlign::BlockStart | InputGroupAlign::BlockEnd => (true, true),
     };
+    // A block addon is a row as tall as the field's: its buttons at the
+    // button inset from the frame above and below, as in an inline addon,
+    // so one in a corner is concentric with the frame.
+    let block = align.block();
+    let row_pad = move || field_button_inner_inset(t);
     view()
         // Its words and buttons are read one by one; it is none itself.
         .accessible(false)
@@ -296,8 +300,10 @@ pub fn InputGroupAddon(props: InputGroupAddonProps, _cx: Scope<NoEvent>) -> impl
         .style_when(align.block(), |s| s.w_full())
         .ps(move || if start { pad() } else { px(0.0) })
         .pe(move || if end { pad() } else { px(0.0) })
-        .pt(move || if top { gap() } else { px(0.0) })
-        .pb(move || if bottom { gap() } else { px(0.0) })
+        .py(move || if block { row_pad() } else { px(0.0) })
+        .style_when(block, move |s| {
+            s.min_h(move || field_button_side(t, size()) + row_pad() * 2.0)
+        })
         .text_color(move || t.color(INPUT_GROUP_ADDON_FOREGROUND))
         .text_size(font_size)
         .line_height(move || line_height(font_size()))
@@ -314,22 +320,19 @@ fn gap(t: Theme, size: Size) -> Points {
     t.length(INPUT_GROUP_GAP) * size.pick(0.75, 0.75, 1.0, 1.0)
 }
 
-/// The class that moves a button at the group's edge out toward it: to 4
-/// from the frame's inner edge in an inline addon, to the gap in a block
-/// one. Only the addon's first child (at the start) or last (at the end)
-/// moves, by NSH's `first:` / `last:` variants.
+/// The class that moves a button at the group's edge out toward it: to
+/// the button inset from the frame (`field_button_inset`, as above and
+/// below it), so a button at the edge is concentric with the frame. Only
+/// the addon's first child (at the start) or last (at the end) moves, by
+/// NSH's `first:` / `last:` variants; a block addon's at both ends.
 fn edge_class(t: Theme, size: Size, addon: Option<InAddon>) -> SharedString {
     let pad = t.length(padding_token(size));
+    let pull = px(0.0) - (pad - field_button_inner_inset(t)).max(px(0.0));
     let c = Classes::new();
     let c = match addon {
-        Some(InAddon(InputGroupAlign::InlineStart)) => {
-            c.length("first", "ms", px(0.0) - (pad - px(4.0)).max(px(0.0)))
-        }
-        Some(InAddon(InputGroupAlign::InlineEnd)) => {
-            c.length("last", "me", px(0.0) - (pad - px(4.0)).max(px(0.0)))
-        }
+        Some(InAddon(InputGroupAlign::InlineStart)) => c.length("first", "ms", pull),
+        Some(InAddon(InputGroupAlign::InlineEnd)) => c.length("last", "me", pull),
         Some(InAddon(InputGroupAlign::BlockStart | InputGroupAlign::BlockEnd)) => {
-            let pull = px(0.0) - (pad - gap(t, size)).max(px(0.0));
             c.length("first", "ms", pull).length("last", "me", pull)
         }
         None => c,
