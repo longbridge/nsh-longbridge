@@ -323,7 +323,11 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
     let root = root
         .flex_row()
         .items_center()
-        .when(horizontal, |v| v.flex_1().justify_center())
+        // Grows from its content (`flex: 1 1 auto`): shadcn's `flex-1` relies
+        // on a flex item's content minimum (`min-width: auto`), which NSH
+        // does not apply, so from 0 a long label would get less than its
+        // width in a list as wide as its triggers.
+        .when(horizontal, |v| v.flex_auto().justify_center())
         .when(!horizontal, |v| v.justify_start())
         .gap(move || t.length(SPACING) * 1.5)
         .h(height)

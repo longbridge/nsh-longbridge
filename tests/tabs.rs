@@ -5,7 +5,7 @@
 
 mod common;
 
-use common::{css, fill, light, size, start};
+use common::{bounds, css, fill, light, size, start};
 use nsh_core::{geometry::Axis, prelude::*};
 use nsh_longbridge::{
     ScopeTokens, Size, TabsVariant,
@@ -218,11 +218,37 @@ fn the_segmented_list_raises_the_selected_tab() {
     assert_eq!(fill(&app, "role:tablist[Segmented]"), light(TABS_LIST));
     assert_eq!(fill(&app, "role:tab[Alpha]"), light(TABS_TRIGGER_SELECTED));
     assert_eq!(fill(&app, "role:tab[Beta]"), None);
-    // Triggers share the list's width.
-    assert_eq!(
-        size(&app, "role:tab[Alpha]").0,
-        size(&app, "role:tab[Beta]").0
-    );
+}
+
+/// Labels of different lengths in a list as wide as its triggers.
+#[component]
+fn Ranges() -> impl IntoElement {
+    view().items_start().child(
+        tabs()
+            .default_value(Some(SharedString::from("week")))
+            .child(
+                tabs_list()
+                    .accessibility_label("Range")
+                    .child(tabs_trigger().value("day").child("Day"))
+                    .child(tabs_trigger().value("week").child("Week"))
+                    .child(tabs_trigger().value("month").child("Month"))
+                    .child(tabs_trigger().value("year").child("Year")),
+            ),
+    )
+}
+
+/// Every label, a long one too, keeps `tabs-trigger-padding-x` (and the
+/// edge) on both sides: the triggers grow from their content.
+#[test]
+fn every_label_keeps_the_trigger_padding() {
+    let app = start::<Ranges>(true);
+    for name in ["Day", "Week", "Month", "Year"] {
+        let tab = bounds(&app, &format!("role:tab[{name}]"));
+        let label = bounds(&app, &format!("text:{name}"));
+        let start = (label.origin.x - tab.origin.x).0;
+        let end = (tab.origin.x + tab.size.width - label.origin.x - label.size.width).0;
+        assert_eq!((start, end), (9.0, 9.0), "{name}");
+    }
 }
 
 #[test]

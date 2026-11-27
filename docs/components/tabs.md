@@ -161,7 +161,8 @@ shadcn:
 - A trigger fills the list's height inside its padding, less 1 (shadcn's `calc(100%-1px)`), its content centered; it
   has no vertical padding (shadcn's `py-1` fits its one size only). Horizontal padding `tabs-trigger-padding-x` (8),
   icon-to-label gap `spacing × 1.5` (6), text `font-size-<size>` at `font-weight-medium`, one line.
-- Triggers share the list's width (`flex: 1`); the list is as wide as its content (`w-fit`: `align-self: flex-start` in
+- Triggers share the list's width, each growing from its content (`flex: 1 1 auto`; see [NSH gaps](#nsh-gaps) 6); the
+  list is as wide as its content (`w-fit`: `align-self: flex-start` in
   a column, as Select's root), or as the app's `class` sets (`w-full`, `w-[400px]`). In a column each trigger takes the
   full width and starts its content at the start.
 - Corners: the list `tabs-list-radius` (`radius-lg`, 10), the trigger `tabs-trigger-radius` = list radius − padding
@@ -324,6 +325,11 @@ tabs()
 5. **No hit slop on a tab.** `nsh/base`'s `Tab` takes no `hitSlop`, and a component's element takes none from its
    parent, so a trigger on a touch screen is hit within its own bounds (33 tall in a 40 list at `md`), not the
    vertical (44 − list height) / 2 Input has. A `hitSlop` prop on `Tab` would add it.
+6. **No content minimum for flex items** (CSS's `min-width: auto`). shadcn's triggers are `flex-1`, which in a browser
+   never shrinks one below its label, so a list as wide as its content gives each label at least its padding. In NSH a
+   trigger growing from 0 could get less than its label (a long one lost most of its padding). Workaround: triggers
+   grow from their content (`flex: 1 1 auto`): in a list as wide as its content each label has `tabs-trigger-padding-x`
+   on both sides; in a wider list they share the extra room equally, where a browser makes them nearer to equal widths.
 
 ## Decisions
 
