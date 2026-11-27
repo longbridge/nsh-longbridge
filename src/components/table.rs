@@ -135,6 +135,19 @@ pub(crate) fn register_cell_control() {
     }
 }
 
+/// Registers a library element that is not text (a `Skeleton`, a
+/// `Progress`) with the `TableHead` / `TableCell` it is in: the cell places
+/// its content as it is ([`cell_content`]), keeping its padding, so the
+/// element takes the cell's width (inside a text it has none). Nothing
+/// outside a cell. Call it in the element's body.
+pub(crate) fn register_cell_block() {
+    if let Some(CellControls(_, holds)) = use_context::<Option<CellControls>>().flatten()
+        && !holds.get_untracked()
+    {
+        holds.set(true);
+    }
+}
+
 /// The props of [`Table`].
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct TableProps {

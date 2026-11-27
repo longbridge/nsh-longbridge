@@ -5,6 +5,7 @@
 use nsh_core::prelude::*;
 
 use crate::{
+    components::table,
     theme::{
         semantic::{ACCENT, RADIUS_MD},
         theme,
@@ -31,6 +32,7 @@ pub struct SkeletonProps {}
 #[component]
 pub fn Skeleton(_props: SkeletonProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
+    table::register_cell_block();
     view()
         .rounded(move || t.length(SKELETON_RADIUS))
         .bg(move || t.color(SKELETON))

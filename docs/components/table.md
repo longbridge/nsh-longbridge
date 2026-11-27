@@ -79,7 +79,8 @@ cells' padding and one-line text, and the caption's place.
 - A cell that holds a library control (a `Checkbox`, which registers with it, or an overlay such as a `DropdownMenu`,
   which reports to it through `foundation::trigger`) places its children as they are, not inside the text part: a
   view inside a text sits on the text's baseline, which sets a box or a button about 2 points above the row's middle.
-  The cell keeps that form once it has held one.
+  A `Skeleton` or a `Progress` registers too, keeping the padding: inside a text it would have no width, so a
+  `w-full` bar would not show. The cell keeps that form once it has held one.
 
 ## API
 

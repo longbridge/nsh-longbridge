@@ -13,6 +13,7 @@ use nsh_core::{
 };
 
 use crate::{
+    components::table,
     foundation::{class::Classes, motion},
     theme::{Theme, seeds::DURATION, seeds::SPACING, semantic::PRIMARY, theme},
     tokens,
@@ -76,6 +77,7 @@ pub struct ProgressProps {
 #[component]
 pub fn Progress(props: ProgressProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
+    table::register_cell_block();
     let indeterminate = props.indeterminate;
     let still = reduce_motion();
     // The moving segment: `running` while it crosses the track with a

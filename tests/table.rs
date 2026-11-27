@@ -1,8 +1,8 @@
 //! `Table` in a headless engine: the roles screen readers get, row heights
 //! on a pointer and on a touch screen, the selected and lit rows, the
 //! body's last row without its edge, a cell holding a `Checkbox` without
-//! its end padding, a label that wraps, and a scope's tokens reaching the
-//! look.
+//! its end padding, a `Skeleton` and a `Progress` as wide as their cells, a
+//! label that wraps, and a scope's tokens reaching the look.
 
 mod common;
 
@@ -13,8 +13,8 @@ use nsh_core::prelude::*;
 use nsh_longbridge::{
     ButtonVariant, ScopeTokens, Size, button, checkbox,
     components::table::{TABLE_ROW_HOVER, TABLE_ROW_SELECTED, TABLE_STICKY_HEADER},
-    dropdown_menu, dropdown_menu_item, table, table_body, table_caption, table_cell, table_footer,
-    table_head, table_header, table_row, theme_scope,
+    dropdown_menu, dropdown_menu_item, progress, skeleton, table, table_body, table_caption,
+    table_cell, table_footer, table_head, table_header, table_row, theme_scope,
 };
 use nsh_testing::Headless;
 
@@ -263,6 +263,50 @@ fn a_later_class_lifts_the_one_line() {
         "the label wraps: {}",
         height(&app, "id:wraps")
     );
+}
+
+/// A loading row: a `Skeleton` and a `Progress`, each as wide as its cell.
+#[component]
+fn Loading() -> impl IntoElement {
+    view().w(px(400.0)).child(
+        table().child(
+            table_body().child(
+                table_row()
+                    .child(
+                        table_cell().test_id("bar-cell").child(
+                            skeleton()
+                                .test_id("bar")
+                                .app_class(Some("h-3.5 w-full".into())),
+                        ),
+                    )
+                    .child(
+                        table_cell()
+                            .test_id("progress-cell")
+                            .child(progress().test_id("progress").value(40.0)),
+                    ),
+            ),
+        ),
+    )
+}
+
+/// A `Skeleton` or a `Progress` in a cell is placed as it is, not inside
+/// the cell's text (where it would have no width), and keeps the padding.
+#[test]
+fn a_skeleton_and_a_progress_fill_their_cells() {
+    let app = start::<Loading>(true);
+    for (cell, part) in [
+        ("id:bar-cell", "id:bar"),
+        ("id:progress-cell", "id:progress"),
+    ] {
+        let cell = bounds(&app, cell);
+        let part = bounds(&app, part);
+        assert_eq!(part.origin.x.0 - cell.origin.x.0, 8.0, "start padding kept");
+        assert_eq!(
+            part.size.width.0,
+            cell.size.width.0 - 16.0,
+            "as wide as the cell"
+        );
+    }
 }
 
 /// A small table, and a scope changing the selected fill and a sticky
