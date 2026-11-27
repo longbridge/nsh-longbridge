@@ -118,6 +118,37 @@ fn a_vertical_field_stacks_its_parts_8_apart() {
     );
 }
 
+/// Two fields, the first with an error that has nothing to show.
+#[component]
+fn QuietError() -> impl IntoElement {
+    view().p(px(20.0)).w(px(400.0)).child(
+        field_group()
+            .child(
+                field()
+                    .child(field_label().child(text("First")))
+                    .child(input().accessibility_label("First box"))
+                    .child(field_error().errors(FieldErrors::default())),
+            )
+            .child(
+                field()
+                    .child(field_label().child(text("Second")))
+                    .child(input().accessibility_label("Second box")),
+            ),
+    )
+}
+
+#[test]
+fn an_error_with_nothing_to_show_takes_no_gap() {
+    let app = start::<QuietError>(true);
+    let first = bounds(&app, "label:First box");
+    let second = bounds(&app, "text:Second");
+    // The group's gap (16) under the first control, nothing more.
+    assert_eq!(
+        second.origin.y,
+        first.origin.y + first.size.height + px(16.0)
+    );
+}
+
 #[test]
 fn a_horizontal_field_puts_its_control_beside_the_text() {
     let app = start::<Layouts>(true);

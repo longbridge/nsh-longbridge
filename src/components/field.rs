@@ -493,45 +493,47 @@ pub fn FieldError(props: FieldErrorProps, _cx: Scope<NoEvent>) -> impl IntoEleme
     let own = move || !props.children.with(|c| c.is_empty());
     let messages = computed(move || props.errors.with(FieldErrors::messages));
     let shown = move || own() || messages.with(|m| !m.is_empty());
-    dynamic(move || {
-        shown().then(|| {
-            let element = element_ref();
-            if let Some(f) = field {
-                f.register_error(element);
-            }
-            let body: AnyElement = if untracked(own) {
-                text("").child(props.children).into_element()
-            } else {
-                dynamic(move || {
-                    let list = messages.get();
-                    if list.len() == 1 {
-                        text(list[0].clone()).into_element()
-                    } else {
-                        view()
-                            .flex_col()
-                            .gap(move || t.length(SPACING))
-                            .children(list.into_iter().map(move |m| {
-                                view()
-                                    .flex_row()
-                                    .child(text("•").w(move || t.length(SPACING) * 4.0))
-                                    .child(text(m).flex_1())
-                            }))
-                            .into_element()
-                    }
-                })
-            };
-            view()
-                .element_ref(&element)
-                // `field-content-gap` under the control or the description.
-                .app_class(move || Some(pull_class(t, in_set)))
-                .role(AccessibilityRole::Alert)
-                .accessibility_live_region(|| LiveRegion::Assertive)
-                .text_size(font_size)
-                .line_height(move || line_height(font_size()))
-                .text_color(move || t.color(FIELD_ERROR_FOREGROUND))
-                .child(body)
-        })
-    })
+    let element = element_ref();
+    // Always there, hidden (out of the field's gaps) while it has nothing
+    // to show.
+    view()
+        .element_ref(&element)
+        .style_when(move || !shown(), |s| s.hidden())
+        // `field-content-gap` under the control or the description.
+        .app_class(move || Some(pull_class(t, in_set)))
+        .role(AccessibilityRole::Alert)
+        .accessibility_live_region(|| LiveRegion::Assertive)
+        .text_size(font_size)
+        .line_height(move || line_height(font_size()))
+        .text_color(move || t.color(FIELD_ERROR_FOREGROUND))
+        .child(dynamic(move || {
+            shown().then(|| {
+                if let Some(f) = field {
+                    f.register_error(element);
+                }
+                if untracked(own) {
+                    text("").child(props.children).into_element()
+                } else {
+                    dynamic(move || {
+                        let list = messages.get();
+                        if list.len() == 1 {
+                            text(list[0].clone()).into_element()
+                        } else {
+                            view()
+                                .flex_col()
+                                .gap(move || t.length(SPACING))
+                                .children(list.into_iter().map(move |m| {
+                                    view()
+                                        .flex_row()
+                                        .child(text("•").w(move || t.length(SPACING) * 4.0))
+                                        .child(text(m).flex_1())
+                                }))
+                                .into_element()
+                        }
+                    })
+                }
+            })
+        }))
 }
 
 /// The props of [`FieldContent`].
