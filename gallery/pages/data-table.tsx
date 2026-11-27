@@ -37,8 +37,8 @@ const paymentColumns: DataTableColumn[] = [
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
-const statusVariant = (s: string) =>
-  s === "Success" ? "secondary" : s === "Failed" ? "destructive" : "outline";
+// Outlined, so a status keeps its pill on a checked row's fill.
+const statusVariant = (s: string) => (s === "Failed" ? "destructive" : "outline");
 
 const symbols = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOG", "META", "NFLX", "AMD", "INTC"];
 
@@ -167,7 +167,7 @@ function HeroDemo() {
           </Button>
         </View>
         <DataTable
-          class="h-[300px]"
+          class="h-[262px]"
           accessibilityLabel="Payments"
           columns={paymentColumns}
           data={rows().map((p) => ({ ...p, amount: money(p.amount) }))}
