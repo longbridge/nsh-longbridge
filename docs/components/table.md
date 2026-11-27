@@ -69,7 +69,9 @@ cells' padding and one-line text, and the caption's place.
 - `TableFooter` likewise keeps no bottom edge on its last row (`[&>tr]:last:border-b-0`).
 - A `TableCell` / `TableHead` provides a context a library `Checkbox` inside it registers with (as `CardAction` does in
   a `CardHeader`), and drops its end padding while it holds one (shadcn's `[&:has([role=checkbox])]:pr-0`; NSH gaps
-  3). This is a small addition to `Checkbox` (contract: Checkbox reports to an enclosing cell).
+  2). This is a small addition to `Checkbox` (it reports to an enclosing cell), made by this group with `Table`.
+- `TableRow` provides a context the library's overlays report their open state to through `foundation::trigger`
+  (NSH gaps 3); a small addition to `foundation::trigger`, made by this group with `Table`.
 - Every child of `TableHead`, `TableCell` and `TableCaption` sits in a text part (conventions, "Styled parts"), so a
   string child takes the cell's text styles.
 
@@ -121,6 +123,66 @@ Column widths are the cells' (NSH gaps 1): by default every `TableHead` and `Tab
 row (`flex: 1 1 0`, `min-width: 0`); a column of its own width gives each of its cells the same classes:
 `class="w-24 flex-none"` (`flex-none` is needed: a share's basis wins over a width). Alignment is the cell's too:
 `class="items-end"` puts a number column's text at the end (shadcn's `text-right`).
+
+#### Column widths, worked
+
+shadcn's invoice table sizes its columns to their content. Here each column is a choice the app writes once, as a
+class string, and gives to every cell of that column, the header's included:
+
+```tsx
+// One class string per column: a fixed width, a share, an end-aligned share.
+const col = {
+  invoice: "w-[100px] flex-none", // fixed: 100 points, never grows or shrinks
+  status: "flex-1",                // a share (the default; written for clarity)
+  method: "flex-[2]",              // twice the share of `status`
+  amount: "w-[96px] flex-none items-end", // fixed and its text at the end
+};
+
+<Table accessibilityLabel="Invoices">
+  <TableHeader>
+    <TableRow>
+      <TableHead class={col.invoice}>Invoice</TableHead>
+      <TableHead class={col.status}>Status</TableHead>
+      <TableHead class={col.method}>Method</TableHead>
+      <TableHead class={col.amount}>Amount</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {invoices.map((i) => (
+      <TableRow>
+        <TableCell class={col.invoice}>{i.id}</TableCell>
+        <TableCell class={col.status}>{i.status}</TableCell>
+        <TableCell class={col.method}>{i.method}</TableCell>
+        <TableCell class={col.amount}>{i.amount}</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+- `flex-none` with every fixed width: a share's basis (`flex: 1 1 0`) wins over a width.
+- A column as wide as its content does not exist (NSH gaps 1): pick a width that holds the widest value, or let the
+  text cut with an ellipsis in a share.
+- A footer cell spanning columns takes the sum: `flex-[3]` over three shares, or the fixed widths added up
+  (`w-[196px] flex-none`).
+- A Rust app keeps the same strings in constants and passes them with `.app_class(..)`.
+
+#### Wide tables
+
+No scroll container is built in (Decisions 1). A table wider than its place gets a min width and sits in the app's
+horizontal `ScrollView`; its fixed columns keep their widths, its shares divide the min width:
+
+```tsx
+<ScrollView horizontal class="w-full">
+  <Table class="min-w-[720px]" accessibilityLabel="Orders">
+    …
+  </Table>
+</ScrollView>
+```
+
+A table that scrolls both ways (a long and wide one) nests the horizontal `ScrollView` inside the page's vertical one,
+with `<TableHeader sticky>` keeping its titles; past a few hundred rows, or with columns that must stay at a side,
+it is a [DataTable](data-table.md).
 
 ## Variants and sizes
 
@@ -368,26 +430,35 @@ their taller rows.
    columns cannot size to their widest cell as HTML tables do (shadcn's columns follow their content and the
    container scrolls). Workaround: every cell takes an equal share, and a column's cells share the app's width
    classes (`w-24 flex-none`). A grid with subgrid rows, or a `columns` template on `Table` that its rows read, would
-   allow content-sized columns (Decisions 2 asks whether the library should add the latter).
+   allow content-sized columns. A `columns` template on `Table` is not added in P3 (Decisions 2).
 2. **No `:last-child` or `:has()` selectors.** shadcn's body drops the last row's edge with `[&_tr:last-child]`, and
    a cell drops its end padding with `:has([role=checkbox])`. Workaround: the body counts its rows and tells each its
    position through context; a library `Checkbox` registers with its cell (as `CardAction` with `CardHeader`). An
    app's own checkbox-like control does not register: its cell takes `class="pr-0"`.
-3. **No `has-aria-expanded:`.** shadcn lights a row that holds an open menu trigger. Workaround: `TableRow` provides a
+3. ★ **No `has-aria-expanded:`.** shadcn lights a row that holds an open menu trigger. Workaround: `TableRow` provides a
    context the library's overlays (`DropdownMenu`, `Popover`, `Select` through `foundation::trigger`) report their
    open state to, and the row takes the hover fill while one is open. An app's own popup is not covered.
+   Headless test: a `DropdownMenu` in a cell lights its row while open, from TSX and Rust. Fallback: the row is not
+   lit (shadcn's look without that rule), noted in States.
 4. **String children** follow Button's G0 in TSX.
+5. ★ **A later class lifting `truncate`'s one line.** A cell's label is one line (`truncate`); whether
+   `labelClass="whitespace-normal"` after it gives back wrapping is the first headless test of `Table`. Fallback: the
+   label's one line is set as a bound style the app's `labelStyle` overrides (`labelStyle={{ whiteSpace: "normal" }}`),
+   and the spec's examples say so.
+6. ★ **The last row's edge and the checkbox cell's padding through context** (2): headless tests that the body's last
+   row draws no edge after rows are added and removed, and that a cell holding a library `Checkbox` drops its end
+   padding. Fallback: the app's `class="border-b-0"` on the last row and `class="pr-0"` on the cell, written in the
+   examples.
 
 ## Decisions
 
-Proposed; for review.
+Settled in review.
 
 1. **No scroll container.** shadcn wraps the table in `overflow-x-auto`. A scroll view in NSH is a native one that
    takes the wheel and nests with the page's; a table that fits needs none. A wide table goes in the app's
-   horizontal `ScrollView` with a min width on `Table`.
-2. **Column widths by classes, no `columns` prop** (NSH gaps 1). A `columns` template (`["w-24", "1fr", "w-20"]`)
-   read by every row would save repeating classes, but neither shadcn nor `nsh/base`'s `Table` has one. To decide in
-   review: add it, or keep classes and point to `DataTable` for real column management.
+   horizontal `ScrollView` with a min width on `Table` ("Wide tables").
+2. **Column widths by classes, no `columns` prop** (NSH gaps 1): per-cell width classes ("Column widths, worked"),
+   and `DataTable` for real column management. A `columns` template is revisited when an app needs it.
 3. **Header rows have no hover** (shadcn's do, as a side effect of `tr:hover`): a title row lit under the pointer
    reads as pressable.
 4. **A row holding an open popup stays lit** (shadcn's `has-aria-expanded:`), through the overlays' open state
@@ -395,5 +466,4 @@ Proposed; for review.
 5. **`sticky` is a prop on `TableHeader`**, not only a class: it also sets the fill the header needs over scrolling
    rows, from a token, which a class cannot follow in a `ThemeScope`.
 6. **One line per cell by default, cut with an ellipsis** (shadcn's `whitespace-nowrap`, which scrolls instead):
-   columns are shares of the width here. A cell that wraps sets `labelClass="whitespace-normal"` (to check at
-   implementation that a later class lifts `truncate`'s one line; if it does not, that is an NSH gap to add here).
+   columns are shares of the width here. A cell that wraps sets `labelClass="whitespace-normal"` (NSH gaps 5).

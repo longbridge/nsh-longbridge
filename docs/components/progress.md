@@ -40,9 +40,9 @@ scale, not a width, so it can transition), and the indeterminate form's moving s
 
 - `#[component] fn Progress` whose root is `nsh_base::progress()`, `value`, `indeterminate`, `accessibilityLabel` and
   `children` passed through.
-- **The look is classes generated from the resolved tokens** (as DataTable's, data-table.md NSH gaps 1), put before
-  the app's `trackClass` / `indicatorClass`, so `trackClass="h-1"` wins over the library's height; the app's
-  `trackStyle` / `indicatorStyle` win over both.
+- **The look is classes generated from the resolved tokens, before the app's `trackClass` / `indicatorClass`**
+  (conventions, "Drawing": a part of an `nsh/base` component), so `trackClass="h-1"` wins over the library's height;
+  the app's `trackStyle` / `indicatorStyle` win over both.
 - **The track**: `w-full`, height `progress-height`, corners `progress-radius`, fill `progress`, clipped
   (`overflow: hidden`).
 - **The indicator** is the full width of the track (`w-full`, which wins over `nsh/base`'s width by value: its rule,
@@ -192,22 +192,22 @@ progress().indeterminate(true).accessibility_label("Connecting")
 
 ## NSH gaps
 
-1. **A repeating motion.** NSH runs Tailwind's `spin`, `ping`, `pulse` and `bounce` keyframes; whether an app (or a
-   library) can name keyframes of its own (a slide across) is to check at implementation. If it can, the segment
-   moves with them (`animation-[nlb-progress-slide_1500ms_ease-in-out_infinite]`, reduced motion skipping it). If
-   not, the library drives it: a timer (`set_interval`, as `nsh/base`'s terminal bar) every pass sets the segment back
+1. ★ **A repeating motion.** NSH runs Tailwind's `spin`, `ping`, `pulse` and `bounce` keyframes; whether a library
+   can name keyframes of its own (a slide across) is the first headless test of `Progress`. If it can, the segment
+   moves with them (`animation-[nlb-progress-slide_1500ms_ease-in-out_infinite]`, reduced motion skipping it).
+   Fallback: the library drives it with a timer (`set_interval`, as `nsh/base`'s terminal bar) every pass sets the segment back
    to the start without a transition and then to the end with one. Either way the motion runs only while
    indeterminate and shown.
-2. **A width does not transition** (NSH animates transforms, not layout): the indicator scales instead (see
-   Implementation). If a later NSH animates widths, nothing changes in the API.
-3. **The track and the indicator are `nsh/base`'s parts**, whose Rust `trackStyle` / `indicatorStyle` setters take a
-   style built once (Checkbox's NSH gaps 3), and whose classes lose to inline styles. Workaround: the look as
-   generated classes before the app's (Implementation), and the indicator's scale as a bound `indicatorStyle` with
-   the app's merged after.
+2. ★ **A width does not transition** (NSH animates transforms, not layout): the indicator scales instead (see
+   Implementation). Headless test: `value` 30 → 60 transitions the indicator's scale from 0.3 to 0.6 from its start,
+   and the track's clip rounds its start. Fallback: the indicator's width by value (`nsh/base`'s own), changing at
+   once. If a later NSH animates widths, nothing changes in the API.
+3. **The track and the indicator are `nsh/base`'s parts** (conventions, "Drawing"): generated classes, and the
+   indicator's scale as a bound `indicatorStyle` with the app's merged after.
 
 ## Decisions
 
-Proposed; for review.
+Settled in review.
 
 1. **The indeterminate form moves** (`nsh/base` has the state, and its terminal bar moves a segment; shadcn draws an
    empty track, which reads as "not started").

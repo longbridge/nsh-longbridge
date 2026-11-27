@@ -57,8 +57,8 @@ so here:
 ### Implementation
 
 - `#[component] fn Pagination` whose root is `nsh_base::pagination()`, every prop and `onChange` passed through.
-- **Items' look**: an `itemClass` generated from the resolved Button tokens in a binding (as `Select`'s highlight,
-  select.md NSH gaps 1): the ghost look at rest, `hover:`, `active:` (with the press's `scale-[0.97]`, none with reduced
+- **Items' look**: an `itemClass` generated from the resolved Button tokens, before the app's `itemClass`
+  (conventions, "Drawing": a part of an `nsh/base` component): the ghost look at rest, `hover:`, `active:` (with the press's `scale-[0.97]`, none with reduced
   motion), `selected:` the outline look (fill, edge, `xs` shadow, its own `hover:`), `focus-visible:` the ring and
   edge, `disabled:` `opacity-disabled` without hover; each appearance's color under `dark:`. The app's `itemClass`
   follows it (its classes win). Geometry (height, min width, radius, centered content, the text's size and weight)
@@ -212,21 +212,22 @@ pagination()
 
 ## NSH gaps
 
-1. **The items are `nsh/base`'s views** (accepted, as `Select`'s rows): their states (`hover:`, `selected:`,
+1. ★ **The items are `nsh/base`'s views** (conventions, "Drawing"): their states (`hover:`, `selected:`,
    `focus-visible:`, `disabled:`) are the item's, which an inline style cannot take and the library's content cannot
-   see (nsh-core's typed styles have no `group_selected` / `group_disabled`). Workaround: the states as an `itemClass`
-   generated from the resolved tokens in a binding (Implementation), the geometry as a bound `itemStyle`. Named
-   group variants for selected and disabled, or states in an inline style, would let the library draw them without
-   generated classes.
+   see (nsh-core's typed styles have no `group_selected` / `group_disabled`); they are generated classes, the
+   geometry a bound `itemStyle`. Headless test: the current page draws the outline look and the others the ghost
+   look, in a `ThemeScope` with a forced appearance too; Previous at page 1 is dimmed. Fallback: none needed for the
+   look (Select's rows use the same mechanism). Named group variants for selected and disabled would let the library
+   draw the states without generated classes.
 2. **No library `Button` inside an item**: an item is `nsh/base`'s pressable, and a pressable inside it would take
-   the press (popover.md, NSH gaps 7). So the items are drawn as Button looks, not as Buttons; a change to Button's
-   look reaches them through the shared tokens, not its code.
+   the press (the trigger slot's gap, popover.md NSH gaps 7). So the items are drawn directly with Button's look, not
+   as Buttons; a change to Button's look reaches them through the shared tokens, not its code.
 3. **The words of Previous / Next by window width** (`sm:`): NSH's breakpoints are the window's, as Tailwind's
    viewport ones; a pagination in a narrow panel of a wide window keeps its words. `compact` is the way there.
 
 ## Decisions
 
-Proposed; for review.
+Settled in review.
 
 1. **Data-driven, not composed by hand** (Differs from shadcn's structure): `nsh/base` computes the pages shown and
    owns the items' focus, so `Pagination` takes `page` and `totalPages`.
@@ -234,4 +235,4 @@ Proposed; for review.
 3. **Button's tokens for the items**, no `pagination-item-*` copies: the items are buttons in shadcn
    (`buttonVariants`) and should follow a theme's buttons.
 4. **The library's words** "Previous", "Next", "Go to previous page", "Go to next page" and "Pagination" join `labels`
-   (contract change: new `Label` keys).
+   (new `Label` keys, accepted).

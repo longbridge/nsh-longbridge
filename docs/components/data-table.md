@@ -51,11 +51,9 @@ its title, with the checked rows lit (shadcn's row selection).
 
 - `#[component] fn DataTable` whose body is `nsh_base::data_table()` with every prop and event passed through, and the
   ref's methods forwarded (`DataTableApi`).
-- **The look is classes generated from the resolved tokens**, per part, in a binding (so a `ThemeScope` and its
-  forced appearance reach it, and a token change shows at once), joined before the app's `classes` of the same part.
-  So an app's class for a part wins over the library's (`classes={{ cell: "px-4" }}`), and its `styles` win over
-  both (`nsh/base`: styles over classes). The same mechanism as `Select`'s generated highlight (select.md, NSH gaps 1).
-  The library writes no `styles`.
+- **The look of every part is a class generated from the resolved tokens, before the app's** (conventions,
+  "Drawing": a part of an `nsh/base` component), so `classes={{ cell: "px-4" }}` wins over the library's and the app's
+  `styles` win over both. The library writes no `styles`.
 - **`size`** gives `rowHeight` (`table-row-height-<size>`), `headerHeight` (`table-head-height-<size>`) and
   `fontSize` (`font-size-<size>`) unless the app sets them.
 - **The last row draws no bottom edge**: the library adds `border-b-0` to the `rowClasses` entry of row
@@ -64,8 +62,7 @@ its title, with the checked rows lit (shadcn's row selection).
   `fixed: "left"`, width `data-table-checkbox-width`, not `sortable`, `resizable`, `movable` or `selectable`) and
   draws it through `renderCell` / `renderHeaderCell` (calling the app's for every other column, or, without one,
   drawing the cell's text as the table would, in Rust: `nsh/base`'s renderer is the whole table's, NSH gaps 6): a
-  library `Checkbox`
-  of the table's `size`, named "Select row" / "Select all" (`labels`). Checked rows take `table-row-selected` through
+  library `Checkbox` of the table's `size`, named "Select row" / "Select all" (`labels`). Checked rows take `table-row-selected` through
   the generated `rowClasses`, after the app's. Column indexes in events stay the app's: the library's column is
   removed from what it reports (`column` − 1, `order` without it).
 - The table is a `Table`-look surface: the root takes the edge and the radius; its parts the rows' and cells' looks.
@@ -323,20 +320,19 @@ library, whose TypeScript declarations declare them too (as `Select`'s `SelectIt
 
 ## NSH gaps
 
-1. **The look must be classes, not inline styles** (as `Select`'s rows): `nsh/base`'s parts take the app's classes
-   and styles, styles over classes. Were the library's look `styles`, an app's `classes` could not change it.
-   Workaround: classes generated from the resolved tokens in a binding (arbitrary values, `dark:` for the other
-   appearance), before the app's. A part style that follows tokens (or token-named classes that see the library's
-   derived tokens) would let the library write its look as tokens.
+1. ★ **Parts styled only through `classes` / `styles`**: the look is generated classes (conventions, "Drawing").
+   Headless test: a `ThemeScope` with another `table-row-selected` and a forced appearance reaches a selected row,
+   and `classes={{ cell: "px-4" }}` wins over the library's padding. Fallback: none needed for the look; if the
+   app's class does not win, the spec says to use `styles` for that part.
 2. **Controls inside cells and the keyboard.** The table is one Tab stop and binds Tab while it has the keyboard; a
    `Checkbox` drawn by `renderCell` is pressable, so on macOS and the web it would also be a Tab stop. The library's
    boxes are made not focusable; checking from the keyboard then needs Space on the selected row, which
    `nsh/base`'s `DataTable` does not bind and the library cannot bind without knowing that the table has the
-   keyboard (no focus event on the table). To decide in review (Decisions 3); a `focused` state or `onFocusChange`
-   on `nsh/base`'s table would allow it.
-3. **The resize band's hover.** The handle's line is a part inside a wider band; whether the band's hover reaches
-   the line's `hover:` is to check at implementation. If it does not, the line stays transparent and the resize
-   cursor alone shows the handle.
+   keyboard (no focus event on the table). Not in P3 (Decisions 3); a `focused` state or `onFocusChange` on
+   `nsh/base`'s table would allow it.
+3. ★ **The resize band's hover.** The handle's line is a part inside a wider band. Headless test: the band's hover
+   reaches the line's `hover:` (`data-table-resize-handle-hover`). Fallback: the line stays transparent and the
+   resize cursor alone shows the handle.
 4. **One row height** for the whole table (`rowHeight`): virtualization needs it. Rows that need more room take a
    larger `size`; rows of their own heights are a `Table`'s.
 5. **String children** follow Button's G0 in TSX (`empty`, `loadingView`, what `renderCell` returns).
@@ -344,11 +340,14 @@ library, whose TypeScript declarations declare them too (as `Select`'s `SelectIt
    The checkbox column needs one, so with `checkboxColumn` and no `renderCell` of the app's the library draws the
    other cells' text itself (Rust, a text per cell in view, aligned as the column; `positiveClass` / `negativeClass`
    still apply on the cell). That costs a view per cell in view more than the table's own text. A renderer per
-   column (`DataTableColumn.render`) in `nsh/base` would keep the other columns native.
+   column (`DataTableColumn.render`) in `nsh/base` would keep the other columns native. ★ Headless tests: a press on
+   a row's box reports `onCheckedChange` with the app's data row (not the table's selection), a sort keeps the boxes
+   on the app's rows through `checkedRows`, the events' column indexes leave the library's column out, and the boxes
+   are no Tab stops. Fallback for the last: none known; if a box stays a Tab stop, it is listed here.
 
 ## Decisions
 
-Proposed; for review.
+Settled in review.
 
 1. **`DataTable` is a component of its own**, not a mode of `Table`: its API is data (`columns`, `data`), `Table`'s is
    children, and the two meet only in their tokens.
@@ -359,8 +358,8 @@ Proposed; for review.
    (`rowSelectable={false}`) when only boxes select. `checkedRows` is by place in `data`, as `rowClasses`, so the
    app keeps checked rows by its own ids across sorting and paging (gpui-kit's Design Guides: "preserve selection by
    domain identity").
-3. **Space on the selected row toggles its box**: wanted (the desktops' and ARIA grids' habit), blocked by NSH gaps 2.
-   Until then the boxes take presses only. To decide: ask `nsh/base` for the table's focus state, or leave it.
+3. **No Space to check the selected row in P3** (the desktops' and ARIA grids' habit, blocked by NSH gaps 2): the
+   boxes take presses only.
 4. **A bordered box by default** (`data-table-border`, `data-table-radius`), as every example in shadcn's guide wraps
    its table; a plain `Table` has none. `class="border-0 rounded-none"` removes it.
 5. **No filtering, column visibility or pagination inside**: shadcn's guide builds them around the table with an

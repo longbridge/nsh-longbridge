@@ -58,9 +58,9 @@ a component cannot fill another's place in NSH (an `AvatarImage` child could not
 - `#[component] fn Avatar` whose root is `nsh_base::avatar()`, `src`, `name`, `accessibilityLabel`, `fallbackDelay`,
   `fallback` and `onStatusChange` passed through. The root is sized and clipped by the library (`overflow: hidden`,
   the radius); the image takes `object-fit: cover` (`aspect-square size-full`); the fallback its fill, text color and
-  centered type. These are classes generated from the resolved tokens (as DataTable's, data-table.md NSH gaps 1),
-  put before the app's `imageClass` / `fallbackClass`; the app's `imageStyle` / `fallbackStyle` pass through and win
-  over both.
+  centered type. These are classes generated from the resolved tokens, before the app's `imageClass` /
+  `fallbackClass` (conventions, "Drawing": a part of an `nsh/base` component); the app's `imageStyle` /
+  `fallbackStyle` pass through and win over both.
 - `Avatar` provides its `size` in context (`AvatarSize`): `AvatarBadge` reads it.
 - `AvatarGroup` provides "in a group" and its `size` in context: an `Avatar` inside it without a `size` of its own
   takes the group's, draws its ring, and every one after the first overlaps the one before (a negative start margin;
@@ -296,19 +296,21 @@ colors it: `avatar-fallback` is `muted`).
 
 ## NSH gaps
 
-1. **The image and the fallback are `nsh/base`'s parts**, whose Rust `imageStyle` / `fallbackStyle` setters take a
-   style built once (Checkbox's NSH gaps 3), and whose classes lose to inline styles. Workaround: the look as classes
-   generated from the tokens in a binding, before the app's `imageClass` / `fallbackClass` (Implementation), so
-   `fallbackClass="bg-primary"` works and a scope reaches the look.
-2. **No `*:` child selector** (shadcn's `*:data-[slot=avatar]:ring-2` on the group). Workaround: the group's context;
-   an avatar of the library inside reads it. An app's own element in the group gets no ring.
+1. ★ **The image and the fallback are `nsh/base`'s parts** (conventions, "Drawing"): their look is generated
+   classes. Headless test: a `ThemeScope` changing `avatar-fallback` reaches the fallback, and
+   `fallbackClass="bg-primary"` wins over the library's fill. Fallback: the app changes the fill with `fallbackStyle`.
+2. ★ **No `*:` child selector** (shadcn's `*:data-[slot=avatar]:ring-2` on the group). Workaround: the group's
+   context; an avatar of the library inside reads it (its size, its ring, its overlap after the first). An app's own
+   element in the group gets no ring. Headless test: the avatars of a group take its size and ring, the first has no
+   overlap, and one with its own `size` keeps it. Fallback: the overlap as the group's `gap` of
+   −`avatar-group-overlap` (a negative gap, if NSH takes one) or the app's `-ml-2` on each avatar after the first.
 3. **The overflow's count is the app's** (`nsh/base`: it knows the count). shadcn's `AvatarGroupCount` is the app's
    too; the library only draws it.
 4. **String children** follow Button's G0 in TSX (`AvatarGroupCount`'s "+3").
 
 ## Decisions
 
-Proposed; for review.
+Settled in review.
 
 1. **`src` and `name` on `Avatar`**, not `AvatarImage` / `AvatarFallback` children (Differs from shadcn's
    structure): `nsh/base` decides which shows natively.
