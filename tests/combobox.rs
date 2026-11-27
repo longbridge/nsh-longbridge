@@ -2,7 +2,8 @@
 //! sets the value and closes it, several values show as chips whose
 //! buttons remove them, the clear button, the empty list's words, the
 //! list's height capped (the popup shrinking with it), the field look's
-//! focus around the input, sizes, disabled, and what TSX apps get.
+//! focus around the input, sizes, disabled, the matched part of each
+//! title, the create row, the query's resets, and what TSX apps get.
 
 mod common;
 
@@ -16,7 +17,8 @@ use common::{light, size, start};
 use nsh_core::{MountItem, NodeId, Size as Viewport, ViewStyle, platform::Os, prelude::*};
 use nsh_engine::EngineConfig;
 use nsh_longbridge::{
-    SelectItem, combobox, components::combobox::COMBOBOX_CHIP,
+    SelectItem, combobox,
+    components::combobox::{COMBOBOX_CHIP, COMBOBOX_EMPTY_FOREGROUND},
     foundation::field::INPUT_BORDER_FOCUS,
 };
 use nsh_testing::Headless;
@@ -156,6 +158,33 @@ fn an_empty_list_says_so() {
     app.type_text("role:combobox[Framework]", "zzz").unwrap();
     app.run_for(Duration::from_millis(300)).unwrap();
     assert!(app.shows("No items found."));
+    let words = app.screen().span_style("text:No items found.").unwrap();
+    assert_eq!(Some(words.color.0), light(COMBOBOX_EMPTY_FOREGROUND));
+    assert_eq!(words.font_size.0, 14.0);
+}
+
+/// A combobox with an empty state of the app's.
+#[component]
+fn OwnEmpty() -> impl IntoElement {
+    view().p(px(20.0)).w(px(320.0)).child(
+        combobox()
+            .items(frameworks())
+            .empty(text("No framework matches."))
+            .accessibility_label("Framework"),
+    )
+}
+
+#[test]
+fn the_apps_empty_state_inherits_the_words_look() {
+    let mut app = start::<OwnEmpty>(true);
+    app.type_text("role:combobox[Framework]", "zzz").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    let words = app
+        .screen()
+        .span_style("text:No framework matches.")
+        .unwrap();
+    assert_eq!(Some(words.color.0), light(COMBOBOX_EMPTY_FOREGROUND));
+    assert_eq!(words.font_size.0, 14.0);
 }
 
 #[test]
@@ -274,8 +303,223 @@ fn tsx_gets_the_combobox() {
         "value?: (string)[] | null;",
         "empty?: JSX.Element",
         "showTrigger?: boolean;",
+        "creatable?: boolean;",
         "onQueryChange?:",
+        "onCreate?: (event: { query: string }) => void;",
     ] {
         assert!(props.contains(wanted), "{wanted} in:\n{props}");
     }
+}
+
+/// The weight of the text `part` in the row `option` names.
+fn weight(app: &Headless, option: &str, part: &str) -> u16 {
+    app.screen()
+        .span_style(&format!("role:option[{option}] >> text:{part}"))
+        .unwrap()
+        .font_weight
+}
+
+#[test]
+fn the_matched_part_of_each_title_is_emphasized() {
+    let mut app = start::<Boxes>(true);
+    app.type_text("role:combobox[Framework]", "NU").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(weight(&app, "Nuxt.js", "Nu"), 600);
+    assert_eq!(weight(&app, "Nuxt.js", "xt.js"), 400);
+    // The row is read as its title.
+    assert!(app.screen().matches("role:option[Nuxt.js]").unwrap());
+    // Several values too: the first match only.
+    app.press_key("Escape").unwrap();
+    app.type_text("role:combobox[Frameworks]", "t").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(weight(&app, "SvelteKit", "Svel"), 400);
+    assert_eq!(weight(&app, "SvelteKit", "eKit"), 400);
+    assert_eq!(weight(&app, "Astro", "t"), 600);
+}
+
+/// The app filters the items itself (a server's results), keeping the
+/// query.
+#[component]
+fn Searched() -> impl IntoElement {
+    let query = signal(SharedString::default());
+    let results = move || {
+        let q = query.get().to_lowercase();
+        frameworks()
+            .into_iter()
+            .filter(|i| i.title.to_lowercase().starts_with(&q))
+            .collect::<Vec<_>>()
+    };
+    view().p(px(20.0)).w(px(320.0)).child(
+        combobox()
+            .items(results)
+            .query(move || Some(query.get()))
+            .on_query_change(move |q: &SharedString| query.set(q.clone()))
+            .accessibility_label("Search"),
+    )
+}
+
+#[test]
+fn the_matched_part_with_the_apps_own_filter() {
+    let mut app = start::<Searched>(true);
+    app.type_text("role:combobox[Search]", "rem").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(app.screen().count("role:option").unwrap(), 1);
+    assert_eq!(weight(&app, "Remix", "Rem"), 600);
+    assert_eq!(weight(&app, "Remix", "ix"), 400);
+}
+
+/// Tags that can be made, several; one value that can be made, whose app
+/// adds nothing; what each reported.
+#[component]
+fn Creatable() -> impl IntoElement {
+    let items = signal(frameworks());
+    let tags = signal(Vec::<SharedString>::new());
+    let made = signal(Vec::<SharedString>::new());
+    let queries = signal(Vec::<SharedString>::new());
+    let confirmed = signal(Vec::<SharedString>::new());
+    view()
+        .flex_col()
+        .gap(px(12.0))
+        .p(px(20.0))
+        .w(px(320.0))
+        .child(
+            combobox()
+                .multiple(true)
+                .creatable(true)
+                .items(move || items.get())
+                .value(move || Some(tags.get()))
+                .on_change(move |v: &Vec<SharedString>| tags.set(v.clone()))
+                .on_create(move |q: &SharedString| {
+                    let value = SharedString::from(format!("tag-{}", q.to_lowercase()));
+                    items.update(|i| i.push(SelectItem::new(value.clone(), q.clone())));
+                    tags.update(|t| t.push(value));
+                })
+                .on_query_change(move |q: &SharedString| queries.update(|l| l.push(q.clone())))
+                .accessibility_label("Tags"),
+        )
+        .child(
+            combobox()
+                .creatable(true)
+                .items(frameworks())
+                .on_create(move |q: &SharedString| made.update(|m| m.push(q.clone())))
+                .on_confirm(move |v: &Vec<SharedString>| confirmed.set(v.clone()))
+                .accessibility_label("One"),
+        )
+        .child(text(move || {
+            format!(
+                "tags:{} made:{} confirmed:{}",
+                tags.get().join("+"),
+                made.get().join("+"),
+                confirmed.get().join("+")
+            )
+        }))
+        .child(text(move || format!("queries:{}", queries.get().join("|"))))
+}
+
+#[test]
+fn the_create_row_makes_the_query_a_new_tag() {
+    let mut app = start::<Creatable>(true);
+    app.type_text("role:combobox[Tags]", "Qwik").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    // Alone, so highlighted: Return chooses it.
+    assert_eq!(app.screen().count("role:option").unwrap(), 1);
+    assert!(app.screen().matches("role:option[Create “Qwik”]").unwrap());
+    assert_eq!(weight(&app, "Create “Qwik”", "Qwik"), 600);
+    assert_eq!(weight(&app, "Create “Qwik”", "Create"), 400);
+    app.press_key("Return").unwrap();
+    app.wait_for("text:tags:tag-qwik made: confirmed:").unwrap();
+    // The chip, the list still open, the query emptied (and said so).
+    assert!(app.shows("Qwik"));
+    assert!(app.screen().matches("role:listbox").unwrap());
+    assert!(
+        app.shows("queries:Q|Qw|Qwi|Qwik|"),
+        "{:?}",
+        app.screen().texts()
+    );
+    // The input is empty: what is typed next is the whole query. The new
+    // item is chosen, and a row of its own now.
+    app.type_text("role:combobox[Tags]", "q").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(
+        app.shows("queries:Q|Qw|Qwi|Qwik||q"),
+        "{:?}",
+        app.screen().texts()
+    );
+    assert!(app.screen().matches("role:option[Qwik]").unwrap());
+    app.type_text("role:combobox[Tags]", "wik").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(!app.screen().matches("role:option[Create “qwik”]").unwrap());
+}
+
+#[test]
+fn no_create_row_for_a_title_there_is_or_a_blank_query() {
+    let mut app = start::<Creatable>(true);
+    // "astro " is "Astro", ignoring case and the spaces at its ends.
+    app.type_text("role:combobox[Tags]", "astro ").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(app.screen().count("role:option").unwrap(), 0);
+    app.press_key("Escape").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    app.type_text("role:combobox[One]", "  ").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(!app.screen().matches("role:option[Create “  ”]").unwrap());
+}
+
+#[test]
+fn the_create_row_comes_last_and_the_keys_reach_it() {
+    let mut app = start::<Creatable>(true);
+    app.type_text("role:combobox[Tags]", "st").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    // "Astro", then the create row; Return takes the first match.
+    assert_eq!(app.screen().count("role:option").unwrap(), 2);
+    app.press_key("Down").unwrap();
+    app.press_key("Return").unwrap();
+    app.wait_for("text:tags:tag-st made: confirmed:").unwrap();
+}
+
+#[test]
+fn one_value_made_closes_the_list_and_the_value_stays_the_apps() {
+    let mut app = start::<Creatable>(true);
+    // Typed into the closed list: it opens, and the create row is
+    // highlighted at once.
+    app.type_text("role:combobox[One]", "Q").unwrap();
+    app.press_key("Return").unwrap();
+    app.wait_for("text:tags: made:Q confirmed:").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(!app.screen().matches("role:listbox").unwrap());
+    // Again, the app having added nothing: made again.
+    app.type_text("role:combobox[One]", "Ember").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    app.press_key("Return").unwrap();
+    app.wait_for("text:tags: made:Q+Ember confirmed:").unwrap();
+}
+
+/// An app that watches the combobox's own query (a recent group while it
+/// is empty).
+#[component]
+fn Watched() -> impl IntoElement {
+    let typed = signal(SharedString::from("-"));
+    view()
+        .p(px(20.0))
+        .w(px(320.0))
+        .child(
+            combobox()
+                .items(frameworks())
+                .on_query_change(move |q: &SharedString| typed.set(q.clone()))
+                .accessibility_label("Watched"),
+        )
+        .child(text(move || format!("typed:[{}]", typed.get())))
+}
+
+#[test]
+fn the_query_going_back_is_reported() {
+    let mut app = start::<Watched>(true);
+    app.type_text("role:combobox[Watched]", "ne").unwrap();
+    app.wait_for("text:typed:[ne]").unwrap();
+    app.press_key("Escape").unwrap();
+    app.run_for(Duration::from_millis(500)).unwrap();
+    app.wait_for("text:typed:[]").unwrap();
+    // Opened again, every item shows.
+    open(&mut app, "Watched");
+    assert_eq!(app.screen().count("role:option").unwrap(), 5);
 }

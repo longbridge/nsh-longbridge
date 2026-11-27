@@ -1,5 +1,7 @@
-// The Combobox page: a project's settings, several values as chips, sizes,
-// groups and a long list, states, the empty list.
+// The Combobox page: a project's settings, several values as chips, the
+// matched part of each title, values made from the query, recent choices
+// while nothing is typed, sizes, groups and a long list, states, the empty
+// list.
 
 import { signal, Text, View } from "nsh";
 import { Button, Combobox, Input, Label, type SelectItem, type Size } from "nsh-longbridge";
@@ -38,6 +40,25 @@ const labels: SelectItem[] = [
   { value: "security", title: "Security" },
 ];
 
+// Airports, by city: several start alike ("San"), some have letters whose
+// case folds change their length ("İ").
+const airports: SelectItem[] = [
+  ["sfo", "San Francisco (SFO)"], ["sjc", "San José (SJC)"], ["san", "San Diego (SAN)"], ["scl", "Santiago (SCL)"],
+  ["gru", "São Paulo (GRU)"], ["sin", "Singapore (SIN)"], ["icn", "Seoul (ICN)"], ["syd", "Sydney (SYD)"],
+  ["pvg", "Shanghai (PVG)"], ["hnd", "Tokyo (HND)"], ["ist", "İstanbul (IST)"], ["zrh", "Zürich (ZRH)"],
+  ["lhr", "London (LHR)"], ["cdg", "Paris (CDG)"], ["fra", "Frankfurt (FRA)"], ["muc", "München (MUC)"],
+  ["dxb", "Dubai (DXB)"], ["hkg", "Hong Kong (HKG)"], ["lax", "Los Angeles (LAX)"], ["jfk", "New York (JFK)"],
+  ["kef", "Reykjavík (KEF)"], ["ams", "Amsterdam (AMS)"],
+].map(([value, title]) => ({ value, title }));
+
+const topics: SelectItem[] = [
+  { value: "design", title: "Design" },
+  { value: "engineering", title: "Engineering" },
+  { value: "research", title: "Research" },
+  { value: "marketing", title: "Marketing" },
+  { value: "sales", title: "Sales" },
+];
+
 // Enough to scroll: the list is capped at combobox-list-max-height.
 const countries: SelectItem[] = [
   "Argentina", "Australia", "Austria", "Belgium", "Brazil", "Canada", "Chile", "China", "Colombia", "Czechia",
@@ -61,6 +82,36 @@ export function ComboboxPage() {
       <Section title="Several values" description="multiple shows the values as chips whose buttons remove them; choosing a row toggles it and the list stays open.">
         <Demo>
           <LabelsDemo />
+        </Demo>
+      </Section>
+
+      <Section
+        title="Matching"
+        description="The part of each title the query matches is drawn heavier, so the reason a row is there shows at a glance. It matches as the filter does: ignoring case, the first place only."
+      >
+        <MatchingDemo />
+      </Section>
+
+      <Section
+        title="Creating values"
+        description="creatable adds a last row, Create “…”, while no item is called what was typed. Return on it reports onCreate with the query and the app adds the item. With several values the query empties for the next one; with one the list closes."
+      >
+        <Demos>
+          <Demo label="Tags, several">
+            <TagsDemo />
+          </Demo>
+          <Demo label="A folder, one">
+            <FolderDemo />
+          </Demo>
+        </Demos>
+      </Section>
+
+      <Section
+        title="Recent choices"
+        description="Items are data, so while nothing is typed the app can lead with what was chosen last, under a group of its own. It watches the query with onQueryChange; once a query filters the list, every airport shows."
+      >
+        <Demo>
+          <RecentDemo />
         </Demo>
       </Section>
 
@@ -210,5 +261,133 @@ function StatesDemo() {
         </View>
       </View>
     </Demo>
+  );
+}
+
+/**
+ * Destinations, the list held open on "san" while the scene is in the window
+ * (as any list, it closes on Escape or a press outside, the query then
+ * emptied by the app, which keeps it).
+ */
+function MatchingDemo() {
+  const shown = signal(false);
+  const open = signal(true);
+  const query = signal("san");
+  const picked = signal<string[]>(["sin"]);
+  return (
+    <Demo class="items-stretch justify-start" inView={shown.set}>
+      <View class="w-full max-w-[340px] min-h-[300px] gap-2">
+        <Label>
+          <Text>Destinations</Text>
+        </Label>
+        <Combobox
+          multiple
+          items={airports}
+          query={query()}
+          onQueryChange={(e) => query.set(e.query)}
+          open={open() && shown()}
+          onOpenChange={(e) => {
+            open.set(e.open);
+            if (!e.open) query.set("");
+          }}
+          value={picked()}
+          onChange={(e) => picked.set(e.value)}
+          placeholder="Search airports"
+          accessibilityLabel="Destinations"
+        />
+      </View>
+    </Demo>
+  );
+}
+
+let made = 0;
+
+function TagsDemo() {
+  const items = signal<SelectItem[]>(topics);
+  const tags = signal<string[]>(["design"]);
+  return (
+    <View class="w-full max-w-[320px] gap-2">
+      <Label>
+        <Text>Topics</Text>
+      </Label>
+      <Combobox
+        multiple
+        creatable
+        items={items()}
+        value={tags()}
+        onChange={(e) => tags.set(e.value)}
+        onCreate={(e) => {
+          const value = `topic-${++made}`;
+          items.set([...items(), { value, title: e.query }]);
+          tags.set([...tags(), value]);
+        }}
+        placeholder="Add a topic"
+        accessibilityLabel="Topics"
+      />
+      <Text class="text-xs text-muted-foreground">Type a topic that is not listed, then Enter.</Text>
+    </View>
+  );
+}
+
+function FolderDemo() {
+  const folders = signal<SelectItem[]>([
+    { value: "inbox", title: "Inbox" },
+    { value: "receipts", title: "Receipts" },
+    { value: "travel", title: "Travel" },
+  ]);
+  const folder = signal<string[]>(["inbox"]);
+  return (
+    <View class="w-full max-w-[280px] gap-2">
+      <Label>
+        <Text>Move to</Text>
+      </Label>
+      <Combobox
+        creatable
+        items={folders()}
+        value={folder()}
+        onChange={(e) => folder.set(e.value)}
+        onCreate={(e) => {
+          const value = `folder-${++made}`;
+          folders.set([...folders(), { value, title: e.query }]);
+          folder.set([value]);
+        }}
+        placeholder="Choose or name a folder"
+        accessibilityLabel="Folder"
+      />
+      <Text class="text-xs text-muted-foreground">A new name makes a folder and moves it there.</Text>
+    </View>
+  );
+}
+
+/** The airports with the recent ones first, under "Recent", and the rest under "All airports": one value, one row. */
+function withRecent(recent: string[]): SelectItem[] {
+  const first = recent.flatMap((v) => airports.filter((a) => a.value === v)).map((a) => ({ ...a, group: "Recent" }));
+  const rest = airports.filter((a) => !recent.includes(a.value)).map((a) => ({ ...a, group: "All airports" }));
+  return [...first, ...rest];
+}
+
+function RecentDemo() {
+  const typed = signal("");
+  const recent = signal<string[]>(["sin", "hnd", "lhr"]);
+  const airport = signal<string[]>([]);
+  return (
+    <View class="w-full max-w-[320px] gap-2">
+      <Label>
+        <Text>Flying from</Text>
+      </Label>
+      <Combobox
+        items={typed().trim() === "" ? withRecent(recent()) : airports}
+        onQueryChange={(e) => typed.set(e.query)}
+        value={airport()}
+        onChange={(e) => {
+          airport.set(e.value);
+          recent.set([...e.value, ...recent().filter((v) => !e.value.includes(v))].slice(0, 3));
+        }}
+        placeholder="Search airports"
+        cleanable
+        accessibilityLabel="Flying from"
+      />
+      <Text class="text-xs text-muted-foreground">Open it with nothing typed: the last three come first.</Text>
+    </View>
   );
 }

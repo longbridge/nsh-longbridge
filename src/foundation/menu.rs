@@ -25,7 +25,8 @@ use super::{
     class::Classes,
     icon::{IconName, icon_size_token, icon_view},
     size::Size,
-    typography::line_height,
+    text_match::{self, Occurrences},
+    typography::{font_weight, line_height},
 };
 use crate::{
     foundation::popup::POPOVER_RADIUS,
@@ -35,8 +36,8 @@ use crate::{
         semantic::{
             ACCENT, ACCENT_FOREGROUND, BORDER, BORDER_WIDTH, CONTROL_HEIGHT_LG, CONTROL_HEIGHT_MD,
             CONTROL_HEIGHT_SM, CONTROL_HEIGHT_TOUCH_LG, CONTROL_HEIGHT_XS, DESTRUCTIVE,
-            FONT_SIZE_LG, FONT_SIZE_MD, FONT_SIZE_SM, FONT_SIZE_XS, MUTED_FOREGROUND,
-            OPACITY_DISABLED, RADIUS_LG, TOUCH_TARGET,
+            FONT_SIZE_LG, FONT_SIZE_MD, FONT_SIZE_SM, FONT_SIZE_XS, FONT_WEIGHT_SEMIBOLD,
+            MUTED_FOREGROUND, OPACITY_DISABLED, RADIUS_LG, TOUCH_TARGET,
         },
     },
     tokens,
@@ -100,6 +101,9 @@ tokens! {
     MENU_LABEL_FOREGROUND: Color = "menu-label-foreground" => |t| t.color(MUTED_FOREGROUND),
     /// A list's group heading text size: Tailwind's `text-xs`.
     MENU_LABEL_FONT_SIZE: Length = "menu-label-font-size" => |t| t.px(12.0),
+    /// The weight of the part of a list row's title a query matches
+    /// (`Combobox`'s): 400 draws no emphasis.
+    MENU_ITEM_MATCH_FONT_WEIGHT: Number = "menu-item-match-font-weight" => |t| t.number(FONT_WEIGHT_SEMIBOLD),
 }
 
 /// The group a menu row's parts (its icon, its chevron) take the row's
@@ -303,9 +307,17 @@ pub(crate) struct ListLook {
 /// (the menu's sheet on touch screens), its zoom, the overlay behind a
 /// sheet, `menu-padding` around the rows, the rows' look and highlight,
 /// each row's content with the check while it is chosen, and the group
-/// headings, with the app's classes and styles over them.
+/// headings, with the app's classes and styles over them. A fourth
+/// argument draws the rows' content in place of [`list_row`] (one made
+/// with [`list_row_with`]: `Combobox`'s matched titles and create row).
 macro_rules! list_look {
     ($root:ident, $t:expr, $look:expr) => {{
+        let t: $crate::theme::Theme = $t;
+        let look: $crate::foundation::menu::ListLook = $look;
+        let row = $crate::foundation::menu::list_row(t, look.clone());
+        list_look!($root, t, look, row)
+    }};
+    ($root:ident, $t:expr, $look:expr, $row:expr) => {{
         use $crate::foundation::{menu, popup};
         let t: $crate::theme::Theme = $t;
         let look: menu::ListLook = $look;
@@ -317,7 +329,7 @@ macro_rules! list_look {
             .backdrop_style(move |s| s.bg(move || t.color($crate::theme::semantic::OVERLAY)))
             .item_class(move || Some(menu::list_item_class(t, look.item_class.get())))
             .group_class(look.label_class)
-            .render_item(menu::list_row(t, look.clone()));
+            .render_item($row);
         let content_style = look.content_style;
         popup::set_popup_style(&mut $root, move || {
             menu::list_surface(t, content_style.get())
@@ -418,6 +430,19 @@ pub(crate) fn list_item_class(t: Theme, app: Option<SharedString>) -> SharedStri
 /// A list row's content: the title (or the app's `renderItem`), then a box
 /// holding the check while the item is chosen.
 pub(crate) fn list_row(t: Theme, look: ListLook) -> impl Fn(&SelectEntry) -> View + 'static {
+    list_row_with(t, look, |entry: &SelectEntry| {
+        title_text(text(entry.title.clone()))
+    })
+}
+
+/// [`list_row`] with the title drawn by `title` (without the app's
+/// `renderItem`; [`matched_title`]), which takes the room the check leaves
+/// ([`title_text`]).
+pub(crate) fn list_row_with(
+    t: Theme,
+    look: ListLook,
+    title: impl Fn(&SelectEntry) -> AnyElement + 'static,
+) -> impl Fn(&SelectEntry) -> View + 'static {
     let size = look.size;
     let side = move || t.length(icon_size_token(size.get()));
     move |entry: &SelectEntry| {
@@ -429,11 +454,7 @@ pub(crate) fn list_row(t: Theme, look: ListLook) -> impl Fn(&SelectEntry) -> Vie
                 .flex_1()
                 .min_w(px(0.0))
                 .into_element(),
-            None => text(entry.title.clone())
-                .flex_1()
-                .min_w(px(0.0))
-                .truncate()
-                .into_element(),
+            None => title(entry),
         };
         let check = icon_view(t, || IconName::Check, side)
             .opacity(move || if chosen(&value) { 1.0_f32 } else { 0.0 });
@@ -447,4 +468,45 @@ pub(crate) fn list_row(t: Theme, look: ListLook) -> impl Fn(&SelectEntry) -> Vie
             .child(label)
             .child(check)
     }
+}
+
+/// A list row's title with the part `query` first matches (as the filter
+/// matches: [`text_match`]) in `menu-item-match-font-weight`, the rest as
+/// the row's text; one line, cut with an ellipsis. Drawn again as the
+/// query changes.
+pub(crate) fn matched_title(
+    t: Theme,
+    query: Memo<SharedString>,
+) -> impl Fn(&SelectEntry) -> AnyElement + Clone + 'static {
+    move |entry: &SelectEntry| {
+        let title = entry.title.clone();
+        // The runs as `(start, end, matched)`, compared as the query
+        // changes: a row whose match did not move is not drawn again.
+        let runs =
+            computed(move || query.with(|q| text_match::runs(&title, q, Occurrences::First)));
+        let title = entry.title.clone();
+        dynamic(move || {
+            let runs = runs.get();
+            if !runs.iter().any(|(_, matched)| *matched) {
+                return title_text(text(title.clone()));
+            }
+            let weight = font_weight(t, MENU_ITEM_MATCH_FONT_WEIGHT);
+            let line = runs.into_iter().fold(text(""), |line, (range, matched)| {
+                let run = text(SharedString::from(title[range].to_owned()));
+                line.child(if matched {
+                    run.font_weight(weight)
+                } else {
+                    run
+                })
+            });
+            title_text(line)
+        })
+        .into_element()
+    }
+}
+
+/// A row's title on `el`: the room the check leaves, one line, an
+/// ellipsis.
+pub(crate) fn title_text(el: Text) -> AnyElement {
+    el.flex_1().min_w(px(0.0)).truncate().into_element()
 }
