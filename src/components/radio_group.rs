@@ -237,8 +237,8 @@ pub fn RadioGroupItem(props: RadioGroupItemProps, cx: Scope<NoEvent>) -> impl In
     let dot = move || {
         checked().then(|| {
             view()
-                .w(move || side() / 2.0)
-                .h(move || side() / 2.0)
+                .w(move || dot_side(side()))
+                .h(move || dot_side(side()))
                 .rounded_full()
                 .bg(move || t.color(RADIO_GROUP_ITEM_DOT))
                 .app_class(props.dot_class)
@@ -318,6 +318,13 @@ pub fn RadioGroupItem(props: RadioGroupItemProps, cx: Scope<NoEvent>) -> impl In
             props.label_style,
             props.children,
         ))
+}
+
+/// The dot's side in a circle `side` wide: about half of it, an even
+/// number of points from the circle's side, so it sits on whole points in
+/// the middle (7 in 14 would sit 3.5 from the edge).
+fn dot_side(side: Points) -> Points {
+    side - px((f32::from(side) / 4.0).round() * 2.0)
 }
 
 /// The circle's side token of `size`.
