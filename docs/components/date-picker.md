@@ -82,16 +82,20 @@ literally (a `Button` that opens a `Popover` holding a `Calendar`) can write it 
   open popups while open (`foundation::popup::hold_open`, so the trigger's tooltip hides).
 - **The trigger** fills `nsh/base`'s `trigger` slot: the library's field (below) unless the app gives `trigger`.
   `nsh/base` binds the role, value, states, focus, keys and press on the slot and places the popup against it.
-- **The popup and the sheet**: `foundation::popup::surface` on `nsh/base`'s `popupStyle`, written bound as
-  `Select`'s (`foundation::popup::set_popup_style`, `PopupStyleProp` implemented for `DatePickerProps`), no padding of
+- **Joining a `Field`** ([Field](field.md)): the body calls `field::join(host, focus)` once. Inside a `Field` it takes
+  the field's control slot, so a `FieldLabel`'s press focuses the trigger; `invalid` and `disabled` are its own or the
+  field's (either one); the field's described-by target goes on the trigger (the combobox screen readers reach).
+  Outside a `Field` nothing changes.
+- **The popup and the sheet**: `foundation::popup::surface` on `nsh/base`'s `popupStyle`, as `Select`'s
+  (`foundation::popup::set_popup_style`, `PopupStyleProp` implemented for `DatePickerProps`), no padding of
   its own (the calendar's padding is the popup's, shadcn's `p-0`); in the sheet, the menu's sheet look
   (`menu-sheet-radius`, the top edge, the bottom safe area) and the `overlay` backdrop, as `Select`'s.
 - **The calendar** is `nsh/base`'s grid inside the popup: the library writes the calendar look into its parts
   (`headerStyle` … `itemClass`, its `renderItem`) exactly as `Calendar` does, through functions `Calendar`'s file
   shares (one look, not two copies), transparent and with `calendar-padding` around it.
-- **Presets, the time row and the segments**: the library writes their look into `presetsStyle`, `presetStyle`,
-  `timeStyle`, `timeFieldStyle`, `segmentStyle`, `separatorStyle` (bound, the app's after) and generated classes
-  for their states, and fills `timeLabel` with "Time" (`labels`).
+- **Presets, the time row and the segments** are `nsh/base`'s parts, whose Rust styles are built once: their look
+  and states follow conventions.md's rule (Drawing: a class generated from the resolved tokens, before the app's
+  class; the app's style last). The library fills `timeLabel` with "Time" (`labels`).
 
 ## API
 
@@ -113,8 +117,8 @@ literally (a `Button` that opens a `Popover` holding a `Calendar`) can write it 
 | `placeholder` | `placeholder` | `string` | "Pick a date" (`labels`) | What the field shows without a value (shadcn's text) |
 | `dateFormat` | `date_format` | `string` | `"%b %-d, %Y"` (`Oct 28, 2026`) | How the field shows the value and screen readers hear it, in `chrono`'s format; a range's ends joined by ` - `; with `timePrecision`, the time after a space (`%H:%M`, `%I:%M %p` by `hourCycle`, with `:%S` at seconds) |
 | `size` | `size` | `Size` | `"md"` | The field's height, type, padding and icon, and the calendar's cells |
-| `disabled` | `disabled` | `boolean` | `false` | It does not open, takes no focus, is dimmed |
-| `invalid` | `invalid` | `boolean` | `false` | The app's checks reject the value: the field look's red edge and ring; screen readers say invalid |
+| `disabled` | `disabled` | `boolean` | `false` | It does not open, takes no focus, is dimmed; also while its `Field` is disabled |
+| `invalid` | `invalid` | `boolean` | `false` | The app's checks reject the value: the field look's red edge and ring; screen readers say invalid; also while its `Field` is invalid |
 | `open` / `defaultOpen` | `open` / `default_open` | `boolean` | uncontrolled / `false` | The popup's open state |
 | `timePrecision` | `time_precision` | `"minute"` \| `"second"` / `Option<TimePrecision>` | — | Edit the time of day too (a single date only): a time row under the calendar |
 | `hourCycle` | `hour_cycle` | `"h23"` \| `"h12"` / `Option<HourCycle>` | the user's | How the time field counts the hours; unset, `localeSettings()`'s (12-hour where the user's is) |
@@ -165,6 +169,16 @@ again by the library's declarations; in Rust `DateTime`, `DatePickerValue`, `Pic
 | `onCancel` | `Cancel` | — | Closed without a choice: Escape, back, a press outside or on the backdrop |
 
 `nsh/base`'s, forwarded. In Rust `PickedDate` holds the `value` (a `DateTime`) and the picker's `time_precision`.
+
+### Ref
+
+TSX: `ref={due}` gives a `DatePickerRef`, into a variable or a signal (`const due = signal<DatePickerRef>()`); Rust: a
+`ComponentRef<DatePicker>` (`component_ref::<DatePicker>()`), whose `api::<DatePickerApi>()` has the methods.
+`DatePickerRef` joins `FieldRef`'s union, so a `Label`'s `htmlFor` or a `FieldLabel` focuses it (Field, Decisions 3).
+
+| Method | Notes |
+|---|---|
+| `focus()` | Gives the trigger the keyboard focus, without opening it; does nothing while disabled |
 
 ### Parts
 
@@ -260,7 +274,8 @@ and Android's date pickers come up from the bottom or as a dialog, not anchored 
 `nsh/base`'s (Built on): the field is a `combobox`, expanded while open, its value the value in `dateFormat`;
 the calendar's (Calendar's Accessibility); the time field's native field with its segments. The library adds
 `invalid` to the field's accessibility state and hides the icon from screen readers. `accessibilityLabel` names the
-picker (Input's G1: no labelledby between elements); `timeAccessibilityLabel` the time field.
+picker (Input's G1: no labelledby between elements); `timeAccessibilityLabel` the time field. Inside a `Field`, its
+description and error describe the trigger ([Field](field.md)).
 
 ## Tokens
 
@@ -289,7 +304,7 @@ TSX:
 
 ```tsx
 import { signal } from "nsh";
-import { DatePicker, type DatePickerValue } from "nsh-longbridge";
+import { Button, DatePicker, type DatePickerValue, Field, FieldError, FieldLabel } from "nsh-longbridge";
 
 const due = signal<DatePickerValue>(null);
 
@@ -328,6 +343,13 @@ const today = isoDate(new Date()); // Calendar, "Dates in TSX and Rust"
   defaultValue="2026-11-26T09:00"
   accessibilityLabel="Meeting start"
 />
+
+// In a Field: the label focuses it, the field's error describes it and makes it invalid.
+<Field invalid={due() === null}>
+  <FieldLabel>Due date</FieldLabel>
+  <DatePicker value={due()} onChange={({ value }) => due.set(value)} accessibilityLabel="Due date" />
+  <FieldError>Pick a due date.</FieldError>
+</Field>
 
 // An icon button in a toolbar opens it.
 <DatePicker
@@ -373,27 +395,29 @@ date_picker()
    default is English (shadcn's examples' `LLL dd, y` without the zero). The NSH fix is Calendar's NSH gaps 3 (locale
    names in Rust), with a locale-aware default format (`Intl`'s `dateStyle: "medium"`).
 2. **The parts are `nsh/base`'s** (Select's gap 1): `popupStyle`, the calendar's part styles, the presets', the time
-   row's and the segments' styles from Rust are built once, so the library writes them bound itself (a
-   `PopupStyleProp` for `DatePickerProps` and the same for the other part props) and generates the state classes from
-   the resolved tokens. A test guards that a token changed while open reaches the popup.
+   row's and the segments' styles from Rust are built once; their look follows conventions.md's rule (Drawing).
+   ★ The first headless test changes a token while the popup is open and checks the popup, a day and a segment
+   follow it. Fallback: the surface is read as it opens (as a `Popover`'s panel), so a change shows at the next
+   opening.
 3. **No `onPosition`**: no slide toward the field and a centered zoom origin, as `Select` (Tooltip's gap 3).
 4. **The app's pressable as `trigger`** takes the press (Popover's NSH gaps 7): handled for this library's `Button`
    by `foundation::trigger` with the open state the library holds; an app's own pressable is not covered.
 5. **The time field's focus is inside it**: `nsh/base`'s time field keeps a native text field behind the segments,
    which takes the focus; the field look's focus states are drawn on `focus-within:` of the time field's view, not
-   `focus-visible:`. A test guards the ring.
+   `focus-visible:`. ★ The first headless test focuses the time field and checks the edge and the ring on its view.
+   Fallback: the edited segment's highlight alone shows the focus (no ring on the time field).
 6. **Not editable as text.** `nsh/base`'s trigger is a button-like combobox; shadcn's "input" date picker (an `Input`
    that parses what is typed, with a calendar button) has no counterpart. An app builds it from `Input` and a
    `Popover` with a `Calendar`; a `DateField` of segments (React Aria's) would be the NSH answer, as `TimeField` is
    for times.
 7. **No `TimeField` of this library yet.** `nsh/base` has one (used here inside the popup); a standalone `TimeField`
-   with the field look and the segments' look of this spec is a small later component (P3 does not list it).
+   with the field look and the segments' look of this spec comes later, not in P3.
 8. **The sheet's condition is `nsh/base`'s** (`!is_desktop()`, private); the library computes the same
    (`foundation::menu::list_as_sheet`), as Select (DropdownMenu's gap 2).
 
 ## Decisions
 
-To settle in review:
+Settled in review:
 
 1. **Built on `nsh/base`'s `DatePicker`, not this library's `Popover` + `Calendar`** (see "Differs from shadcn's
    structure"): the platform's sheet, the focus and the keys come with it; the popup looks like a `Popover`
@@ -409,3 +433,5 @@ To settle in review:
 6. **Presets beside the calendar on desktops, a row above it in a sheet** (`nsh/base`'s place; the look of shadcn's
    preset buttons).
 7. **`cleanable` waits**, as Select's (Decisions 4); Delete and Backspace clear.
+8. **It joins `Field`** (`field::join`, kind `focus`) and has a `DatePickerRef` with `focus()`.
+9. **No `TimeField` component in P3.**

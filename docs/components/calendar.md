@@ -68,19 +68,18 @@ shadcn's `Calendar` is React DayPicker with classes (`mode`, `selected`, `onSele
 - `#[component] fn Calendar` whose root is `nsh_base::calendar()`, with `value`, `defaultValue`, `range`,
   `numberOfMonths`, `disabledMatcher`, `yearRange` and `onChange` passed through. `firstDayOfWeek` is passed as the
   app's, else `locale_settings().first_day_of_week.number() % 7` in a binding (so it follows the user's settings).
-- **The look is written into `nsh/base`'s part props, bound** (as `Select` writes its rows', Select's NSH gaps 1):
-  `headerStyle`, `bodyStyle`, `monthStyle`, `rowStyle` and `itemStyle` from the tokens, the app's style of the same
-  part merged after; `itemClass` generated in a binding from the resolved tokens (the states an inline style cannot
-  take: `hover:`, `selected:`, `disabled:`, `focus-visible:`, `data-*:`, each appearance's value under `dark:`), the
-  app's `itemClass` appended so its classes win.
+- **The look of `nsh/base`'s parts** follows conventions.md (Drawing: a part of an `nsh/base` component whose Rust
+  style is built once gets its look as a class generated from the resolved tokens, before the app's class; the app's
+  style last), as `Select`'s rows: the header, body, month, row and item looks, and the item states an inline style
+  cannot take (`hover:`, `selected:`, `disabled:`, `focus-visible:`, `data-*:`).
 - **`renderItem` is the library's**: it draws each item's content from its `CalendarEntry` (a day's band and square
   and number, a weekday's or a month's name, the toggles' text and chevron, Previous / Next's chevrons), calling the
   app's `renderItem` for the label when given (see Parts). The content follows the item's states through a named
   group, `group/nlb-calendar-item` on the item and `group-selected/nlb-calendar-item:`,
   `group-data-range-start/nlb-calendar-item:` … on the content, so a state change draws nothing again.
 - The root view around `nsh/base`'s calendar takes the fill, the padding and the app's `class` / `style`.
-- Inside a library `Popover` or `Card` (their contexts: `foundation::popup`'s "inside an open popup", a new
-  `in_card()`) the fill is transparent, as shadcn's `[[data-slot=popover-content]_&]:bg-transparent` and
+- Inside a library `Popover` or `Card` (their contexts: `foundation::popup`'s "inside an open popup", and
+  `in_card()`, which `Card` provides to its content for this, the smallest change to `Card`) the fill is transparent, as shadcn's `[[data-slot=popover-content]_&]:bg-transparent` and
   `[[data-slot=card-content]_&]:bg-transparent`.
 
 ## API
@@ -444,26 +443,29 @@ calendar()
    an NSH `month` / `onMonthChange` pair would allow it.
 6. **Today is read once.** `nsh/base` reads today when the calendar is made, so one left open over midnight marks
    yesterday until it is made again. Accepted.
-7. **The rows and the items are `nsh/base`'s parts** (as Select's gap 1): their styles from Rust are built once, so
-   the library writes the bound style props itself and generates the state classes from the resolved tokens (a
-   scope's tokens and a forced appearance reach them, as Select's). Named groups with `data-*` variants
-   (`group-data-range-start/nlb-calendar-item:`) are in NSH's class grammar (`docs/dev/styles.md`); a test guards
-   that each state reaches the content.
+7. **The rows and the items are `nsh/base`'s parts**, whose Rust styles are built once: their look is generated
+   classes, by conventions.md's rule (Drawing). ★ The content follows the item's states through a named group with
+   `data-*` variants (`group-data-range-start/nlb-calendar-item:`), which NSH's class grammar has
+   (`docs/dev/styles.md`); the first headless test checks that each state (`selected`, each `data-range-*`,
+   `data-today`, `data-outside`, `disabled`, `focus-visible`) reaches the content, in light and dark and under a
+   scope. Fallback, if one does not: that state's look goes on the item itself (`data-range-middle:bg-…` on the cell,
+   which then carries the band, and the square's fill on the cell for `selected:`), losing the band's rounding at the
+   week's ends.
 8. **String children** do not apply (the labels are the library's); `renderItem`'s elements follow Button's G0.
 
 ## Decisions
 
-To settle in review:
+Settled in review:
 
-1. **`range` (a boolean, `nsh/base`'s), not shadcn's `mode`**: NSH has no multiple mode yet, and a `mode` with one
-   value missing would mislead. When NSH adds multiple selection, a `multiple` boolean beside `range` (as
-   `nsh/base` names it) or a `mode` (shadcn's): to decide then.
+1. **`range` (a boolean, `nsh/base`'s), not shadcn's `mode`**; no multiple selection (NSH gaps 1).
 2. **ISO strings in TSX, `chrono` in Rust**, never JS `Date` (see "Dates in TSX and Rust"); the library re-exports
    `chrono`.
 3. **The week starts on the user's day** (`localeSettings()`), where `nsh/base` defaults to Sunday: React DayPicker
    takes it from the locale too, and a Monday-first user sees Monday first without the app doing anything.
 4. **`size` with four cells**, shadcn's 32 as `md`, touch cells at least 44.
-5. **The names are the library's words** (`labels`, translated by the app), until NSH gives Rust locale names.
+5. **The names are the library's words** (`labels`, English by default, translated by the app), until NSH gives
+   Rust locale names.
+8. **Transparent inside a `Card`** through `Card`'s `in_card()` context, as inside a `Popover`.
 6. **One month below `md`**, rather than stacked months under one header row (NSH gaps 2).
 7. **The day's hover and focus are Button's ghost tokens**; the day's own forms (`today`, `selected`, `range`) are
    `calendar-*` tokens.
