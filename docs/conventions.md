@@ -81,6 +81,14 @@ mobile-first single column.
 - A part of an `nsh/base` component whose Rust style is built once (`popupStyle`, `itemStyle`, a part's
   `*_style`) gets the library's look as a class generated from the resolved tokens, placed before the app's class;
   the app's `style` is merged last. So a token change or a `ThemeScope` reaches it, and the app still overrides it.
+- Any look the app must be able to override with a class is such a generated class, never a typed style: a typed
+  style beats every class, the app's included. `foundation::class::Classes` builds them from the resolved tokens (a
+  color with its `dark:` value, a state as a variant: `hover:`, `selected:`), the app's class appended last.
+- A rule about a child's place uses NSH's `first:` / `last:` variants on the child (`last:border-b-0`, `first:ml-0`),
+  not a count the parent keeps of its children: the variants follow children as they are added and removed.
+- Slot content (`trigger`, `overflow`, `fallback`) is made where the app writes it and does not see the context a
+  component provides in its body. What depends on that context (a group's size) is drawn on the slot's box, which the
+  component places, not by the content.
 - A part of an `nsh/base` component that the app must be able to restyle (`<part>Style` from Rust takes only fixed
   styles there) is drawn by the library, on `nsh/base`'s behavior, rather than styled through `nsh/base`'s part.
 - Decorative components (`Separator`, `Skeleton`) are hidden from accessibility: `accessible(false)` and
