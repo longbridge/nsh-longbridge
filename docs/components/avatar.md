@@ -1,11 +1,10 @@
 # Avatar
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
 A person's picture, or their initials while it loads, when it fails and when there is none; a badge over it; a
-group of them that shows the first few and a count. The look is shadcn/ui new-york v4 `avatar.tsx` (`Avatar`,
-`AvatarImage`, `AvatarFallback`, `AvatarBadge`, `AvatarGroup`, `AvatarGroupCount`); the behavior is `nsh/base`'s
-`Avatar` and `AvatarGroup`.
+group of them that shows the first few and a count. The look is this library's (`Avatar`, `AvatarBadge`,
+`AvatarGroup`, `AvatarGroupCount`); the behavior is `nsh/base`'s `Avatar` and `AvatarGroup`.
 
 ## Usage
 
@@ -36,19 +35,20 @@ group of them that shows the first few and a count. The look is shadcn/ui new-yo
 This library adds the look: the circle and its sizes, the fallback's fill and type, the image's fit, the badge, the
 group's overlap and rings, and the count's look.
 
-### Differs from shadcn's structure
+### Why the image and the fallback are props
 
-shadcn composes `<Avatar><AvatarImage src /><AvatarFallback>CN</AvatarFallback></Avatar>`. `nsh/base`'s `Avatar`
-holds the image and the fallback itself (it decides which shows from the image's load state, natively), so here:
+A part-based avatar composes `<Avatar><AvatarImage src /><AvatarFallback>CN</AvatarFallback></Avatar>`. `nsh/base`'s
+`Avatar` holds the image and the fallback itself (it decides which shows from the image's load state, natively), so
+here:
 
-| shadcn | This library |
+| Part-based | This library |
 |---|---|
 | `<AvatarImage src alt>` | `Avatar`'s `src` and `name` (`alt` is the name screen readers hear) |
 | `<AvatarFallback>CN</AvatarFallback>` | The initials of `name` by default; `fallback={…}` for other content (an icon) |
 | `<Avatar size="sm">` | `size="sm"` (and `xs`, `md`, `lg`) |
 | `<AvatarBadge />` | `<AvatarBadge />` as a child of `Avatar` |
 | `<AvatarGroup>` + `<AvatarGroupCount>+3</AvatarGroupCount>` | `<AvatarGroup limit total overflow={<AvatarGroupCount>+3</AvatarGroupCount>}>` |
-| `className="rounded-lg"` (a square avatar) | The same `class`, or `avatar-radius` in a theme |
+| `className="rounded-lg"` (a square avatar) | `avatar-radius` in a theme or a scope, or `imageClass` and `fallbackClass="rounded-lg"` (the root is not clipped, Implementation) |
 
 The image and the fallback are parts styled with `imageClass` / `fallbackClass` (`nsh/base`'s), not components:
 a component cannot fill another's place in NSH (an `AvatarImage` child could not reach `nsh/base`'s image).
@@ -56,17 +56,20 @@ a component cannot fill another's place in NSH (an `AvatarImage` child could not
 ### Implementation
 
 - `#[component] fn Avatar` whose root is `nsh_base::avatar()`, `src`, `name`, `accessibilityLabel`, `fallbackDelay`,
-  `fallback` and `onStatusChange` passed through. The root is sized and clipped by the library (`overflow: hidden`,
-  the radius); the image takes `object-fit: cover` (`aspect-square size-full`); the fallback its fill, text color and
-  centered type. These are classes generated from the resolved tokens, before the app's `imageClass` /
+  `fallback` and `onStatusChange` passed through. The root is sized by the library and **not clipped**, so the badge
+  over its edge is drawn whole; the image and the fallback carry the radius (`avatar-radius`) and clip themselves. The
+  image takes `object-fit: cover` (`size-full`); the fallback its fill, text color and centered type. These are classes generated from the resolved tokens, before the app's `imageClass` /
   `fallbackClass` (conventions, "Drawing": a part of an `nsh/base` component); the app's `imageStyle` /
   `fallbackStyle` pass through and win over both.
 - `Avatar` provides its `size` in context (`AvatarSize`): `AvatarBadge` reads it.
 - `AvatarGroup` provides "in a group" and its `size` in context: an `Avatar` inside it without a `size` of its own
-  takes the group's, draws its ring, and every one after the first overlaps the one before (a negative start margin;
-  the group counts its children's places through `nsh/base`, which lays them out in order).
-- The ring around an avatar in a group, and around a badge, is drawn as the focus ring is (`foundation::focus_ring`'s
-  geometry: outside the box, taking no layout), in `avatar-ring`, so the overlap does not change the avatars' size.
+  takes the group's, draws its ring, and every one after the first overlaps the one before: a negative start margin
+  of `avatar-group-overlap` with `first:ml-0` (NSH's `first:` variant), so the group does not count its children.
+- The ring around an avatar in a group, a badge and the count is a `ring` class (outside the box, taking no layout) of
+  `avatar-ring-width` in `avatar-ring`, so the overlap does not change the avatars' size.
+- The count's circle is drawn on the group's `overflow` box (`nsh/base`'s `overflowClass`), not by
+  `AvatarGroupCount`: slot content is made where the app writes it and does not see the group's context, so it cannot
+  know the group's size. `AvatarGroupCount` centers the count in that circle.
 
 ## API
 
@@ -102,11 +105,11 @@ a component cannot fill another's place in NSH (an `AvatarImage` child could not
 
 | TSX | Rust (`AvatarEvent`) | Payload | When |
 |---|---|---|---|
-| `onStatusChange` | `StatusChange(AvatarStatus)` | `{ status }`: `"idle"` \| `"loading"` \| `"loaded"` \| `"error"` | The image's status changed (`nsh/base`'s, passed on; Radix's `onLoadingStatusChange`) |
+| `onStatusChange` | `StatusChange(AvatarStatus)` | `{ status }`: `"idle"` \| `"loading"` \| `"loaded"` \| `"error"` | The image's status changed (`nsh/base`'s, passed on; elsewhere often `onLoadingStatusChange`) |
 
 ### `AvatarBadge` props
 
-`class`, `style`, `children` (an icon: `<Icon name="check" />`; hidden at `xs` and `sm`, as shadcn's at `sm`). No
+`class`, `style`, `children` (an icon: `<Icon name="check" />`; hidden at `xs` and `sm`, where the dot is too small for it). No
 size of its own: it follows the avatar's.
 
 ### `AvatarGroup` props
@@ -140,29 +143,29 @@ size of its own: it follows the avatar's.
 
 ## Variants and sizes
 
-No variants (shadcn has none).
+No variants.
 
 ### Look
 
-| Part | shadcn classes | This library |
+| Part | In classes | This library |
 |---|---|---|
-| `Avatar` | `relative flex size-8 shrink-0 overflow-hidden rounded-full select-none` | Side `avatar-size-<size>`, corners `avatar-radius` (a circle), clipped, `flex-shrink: 0`, text not selectable |
-| image | `aspect-square size-full` | Covers the circle (`object-fit: cover`) |
-| fallback | `flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs` | Fill `avatar-fallback`, text `avatar-fallback-foreground` at `avatar-fallback-font-size-<size>`, centered |
+| `Avatar` | `relative flex size-8 shrink-0 overflow-hidden rounded-full select-none` | Side `avatar-size-<size>`, `flex-shrink: 0`, text not selectable; not clipped (the badge goes over its edge) |
+| image | `aspect-square size-full` | Covers the circle (`object-fit: cover`), corners `avatar-radius`, clipped |
+| fallback | `flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs` | Fill `avatar-fallback`, text `avatar-fallback-foreground` at `avatar-fallback-font-size-<size>`, centered; corners `avatar-radius` |
 | `AvatarBadge` | `absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-background`; `size-2` / `size-2.5` / `size-3`, its icon `size-2`, none at `sm` | At the bottom end over the avatar, a circle `avatar-badge-size-<size>`, fill `avatar-badge`, its content `avatar-badge-foreground`, a ring of `avatar-ring-width` in `avatar-ring`; an icon `avatar-badge-size-<size> − 2`, hidden at `xs` and `sm` |
 | `AvatarGroup` | `flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background` | A row; each avatar after the first `avatar-group-overlap` (8) over the one before; each with a ring of `avatar-ring-width` (2) in `avatar-ring` |
-| `AvatarGroupCount` | `relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background`, icon `size-4` (`size-3` at `sm`, `size-5` at `lg`) | The fallback's look at the group's size, with the ring; an icon half the side |
+| `AvatarGroupCount` | `relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background`, icon `size-4` (`size-3` at `sm`, `size-5` at `lg`) | The fallback's look at the group's size, with the ring, on the group's `overflow` box; an icon half the side |
 
 ### Sizes
 
-| `size` | Side | Initials | Badge | Count's icon | shadcn |
+| `size` | Side | Initials | Badge | Count's icon | In classes |
 |---|---|---|---|---|---|
 | `xs` | 20 | 12 | 6, no icon | 10 | — |
-| `sm` | 24 | 12 | 8, no icon | 12 | `sm`: `size-6`, `text-xs`, badge `size-2` |
-| `md` | 32 | 14 | 10 | 16 | `default`: `size-8`, `text-sm`, badge `size-2.5` |
-| `lg` | 40 | 14 | 12 | 20 | `lg`: `size-10`, badge `size-3` |
+| `sm` | 24 | 12 | 8, no icon | 12 | `size-6`, `text-xs`, badge `size-2` |
+| `md` | 32 | 14 | 10 | 16 | `size-8`, `text-sm`, badge `size-2.5` |
+| `lg` | 40 | 14 | 12 | 20 | `size-10`, badge `size-3` |
 
-- shadcn's sizes as they are: an avatar is no control, so it does not step down with the control heights; `md` (32)
+- The usual avatar sides, not stepped down: an avatar is no control, so it does not follow the control heights; `md` (32)
   is as tall as a `md` control, `lg` (40) as a touch one. `xs` (20) is added for dense rows (a `Table` of `xs` / `sm`).
 - The same on touch screens: an avatar is not a press target.
 - Any other side is a class (`class="size-12"`); the fallback's type then stays the `size`'s.
@@ -173,7 +176,7 @@ No variants (shadcn has none).
 |---|---|
 | No `src`, or the image failed | The fallback |
 | Loading | The fallback after `fallbackDelay` (none before); the image transparent |
-| Loaded | The image; the fallback gone. No fade by default (shadcn has none); `imageClass="transition-opacity"` fades it in (`nsh/base`) |
+| Loaded | The image; the fallback gone. No fade by default; `imageClass="transition-opacity"` fades it in (`nsh/base`) |
 
 No hover, focus or press: an avatar is not interactive.
 
@@ -219,14 +222,14 @@ Values are those of `nsh/base`'s default theme.
 | `avatar-group-overlap` | length | `spacing × 2` | 8 |
 <!-- /tokens -->
 
-- `avatar-radius` is a circle at any side (shadcn's `rounded-full`, a radius past half the side); `radius-lg` there
-  gives every avatar of the app shadcn's square example (`rounded-lg`).
+- `avatar-radius` is a circle at any side (`rounded-full`, a radius past half the side); `radius-lg` there gives every
+  avatar of the app rounded square corners (`rounded-lg`).
 - The fallback's type is Tailwind's fixed `text-xs` / `text-sm` (as `select-label-font-size`), not the controls'
   `font-size-*`.
 - `avatar-ring` is the page's color: on a `Card` set it to `card` in a scope, or the rings read as gaps of another
-  color (shadcn's `ring-background` has the same limit).
+  color (a ring in the page's background color has that limit anywhere).
 - `AvatarGroupCount` reads `avatar-fallback` and `avatar-fallback-foreground`: it is a fallback with a count.
-- Other tokens it reads: `spacing`. The initials are regular weight, as shadcn's.
+- Other tokens it reads: `spacing`. The initials are regular weight.
 
 ## Examples
 
@@ -236,9 +239,9 @@ TSX:
 import { Text, View } from "nsh";
 import { Avatar, AvatarBadge, AvatarGroup, AvatarGroupCount, Button, DropdownMenu } from "nsh-longbridge";
 
-<Avatar src="https://github.com/shadcn.png" name="shadcn" />
+<Avatar src={user.photoUrl} name={user.name} />
 <Avatar name="Ada Lovelace" size="lg" />                                   {/* "AL" */}
-<Avatar src={photo} name="Ada Lovelace" class="rounded-lg" />
+<Avatar src={photo} name="Ada Lovelace" imageClass="rounded-lg" fallbackClass="rounded-lg" />
 
 // Online: the badge is drawn; the label says it.
 <Avatar src={photo} name="Ada Lovelace" accessibilityLabel="Ada Lovelace, online">
@@ -277,7 +280,7 @@ Rust:
 use nsh_core::prelude::*;
 use nsh_longbridge::{Size, avatar, avatar_badge, avatar_group, avatar_group_count};
 
-avatar().src("https://github.com/shadcn.png").name("shadcn").size(Size::Lg)
+avatar().src(photo_url).name("Ada Lovelace").size(Size::Lg)
 
 avatar_group()
     .size(Size::Sm)
@@ -298,23 +301,23 @@ colors it: `avatar-fallback` is `muted`).
 
 1. ★ **The image and the fallback are `nsh/base`'s parts** (conventions, "Drawing"): their look is generated
    classes. Headless test: a `ThemeScope` changing `avatar-fallback` reaches the fallback, and
-   `fallbackClass="bg-primary"` wins over the library's fill. Fallback: the app changes the fill with `fallbackStyle`.
-2. ★ **No `*:` child selector** (shadcn's `*:data-[slot=avatar]:ring-2` on the group). Workaround: the group's
+   `fallbackClass="bg-primary"` wins over the library's fill. **Verified**: both pass.
+2. ★ **No `*:` child selector** (`*:data-[slot=avatar]:ring-2` on the group). Workaround: the group's
    context; an avatar of the library inside reads it (its size, its ring, its overlap after the first). An app's own
    element in the group gets no ring. Headless test: the avatars of a group take its size and ring, the first has no
-   overlap, and one with its own `size` keeps it. Fallback: the overlap as the group's `gap` of
-   −`avatar-group-overlap` (a negative gap, if NSH takes one) or the app's `-ml-2` on each avatar after the first.
-3. **The overflow's count is the app's** (`nsh/base`: it knows the count). shadcn's `AvatarGroupCount` is the app's
-   too; the library only draws it.
+   overlap, and one with its own `size` keeps it. **Verified**: the overlap is a negative margin with `first:ml-0`. The
+   count in `overflow` does not see the context (slot content is made where the app writes it), so the group draws
+   its circle on the `overflow` box.
+3. **The overflow's count is the app's** (`nsh/base`: it knows the count); the library only draws it.
 4. **String children** follow Button's G0 in TSX (`AvatarGroupCount`'s "+3").
 
 ## Decisions
 
 Settled in review.
 
-1. **`src` and `name` on `Avatar`**, not `AvatarImage` / `AvatarFallback` children (Differs from shadcn's
-   structure): `nsh/base` decides which shows natively.
+1. **`src` and `name` on `Avatar`**, not `AvatarImage` / `AvatarFallback` children (Why the image and the fallback
+   are props): `nsh/base` decides which shows natively.
 2. **The initials come from `name`** (`nsh/base`'s rule, gpui-component's), so one prop gives both the screen
    readers' name and the fallback; `fallback` replaces them.
-3. **Four sizes**, shadcn's three and `xs`, at shadcn's sides (not stepped down: an avatar is not a control).
+3. **Four sizes**, the usual three and `xs`, at the usual sides (not stepped down: an avatar is not a control).
 4. **`size` is optional on `Avatar`** (Rust `Option<Size>`), so an avatar follows its group; elsewhere unset is `md`.

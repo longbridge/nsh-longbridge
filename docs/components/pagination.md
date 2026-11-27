@@ -1,10 +1,10 @@
 # Pagination
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
 The pages of a set to move among: Previous, the pages around the current one with ellipses for the runs left out,
-Next. The look is shadcn/ui new-york v4 `pagination.tsx` (items drawn as `Button`'s `ghost` and, for the current page,
-`outline`); the behavior and the pages shown are `nsh/base`'s `Pagination`.
+Next. The look is the library's (items drawn as `Button`'s `ghost` and, for the current page, `outline`); the behavior
+and the pages shown are `nsh/base`'s `Pagination`.
 
 ## Usage
 
@@ -38,14 +38,14 @@ Next. The look is shadcn/ui new-york v4 `pagination.tsx` (items drawn as `Button
 This library adds the look of the items (Button's tokens), `size`, the content of each item (the number, the
 chevrons and their words, the ellipsis icon), and its own words for Previous and Next.
 
-### Differs from shadcn's structure
+### Why the pages are computed
 
-shadcn composes the row by hand: `Pagination > PaginationContent > PaginationItem > PaginationLink isActive` /
+A hand-composed pagination writes the row itself: `Pagination > PaginationContent > PaginationItem > PaginationLink isActive` /
 `PaginationPrevious` / `PaginationNext` / `PaginationEllipsis`, and the app decides which pages to show. `nsh/base`
 computes the pages and ellipses from `page`, `totalPages` and `visiblePages`, and owns the items' keyboard and focus,
 so here:
 
-| shadcn | This library |
+| Hand-composed | This library |
 |---|---|
 | `<Pagination><PaginationContent>…</PaginationContent></Pagination>` | `<Pagination page totalPages onChange />` |
 | `<PaginationLink href isActive>2</PaginationLink>` | A page item; the current one is drawn as `isActive` |
@@ -64,8 +64,7 @@ so here:
   follows it (its classes win). Geometry (height, min width, radius, centered content, the text's size and weight)
   is a bound `itemStyle`, the app's `itemStyle` merged after.
 - **Items' content**: the library's `renderItem`: a page's number; Previous a row of `chevron-left` and "Previous",
-  Next of "Next" and `chevron-right` (the words hidden in a window narrower than 640, `hidden sm:flex`, as shadcn's
-  `hidden sm:block`); an ellipsis the `ellipsis` icon. With the app's `renderItem`, the library calls it for the
+  Next of "Next" and `chevron-right` (the words hidden in a window narrower than 640, `max-sm:hidden`); an ellipsis the `ellipsis` icon. With the app's `renderItem`, the library calls it for the
   content and still draws the item (as `Select`'s `renderItem`).
 - `Pagination` provides its `size` in context: icons in the items take `icon-size-<size>`.
 
@@ -81,8 +80,8 @@ so here:
 | `compact` | `compact` | `boolean` | `false` | Previous, the children and Next only: a pager for a narrow place, the page in words as children |
 | `size` | `size` | `Size` | `"md"` | The items' height, type and icons: Button's sizes |
 | `disabled` | `disabled` | `boolean` | `false` | No item takes a press or the focus; dimmed |
-| `accessibilityLabel` | `accessibility_label` | `string` | "Pagination" (`labels`) | What screen readers call the navigation (shadcn's `aria-label="pagination"`); name what it pages ("Search results pages") |
-| `previousAccessibilityLabel` | `previous_accessibility_label` | `string` | "Go to previous page" (`labels`) | Previous's name for screen readers (shadcn's) |
+| `accessibilityLabel` | `accessibility_label` | `string` | "Pagination" (`labels`) | What screen readers call the navigation (as `aria-label` on the web); name what it pages ("Search results pages") |
+| `previousAccessibilityLabel` | `previous_accessibility_label` | `string` | "Go to previous page" (`labels`) | Previous's name for screen readers |
 | `nextAccessibilityLabel` | `next_accessibility_label` | `string` | "Go to next page" (`labels`) | Next's name |
 | `renderItem` | `render_item` | `(item: PaginationItemState) => element` / `Renderer<PaginationItemState>` | — | An item's content in place of the library's (a page in the app's words, a menu of the pages an ellipsis leaves out); the library still draws the item |
 | `itemClass` / `itemStyle` | `item_class` / `item_style` | | — | Each item, after the library's look |
@@ -107,22 +106,22 @@ declarations declare them too, as `Select`'s `SelectItem`).
 
 ## Variants and sizes
 
-No variants: the items' looks are fixed by their kind, as shadcn's.
+No variants: the items' looks are fixed by their kind.
 
 ### Look
 
-| Item | shadcn | This library |
+| Item | In classes | This library |
 |---|---|---|
 | Page | `buttonVariants({ variant: "ghost", size: "icon" })`: `size-9 rounded-md`, `hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50` | A square of `button-height-<size>`, corners `button-radius`, text `button-ghost-foreground` at `font-size-<size>`, `font-weight-medium`, centered; hover fill `button-ghost-hover`, text `button-ghost-hover-foreground` |
 | Current page | `variant: "outline"`, `aria-current="page"`: `border bg-background shadow-xs hover:bg-accent … dark:border-input dark:bg-input/30 dark:hover:bg-input/50` | The same square: fill `button-outline`, edge `border-width` × `button-outline-border`, shadow `button-outline-shadow` (1, `xs`), text `button-outline-foreground`; hover fill `button-outline-hover` |
 | Previous / Next | `variant: "ghost", size: "default"`, `gap-1 px-2.5`, `ChevronLeftIcon` + "Previous" (`hidden sm:block`), "Next" + `ChevronRightIcon` | Height `button-height-<size>`, padding `pagination-step-padding-x` (10) at the sides, `pagination-step-gap` (4) between the icon and the word; the ghost look; the word hidden in a window narrower than 640 (then a square) |
-| Ellipsis | `flex size-9 items-center justify-center`, `MoreHorizontalIcon size-4`, `aria-hidden` | A square of `button-height-<size>`, the `ellipsis` icon at `icon-size-<size>`, no hover or press, hidden from screen readers |
+| Ellipsis | `flex size-9 items-center justify-center`, `MoreHorizontalIcon size-4`, `aria-hidden` | A square of `button-height-<size>`, the `ellipsis` icon at `icon-size-<size>`, no press, hidden from screen readers; it takes the items' hover fill (NSH gaps 4) |
 | Row | `nav`: `mx-auto flex w-full justify-center`; `ul`: `flex flex-row items-center gap-1` | A row, `w-full`, centered, `pagination-gap` (4) between items |
 
 ### Sizes
 
 Button's: items 24 / 28 / 32 / 36 tall with a pointer (32 / 36 / 40 / 48 on touch screens), type 12 / 13 / 14 / 14,
-icons 12 / 14 / 16 / 16. shadcn's `size-9` (36) is `lg` here; `md` (32) is one density step down, as `Button`.
+icons 12 / 14 / 16 / 16. `size-9` (36) is `lg` here; `md` (32) is one density step down, as `Button`.
 
 ## States
 
@@ -142,16 +141,16 @@ Colors and the sink transition over `duration` (Button's), none with reduced mot
 | | Desktops and desktop browsers | Phones and tablets |
 |---|---|---|
 | Item height | 24 / 28 / 32 / 36 | 32 / 36 / 40 / 48 |
-| Hit area | The item | Below `touch-target` (44): a vertical hit slop of (44 − height) / 2 and a horizontal one of half `pagination-gap`, so neighbours keep their own presses (as Input's fields side by side) |
-| Focus | Ring and edge | Edge only |
+| Hit area | The item | The item (40 at `md`): `nsh/base`'s items take no hit slop from the library (NSH gaps 4); `md` or `lg` on touch screens |
+| Focus | Ring, and the current page's edge | The current page's edge only |
 | Words of Previous / Next | Shown from a 640-wide window | Hidden on a phone's width; `compact` with "3 / 12" as children is the usual pager there |
 
 ## Accessibility
 
 `nsh/base`'s: a `navigation` landmark named by `accessibilityLabel` ("Pagination" by default); items are `button`s;
 the current page is `selected` and announced as the current page; Previous and Next are named "Go to previous page" /
-"Go to next page" (shadcn's labels; their visible words are not their names), and dimmed at the ends. The ellipsis is
-hidden (shadcn's `aria-hidden`; its "More pages" is inside the hidden span). Icons are hidden. The library's words
+"Go to next page" (their visible words are not their names), and dimmed at the ends. The ellipsis is hidden (a "More
+pages" for it would be read between the numbers as noise). Icons are hidden. The library's words
 are translated with `setTranslator` / `labels::set_translator`.
 
 ## Tokens
@@ -217,22 +216,27 @@ pagination()
    see (nsh-core's typed styles have no `group_selected` / `group_disabled`); they are generated classes, the
    geometry a bound `itemStyle`. Headless test: the current page draws the outline look and the others the ghost
    look, in a `ThemeScope` with a forced appearance too; Previous at page 1 is dimmed. Fallback: none needed for the
-   look (Select's rows use the same mechanism). Named group variants for selected and disabled would let the library
+   look (Select's rows use the same mechanism). **Verified**: it passes. Named group variants for selected and disabled would let the library
    draw the states without generated classes.
 2. **No library `Button` inside an item**: an item is `nsh/base`'s pressable, and a pressable inside it would take
    the press (the trigger slot's gap, popover.md NSH gaps 7). So the items are drawn directly with Button's look, not
    as Buttons; a change to Button's look reaches them through the shared tokens, not its code.
-3. **The words of Previous / Next by window width** (`sm:`): NSH's breakpoints are the window's, as Tailwind's
+3. **The words of Previous / Next by window width** (`max-sm:`): NSH's breakpoints are the window's, as Tailwind's
    viewport ones; a pagination in a narrow panel of a wide window keeps its words. `compact` is the way there.
+4. **The ellipsis and the hit slop are `nsh/base`'s.** `itemClass` and `itemStyle` reach every item, the ellipsis
+   included, and the ellipsis cannot be told apart in a class (it is neither `selected:` nor `disabled:`), so it takes
+   the pages' hover fill. `nsh/base`'s items take no hit slop from the library, so touch-screen items are their
+   height (40 at `md`) and no slop is added below 44. An item kind variant, or a hit slop part prop, in `nsh/base`
+   would allow both.
 
 ## Decisions
 
 Settled in review.
 
-1. **Data-driven, not composed by hand** (Differs from shadcn's structure): `nsh/base` computes the pages shown and
+1. **Data-driven, not composed by hand** (Why the pages are computed): `nsh/base` computes the pages shown and
    owns the items' focus, so `Pagination` takes `page` and `totalPages`.
 2. **Buttons, not links**: an NSH app navigates by state; `onChange` reports the page. The cursor is the arrow.
-3. **Button's tokens for the items**, no `pagination-item-*` copies: the items are buttons in shadcn
-   (`buttonVariants`) and should follow a theme's buttons.
+3. **Button's tokens for the items**, no `pagination-item-*` copies: the items are buttons (the ghost and outline
+   looks) and should follow a theme's buttons.
 4. **The library's words** "Previous", "Next", "Go to previous page", "Go to next page" and "Pagination" join `labels`
    (new `Label` keys, accepted).

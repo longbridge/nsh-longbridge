@@ -1,8 +1,8 @@
 # Progress
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
-A horizontal bar showing how far a task is: shadcn/ui new-york v4 `progress.tsx`'s look on `nsh/base`'s `Progress`.
+A horizontal bar showing how far a task is: the library's look on `nsh/base`'s `Progress`.
 
 ## Usage
 
@@ -48,15 +48,15 @@ scale, not a width, so it can transition), and the indeterminate form's moving s
 - **The indicator** is the full width of the track (`w-full`, which wins over `nsh/base`'s width by value: its rule,
   a `w-*` in `indicatorClass` is the app's) and is scaled along x to `value / 100` from its start
   (`origin-left`, `origin-right` in a right-to-left layout), fill `progress-indicator`. A width changes at once in NSH;
-  a scale transitions. The track's clip and corners round its start, as shadcn's `translateX(-…%)` indicator inside
-  `overflow-hidden rounded-full` does; its end is straight, as shadcn's.
+  a scale transitions. The track's clip and corners round its start; its end is straight, as an indicator slid in
+  from the start (`translateX(-…%)` inside `overflow-hidden rounded-full`) would be.
 - The scale is the one inline style the library writes (`indicatorStyle`, bound to `value`; the app's
-  `indicatorStyle` merged after), and transitions over `duration` (shadcn's `transition-all`), none with reduced
-  motion.
+  `indicatorStyle` merged after), and transitions over `duration`, none with reduced motion.
 - **Indeterminate**: the indicator is a segment of `progress-indeterminate-width` (40%) of the track that moves from
   beyond the start to beyond the end, again and again, each pass taking `progress-indeterminate-duration` (1500 ms),
   with the standard easing. With reduced motion it stays still across the whole track at 50% opacity (a full bar
-  would read as done; an empty one as not started). See NSH gaps 1 for how the loop is driven.
+  would read as done; an empty one as not started). A timer drives the loop (NSH gaps 1): each pass moves the segment
+  with a transition, then puts it back at the start without one; it runs only while indeterminate and shown.
 - `children` go under the track (`nsh/base` places them after it): the root is a column with `progress-gap` (8)
   between the track and them when there are any.
 
@@ -72,9 +72,9 @@ scale, not a width, so it can transition), and the indeterminate form's moving s
 | `class` / `style` | `class` / `style` | | — | The root: width (`w-[60%]`), margins; merged last |
 | `children` | `.child(..)` | string, elements | — | Under the track: a label, the value as text; screen readers read them as the name |
 
-No events: the app owns the value. No `size` and no variants (shadcn has neither): one 8-point bar, its height a token
-or `trackClass`. Coming from shadcn: `<Progress value={33} className="w-[60%]" />` is the same; shadcn's `className`
-styles the track, which is also its root (`h-1` there is `trackClass="h-1"` here, `w-[60%]` is `class`).
+No events: the app owns the value. No `size` and no variants: one 8-point bar, its height a token or `trackClass`.
+Coming from a web progress bar whose root is its track: `<Progress value={33} className="w-[60%]" />` is the same
+here; a class that styles the track (`h-1`) is `trackClass="h-1"` here, and `w-[60%]` is `class`.
 
 ### Parts
 
@@ -88,17 +88,17 @@ styles the track, which is also its root (`h-1` there is `trackClass="h-1"` here
 
 ### Look
 
-| Part | shadcn classes | This library |
+| Part | In classes | This library |
 |---|---|---|
 | track | `relative h-2 w-full overflow-hidden rounded-full bg-primary/20` | Height `progress-height` (8), `w-full`, corners `progress-radius` (half the height), fill `progress` (`primary` at 20%), clipped |
 | indicator | `h-full w-full flex-1 bg-primary transition-all`, `translateX(-(100 − value)%)` | Full size, fill `progress-indicator` (`primary`), scaled along x to `value` % from the start, transitioning over `duration` |
 
-The same in dark (shadcn has no dark treatment): `primary` is light there, its 20% a dark track.
+The same in dark: `primary` is light there, its 20% a dark track.
 
 ### Indeterminate
 
-shadcn draws nothing while indeterminate (its indicator sits at `translateX(-100%)`: an empty track). Radix and
-`nsh/base` have the state, and `nsh/base`'s terminal form moves a segment along the bar; this library does the same:
+An indicator slid fully out (`translateX(-100%)`) would draw an empty track while indeterminate. `nsh/base` has the
+state, and its terminal form moves a segment along the bar; this library does the same:
 
 | | Look |
 |---|---|
@@ -120,7 +120,7 @@ No hover, focus, press or disabled: a progress bar is not interactive.
 
 ## Pointer and touch
 
-The same on both: not a press target. Its height does not change on touch screens (shadcn's `h-2` everywhere).
+The same on both: not a press target. Its height does not change on touch screens (`h-2` everywhere).
 
 ## Accessibility
 
@@ -146,7 +146,7 @@ Values are those of `nsh/base`'s default theme.
 <!-- /tokens -->
 
 - `progress` is the track (the control itself has the bare name, tokens.md); it is `primary` at 20%, not
-  `progress-indicator` at 20%, as shadcn's.
+  `progress-indicator` at 20%: an app that recolors the indicator recolors the track too (`trackClass`).
 - `progress-radius` is drawn at most half the track's height, so a `trackClass="h-1"` keeps round ends.
 - `progress-indeterminate-duration` is a pass in milliseconds; `progress-indeterminate-width` a share of the track.
 - Other tokens it reads: `duration`, `spacing`.
@@ -192,16 +192,16 @@ progress().indeterminate(true).accessibility_label("Connecting")
 
 ## NSH gaps
 
-1. ★ **A repeating motion.** NSH runs Tailwind's `spin`, `ping`, `pulse` and `bounce` keyframes; whether a library
-   can name keyframes of its own (a slide across) is the first headless test of `Progress`. If it can, the segment
-   moves with them (`animation-[nlb-progress-slide_1500ms_ease-in-out_infinite]`, reduced motion skipping it).
-   Fallback: the library drives it with a timer (`set_interval`, as `nsh/base`'s terminal bar) every pass sets the segment back
-   to the start without a transition and then to the end with one. Either way the motion runs only while
-   indeterminate and shown.
+1. ★ **A repeating motion.** NSH runs Tailwind's `spin`, `ping`, `pulse` and `bounce` keyframes only: a library cannot
+   name keyframes of its own (a slide across). **The fallback is taken**: the library drives the segment with a timer
+   (`set_interval`, as `nsh/base`'s terminal bar): every pass sets it back to the start without a transition, then to
+   past the end with one. The motion runs only while indeterminate and shown, and not with reduced motion. Headless
+   test: the segment is 40% of the track and keeps it through passes; with reduced motion it is the whole track at
+   50%.
 2. ★ **A width does not transition** (NSH animates transforms, not layout): the indicator scales instead (see
    Implementation). Headless test: `value` 30 → 60 transitions the indicator's scale from 0.3 to 0.6 from its start,
-   and the track's clip rounds its start. Fallback: the indicator's width by value (`nsh/base`'s own), changing at
-   once. If a later NSH animates widths, nothing changes in the API.
+   and the track's clip rounds its start. **Verified**: the indicator keeps the track's width through a change of
+   `value` (it is scaled). If a later NSH animates widths, nothing changes in the API.
 3. **The track and the indicator are `nsh/base`'s parts** (conventions, "Drawing"): generated classes, and the
    indicator's scale as a bound `indicatorStyle` with the app's merged after.
 
@@ -209,8 +209,9 @@ progress().indeterminate(true).accessibility_label("Connecting")
 
 Settled in review.
 
-1. **The indeterminate form moves** (`nsh/base` has the state, and its terminal bar moves a segment; shadcn draws an
-   empty track, which reads as "not started").
-2. **No `size`**: shadcn has one height; `progress-height` and `trackClass` cover the rest.
+1. **The indeterminate form moves** (`nsh/base` has the state, and its terminal bar moves a segment; an empty track
+   would read as "not started").
+2. **No `size`**: one height is enough for a bar that is no control; `progress-height` and `trackClass` cover the
+   rest.
 3. **`children` under the track**: `nsh/base` puts them after it; a label beside the bar is the app's row around a
    `Progress` without children.

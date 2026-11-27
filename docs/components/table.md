@@ -1,8 +1,8 @@
 # Table
 
-Status: spec (P3), not implemented.
+Status: implemented (P3).
 
-A table of rows the app writes as children: shadcn/ui new-york v4 `table.tsx`'s look on `nsh/base`'s `Table` parts.
+A table of rows the app writes as children: the library's look on `nsh/base`'s `Table` parts.
 This spec owns the **table look** (rows, header cells, cells, separators, hover and selected rows, the footer, the
 caption) and its `table-*` tokens, which [DataTable](data-table.md) reads too. It also settles the line between the
 two (see "When not to use").
@@ -34,7 +34,7 @@ two (see "When not to use").
 | Header while scrolling | `sticky` on `TableHeader` | Always stays |
 | Column widths | Each cell's classes (`w-24 flex-none`, `flex-1`) | `width`, `grow`, `minWidth`; resize, move, fit, fixed at a side |
 | Sorting | The app's own button in a `TableHead` | A sort button in sortable titles; the app sorts its data |
-| Selection | The app's: a `Checkbox` per row, `TableRow selected` | The table's selection (a row, a column, a cell, a range) and a checkbox column |
+| Selection | The app's: a `Checkbox` per row, `TableRow selected` | The table's selection (a row, a column, a cell) and a checkbox column |
 | Keyboard | Tab through the controls in the cells | One Tab stop; arrows, Home, End, Page Up / Down move the selection |
 
 The rule: static rows the app writes → `Table`; anything the user does to the rows or columns as a whole, or more rows
@@ -57,23 +57,25 @@ cells' padding and one-line text, and the caption's place.
 
 ### Implementation
 
-- Each part is a `#[component]` whose root is the `nsh/base` part with the library's look bound from tokens, the app's
-  `class` / `style` merged last.
+- Each part is a `#[component]` whose root is the `nsh/base` part. Its look is **classes generated from the resolved
+  tokens** (`foundation::class`), before the app's `class`: an inline style would win over every class, and the app's
+  column classes (`w-24 flex-none`, `items-end`, `pr-0`, `border-b-0`) must win over the library's look.
 - `Table` provides its `size` in context (`TableSize`); every part reads it. A `TableHead` / `TableCell` outside a
   `Table` takes `md`.
-- `TableHeader` provides "in the header" in context; `TableRow` reads it to draw no hover there (shadcn's header rows
-  take `hover:bg-muted/50` too, Decisions 3).
-- `TableBody` marks its last row so it draws no bottom edge (shadcn's `[&_tr:last-child]:border-0`): the body counts
-  its rows (`children_each`, as `nsh/base`'s `AvatarGroup` counts its avatars) and gives each its position through
-  context; NSH has no `:last-child` (NSH gaps 2).
-- `TableFooter` likewise keeps no bottom edge on its last row (`[&>tr]:last:border-b-0`).
+- `TableHeader` provides "in the header" in context; `TableRow` reads it to draw no hover there (Decisions 3).
+- Body and footer rows take `last:border-b-0`: NSH's `last:` variant drops the last row's bottom edge and follows rows
+  added and removed, so the body does not count its rows. Header rows keep theirs (the line under the titles).
 - A `TableCell` / `TableHead` provides a context a library `Checkbox` inside it registers with (as `CardAction` does in
-  a `CardHeader`), and drops its end padding while it holds one (shadcn's `[&:has([role=checkbox])]:pr-0`; NSH gaps
-  2). This is a small addition to `Checkbox` (it reports to an enclosing cell), made by this group with `Table`.
-- `TableRow` provides a context the library's overlays report their open state to through `foundation::trigger`
-  (NSH gaps 3); a small addition to `foundation::trigger`, made by this group with `Table`.
+  a `CardHeader`), and drops its end padding while it holds one (NSH has no `:has()`; NSH gaps 2). This is a small
+  addition to `Checkbox` (it reports to an enclosing cell).
+- `TableRow` provides a context the library's overlays (`DropdownMenu`, `Popover`, `Select`) report their open state
+  to through `foundation::trigger` (NSH gaps 3); a small addition to `foundation::trigger` and `Select`.
+- `TableRow` is drawn by the library as a row view with the `row` role (what `nsh/base`'s `TableRow` is), because
+  `nsh/base`'s part takes no accessibility state and a `selected` row must be announced selected.
 - Every child of `TableHead`, `TableCell` and `TableCaption` sits in a text part (conventions, "Styled parts"), so a
-  string child takes the cell's text styles.
+  string child takes the cell's text styles. In cells it is one line cut with an ellipsis through
+  `whitespace-nowrap overflow-hidden text-ellipsis`, not `truncate`: `truncate` also clamps the text to one line,
+  which a later `whitespace-normal` does not lift (NSH gaps 5).
 
 ## API
 
@@ -99,7 +101,7 @@ cells' padding and one-line text, and the caption's place.
 | `Table` | `size` | `size` | `Size` | `"md"` | Row heights and type of every part; see Variants and sizes |
 | `Table` | `accessibilityLabel` | `accessibility_label` | `string` | — | What screen readers call the table. A `TableCaption` is shown, not the name: set both when there is a caption (`nsh/base`'s rule) |
 | `TableHeader` | `sticky` | `sticky` | `boolean` | `false` | Stays at the top of the nearest scroll view while the body scrolls under it, filled with `table-sticky-header` so the rows do not show through |
-| `TableRow` | `selected` | `selected` | `boolean` | `false` | The row is selected (shadcn's `data-state="selected"`): the selected fill; screen readers hear it selected |
+| `TableRow` | `selected` | `selected` | `boolean` | `false` | The row is selected: the selected fill; screen readers hear it selected |
 | `TableHead`, `TableCell`, `TableCaption` | `labelClass` / `labelStyle` | `label_class` / `label_style` | | — | The `label` part: the text around each child |
 | every part | `class` / `style` | `class` / `style` | | — | The part's root, merged last |
 | every part | `children` | `.child(..)` | string, elements | — | Its content |
@@ -117,16 +119,16 @@ a cell.
 | `TableRow` | A row: min height, bottom edge, hover and selected fills | `class` / `style` |
 | `TableHead`, `TableCell` | A cell: padding, vertically centered, one line | `class` / `style` |
 | `TableCaption` | Muted text under the table | `class` / `style` |
-| `label` | In `TableHead`, `TableCell` and `TableCaption`: a text around each child, one line cut with an ellipsis in cells (`truncate`), wrapping in the caption | `labelClass` / `labelStyle` |
+| `label` | In `TableHead`, `TableCell` and `TableCaption`: a text around each child, one line cut with an ellipsis in cells (`whitespace-nowrap overflow-hidden text-ellipsis`), wrapping in the caption | `labelClass` / `labelStyle` |
 
 Column widths are the cells' (NSH gaps 1): by default every `TableHead` and `TableCell` takes an equal share of the
 row (`flex: 1 1 0`, `min-width: 0`); a column of its own width gives each of its cells the same classes:
 `class="w-24 flex-none"` (`flex-none` is needed: a share's basis wins over a width). Alignment is the cell's too:
-`class="items-end"` puts a number column's text at the end (shadcn's `text-right`).
+`class="items-end"` puts a number column's text at the end.
 
 #### Column widths, worked
 
-shadcn's invoice table sizes its columns to their content. Here each column is a choice the app writes once, as a
+An HTML table sizes its columns to their content. Here each column is a choice the app writes once, as a
 class string, and gives to every cell of that column, the header's included:
 
 ```tsx
@@ -186,11 +188,11 @@ it is a [DataTable](data-table.md).
 
 ## Variants and sizes
 
-No variants (shadcn has none).
+No variants.
 
 ### Look
 
-| Part | shadcn classes | This library |
+| Part | In classes | This library |
 |---|---|---|
 | `Table` | `relative w-full overflow-x-auto` container; `w-full caption-bottom text-sm` | A column, `w-full`; text `foreground`, `font-size-<size>` (14 at `md`); no scroll container (Decisions 1) |
 | `TableHeader` | `[&_tr]:border-b` | Its rows keep their bottom edge (the line under the titles); no fill unless `sticky` |
@@ -201,21 +203,22 @@ No variants (shadcn has none).
 | `TableCell` | `p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0` | As `TableHead`, without the weight and color (the table's) |
 | `TableCaption` | `mt-4 text-sm text-muted-foreground` | `table-caption-gap` (16) above, 14 / 20, `table-caption-foreground`, centered (HTML's caption is centered) |
 
-shadcn's `[&>[role=checkbox]]:translate-y-[2px]` is a baseline fix of HTML table cells; a cell here centers its
-content, so it is not needed.
+A web table nudges a checkbox down (`[&>[role=checkbox]]:translate-y-[2px]`) to fix HTML cells' baseline; a cell here
+centers its content, so it is not needed.
 
 ### Sizes
 
-| `size` | Body row (pointer / touch) | Header row (pointer / touch) | Type | shadcn |
-|---|---|---|---|---|
-| `xs` | 24 / 32 | 28 / 36 | 12 | — |
-| `sm` | 28 / 36 | 32 / 40 | 13 | — |
-| `md` | 32 / 40 | 36 / 44 | 14 | Body `p-2` around 20 = 36, header `h-10` = 40 |
-| `lg` | 36 / 48 | 40 / 52 | 14 | (shadcn's own) |
+| `size` | Body row (pointer / touch) | Header row (pointer / touch) | Type |
+|---|---|---|---|
+| `xs` | 24 / 32 | 28 / 36 | 12 |
+| `sm` | 28 / 36 | 32 / 40 | 13 |
+| `md` | 32 / 40 | 36 / 44 | 14 |
+| `lg` | 36 / 48 | 40 / 52 | 14 |
 
 - A body row's height is the control height of its size, so a `Button`, `Input`, `Select` or `Checkbox` of the same
-  `size` fits a row; a header row is `spacing` taller (shadcn's 40 over 36). `md` is one step below shadcn, the
-  library's desktop density (gpui-kit's tables use 26 / 30 / 32 / 40); `size="lg"` is shadcn's.
+  `size` fits a row; a header row is `spacing` taller. `lg` is the classes above (`p-2` around a 20-point line, 36;
+  an `h-10` header, 40); `md`, one step down, is the library's desktop density, as every control here (gpui-kit's
+  tables use 26 / 30 / 32 / 40).
 - Heights are minimums: a cell with an avatar and two lines makes its row taller, keeping `table-cell-padding-y` above
   and below.
 - Type is `font-size-<size>`, its line height foundation's `line_height`; an icon in a cell without a size takes
@@ -230,7 +233,7 @@ table, prefer [DataTable](data-table.md), which keeps its header by construction
 
 ## States
 
-| State | Look | shadcn |
+| State | Look | In classes |
 |---|---|---|
 | Row at rest | Bottom edge `table-border`, no fill | `border-b` |
 | Row hover (pointer, body and footer rows) | Fill `table-row-hover` (`muted` at 50%) | `hover:bg-muted/50` |
@@ -240,7 +243,7 @@ table, prefer [DataTable](data-table.md), which keeps its header by construction
 | Sticky header | Fill `table-sticky-header` | — |
 
 No focus, press or disabled look: the table is not interactive; the controls in its cells have theirs. Fills
-transition over `duration` (shadcn's `transition-colors`), none with reduced motion. The cursor is the arrow.
+transition over `duration` (`transition-colors`), none with reduced motion. The cursor is the arrow.
 
 ## Pointer and touch
 
@@ -256,8 +259,7 @@ transition over `duration` (shadcn's `transition-colors`), none with reduced mot
 - Roles from `nsh/base`: `table` named by `accessibilityLabel`, `rowgroup`s, `row`s, `columnheader`s, `cell`s.
 - A `selected` row is announced selected (`accessibilityState.selected`).
 - The caption is read as text after the table; it does not name it (set `accessibilityLabel` too).
-- A `Checkbox` alone in a cell needs its `accessibilityLabel` ("Select INV-002"), as shadcn's `aria-label="Select
-  row"`.
+- A `Checkbox` alone in a cell needs its `accessibilityLabel` ("Select INV-002"): it has no label beside it.
 
 ## Tokens
 
@@ -427,43 +429,41 @@ their taller rows.
 ## NSH gaps
 
 1. **No table layout.** NSH lays out flex and grid boxes; a row does not know the widths of the cells above it, so
-   columns cannot size to their widest cell as HTML tables do (shadcn's columns follow their content and the
+   columns cannot size to their widest cell as HTML tables do (there the columns follow their content and the
    container scrolls). Workaround: every cell takes an equal share, and a column's cells share the app's width
    classes (`w-24 flex-none`). A grid with subgrid rows, or a `columns` template on `Table` that its rows read, would
    allow content-sized columns. A `columns` template on `Table` is not added in P3 (Decisions 2).
-2. **No `:last-child` or `:has()` selectors.** shadcn's body drops the last row's edge with `[&_tr:last-child]`, and
-   a cell drops its end padding with `:has([role=checkbox])`. Workaround: the body counts its rows and tells each its
-   position through context; a library `Checkbox` registers with its cell (as `CardAction` with `CardHeader`). An
-   app's own checkbox-like control does not register: its cell takes `class="pr-0"`.
-3. ★ **No `has-aria-expanded:`.** shadcn lights a row that holds an open menu trigger. Workaround: `TableRow` provides a
+2. **No `:has()` selector.** A cell cannot drop its end padding with `:has([role=checkbox])`. Workaround: a library
+   `Checkbox` registers with its cell (as `CardAction` with `CardHeader`). An app's own checkbox-like control does not
+   register: its cell takes `class="pr-0"`. The last row's edge needs no workaround: NSH's `last:` variant drops it.
+3. ★ **No `has-aria-expanded:`.** A row that holds an open menu trigger is lit. Workaround: `TableRow` provides a
    context the library's overlays (`DropdownMenu`, `Popover`, `Select` through `foundation::trigger`) report their
    open state to, and the row takes the hover fill while one is open. An app's own popup is not covered.
-   Headless test: a `DropdownMenu` in a cell lights its row while open, from TSX and Rust. Fallback: the row is not
-   lit (shadcn's look without that rule), noted in States.
+   Headless test: a `DropdownMenu` in a cell lights its row while open, from TSX and Rust. **Verified**: it passes.
+   (The fallback was a row that is not lit.)
 4. **String children** follow Button's G0 in TSX.
-5. ★ **A later class lifting `truncate`'s one line.** A cell's label is one line (`truncate`); whether
-   `labelClass="whitespace-normal"` after it gives back wrapping is the first headless test of `Table`. Fallback: the
-   label's one line is set as a bound style the app's `labelStyle` overrides (`labelStyle={{ whiteSpace: "normal" }}`),
-   and the spec's examples say so.
-6. ★ **The last row's edge and the checkbox cell's padding through context** (2): headless tests that the body's last
-   row draws no edge after rows are added and removed, and that a cell holding a library `Checkbox` drops its end
-   padding. Fallback: the app's `class="border-b-0"` on the last row and `class="pr-0"` on the cell, written in the
-   examples.
+5. ★ **A later class lifting a one-line label.** NSH's `truncate` also clamps the text to one line, which a later
+   `whitespace-normal` does not lift. **Verified** with the label's one line written as `whitespace-nowrap
+   overflow-hidden text-ellipsis`: `labelClass="whitespace-normal"` after it wraps (headless test). The fallback (a
+   bound style the app's `labelStyle` overrides) is not needed.
+6. ★ **The last row's edge and the checkbox cell's padding** (2): headless tests that the body's last row draws no
+   edge after rows are added and removed (`last:`), and that a cell holding a library `Checkbox` drops its end padding
+   (context). **Verified**: both pass. (The fallback was the app's `class="border-b-0"` and `class="pr-0"`.)
 
 ## Decisions
 
 Settled in review.
 
-1. **No scroll container.** shadcn wraps the table in `overflow-x-auto`. A scroll view in NSH is a native one that
+1. **No scroll container.** A web table usually sits in an `overflow-x-auto` wrapper. A scroll view in NSH is a native one that
    takes the wheel and nests with the page's; a table that fits needs none. A wide table goes in the app's
    horizontal `ScrollView` with a min width on `Table` ("Wide tables").
 2. **Column widths by classes, no `columns` prop** (NSH gaps 1): per-cell width classes ("Column widths, worked"),
    and `DataTable` for real column management. A `columns` template is revisited when an app needs it.
-3. **Header rows have no hover** (shadcn's do, as a side effect of `tr:hover`): a title row lit under the pointer
+3. **Header rows have no hover** (a web table's often do, as a side effect of `tr:hover`): a title row lit under the pointer
    reads as pressable.
-4. **A row holding an open popup stays lit** (shadcn's `has-aria-expanded:`), through the overlays' open state
+4. **A row holding an open popup stays lit** (`has-aria-expanded:` on the web), through the overlays' open state
    (NSH gaps 3).
 5. **`sticky` is a prop on `TableHeader`**, not only a class: it also sets the fill the header needs over scrolling
    rows, from a token, which a class cannot follow in a `ThemeScope`.
-6. **One line per cell by default, cut with an ellipsis** (shadcn's `whitespace-nowrap`, which scrolls instead):
+6. **One line per cell by default, cut with an ellipsis** (a web table's `whitespace-nowrap` scrolls instead):
    columns are shares of the width here. A cell that wraps sets `labelClass="whitespace-normal"` (NSH gaps 5).
