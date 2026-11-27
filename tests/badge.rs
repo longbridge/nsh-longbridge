@@ -4,7 +4,7 @@
 
 mod common;
 
-use common::{css, fill, light, size, start};
+use common::{bounds, css, fill, light, size, start};
 use nsh_core::prelude::*;
 use nsh_longbridge::{
     BadgeVariant, IconName, ScopeTokens, badge,
@@ -53,6 +53,29 @@ fn Badges() -> impl IntoElement {
             view()
                 .w(px(60.0))
                 .child(badge().test_id("long").child("A very long badge")),
+        )
+}
+
+/// Badges in a column that stretches its children, beside a two-line name
+/// in a row that centers its children, and given a width by a class.
+#[component]
+fn Layouts() -> impl IntoElement {
+    view()
+        .w(px(400.0))
+        .child(badge().test_id("in-column").child("Badge"))
+        .child(
+            view()
+                .test_id("row")
+                .flex_row()
+                .items_center()
+                .child(view().w(px(120.0)).h(px(40.0)))
+                .child(badge().test_id("in-row").child("Owner")),
+        )
+        .child(
+            badge()
+                .test_id("classed")
+                .app_class(Some("w-16".into()))
+                .child("B"),
         )
 }
 
@@ -105,4 +128,28 @@ fn screen_readers_read_its_text_and_cannot_focus_it() {
 fn a_scope_primary_reaches_the_default_fill() {
     let app = start::<Badges>(true);
     assert_eq!(fill(&app, "id:scoped"), css("#2563eb"));
+}
+
+#[test]
+fn a_stretching_column_does_not_widen_it() {
+    let app = start::<Layouts>(true);
+    let (w, _) = size(&app, "id:in-column");
+    assert!(w < 80.0, "as wide as its text, not the column: {w}");
+}
+
+#[test]
+fn a_row_centers_it_beside_taller_content() {
+    let app = start::<Layouts>(true);
+    let row = bounds(&app, "id:row");
+    let badge = bounds(&app, "id:in-row");
+    let above = badge.origin.y.0 - row.origin.y.0;
+    let below = row.size.height.0 - above - badge.size.height.0;
+    assert_eq!(row.size.height.0, 40.0);
+    assert_eq!(above, below, "centered in the row, not at its top");
+}
+
+#[test]
+fn a_width_class_goes_over_its_own_width() {
+    let app = start::<Layouts>(true);
+    assert_eq!(size(&app, "id:classed").0, 64.0);
 }

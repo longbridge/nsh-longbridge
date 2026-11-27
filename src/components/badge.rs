@@ -98,7 +98,11 @@ pub fn Badge(props: BadgeProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         .flex_row()
         .items_center()
         .justify_center()
-        .self_start()
+        // shadcn's `w-fit`: as wide as its content where a column stretches
+        // its children, while a row's `items-center` still centers it (an
+        // `align-self` would override the row's alignment). A class, as
+        // `fit-content` has no typed setter; the app's class goes over it.
+        .app_class(Some(SharedString::from("w-fit")))
         .flex_shrink_0()
         // A long badge is cut to its parent's width with an ellipsis.
         .max_w(Length::Definite(relative(1.0)))

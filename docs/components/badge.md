@@ -74,7 +74,7 @@ border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `si
 
 | | Value |
 |---|---|
-| Layout | A row, centered both ways, as wide as its content (`self-start`, so a stretching parent does not widen it), `shrink-0`, at most as wide as its parent (`max-w-full`) |
+| Layout | A row, centered both ways, as wide as its content (`w-fit`: a column that stretches its children does not widen it, and a row's `items-center` still centers it), `shrink-0`, at most as wide as its parent (`max-w-full`); a width `class` goes over `w-fit` |
 | Border | `border-width` (1), colored per variant (transparent except `outline`: it keeps its room, so all variants are the same height) |
 | Padding | `badge-padding-x` (8) horizontally, `badge-padding-y` (2) vertically |
 | Corners | `badge-radius` |
@@ -175,3 +175,6 @@ The count badge (`min-w-5 px-1 tabular-nums`) is how shadcn's docs write it: a `
 
 1. No `href` (link badges).
 2. No `success` / `warning` / `info` variants; revisited with Alert in P2.
+3. As wide as its content through `w-fit` (`width: fit-content`), not `align-self: flex-start`: an `align-self` of its
+   own would override the cross-axis alignment of a row it sits in, so a badge beside a two-line name would sit at the
+   top instead of the middle.
