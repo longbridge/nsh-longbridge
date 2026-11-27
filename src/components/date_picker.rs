@@ -50,8 +50,8 @@ use crate::{
         icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
         labels::{self, Label},
         menu::{
-            MENU_ITEM_FOCUS, MENU_ITEM_FOCUS_FOREGROUND, MENU_ITEM_PADDING_X, MENU_MIN_WIDTH,
-            list_as_sheet,
+            MENU_ITEM_FOCUS, MENU_ITEM_FOCUS_FOREGROUND, MENU_ITEM_PADDING_X, MENU_ITEM_RADIUS,
+            MENU_MIN_WIDTH, MENU_PADDING, list_as_sheet,
         },
         popup::{self, POPOVER_MARGIN, POPOVER_OFFSET, set_popup_style},
         shadow,
@@ -628,10 +628,11 @@ fn presets_look(t: Theme, sheet: bool) -> StyleRefinement {
             .p(padding)
             .pb(px(0.0))
     } else {
+        // A menu's list: its padding, its rows touching, so a row in the
+        // popup's corner is concentric with it (`menu-item-radius`).
         StyleRefinement::default()
             .flex_col()
-            .gap(t.length(SPACING))
-            .p(padding)
+            .p(t.length(MENU_PADDING))
             .min_w(t.length(MENU_MIN_WIDTH))
             .border_r(t.length(BORDER_WIDTH))
             .border_color(t.color(BORDER))
@@ -646,7 +647,13 @@ fn preset_look(t: Theme, sheet: bool) -> StyleRefinement {
         .flex_row()
         .items_center()
         .flex_shrink_0()
-        .rounded(t.length(BUTTON_RADIUS))
+        // A button's corners in the sheet's row, a menu row's beside the
+        // calendar.
+        .rounded(if sheet {
+            t.length(BUTTON_RADIUS)
+        } else {
+            t.length(MENU_ITEM_RADIUS)
+        })
         .text_size(font_size)
         .line_height(line_height(font_size))
         .font_weight(FontWeight::NORMAL)
