@@ -40,6 +40,10 @@ left unset derives from the tier below, so hover, press and focus states follow 
 - [Conventions](docs/conventions.md): how a component is built and drawn
 - `gallery/`: an app showing every component in light and dark, with its tokens editable live
 
+## License
+
+Copyright 2026 Longbridge. Licensed under the [Apache License, Version 2.0](LICENSE).
+
 ## Acknowledgments
 
 The default look and the theme variables' names draw on [shadcn/ui](https://ui.shadcn.com) (MIT), so its themes can be
