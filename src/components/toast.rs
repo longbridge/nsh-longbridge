@@ -699,6 +699,15 @@ fn stack(props: ToasterProps, scope: CapturedScope, state: ToastStackState) -> i
                 .collect::<Vec<_>>()
         })
     });
+    // The newest toast not going: the front layer of a collapsed stack.
+    let front = computed(move || {
+        shown.with(|v| {
+            v.iter()
+                .rev()
+                .find(|(_, _, status)| *status != ToastTransitionStatus::Ending)
+                .map(|(id, _, _)| id.clone())
+        })
+    });
     let placement = move || props.placement.get();
     let spans = move || !pointer() || window().width < px(NARROW);
     let offset = move || t.length(TOAST_OFFSET);
@@ -746,7 +755,7 @@ fn stack(props: ToasterProps, scope: CapturedScope, state: ToastStackState) -> i
                 .child(each(
                     move || shown.get(),
                     |(id, _, _)| id.clone(),
-                    move |item, _| one(t, props, move || item.get()),
+                    move |item, _| one(t, props, state, front, move || item.get()),
                 )),
         )
 }
@@ -766,9 +775,16 @@ type Item = (SharedString, Shown, ToastTransitionStatus);
 fn one(
     t: Theme,
     props: ToasterProps,
+    state: ToastStackState,
+    front: Memo<Option<SharedString>>,
     item: impl Fn() -> Item + Copy + 'static,
 ) -> impl IntoElement {
     let id = untracked(|| item().0);
+    // Behind the front layer of a collapsed stack: its content hidden, as
+    // Sonner's, so the layers read as cards behind the newest.
+    let behind_id = id.clone();
+    let behind =
+        computed(move || !state.is_expanded() && front.with(|f| f.as_ref() != Some(&behind_id)));
     let toast = move || item().1;
     let animate = move || t.number(TOAST_ANIMATE) != 0.0 && !reduce_motion();
     let top = move || props.placement.get().top();
@@ -792,7 +808,14 @@ fn one(
         .swiping_class(move || Some(SharedString::from("transition-none")))
         .transition_all()
         .duration(400.0)
-        .child(boxed(t, props, id, toast))
+        .child(boxed(t, props, id, behind, toast))
+}
+
+/// `el` hidden while its toast is `behind` the front layer.
+fn veiled<E: Styled>(el: E, behind: Memo<bool>) -> E {
+    el.opacity(move || if behind.get() { 0.0_f32 } else { 1.0 })
+        .transition_opacity()
+        .duration(400.0)
 }
 
 /// A toast's box: its look, the "×", the icon, the text and the buttons.
@@ -800,6 +823,7 @@ fn boxed(
     t: Theme,
     props: ToasterProps,
     id: SharedString,
+    behind: Memo<bool>,
     toast: impl Fn() -> Shown + Copy + 'static,
 ) -> impl IntoElement {
     let font_size = move || t.length(TOAST_FONT_SIZE);
@@ -834,7 +858,7 @@ fn boxed(
         .app_class(props.toast_class)
         .inline_style(move || props.toast_style.get());
     el.child(when(close_shown, move || {
-        vec![close(t, props, close_id.clone()).into_element()]
+        vec![close(t, props, close_id.clone(), behind).into_element()]
     }))
     .child(when(
         move || kind().icon().is_some(),
@@ -847,7 +871,8 @@ fn boxed(
                 icon
             };
             vec![
-                icon.flex_shrink_0()
+                veiled(icon, behind)
+                    .flex_shrink_0()
                     .ml(px(-3.0))
                     .mr(px(4.0))
                     .app_class(props.icon_class)
@@ -857,7 +882,7 @@ fn boxed(
         },
     ))
     .child(
-        view()
+        veiled(view(), behind)
             .flex_col()
             .flex_1()
             .min_w_0()
@@ -886,7 +911,7 @@ fn boxed(
         move || {
             let id = cancel_id.clone();
             vec![
-                button()
+                veiled(button(), behind)
                     .size(Size::Xs)
                     .variant(ButtonVariant::Secondary)
                     .on_press(move || {
@@ -907,7 +932,7 @@ fn boxed(
         move || {
             let id = action_id.clone();
             vec![
-                button()
+                veiled(button(), behind)
                     .size(Size::Xs)
                     .on_press(move || {
                         let answer = untracked(toast).options.action.map(|a| a.id);
@@ -925,7 +950,7 @@ fn boxed(
 }
 
 /// A toast's "×": a circle on its top-start corner, moved out by 35%.
-fn close(t: Theme, props: ToasterProps, id: SharedString) -> impl IntoElement {
+fn close(t: Theme, props: ToasterProps, id: SharedString, behind: Memo<bool>) -> impl IntoElement {
     let side = move || t.length(TOAST_CLOSE_SIZE);
     let out = move || side() * -0.35;
     let el = nsh_base::button()
@@ -948,6 +973,7 @@ fn close(t: Theme, props: ToasterProps, id: SharedString) -> impl IntoElement {
         .app_class(props.close_class)
         .inline_style(move || props.close_style.get())
         .on_press(move || dismiss_with(&id, None))
+        .opacity(move || if behind.get() { 0.0_f32 } else { 1.0 })
         .child(icon_view(t, || IconName::X, || px(12.0)));
     motion::transition_all(el, t)
 }

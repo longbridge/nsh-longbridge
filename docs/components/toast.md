@@ -31,7 +31,7 @@ styled library (`docs/dev/components.md` "Toasts"; NSH's gallery builds its own 
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
 | `ToastManager` | Ordered storage and the lifecycle of each toast: entering, present, its timeout, paused, ending, removed; `visible(limit)`, `push`, `dismiss`, `dismissAll`, `advance(now, paused)` |
-| `ToastStack` | Measures the toasts and lays them out from the placement's edge, the newest nearest it: collapsed, overlapping layers 14 apart, each 5% narrower, 3 shown; expanded (pointer over it, a finger down on it), a list 14 apart; arrivals, departures and expansion move with springs (Sonner's `ToastMotion`); `onExpandedChange` pauses the timeouts |
+| `ToastStack` | Measures the toasts and lays them out from the placement's edge, the newest nearest it: collapsed, overlapping layers 14 apart, each 5% narrower, 3 shown, the content of those behind the newest hidden by the library (NSH gap 6); expanded (pointer over it, a finger down on it), a list 14 apart; arrivals, departures and expansion move with springs (Sonner's `ToastMotion`); `onExpandedChange` pauses the timeouts |
 | `Toast` | The semantic root (role `alert`), read once by screen readers as it shows (`accessibilityLabel`); `transitionStatus` with `startingClass` / `endingClass` / `swipingClass` for the entrance and exit; a swipe toward `swipeDirection` past 50 points, or a flick, asks to dismiss it |
 | Terminal | Only the newest toast, on the status line; nothing stacks or moves |
 
@@ -375,6 +375,11 @@ spawn(async move {
    undocumented in NSH, so a note there would keep it.
 5. **Expanded by default** (Sonner's `expand`): `nsh/base`'s stack expands only for the pointer or a finger, so
    `expand` is not offered.
+6. **Collapsed layers keep their own height.** Sonner gives the toasts behind the newest the newest's height and hides
+   their content, so they read as cards behind it; `nsh/base`'s stack lays each layer out at its measured height. The
+   library hides the content of the layers behind the newest while the stack is collapsed (fading in as it spreads
+   out; a test guards it); a taller layer behind still peeks further. A collapsed height option on the stack would
+   close the gap.
 
 ## Decisions
 

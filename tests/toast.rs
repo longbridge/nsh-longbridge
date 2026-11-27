@@ -423,3 +423,36 @@ fn tsx_gets_toast_and_dismiss_toast() {
         assert!(ts.contains(declaration), "{declaration}\n{ts}");
     }
 }
+
+fn make_layered(n: u32) -> nsh_longbridge::ToastBuilder {
+    match n {
+        1 => toast("Older").action("undo", "Undo").duration(None),
+        _ => toast("Newer").duration(None),
+    }
+}
+
+#[component]
+fn Layered() -> impl IntoElement {
+    app(make_layered, toaster().into_element())
+}
+
+/// Collapsed, a layer behind the newest hides its content (Sonner's
+/// cards behind the front one); the pointer on the stack spreads it out
+/// and shows it.
+#[test]
+fn a_collapsed_stacks_back_layers_hide_their_content() {
+    let mut app = start::<Layered>(true);
+    show(&mut app);
+    show(&mut app);
+    let opacity = |app: &Headless| {
+        app.screen()
+            .view_style("role:button[Undo]")
+            .unwrap()
+            .unwrap()
+            .opacity
+    };
+    assert_eq!(opacity(&app), 0.0, "behind the newest");
+    app.hover("role:alert[Newer]").unwrap();
+    app.run_for(Duration::from_millis(600)).unwrap();
+    assert_eq!(opacity(&app), 1.0, "spread out");
+}
