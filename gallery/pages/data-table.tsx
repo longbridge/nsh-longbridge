@@ -12,11 +12,16 @@ import {
   type Size,
   Spinner,
 } from "nsh-longbridge";
+import { numberOf } from "../theme";
 import { Demo, Page, Row, Section } from "../ui/layout";
 import { narrow } from "../ui/screen";
 import { TokensSection } from "../ui/tokens";
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
+
+/** A table's height that fits its titles and `rows` rows of `size` in its edge, no room left below. */
+const fitRows = (size: Size, rows: number) =>
+  `h-[${numberOf(`table-head-height-${size}`) + rows * numberOf(`table-row-height-${size}`) + 2 * numberOf("border-width")}px]`;
 
 type Payment = { id: string; status: string; email: string; amount: number };
 
@@ -126,7 +131,7 @@ export function DataTablePage() {
               <View class="flex-1">
                 <DataTable
                   size={size}
-                  class={{ xs: "h-[80px]", sm: "h-[92px]", md: "h-[104px]", lg: "h-[116px]" }[size]}
+                  class={fitRows(size, 2)}
                   accessibilityLabel={`Payments, ${size}`}
                   columns={paymentColumns}
                   data={allPayments.slice(0, 2).map((p) => ({ ...p, amount: money(p.amount) }))}
@@ -173,7 +178,7 @@ function HeroDemo() {
           </Button>
         </View>
         <DataTable
-          class="h-[262px]"
+          class={fitRows("md", allPayments.length)}
           accessibilityLabel="Payments"
           columns={narrow() ? narrowColumns : paymentColumns}
           data={rows().map((p) => ({ ...p, amount: money(p.amount) }))}
