@@ -12,7 +12,7 @@ use crate::{
     foundation::{icon::provide_text_color, motion, popup, typography::line_height},
     theme::{
         seeds::SPACING,
-        semantic::{BACKGROUND, FOREGROUND, RADIUS_MD},
+        semantic::{BACKGROUND, FOREGROUND, RADIUS_SM},
         theme,
     },
     tokens,
@@ -24,8 +24,9 @@ tokens! {
     TOOLTIP: Color = "tooltip" => |t| t.color(FOREGROUND),
     /// The bubble's text.
     TOOLTIP_FOREGROUND: Color = "tooltip-foreground" => |t| t.color(BACKGROUND),
-    /// The bubble's corner radius.
-    TOOLTIP_RADIUS: Length = "tooltip-radius" => |t| t.length(RADIUS_MD),
+    /// The bubble's corner radius: the tighter tier of a compact overlay
+    /// (a 28-point bubble of 12-point text), well below half its height.
+    TOOLTIP_RADIUS: Length = "tooltip-radius" => |t| t.length(RADIUS_SM),
     /// The bubble's horizontal padding (`px-3`).
     TOOLTIP_PADDING_X: Length = "tooltip-padding-x" => |t| t.length(SPACING) * 3.0,
     /// The bubble's vertical padding (`py-1.5`).
