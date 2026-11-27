@@ -69,7 +69,7 @@ export function SizesPage() {
             </If>
           </View>
           {sizes.map((size, i) => (
-            <View class={`min-h-16 flex-row flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
+            <View class={`min-h-16 flex-row flex-wrap content-center items-center gap-x-4 gap-y-3 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
               <Text class="w-10 font-mono text-xs text-foreground">{size}</Text>
               <Text class="w-20 font-mono text-xs tabular-nums text-foreground">{formatValue(`control-height-${size}`)}</Text>
               <Text class="w-20 font-mono text-xs tabular-nums text-muted-foreground">{formatValue(`control-height-touch-${size}`)}</Text>
