@@ -30,6 +30,14 @@ const allTasks: Task[] = [
   { id: "t6", title: "Answer the support backlog", status: "To do", assignee: "Zoe", due: "Thu" },
   { id: "t7", title: "Profile the search index", status: "In review", assignee: "Noah", due: "Fri" },
   { id: "t8", title: "Archive last quarter's files", status: "Done", assignee: "Mia", due: "Fri" },
+  { id: "t9", title: "Write the migration guide", status: "To do", assignee: "Eli", due: "Mon" },
+  { id: "t10", title: "Test the new sign-in flow", status: "In progress", assignee: "Zoe", due: "Mon" },
+  { id: "t11", title: "Clean up unused feature flags", status: "To do", assignee: "Leo", due: "Tue" },
+  { id: "t12", title: "Translate the settings screens", status: "In review", assignee: "Ivy", due: "Wed" },
+  { id: "t13", title: "Refresh the help center screenshots", status: "To do", assignee: "Ava", due: "Wed" },
+  { id: "t14", title: "Measure the dashboard's load time", status: "In progress", assignee: "Eli", due: "Thu" },
+  { id: "t15", title: "Prepare the quarterly review", status: "To do", assignee: "Noah", due: "Fri" },
+  { id: "t16", title: "Renew the design tool licenses", status: "Done", assignee: "Ivy", due: "Fri" },
 ];
 
 const columns: DataTableColumn[] = [
@@ -155,7 +163,7 @@ function HeroDemo() {
     <Demo
       hero
       class="items-stretch p-6"
-      label="Check rows to raise the bar. Escape clears the selection from the bar; in the table, the page listens for it."
+      label="Check rows to raise the bar; the list scrolls, and its last rows come up above the bar. Escape clears the selection from the bar; in the table, the page listens for it."
     >
       <View class="h-[340px] w-full max-w-[720px] self-center">
         {/* Escape in the bar is the bar's; in the table, the page's own. */}
