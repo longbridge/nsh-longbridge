@@ -27,6 +27,7 @@ import { PopoverPage } from "./pages/popover";
 import { ProgressPage } from "./pages/progress";
 import { RadioGroupPage } from "./pages/radio-group";
 import { SelectPage } from "./pages/select";
+import { SelectionBarPage } from "./pages/selection-bar";
 import { SeparatorPage } from "./pages/separator";
 import { SizesPage } from "./pages/sizes";
 import { SkeletonPage } from "./pages/skeleton";
@@ -88,6 +89,7 @@ export const catalog: PageGroup[] = [
       { id: "progress", label: "Progress", page: ProgressPage },
       { id: "radio-group", label: "Radio Group", page: RadioGroupPage },
       { id: "select", label: "Select", page: SelectPage },
+      { id: "selection-bar", label: "Selection Bar", page: SelectionBarPage },
       { id: "separator", label: "Separator", page: SeparatorPage },
       { id: "skeleton", label: "Skeleton", page: SkeletonPage },
       { id: "slider", label: "Slider", page: SliderPage },

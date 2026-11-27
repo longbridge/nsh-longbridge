@@ -3,6 +3,8 @@
 //! `docs/components/button.md`.
 
 use nsh_base::button as base_button;
+use std::rc::Rc;
+
 use nsh_core::{element::Style, element::TextPartStyle, prelude::*};
 
 use crate::{
@@ -208,6 +210,28 @@ pub(crate) fn draw(
     node: Option<ElementRef>,
     on_press: impl Fn() + 'static,
 ) -> impl IntoElement {
+    draw_with(props, node, on_press, Extras::default())
+}
+
+/// What a button drawn for another component adds to `Button`'s drawing.
+#[derive(Default)]
+pub(crate) struct Extras {
+    /// Words drawn after the children, in a label part of their own: the
+    /// text of a component whose words are a prop (a selection bar's
+    /// action).
+    pub(crate) words: Option<Rc<dyn Fn() -> SharedString>>,
+    /// A hint layer (a `Tooltip`) anchored to the button itself, as an
+    /// element's `tooltip` is: a component's element takes none in Rust.
+    pub(crate) hint: Option<AnyElement>,
+}
+
+/// [`draw`] with `extras`.
+pub(crate) fn draw_with(
+    props: ButtonProps,
+    node: Option<ElementRef>,
+    on_press: impl Fn() + 'static,
+    extras: Extras,
+) -> impl IntoElement {
     let t = theme();
     let variant = move || props.variant.get();
     let size = move || props.size.get();
@@ -386,6 +410,12 @@ pub(crate) fn draw(
     } else {
         root.cursor(Cursor::Default)
     };
+    let words = extras.words.map(|words| {
+        text(move || words())
+            .app_class(props.label_class)
+            .inline_style(move || Style::from(props.label_style.get()))
+            .style_when(props.icon_only, |s| s.hidden())
+    });
     root.child(dynamic(leading))
         .children_each(props.children, move |child, _| {
             text("")
@@ -394,12 +424,14 @@ pub(crate) fn draw(
                 .style_when(props.icon_only, |s| s.hidden())
                 .child(child)
         })
+        .children(words)
         .child(dynamic(move || {
             (!props.icon_only.get())
                 .then(|| props.icon_end.get())
                 .flatten()
                 .map(|name| icon_part(name, false))
         }))
+        .children(extras.hint)
 }
 
 fn height_token(size: Size) -> Token<kind::Length> {

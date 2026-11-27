@@ -89,6 +89,18 @@ pub enum IconName {
     /// `copy`: copy to the clipboard.
     #[prop(rename = "copy")]
     Copy,
+    /// `archive`.
+    #[prop(rename = "archive")]
+    Archive,
+    /// `download`.
+    #[prop(rename = "download")]
+    Download,
+    /// `tag`.
+    #[prop(rename = "tag")]
+    Tag,
+    /// `user`.
+    #[prop(rename = "user")]
+    User,
 }
 
 nsh_core::static_reactive!(IconName: IconName);
@@ -121,6 +133,10 @@ impl IconName {
             IconName::EyeOff => include_str!("icons/eye-off.svg"),
             IconName::Search => include_str!("icons/search.svg"),
             IconName::Copy => include_str!("icons/copy.svg"),
+            IconName::Archive => include_str!("icons/archive.svg"),
+            IconName::Download => include_str!("icons/download.svg"),
+            IconName::Tag => include_str!("icons/tag.svg"),
+            IconName::User => include_str!("icons/user.svg"),
         }
     }
 }

@@ -188,6 +188,13 @@ pub enum Label {
     /// says whether it shows).
     #[prop(rename = "show-password")]
     ShowPassword,
+    /// "{count} selected": a selection bar's count, `{count}` replaced by
+    /// the number of selected items.
+    #[prop(rename = "count-selected")]
+    CountSelected,
+    /// "Clear selection": a selection bar's "×".
+    #[prop(rename = "clear-selection")]
+    ClearSelection,
 }
 
 impl Label {
@@ -250,6 +257,8 @@ impl Label {
         Label::Search,
         Label::Create,
         Label::ShowPassword,
+        Label::CountSelected,
+        Label::ClearSelection,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -312,6 +321,8 @@ impl Label {
             Label::Search => "search",
             Label::Create => "create",
             Label::ShowPassword => "show-password",
+            Label::CountSelected => "count-selected",
+            Label::ClearSelection => "clear-selection",
         }
     }
 
@@ -375,6 +386,8 @@ impl Label {
             Label::Search => "Search",
             Label::Create => "Create “{query}”",
             Label::ShowPassword => "Show password",
+            Label::CountSelected => "{count} selected",
+            Label::ClearSelection => "Clear selection",
         }
     }
 
