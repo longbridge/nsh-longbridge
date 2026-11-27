@@ -10,7 +10,7 @@ const posts = [
   { initials: "OM", name: "Olivia Martin", text: "Shipped the new billing page. Thanks for the reviews, everyone!" },
   { initials: "JL", name: "Jackson Lee", text: "The staging database moves to the new cluster on Friday." },
 ];
-const columns = ["w-24", "flex-1", "w-16"];
+const columns = ["w-24", "flex-1", "w-28"];
 
 export function SkeletonPage() {
   return (

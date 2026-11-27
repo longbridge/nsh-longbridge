@@ -64,7 +64,7 @@ export function IconsPage() {
           {sizes.map((size, i) => (
             <View class={`min-h-14 flex-row items-center gap-6 px-5 ${i > 0 ? "border-t border-border" : ""}`}>
               <Text class="w-8 font-mono text-xs text-muted-foreground">{size}</Text>
-              <View class="flex-1 flex-row flex-wrap items-center gap-x-6 gap-y-3 py-3">
+              <View class="flex-1 flex-row flex-wrap items-center gap-x-4 gap-y-3 py-3">
                 {icons.map((ic) => (
                   <Icon name={ic.name} size={size} />
                 ))}

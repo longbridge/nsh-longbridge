@@ -202,7 +202,7 @@ function Band(props: { label: string; value: number }) {
   return (
     <View class="items-center gap-2">
       <Text class="text-sm tabular-nums text-muted-foreground">{`${gain() > 0 ? "+" : ""}${gain()}`}</Text>
-      <View class="h-40">
+      <View class="h-48">
         <Slider
           axis="vertical"
           min={-6}

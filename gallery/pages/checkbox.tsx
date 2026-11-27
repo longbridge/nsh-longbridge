@@ -171,7 +171,7 @@ function TableDemo() {
                   />
                 </TableCell>
                 <TableCell class="w-24 flex-none">
-                  <Text class="font-mono">{r.id}</Text>
+                  <Text>{r.id}</Text>
                 </TableCell>
                 <TableCell>
                   <View class="flex-row items-center gap-2">
