@@ -73,10 +73,11 @@ mobile-first single column.
   a plain view black text in both appearances).
 - "As wide as its content" is `w-fit` (an internal `app_class`), never `align-self`, which would override the row's
   alignment around it.
-- A control that fills its parent's width or fits its content (`Input`, `Textarea`, `Combobox`, `Slider`,
-  `DatePicker`) shrinks in a row: it reads `Joined::in_row()` from its `field::join` and adds `flex-shrink: 1` and
-  `min-width: 0` there. NSH's layout shrinks nothing unless told to, so without it the control keeps its width and
-  pushes the row past its field.
+- In a horizontal field a control reads `Joined::in_row()` from its `field::join`: one that fills its parent's width
+  (`Input`, `Textarea`, `Combobox`, `Slider`) takes `flex: 1 1 0` and `min-width: 0` there, an equal share of the row
+  with the label side, so a group's rows line up in columns; one that fits its content (`DatePicker`) adds
+  `flex-shrink: 1` and `min-width: 0`. NSH's layout shrinks nothing unless told to, so without it the control keeps
+  its width and pushes the row past its field.
 - Styles NSH cannot bind (font weight, underline, cursor) are read once when the component is made; the spec's NSH
   gaps section names them.
 - Shadows come from `foundation`'s `shadow()` as the root's inline style; the app's `style` is merged after it.

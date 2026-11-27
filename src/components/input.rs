@@ -236,8 +236,8 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
         .hit_slop(move || vertical_hit_slop(t, height()))
         .w_full()
         .min_w(px(0.0))
-        // Beside a label in a horizontal field: it shares the row.
-        .style_when(move || joined.in_row(), |s| s.flex_shrink(1.0))
+        // Beside a label in a horizontal field: an equal share of the row.
+        .style_when(move || joined.in_row(), |s| s.flex_1())
         .h(height)
         .px(move || t.length(padding_token(size())))
         .text_size(move || t.length(font_size_token(size())))

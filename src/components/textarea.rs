@@ -181,11 +181,8 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
         .on_focus(move || cx.emit(TextareaEvent::Focus))
         .on_blur(move || cx.emit(TextareaEvent::Blur))
         .w_full()
-        // Beside a label in a horizontal field: it shares the row.
-        .style_when(
-            move || joined.in_row(),
-            |s| s.flex_shrink(1.0).min_w(px(0.0)),
-        )
+        // Beside a label in a horizontal field: an equal share of the row.
+        .style_when(move || joined.in_row(), |s| s.flex_1().min_w(px(0.0)))
         // No height: the host measures its text as it lays out, so the
         // field grows in the same layout as the edit (no frame late).
         .min_h(move || {

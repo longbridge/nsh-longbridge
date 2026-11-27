@@ -217,6 +217,47 @@ fn a_label_beside_a_full_width_control_shares_the_row_and_wraps() {
     assert!(input.size.width > px(60.0), "{input:?}");
 }
 
+/// Two horizontal fields in a group, descriptions of different lengths.
+#[component]
+fn Columns() -> impl IntoElement {
+    let row = |name: &'static str, words: &'static str| {
+        field()
+            .orientation(FieldOrientation::Horizontal)
+            .child(
+                field_content()
+                    .child(field_label().child(text(name)))
+                    .child(field_description().child(text(words))),
+            )
+            .child(input().accessibility_label(name))
+    };
+    view().p(px(20.0)).w(px(560.0)).child(
+        field_group()
+            .child(row("Name", "Your full name."))
+            .child(row(
+                "Message",
+                "You can write your message here. Keep it short.",
+            )),
+    )
+}
+
+#[test]
+fn horizontal_fields_line_up_in_columns() {
+    let app = start::<Columns>(true);
+    let name = bounds(&app, "label:Name");
+    let message = bounds(&app, "label:Message");
+    // The label side and the control share each row equally, so the
+    // controls start at the same x whatever the descriptions say.
+    assert!(
+        (name.origin.x - message.origin.x).0.abs() < 0.5,
+        "{name:?} {message:?}"
+    );
+    assert!(
+        (name.size.width - message.size.width).0.abs() < 0.5,
+        "{name:?} {message:?}"
+    );
+    assert!(name.size.width > px(240.0), "{name:?}");
+}
+
 /// `FieldError`s: none, one message, several (one repeated, one empty),
 /// and children over messages.
 #[component]

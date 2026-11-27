@@ -392,7 +392,9 @@ pub fn FieldLabel(props: FieldLabelProps, _cx: Scope<NoEvent>) -> impl IntoEleme
                         AdaptiveColor::TRANSPARENT
                     })
             } else {
-                // Beside the control, it takes the room left, never
+                // Beside the control, an equal share of the row with a
+                // full-width control (so a group's rows line up in
+                // columns), the room left beside a switch or a box; never
                 // narrower than its longest word, its children stacked:
                 // NSH's layout does not shrink a text in a row, so a row
                 // here would let a long label run under the control
@@ -400,8 +402,7 @@ pub fn FieldLabel(props: FieldLabelProps, _cx: Scope<NoEvent>) -> impl IntoEleme
                 if horizontal() {
                     s.flex_col()
                         .justify_center()
-                        .flex_grow(1.0)
-                        .flex_shrink(1.0)
+                        .flex_1()
                         .min_w(nsh_core::geometry::auto())
                 } else {
                     s.flex_row().items_center()
@@ -525,8 +526,9 @@ pub struct FieldContentProps {
 }
 
 /// A column for a label (or a title) and a description beside a control,
-/// in a horizontal field: it takes the room left, and its field aligns to
-/// the top, the control centered on its first line.
+/// in a horizontal field: half the row beside a full-width control (so a
+/// group's rows line up), the room left beside a switch or a box; its
+/// field aligns to the top, the control centered on its first line.
 #[component]
 pub fn FieldContent(props: FieldContentProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
@@ -538,13 +540,13 @@ pub fn FieldContent(props: FieldContentProps, _cx: Scope<NoEvent>) -> impl IntoE
             }
         });
     }
-    // `flex: 1 1 auto`: from its words' width, so a full-width control
-    // beside it shares the row instead of taking all of it, and never
+    // `flex: 1 1 0`: an equal share of the row with a full-width control
+    // (which takes `flex: 1 1 0` there too), so the rows of a group line
+    // up in columns; the room left beside a switch or a box. Never
     // narrower than its longest word (CSS's automatic minimum).
     view()
         .flex_col()
-        .flex_grow(1.0)
-        .flex_shrink(1.0)
+        .flex_1()
         .min_w(nsh_core::geometry::auto())
         .gap(move || t.length(FIELD_CONTENT_GAP))
         .child(props.children)

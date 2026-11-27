@@ -268,10 +268,10 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
         })
         .on_cancel(move || cx.emit(ComboboxEvent::Cancel))
         // As wide as its parent, as Input; beside a label in a horizontal
-        // field, it shares the row.
+        // field, an equal share of the row.
         .app_class(move || {
             Some(SharedString::from(if joined.in_row() {
-                "w-full min-w-0 shrink"
+                "w-full min-w-0 flex-1"
             } else {
                 "w-full min-w-0"
             }))

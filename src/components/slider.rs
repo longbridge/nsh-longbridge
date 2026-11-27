@@ -204,10 +204,10 @@ pub fn Slider(props: SliderProps, cx: Scope<SliderEvent>) -> impl IntoElement {
                     .min_h(move || t.length(SLIDER_VERTICAL_MIN_HEIGHT))
                     .app_class(Some(SharedString::from("h-full")))
             } else {
-                // Beside a label in a horizontal field, it shares the row.
+                // Beside a label in a horizontal field, an equal share of the row.
                 s.app_class(move || {
                     Some(SharedString::from(if joined.in_row() {
-                        "w-full min-w-0 shrink"
+                        "w-full min-w-0 flex-1"
                     } else {
                         "w-full"
                     }))
