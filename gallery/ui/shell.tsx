@@ -18,6 +18,7 @@ import {
   scheme,
 } from "../theme";
 import { Segmented, Select } from "./controls";
+import { GalleryToaster } from "./toaster";
 import { compact, narrow, pagePadding } from "./screen";
 import { ChevronRight, GitHub, Glyph, Menu, Monitor, Moon, Search, Sun } from "./icons";
 
@@ -267,6 +268,7 @@ export function Shell(): JSX.Element {
           <Sidebar class="flex-1 w-full" onSelect={() => menu.set(false)} />
         </Sheet>
       </If>
+      <GalleryToaster />
     </View>
   );
 }

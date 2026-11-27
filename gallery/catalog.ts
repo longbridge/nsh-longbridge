@@ -1,18 +1,21 @@
 // Every page of the gallery, in the sidebar's groups and order.
 
 import type { JSX } from "nsh";
+import { AlertDialogPage } from "./pages/alert-dialog";
 import { BadgePage } from "./pages/badge";
 import { ButtonPage } from "./pages/button";
 import { CardPage } from "./pages/card";
 import { CheckboxPage } from "./pages/checkbox";
 import { ColorsPage } from "./pages/colors";
 import { CustomizePage } from "./pages/customize";
+import { DialogPage } from "./pages/dialog";
 import { DropdownMenuPage } from "./pages/dropdown-menu";
 import { HomePage } from "./pages/home";
 import { IconsPage } from "./pages/icons";
 import { InputPage } from "./pages/input";
 import { KbdPage } from "./pages/kbd";
 import { LabelPage } from "./pages/label";
+import { PopoverPage } from "./pages/popover";
 import { RadioGroupPage } from "./pages/radio-group";
 import { SelectPage } from "./pages/select";
 import { SeparatorPage } from "./pages/separator";
@@ -22,6 +25,7 @@ import { SpinnerPage } from "./pages/spinner";
 import { SwitchPage } from "./pages/switch";
 import { TabsPage } from "./pages/tabs";
 import { TextareaPage } from "./pages/textarea";
+import { ToastPage } from "./pages/toast";
 import { TooltipPage } from "./pages/tooltip";
 import { TypographyPage } from "./pages/typography";
 
@@ -49,14 +53,17 @@ export const catalog: PageGroup[] = [
   {
     title: "Components",
     pages: [
+      { id: "alert-dialog", label: "Alert Dialog", page: AlertDialogPage },
       { id: "badge", label: "Badge", page: BadgePage },
       { id: "button", label: "Button", page: ButtonPage },
       { id: "card", label: "Card", page: CardPage },
       { id: "checkbox", label: "Checkbox", page: CheckboxPage },
+      { id: "dialog", label: "Dialog", page: DialogPage },
       { id: "dropdown-menu", label: "Dropdown Menu", page: DropdownMenuPage },
       { id: "input", label: "Input", page: InputPage },
       { id: "kbd", label: "Kbd", page: KbdPage },
       { id: "label", label: "Label", page: LabelPage },
+      { id: "popover", label: "Popover", page: PopoverPage },
       { id: "radio-group", label: "Radio Group", page: RadioGroupPage },
       { id: "select", label: "Select", page: SelectPage },
       { id: "separator", label: "Separator", page: SeparatorPage },
@@ -65,6 +72,7 @@ export const catalog: PageGroup[] = [
       { id: "switch", label: "Switch", page: SwitchPage },
       { id: "tabs", label: "Tabs", page: TabsPage },
       { id: "textarea", label: "Textarea", page: TextareaPage },
+      { id: "toast", label: "Toast", page: ToastPage },
       { id: "tooltip", label: "Tooltip", page: TooltipPage },
     ],
   },

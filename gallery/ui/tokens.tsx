@@ -29,12 +29,15 @@ import { compact } from "./screen";
 function rangeOf(name: string): { min: number; max: number; step: number; format?: (v: number) => string } {
   const kind = kindOf(name);
   if (kind === "tier") return { min: 0, max: 4, step: 1, format: (v) => ["none", "xs", "sm", "md", "lg"][v] ?? String(v) };
+  if (kind === "ms" && name === "toast-duration") return { min: 0, max: 10000, step: 500 };
   if (kind === "ms") return { min: 0, max: 2000, step: 50 };
   if (/opacity/.test(name)) return { min: 0, max: 1, step: 0.1 };
   if (/animate/.test(name)) return { min: 0, max: 1, step: 1, format: (v) => (v ? "on" : "off") };
   if (/weight/.test(name)) return { min: 100, max: 900, step: 100 };
   if (/max-width/.test(name)) return { min: 120, max: 640, step: 20 };
   if (/thickness|border-width|ring-width/.test(name)) return { min: 0, max: 6, step: 0.5 };
+  // A popup's or the toast stack's width.
+  if (/^(popover|toast)-width$/.test(name)) return { min: 160, max: 480, step: 4 };
   if (/radius/.test(name)) return { min: 0, max: 9999, step: 1, format: (v) => (v >= 999 ? "full" : String(v)) };
   return { min: 0, max: 96, step: 1 };
 }
