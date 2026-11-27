@@ -226,7 +226,7 @@ No variants.
 | | |
 |---|---|
 | Field | At least `input-height-<size>` tall, growing as chips wrap; start padding `spacing × 1.5` (6) while there are chips; chips and input `spacing × 1.5` (6) apart; vertical padding 4 within the field (with its edge), the buttons' inset, so the chips sit centered beside the buttons |
-| Chip | `combobox-chip-height` (22) tall, corners `radius-sm` (6), fill `combobox-chip` (`muted`), text 12 (`text-xs`) `font-weight-medium` `combobox-chip-foreground` (`foreground`), padding `spacing × 1.5` (6) at the start, the title cut with an ellipsis |
+| Chip | `combobox-chip-height` (22) tall, corners `input-radius − 4` (4), concentric with the field's like the buttons', fill `combobox-chip` (`muted`), text 12 (`text-xs`) `font-weight-medium` `combobox-chip-foreground` (`foreground`), padding `spacing × 1.5` (6) at the start, the title cut with an ellipsis |
 | Remove | A square the chip's height, the `x` icon at 12, at 50% opacity, 100% under the pointer, no fill |
 | Input | At least 64 wide, a chip's height, taking the room left |
 
@@ -335,7 +335,7 @@ declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --test tokens`); a test keeps i
 - The matched part's weight is the menu family's `menu-item-match-font-weight` (`font-weight-semibold`), declared in
   `foundation::menu` beside the rows' other tokens, for the same reason: a searchable list of Select's would read it
   too. A theme sets it to 400 (the rows' regular weight) to draw no emphasis.
-- Other tokens it reads: `radius-sm`, `text-xs`, `text-sm`, `font-weight-medium`, `opacity-disabled`, `icon-size-*`,
+- Other tokens it reads: `text-xs`, `text-sm`, `font-weight-medium`, `opacity-disabled`, `icon-size-*`,
   `touch-target`, `overlay`, `shadow`, `duration`.
 
 ## Examples
