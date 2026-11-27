@@ -67,7 +67,8 @@ font-medium text-muted-foreground select-none`, icons `size-3`.
 
 Inside a tooltip the cap turns to `bg-background/20 text-background` (dark `bg-background/10`), because the tooltip is
 inverted (`foreground` fill). NSH has no ancestor selectors, so this library uses context: `Tooltip` provides an "inside
-a tooltip" context, and a `Kbd` that reads it uses `kbd-tooltip` / `kbd-tooltip-foreground`. Nothing for the app to do.
+a tooltip" context, and a `Kbd` that reads it uses `kbd-tooltip` / `kbd-tooltip-foreground` and `kbd-tooltip-radius`
+(concentric with the bubble it fills but for its padding, no less than `radius-xs`). Nothing for the app to do.
 
 ## States
 
@@ -99,6 +100,7 @@ Values are those of `nsh/base`'s default theme.
 | `kbd-tooltip` | color | `light_dark(tooltip-foreground × 20%, tooltip-foreground × 10%)` |  |
 | `kbd-tooltip-foreground` | color | `tooltip-foreground` |  |
 | `kbd-radius` | length | `radius-sm` | 6 |
+| `kbd-tooltip-radius` | length | `max(tooltip-radius − tooltip-padding-y, radius-xs)` | 2 |
 | `kbd-height` | length | `spacing × 5` | 20 |
 | `kbd-padding-x` | length | `spacing` | 4 |
 | `kbd-font-size` | length | `font-size-xs` | 12 |
