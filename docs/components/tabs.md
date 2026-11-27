@@ -127,46 +127,48 @@ it in its own signals, or shows and hides its own views with the value.
 In classes (the list's `h-9` is `lg`):
 
 - Root: `flex gap-2`, a column when horizontal.
-- List: `inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground h-9` (horizontal),
+- List: `inline-flex w-fit items-center justify-center rounded-lg p-0.5 text-muted-foreground h-9` (horizontal),
   `h-fit flex-col` (vertical); `default`: `bg-muted`; `line`: `gap-1 bg-transparent rounded-none`.
-- Trigger: `h-[calc(100%-1px)] flex-1 items-center justify-center gap-2 rounded-md border border-transparent px-2
+- Trigger: `h-full flex-1 items-center justify-center gap-2 rounded-md border border-transparent px-2
   py-1 text-sm font-medium whitespace-nowrap text-foreground/60 hover:text-foreground transition-all`, icons `size-4`;
   vertical `w-full justify-start`; selected `bg-background text-foreground shadow-sm`, dark `border-input
   bg-input/30 text-foreground`; dark rest `text-muted-foreground`. `line`: selected has no fill, border or shadow, and
-  an underline (`after:`) `bg-foreground h-0.5` at `bottom-[-5px]` (vertical: `w-0.5` at `-right-1`), fading in. `gap-1` at
-  `xs` and `sm`.
+  an underline (`after:`) `bg-foreground h-0.5` at `bottom-[-3px]`, on the list's bottom edge (vertical: `w-0.5` at `-right-[3px]`),
+  fading in. `gap-1` at `xs` and `sm`.
 - Content: `flex-1 outline-none`.
 
 ### Variants
 
 | | `default` (segmented) | `line` |
 |---|---|---|
-| List | Fill `tabs-list`, corners `tabs-list-radius` (10), padding `tabs-list-padding` (3) | No fill, square, the same padding, triggers `spacing` (4) apart |
+| List | Fill `tabs-list`, corners `tabs-list-radius` (10), padding `tabs-list-padding` (2) | No fill, square, the same padding, triggers `spacing` (4) apart |
 | Trigger at rest | No fill, a 1 pt edge in transparent, text `tabs-trigger-foreground` | Same |
 | Trigger hovered | Text `tabs-trigger-hover-foreground` | Same |
-| Trigger selected | Fill `tabs-trigger-selected`, edge `tabs-trigger-selected-border`, shadow tier `tabs-trigger-selected-shadow` (2, `sm`), text `tabs-trigger-selected-foreground` | Text `tabs-trigger-selected-foreground`; an underline `tabs-line-indicator-width` (2) thick in `tabs-line-indicator`, as long as the trigger, its bottom edge `tabs-list-padding` + 2 (5) below the trigger's (a column: a bar along the trigger's height, its right edge `tabs-list-padding` + 1 (4) beyond the trigger's), at opacity 1 (0 otherwise) |
+| Trigger selected | Fill `tabs-trigger-selected`, edge `tabs-trigger-selected-border`, shadow tier `tabs-trigger-selected-shadow` (2, `sm`), text `tabs-trigger-selected-foreground` | Text `tabs-trigger-selected-foreground`; an underline `tabs-line-indicator-width` (2) thick in `tabs-line-indicator`, as long as the trigger, its bottom edge on the list's (a column: a bar along the trigger's height, its right edge on the list's), at opacity 1 (0 otherwise) |
 | Dark | Rest text `muted-foreground`; selected fill `input` at 30%, edge `input` | Rest text `muted-foreground`; no selected edge |
 
 ### Sizes
 
 | `size` | List height (pointer / touch) | Trigger height | Text | Icon |
 |---|---|---|---|---|
-| `xs` | 24 / 32 | 17 / 25 | 12 | 12 |
-| `sm` | 28 / 36 | 21 / 29 | 13 | 14 |
-| `md` | 32 / 40 | 25 / 33 | 14 | 16 |
-| `lg` | 36 / 48 | 29 / 41 | 14 | 16 |
+| `xs` | 24 / 32 | 20 / 28 | 12 | 12 |
+| `sm` | 28 / 36 | 24 / 32 | 13 | 14 |
+| `md` | 32 / 40 | 28 / 36 | 14 | 16 |
+| `lg` | 36 / 48 | 32 / 44 | 14 | 16 |
 
 - The list's height is `tabs-list-height-<size>` (`control-height-<size>`): 32 at `md`, 36 at `lg`,
   as every control here. A vertical list sizes to its triggers instead, each as tall as in a row.
-- A trigger fills the list's height inside its padding, less 1 (`calc(100%-1px)`), its content centered; it
-  has no vertical padding (a fixed `py-1` would fit one size only). Horizontal padding `tabs-trigger-padding-x` (8),
-  icon-to-label gap 4 at `xs` and `sm`, 8 at `md` and `lg` (Button's), text `font-size-<size>` at `font-weight-medium`, one line.
+- A trigger fills the list's height inside its padding, its content centered: the band around the selected trigger is
+  `tabs-list-padding` (2) on every side, so its corners are concentric with the list's (gpui-kit's Design Guides: the
+  selected fill shares the container's silhouette). It has no vertical padding (a fixed `py-1` would fit one size
+  only). Horizontal padding `tabs-trigger-padding-x` (8), icon-to-label gap 4 at `xs` and `sm`, 8 at `md` and `lg`
+  (Button's), text `font-size-<size>` at `font-weight-medium`, one line.
 - Triggers share the list's width, each growing from its content (`flex: 1 1 auto`; see [NSH gaps](#nsh-gaps) 5); the
   list is as wide as its content (`w-fit`, and `h-fit` beside vertical panels: a root that stretches its children does
   not stretch the list, and a row's `items-center` still centers it), or as the app's `class` sets (`w-full`,
   `w-[400px]`). In a column each trigger takes the full width and starts its content at the start.
 - Corners: the list `tabs-list-radius` (`radius-lg`, 10), the trigger `tabs-trigger-radius` = list radius − padding
-  (7): concentric (conventions), not a fixed `rounded-md` (8).
+  (8, `radius-md`): concentric (conventions).
 - Root: the list and the panels `tabs-gap` (8) apart, in a column (horizontal) or a row (vertical).
 
 ## States
@@ -217,12 +219,12 @@ Values are those of `nsh/base`'s default theme.
 | `tabs-gap` | length | `spacing × 2` | 8 |
 | `tabs-list` | color | `muted` |  |
 | `tabs-list-radius` | length | `radius-lg` | 10 |
-| `tabs-list-padding` | length | `spacing × 0.75` | 3 |
+| `tabs-list-padding` | length | `spacing × 0.5` | 2 |
 | `tabs-list-height-xs` | length | `pointer_touch(control-height-xs, control-height-touch-xs)` | 24 (touch 32) |
 | `tabs-list-height-sm` | length | `pointer_touch(control-height-sm, control-height-touch-sm)` | 28 (touch 36) |
 | `tabs-list-height-md` | length | `pointer_touch(control-height-md, control-height-touch-md)` | 32 (touch 40) |
 | `tabs-list-height-lg` | length | `pointer_touch(control-height-lg, control-height-touch-lg)` | 36 (touch 48) |
-| `tabs-trigger-radius` | length | `tabs-list-radius − tabs-list-padding` | 7 |
+| `tabs-trigger-radius` | length | `tabs-list-radius − tabs-list-padding` | 8 |
 | `tabs-trigger-padding-x` | length | `spacing × 2` | 8 |
 | `tabs-trigger-foreground` | color | `light_dark(foreground × 60%, muted-foreground)` |  |
 | `tabs-trigger-hover-foreground` | color | `foreground` |  |

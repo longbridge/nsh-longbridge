@@ -42,8 +42,10 @@ tokens! {
     TABS_LIST: Color = "tabs-list" => |t| t.color(MUTED),
     /// The list's corner radius (the `default` variant).
     TABS_LIST_RADIUS: Length = "tabs-list-radius" => |t| t.length(RADIUS_LG),
-    /// The space between the list's edge and its triggers (`p-[3px]`).
-    TABS_LIST_PADDING: Length = "tabs-list-padding" => |t| t.length(SPACING) * 0.75,
+    /// The space between the list's edge and its triggers, even on every
+    /// side (`spacing` × 0.5: the selected trigger sits in the track as a
+    /// `sm` control in a `md` one, its corners `radius-md` in `radius-lg`).
+    TABS_LIST_PADDING: Length = "tabs-list-padding" => |t| t.length(SPACING) * 0.5,
     /// An extra small list's height.
     TABS_LIST_HEIGHT_XS: Length = "tabs-list-height-xs" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_XS), t.length(CONTROL_HEIGHT_TOUCH_XS)),
     /// A small list's height.
@@ -298,9 +300,10 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
     let selected =
         move || tabs.is_some_and(|c| c.value.with(|v| v.as_ref() == Some(&props.value.get())));
     let disabled = move || props.disabled.get();
-    // `h-[calc(100%-1px)]` inside the list's padding.
-    let height =
-        move || t.length(list_height_token(size())) - t.length(TABS_LIST_PADDING) * 2.0 - px(1.0);
+    // The list's height inside its padding: the band around the selected
+    // trigger is as wide above and below as at the ends, so its corners are
+    // concentric with the list's.
+    let height = move || t.length(list_height_token(size())) - t.length(TABS_LIST_PADDING) * 2.0;
     let font_size = move || t.length(font_size_token(size()));
     let icon_side = move || t.length(icon_size_token(size()));
     let raised = move || selected() && !line();
@@ -401,18 +404,21 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
                 .bg(move || t.color(TABS_LINE_INDICATOR))
                 .opacity(move || if selected() { 1.0_f32 } else { 0.0 })
                 .transition_opacity();
+            // On the list's edge: past the trigger's own edge (the offsets
+            // count from inside it) and the list's padding.
+            let beyond = move || -(t.length(TABS_LIST_PADDING) + t.length(BORDER_WIDTH));
             let indicator = if horizontal {
                 indicator
                     .left(px(0.0))
                     .right(px(0.0))
                     .h(thickness)
-                    .bottom(move || -(t.length(TABS_LIST_PADDING) + px(2.0)))
+                    .bottom(beyond)
             } else {
                 indicator
                     .top(px(0.0))
                     .bottom(px(0.0))
                     .w(thickness)
-                    .right(move || -(t.length(TABS_LIST_PADDING) + px(1.0)))
+                    .right(beyond)
             };
             motion::timing(indicator, t)
         })
