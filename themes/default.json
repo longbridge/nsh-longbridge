@@ -114,7 +114,7 @@
       "kbd-group-gap": "calc(var(--spacing))",
       "separator-thickness": "calc(var(--border-width))",
       "skeleton-radius": "calc(var(--radius-md))",
-      "tooltip-radius": "calc(var(--radius-md))",
+      "tooltip-radius": "calc(var(--radius-sm))",
       "tooltip-padding-x": "calc(var(--spacing) * 3)",
       "tooltip-padding-y": "calc(var(--spacing) * 1.5)",
       "tooltip-font-size": "12px",

@@ -152,7 +152,7 @@ In classes: `w-fit rounded-md bg-foreground px-3 py-1.5 text-xs text-balance tex
 | | Value |
 |---|---|
 | Fill / text | `tooltip` / `tooltip-foreground`: inverted by default (dark on a light theme, light on a dark one), so it stands apart from the page |
-| Corners | `tooltip-radius` (`radius-md`, 8) |
+| Corners | `tooltip-radius` (`radius-sm`, 6; Decisions 5) |
 | Padding | `tooltip-padding-x` (12) horizontally, `tooltip-padding-y` (6) vertically |
 | Text | `tooltip-font-size` (12), line height from the foundation's font size → line height (12 → 16), regular weight |
 | Layout | A row, centered vertically, `spacing` × 2 (8) apart: the gap before a trailing `Kbd` |
@@ -228,7 +228,7 @@ Values are those of `nsh/base`'s default theme.
 |---|---|---|---|
 | `tooltip` | color | `foreground` |  |
 | `tooltip-foreground` | color | `background` |  |
-| `tooltip-radius` | length | `radius-md` | 8 |
+| `tooltip-radius` | length | `radius-sm` | 6 |
 | `tooltip-padding-x` | length | `spacing × 3` | 12 |
 | `tooltip-padding-y` | length | `spacing × 1.5` | 6 |
 | `tooltip-font-size` | length | `12` | 12 |
@@ -347,3 +347,6 @@ view().tooltip(
    change described under "Tokens".
 4. **The API follows NSH's `tooltip` prop**, not four pieces. The core recognizes the TSX wrapper as a hint
    layer (verified by headless tests).
+5. **`radius-sm` (6), not `rounded-md`'s 8**: the bubble is 28 high (12-point text, 6 above and below), so 8 rounded
+   it more than a 32-point button's 8 and close to half its height; gpui-kit's Design Guides give compact overlays the
+   tighter tier and keep a tooltip from reading as a capsule. A bubble with a `Kbd` (32 high) keeps the same corners.
