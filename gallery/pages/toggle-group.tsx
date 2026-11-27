@@ -95,7 +95,7 @@ export function ToggleGroupPage() {
       <TokensSection
         prefix="toggle-group"
         component="Toggle Group"
-        note="Its items read Toggle's tokens; these are the group's own."
+        note="has no tokens of its own: its items read Toggle's."
       />
     </Page>
   );

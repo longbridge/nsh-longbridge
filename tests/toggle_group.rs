@@ -357,12 +357,17 @@ fn a_row_apart_has_whole_toggles_and_the_gap() {
 }
 
 #[test]
-fn items_take_the_groups_size_and_padding_without_a_least_width() {
+fn items_take_the_groups_size_and_hold_a_square() {
     let app = start::<Shapes>(true);
-    assert_eq!(size(&app, "role:button[Small a]").1, 28.0);
-    // 12 each side around one letter: wider than tall here, never a square
-    // of the height.
+    assert_eq!(size(&app, "role:button[Small a]"), (28.0, 28.0));
     assert_eq!(size(&app, "role:button[Joined a]").1, 32.0);
+    // One letter (or an icon) sits in a square: an apart item is one, a
+    // joined outline item holds one between its dividers (the first item
+    // draws its start edge too).
+    assert_eq!(size(&app, "role:button[Apart a]"), (32.0, 32.0));
+    assert_eq!(size(&app, "role:button[Joined a]").0, 34.0);
+    assert_eq!(size(&app, "role:button[Joined b]").0, 33.0);
+    assert_eq!(size(&app, "role:button[Joined c]").0, 33.0);
     let touch = start::<Shapes>(false);
     assert_eq!(size(&touch, "role:button[Small a]").1, 36.0);
     assert_eq!(size(&touch, "role:button[Joined a]").1, 40.0);

@@ -250,7 +250,6 @@
       "toggle-padding-x-md": "calc(var(--spacing) * 2)",
       "toggle-padding-x-lg": "calc(var(--spacing) * 2.5)",
       "toggle-outline-shadow": "1",
-      "toggle-group-item-padding-x": "calc(var(--spacing) * 3)",
       "selection-bar-radius": "calc(var(--radius-xl))",
       "selection-bar-padding": "calc(var(--spacing) * 1.5)",
       "selection-bar-gap": "calc(var(--spacing))",

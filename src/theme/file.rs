@@ -46,7 +46,6 @@ pub fn registry() -> Vec<TokenDecl> {
         crate::components::progress::TOKENS,
         crate::components::pagination::TOKENS,
         crate::components::toggle::TOKENS,
-        crate::components::toggle_group::TOKENS,
         crate::components::selection_bar::TOKENS,
         crate::components::slider::TOKENS,
         crate::components::combobox::TOKENS,
