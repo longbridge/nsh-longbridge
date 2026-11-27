@@ -156,6 +156,8 @@
       "toast-font-size": "13px",
       "toast-icon-size": "16px",
       "toast-close-size": "20px",
+      "toast-stack-gap": "calc(var(--spacing) * 3)",
+      "toast-stack-peek": "calc(var(--spacing) * 3)",
       "toast-offset": "calc(var(--spacing) * 6)",
       "toast-duration": "4000",
       "toast-animate": "1",

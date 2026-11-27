@@ -76,6 +76,12 @@ tokens! {
     TOAST_ICON_SIZE: Length = "toast-icon-size" => |t| t.px(16.0),
     /// The side of a toast's "×".
     TOAST_CLOSE_SIZE: Length = "toast-close-size" => |t| t.px(20.0),
+    /// How far apart the toasts of the expanded stack are: one content
+    /// group's gap.
+    TOAST_STACK_GAP: Length = "toast-stack-gap" => |t| t.length(SPACING) * 3.0,
+    /// How much of each toast behind the newest shows in the collapsed
+    /// stack.
+    TOAST_STACK_PEEK: Length = "toast-stack-peek" => |t| t.length(SPACING) * 3.0,
     /// How far the stack is from the window's edges (inside the safe area).
     TOAST_OFFSET: Length = "toast-offset" => |t| t.pointer_touch(t.length(SPACING) * 6.0, t.length(SPACING) * 4.0),
     /// How long a toast stays by default, in milliseconds.
@@ -303,7 +309,7 @@ impl Default for Queue {
     fn default() -> Self {
         Self {
             inner: Rc::new(RefCell::new(Inner {
-                manager: ToastManager::new(ToastMotion::sonner()),
+                manager: ToastManager::new(ToastMotion::default()),
                 clocks: HashMap::new(),
                 answers: HashMap::new(),
                 chosen: HashMap::new(),
@@ -844,6 +850,11 @@ fn stack(props: ToasterProps, scope: CapturedScope, state: ToastStackState) -> i
         })
         .child(
             toast_stack()
+                .motion(move || ToastMotion {
+                    collapsed_peek: t.length(TOAST_STACK_PEEK),
+                    expanded_gap: t.length(TOAST_STACK_GAP),
+                    ..ToastMotion::default()
+                })
                 .placement(move || placement().anchor())
                 .state(state)
                 .close_on_escape(false)
