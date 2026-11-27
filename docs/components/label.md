@@ -6,9 +6,8 @@ RadioGroup ([Tokens](#tokens)).
 
 ## Usage
 
-The text naming a control: a form field's name, the words beside a Checkbox or a Switch. The look is shadcn/ui
-new-york v4's `Label` (14, medium weight, a line height of 1, in a row with icons or controls). Pressing a Label moves
-the focus to the field it names (`htmlFor`).
+The text naming a control: a form field's name, the words beside a Checkbox or a Switch. The look: 14, medium weight, a
+line height of 1, in a row with icons or controls. Pressing a Label moves the focus to the field it names (`htmlFor`).
 
 ## When not to use
 
@@ -22,8 +21,8 @@ the focus to the field it names (`htmlFor`).
 ## Built on
 
 No `nsh/base` component and no host element: a Label is a `view` in a row around the app's children, written in this
-library. shadcn's is Radix's `Label.Root` (a `<label>`): pressing it focuses the control its `for` names, and a double
-click selects no text. This library does those two things only:
+library. It does what a web `<label>` does, and only that: pressing it focuses the control its `for` names, and a
+double click selects no text:
 
 - With `htmlFor` naming a field, pressing the Label focuses the field (as its ref's `focus()`); not while the Label or
   the field is disabled.
@@ -36,8 +35,8 @@ click selects no text. This library does those two things only:
 | TSX | Rust | Type | Default | Notes |
 |---|---|---|---|---|
 | `children` | `.child(..)` / `.children(..)` | elements / text | — | The label: text, possibly with an icon or a Badge (spaced by `gap`) |
-| `htmlFor` | `html_for` | TSX: `InputRef \| TextareaRef`; Rust: `FieldRef`, from a `ComponentRef<Input>` or `ComponentRef<Textarea>` | — | What a press focuses. Named as shadcn's / React's `htmlFor`. A Label before its field gets the ref through a signal (below) |
-| `disabled` | `disabled` | `boolean` | `false` | Dimmed (`opacity-disabled`), presses do nothing. shadcn follows the field through `peer-disabled` / `group-data-[disabled]`; NSH has no `peer-*`, so the app passes it (G3) |
+| `htmlFor` | `html_for` | TSX: `InputRef \| TextareaRef`; Rust: `FieldRef`, from a `ComponentRef<Input>` or `ComponentRef<Textarea>` | — | What a press focuses. Named as React's `htmlFor`. A Label before its field gets the ref through a signal (below) |
+| `disabled` | `disabled` | `boolean` | `false` | Dimmed (`opacity-disabled`), presses do nothing. Following the field would need CSS's `peer-disabled` / `group-data-[disabled]`; NSH has no `peer-*`, so the app passes it (G3) |
 | `class` | `class` | `string` | — | The root's classes, merged last |
 | `style` | `style` | `StyleProp<ViewStyle>` / `Style` | — | The root's style; a text `color` or `fontSize` here reaches the text inside |
 
@@ -54,8 +53,8 @@ const field = signal<InputRef>();
 A Label after its field may take a plain variable. Rust has no such order: a `ComponentRef` is found when the Label is
 pressed.
 
-No `size`, `variant`, `required` or `invalid`: shadcn's Label has none. A required mark and red text on errors belong to
-Field (P3; shadcn's `FieldLabel` has `data-[invalid=true]:text-destructive`).
+No `size`, `variant`, `required` or `invalid`: a label is text, and those belong to the field. A required mark and red
+text on errors belong to Field (P3; its label turns `text-destructive` when invalid).
 
 ### Events
 
@@ -69,12 +68,12 @@ by the `Text` inside, so `class` / `style` on the root restyle the text; there i
 
 ## Variants and sizes
 
-No variants. **No `size`**: shadcn's Label has one size, `text-sm`, over fields of every size; a small label beside a
+No variants. **No `size`**: one size, `text-sm`, over fields of every size; a small label beside a
 small field uses `class="text-xs"`.
 
 ## States
 
-| State | Look | shadcn's classes |
+| State | Look | Classes |
 |---|---|---|
 | Rest | Text `label-font-size` (14), weight `label-font-weight` (500), color `label-foreground` (`foreground`), line height = text size (`leading-none`); a row, centered, children `label-gap` (8) apart; text not selectable | `flex items-center gap-2 text-sm leading-none font-medium select-none` |
 | hover | Unchanged; the arrow cursor (not the hand: it is no link; gpui-kit's Design Guides) | none |
@@ -89,14 +88,14 @@ disabled Input).
 A line height of 1 needs checking with CJK text: under `leading-none`, CJK glyphs and Latin descenders (g, y) may be
 clipped on some platforms. The gallery shows a Chinese label and a `gy` label, screenshotted in light and dark; if they
 clip, the Label takes the line height of foundation's text size → line height function, and this spec records the
-departure from shadcn. (A line height equal to the text size is shadcn's deliberate `leading-none`, so the Label does not
+change. (A line height equal to the text size is a deliberate `leading-none`, so the Label does not
 use that function: the one exception to "components set no line heights of their own".)
 
 ## Pointer and touch
 
 | | Pointer | Touch |
 |---|---|---|
-| Text | 14 | 14 (not the fields' 16 on touch: shadcn's Label is `text-sm` on narrow screens too) |
+| Text | 14 | 14 (not the fields' 16 on touch: a label is `text-sm` on narrow screens too; 16 only keeps a browser from zooming into a field) |
 | Hit area | The label's box | The label's box, **not padded to 44**: it is no control of its own, its field already meets the target, and padding would take presses from the fields above and below |
 | Press | A full click (on release) focuses the field, as a browser's `<label>` click | The same (on a tap's release), showing the software keyboard; a scrolling drag does not trigger it |
 
@@ -125,7 +124,7 @@ Values are those of `nsh/base`'s default theme.
 
 `label-font-size` follows `font-size-md` rather than Tailwind's fixed `text-sm` (14), so a theme that sets the
 `font-size` seed to 13 for a compact density shrinks labels with their fields. Both default to 14, so nothing differs
-from shadcn visibly.
+visibly by default.
 
 The `label` parts of the choice controls (Checkbox, Switch, RadioGroup items) read `label-foreground` and
 `label-font-weight`, with their own `font-size-<size>` rather than `label-font-size` (they have `size`, a Label does
@@ -199,7 +198,7 @@ With NSH 0.7.0, write a string child inside `<Text>` for now ([Button's G0](butt
   ref read before the field sets it is empty: the API above passes it through a signal.
 - **G3 No `peer-*`.** NSH does not support `peer-*` variants, so a Label cannot learn its field's `disabled` by itself.
   Workaround: `disabled` is passed explicitly; later, Field (P3) hands `disabled` to both the label and the control, so
-  the app writes it once (shadcn's `group-data-[disabled=true]` serves that use).
+  the app writes it once.
 
 ## Decisions
 

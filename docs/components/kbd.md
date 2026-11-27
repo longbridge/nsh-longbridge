@@ -1,6 +1,6 @@
 # Kbd
 
-Status: implemented (P1). Key caps: a key or a key combination drawn as small caps. Reference: shadcn/ui new-york v4 `kbd.tsx` (`Kbd`,
+Status: implemented (P1). Key caps: a key or a key combination drawn as small caps (`Kbd`,
 `KbdGroup`).
 
 ## Usage
@@ -17,7 +17,7 @@ Status: implemented (P1). Key caps: a key or a key combination drawn as small ca
 ## Built on
 
 `nsh/base` has no counterpart; this library draws a `view` and a `text`. It has no behavior: not focusable, no pointer
-events (shadcn's `pointer-events-none`), text not selectable (`select-none`).
+events (`pointer-events-none`), text not selectable (`select-none`).
 
 Key names are the app's: `Kbd` does not parse `"mod+k"`. For the platform's form (`⌘K` on Apple platforms, `Ctrl+K`
 elsewhere), compute it with NSH's `keymap.label("mod+k")` (Rust `nsh_core::element::key_label("mod+k")`) and pass the
@@ -46,12 +46,12 @@ Neither has events or other parts (the cap is the root and the text is the child
 ## Variants and sizes
 
 - No `variant`.
-- No `size` (none of `xs` / `sm` / `md` / `lg`): shadcn has one (20 high). It follows the row it sits in, not control
+- No `size` (none of `xs` / `sm` / `md` / `lg`): one size (20 high). It follows the row it sits in, not control
   sizes. If it is too large in a `size="xs"` button, change `kbd-height` with `class` or a scoped token.
 
 ### Look
 
-shadcn: `inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 rounded-sm bg-muted px-1 font-sans text-xs
+In classes: `inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 rounded-sm bg-muted px-1 font-sans text-xs
 font-medium text-muted-foreground select-none`, icons `size-3`.
 
 | | Value |
@@ -65,10 +65,9 @@ font-medium text-muted-foreground select-none`, icons `size-3`.
 
 ### In a `Tooltip`
 
-shadcn switches to `bg-background/20 text-background` (dark `bg-background/10`) with the selector
-`[[data-slot=tooltip-content]_&]`, because the tooltip is inverted (`foreground` fill). NSH has no ancestor selectors,
-so this library uses context: `Tooltip` provides an "inside a tooltip" context, and a `Kbd` that reads it uses
-`kbd-tooltip` / `kbd-tooltip-foreground`. Nothing for the app to do.
+Inside a tooltip the cap turns to `bg-background/20 text-background` (dark `bg-background/10`), because the tooltip is
+inverted (`foreground` fill). NSH has no ancestor selectors, so this library uses context: `Tooltip` provides an "inside
+a tooltip" context, and a `Kbd` that reads it uses `kbd-tooltip` / `kbd-tooltip-foreground`. Nothing for the app to do.
 
 ## States
 
@@ -106,10 +105,10 @@ Values are those of `nsh/base`'s default theme.
 | `kbd-group-gap` | length | `spacing` | 4 |
 <!-- /tokens -->
 
-`kbd-tooltip` is shadcn's `bg-background/20` (`dark:bg-background/10`) inside a tooltip, based on the tooltip's text
+`kbd-tooltip` is `bg-background/20` (`dark:bg-background/10`) inside a tooltip, based on the tooltip's text
 color rather than `background`, so the caps follow a recolored tooltip.
 
-`kbd-height` does not follow `control-height`: it is a small label inside controls, and shadcn fixes it at `h-5`. A
+`kbd-height` does not follow `control-height`: it is a small label inside controls, fixed at `h-5`. A
 denser `spacing` shrinks it along with everything else.
 
 ## Examples
@@ -146,7 +145,7 @@ kbd_group()
 
 ## NSH gaps
 
-- **No ancestor selectors** (shadcn's `[[data-slot=tooltip-content]_&]`). Workaround: `Tooltip` provides a context that
+- **No ancestor selectors** (a CSS `[[data-slot=tooltip-content]_&]`). Workaround: `Tooltip` provides a context that
   `Kbd` reads. A `Kbd` a TSX app passes as a `Tooltip`'s child is adopted where the tooltip places its children, so it
   reads that context (NSH's `docs/dev/components.md`, "The host node and ids"). Verified: headless tests guard both the
   TSX and the Rust path (`tests/tooltip.rs`).

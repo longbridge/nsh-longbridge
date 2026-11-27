@@ -6,8 +6,7 @@ trigger, NumberInput and Combobox share it.
 
 ## Usage
 
-Single-line text entry: a name, an email, a password, a search term, short text other than amounts. The look is
-shadcn/ui new-york v4's `Input`.
+Single-line text entry: a name, an email, a password, a search term, short text other than amounts.
 
 ## When not to use
 
@@ -16,17 +15,17 @@ shadcn/ui new-york v4's `Input`.
 | Several lines, notes, text with line breaks | [Textarea](textarea.md) |
 | A number with steps, a range, arrow-key nudges | `nsh/base`'s `NumberInput` (wrapped by this library later, P3), not `Input` + `keyboardType="numeric"` with checks of the app's own |
 | A choice from a fixed list | Select (P2) / Combobox (P3) |
-| Icons, units or buttons before or after the field | InputGroup (shadcn v4's `input-group`, later); P1 gives `Input` no prefix / suffix |
+| Icons, units or buttons before or after the field | InputGroup (later); P1 gives `Input` no prefix / suffix |
 | A verification code, one character per cell | `nsh/base`'s `OtpInput` |
 | A field's label, description, error line | The label is a [Label](label.md); descriptions and errors wait for Form / Field (P3) |
-| Picking a file (shadcn's `type="file"`) | Not supported: NSH has no file input; use the system's file dialog |
+| Picking a file (HTML's `type="file"`) | Not supported: NSH has no file input; use the system's file dialog |
 
 ## Built on
 
 NSH's host element `Input` (TSX imports it from `nsh/base`; Rust's is nsh-core's `element::input()`; natively AppKit,
 UIKit, EditText, Win32, GTK or the browser's `<input>`). `nsh/base` has no styled text field component, and its
 `NumberInput` uses this element directly; this library wraps it the same way. The component's root is the `input()`
-element itself, with no view around it, so `class` / `style` land on the field, one element as in shadcn.
+element itself, with no view around it, so `class` / `style` land on the field, one element.
 
 What the host element already does, and this library does **not** reimplement:
 
@@ -55,7 +54,7 @@ This library adds only the look (tokens), `size`, `invalid`'s look and accessibi
 | `disabled` | `disabled` | `boolean` | `false` | No editing, no focus, out of the Tab order; look under [States](#states) |
 | `readonly` | `readonly` | `boolean` | `false` | Focusable, selectable and copyable, not editable; looks as at rest |
 | `invalid` | `invalid` | `boolean` | `false` | The app's checks reject the value: a red edge, a red ring while focused; screen readers say invalid (`accessibilityState.invalid`, so `aria-invalid:` classes apply) |
-| `masked` | `masked` | `boolean` | `false` | A password field (shadcn's `type="password"`) |
+| `masked` | `masked` | `boolean` | `false` | A password field (HTML's `type="password"`) |
 | `keyboardType` | `keyboard_type` | NSH's `KeyboardType` | `"default"` | The software keyboard (`email-address`, `url`, `phone-pad`, ...), passed through |
 | `returnKeyType` | `return_key_type` | NSH's `ReturnKeyType` | the platform's (`"default"`) | Passed through |
 | `autoCapitalize` | `auto_capitalize` | NSH's `AutoCapitalize` (Rust: `Option<AutoCapitalize>`) | the platform's | Passed through; set only when given when the field is made |
@@ -68,8 +67,8 @@ This library adds only the look (tokens), `size`, `invalid`'s look and accessibi
 | `class` | `class` | `string` | — | The root's (the field's) Tailwind classes, merged last, over the component's |
 | `style` | `style` | `StyleProp<InputStyle>` / `InputPartStyle` | — | The root's inline style, over `class`; takes `placeholderColor`, `caretColor`, `selectionColor` |
 
-No `type` prop: what shadcn tells apart with HTML's `type` is separate props in NSH (`masked`, `keyboardType`,
-`autoComplete`), under NSH's names. No `variant`: shadcn's Input has one look.
+No `type` prop: what HTML tells apart with `type` is separate props in NSH (`masked`, `keyboardType`,
+`autoComplete`), under NSH's names. No `variant`: an Input has one look.
 
 ### Events
 
@@ -81,7 +80,7 @@ No `type` prop: what shadcn tells apart with HTML's `type` is separate props in 
 | `onBlur` | `Blur` / `.on_blur(..)` | — | The field lost the keyboard focus |
 
 The host element also has `onSelectionChange`, `onCaretMove`, `onPaste`, `onKeyPress`, `onCompositionChange` and more.
-P1 does not pass them through (they are not part of shadcn's Input); an app that needs them uses `nsh/base`'s `Input`
+P1 does not pass them through (a styled field does not need them); an app that needs them uses `nsh/base`'s `Input`
 directly for now (end of [Examples](#examples)). They are added later under their own names when a real need comes up.
 
 ### Ref
@@ -113,14 +112,14 @@ No variants. All four sizes; height, text size and horizontal padding change tog
 | `xs` | 24 / 32 (`control-height-xs` / `-touch-xs`) | 12 / 14 | 8 (spacing × 2) | Editing in a table cell, a filter in a toolbar |
 | `sm` | 28 / 36 | 13 / 14 | 10 (spacing × 2.5) | Compact forms, sidebars |
 | `md` | 32 / 40 | 14 / 16 | 12 (spacing × 3) | The default |
-| `lg` | 36 / 48 | 14 / 16 | 12 (spacing × 3) | With a pointer, shadcn's `h-9 px-3 md:text-sm` |
+| `lg` | 36 / 48 | 14 / 16 | 12 (spacing × 3) | Roomier forms; with a pointer, `h-9 px-3 text-sm` |
 
-Unlike shadcn, which has one height (`h-9`, 36): the default `md` is 32, as tall as Button's `md` (medium desktop density,
-gpui-kit's Design Guides). For shadcn's height use `size="lg"`, or `control-height: 36` in the theme. An Input and a
+The default `md` is 32, as tall as Button's `md` (medium desktop density,
+gpui-kit's Design Guides). For 36 use `size="lg"`, or `control-height: 36` in the theme. An Input and a
 Button of the same `size` line up in a row. Text of 16 on touch screens at `md` / `lg` is conventions.md's rule (iOS
-Safari zooms the page into fields with smaller text; shadcn's `text-base` on narrow screens too).
+Safari zooms the page into fields with smaller text).
 
-Width: `w-full min-w-0` (fills its parent, shrinks in a flex row), as shadcn; a fixed width goes in `class`. Every size
+Width: `w-full min-w-0` (fills its parent, shrinks in a flex row); a fixed width goes in `class`. Every size
 uses `input-radius` (Button's step; if P0's Button gives `xs` a smaller radius, Input follows the same rule). One line of
 text is centered vertically in the fixed height, with no line height set.
 
@@ -130,14 +129,14 @@ Foundation's **field look** draws the states (built in P0, conventions.md "Appea
 `invalid`, `readonly`, `disabled` and the focus. The table is the result with the default tokens, and what the gallery
 and the screenshots are checked against:
 
-| State | Edge | Fill | Shadow / ring | Other | shadcn's classes |
+| State | Edge | Fill | Shadow / ring | Other | Classes |
 |---|---|---|---|---|---|
 | Rest | `input-border-width` (1) in `input-border` | `input-background` (light: transparent; dark: `input` at 30%) | `input-shadow` = 1 (`xs`) | Text `input-foreground`, placeholder `input-placeholder-foreground` | `border border-input bg-transparent shadow-xs dark:bg-input/30 placeholder:text-muted-foreground` |
-| hover | Unchanged (no hover state, as shadcn) | Unchanged | Unchanged | The I-beam cursor (native) | none |
+| hover | Unchanged (no hover state: the edge already says where the field is) | Unchanged | Unchanged | The I-beam cursor (native) | none |
 | focus-visible | `input-border-focus` (`ring`) | Unchanged | A ring of `input-ring-width` (3) in `input-ring` (`ring` at 50%), outside the box, over the `xs` shadow | Touch: the edge color only, no ring | `focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50` |
 | invalid | `input-border-invalid` (`destructive`) | Unchanged | No ring while unfocused | Screen readers say invalid | `aria-invalid:border-destructive` |
 | invalid + focus-visible | `input-border-invalid` (the red edge wins over `ring`'s) | Unchanged | A ring of 3 in `input-ring-invalid` (= `ring-invalid`: `destructive` at 20%, 40% in dark); none on touch | — | `aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40` |
-| readonly | As at rest | As at rest | As focus-visible while focused | Focusable, its text selectable and copyable, not editable | none (shadcn has no such state) |
+| readonly | As at rest | As at rest | As focus-visible while focused | Focusable, its text selectable and copyable, not editable | none |
 | disabled | As at rest | As at rest | No ring (no focus) | `opacity-disabled` (0.5) over all, the arrow cursor | `disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50` |
 
 Notes for this component:
@@ -150,14 +149,13 @@ Notes for this component:
   `overflow-hidden` container gets its ring clipped (seen in real apps): the container leaves `ring-width` of padding,
   and the gallery has an edge case to check it.
 - Transitions: the edge color, the fill and the shadow / ring transition over `duration`, none with reduced motion.
-  shadcn transitions only `color, box-shadow` and switches the edge color at once; NSH groups transitions by colors and
-  shadows, which cannot be split, so the edge and the ring transition together.
-- Selection: shadcn's Input sets `selection:bg-primary selection:text-primary-foreground`. NSH sets only the selection's
-  fill, not the selected text's color, and each platform adds its own alpha (Android 55%, Linux 30%, iOS a tint), so
-  copying it would put dark text on a dark fill in light mode. **`selectionColor` is left unset: the platform's
-  selection** (G4 under [NSH gaps](#nsh-gaps)). shadcn's Textarea sets none either.
-- Caret: shadcn sets none; neither does this library (the platform's).
-- Loading: a field has no loading state (shadcn has none); an asynchronous check's spinner belongs in an InputGroup
+  NSH groups transitions by colors and shadows, which cannot be split, so the edge and the ring transition together.
+- Selection: a `selection:bg-primary selection:text-primary-foreground` look is not possible. NSH sets only the
+  selection's fill, not the selected text's color, and each platform adds its own alpha (Android 55%, Linux 30%, iOS a
+  tint), so copying it would put dark text on a dark fill in light mode. **`selectionColor` is left unset: the
+  platform's selection** (G4 under [NSH gaps](#nsh-gaps)). Textarea sets none either.
+- Caret: the platform's; this library sets none.
+- Loading: a field has no loading state; an asynchronous check's spinner belongs in an InputGroup
   (later).
 
 ## Pointer and touch
@@ -180,7 +178,7 @@ All from the host element; this library adds only the `invalid` state and the `d
 - Keyboard: an editable field is always a Tab stop; Return raises `onSubmit` per `submitBehavior`; editing keys belong to
   the field, and an ancestor's shortcuts never take them. A disabled field is no Tab stop.
 - Focus: `focus-visible:` **always matches a focused editable field** (NSH's rule: a field shows its focus whether it was
-  clicked or tabbed into), so the focus ring hangs on `focus-visible:` as in shadcn, with no keyboard / pointer split.
+  clicked or tabbed into), so the focus ring hangs on `focus-visible:`, with no keyboard / pointer split.
 - Screen readers: the text field role, the value, `accessibilityLabel`; `invalid` maps on every platform (macOS
   `AXInvalid`, Windows `IsDataValidForForm`, AT-SPI's invalid entry, Android `setContentInvalid`, the web's
   `aria-invalid`, iOS in the value); `disabled` reads as dimmed.

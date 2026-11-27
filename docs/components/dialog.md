@@ -1,8 +1,7 @@
 # Dialog
 
 Status: implemented (P2). A modal window over the app: a panel in the middle of the window over a dimmed
-overlay, keeping the keyboard focus and screen readers inside it until it closes. Reference: shadcn/ui new-york v4
-`dialog.tsx` (Radix Dialog).
+overlay, keeping the keyboard focus and screen readers inside it until it closes.
 
 This spec also settles what every overlay of the library shares (the layers, stacking, dismissal, focus, the theme
 scope, shadows, radii and motion): see "Overlays: what every layer shares" under "Built on". `AlertDialog`,
@@ -65,7 +64,7 @@ Dialog                        root: the open state, a view holding the trigger (
 `DialogContent`, in its order. `DialogContent` (and `AlertDialogContent`) outside a dialog draws its panel in place,
 without the overlay: a preview of the look (the gallery's scenes), its buttons closing nothing.
 
-### Differs from shadcn's structure
+### Why the trigger is a slot
 
 - **No `DialogTrigger`: a `trigger` slot on `Dialog`**, as `nsh/base`'s `Popover` and `Sheet` take theirs and this
   library's `Popover` does. NSH has no `asChild`: a `DialogTrigger` wrapping the app's `Button` would be a second
@@ -74,13 +73,13 @@ without the overlay: a preview of the look (the gallery's scenes), its buttons c
   there takes the press itself; the dialog gives it its toggle through `foundation::trigger` (NSH gaps 7). A dialog
   opened by the app (`open`) needs no trigger.
 - **No `DialogPortal`, no `DialogOverlay` component**: the modal is the portal, and the overlay is a part of
-  `DialogContent` (`overlayClass` / `overlayStyle`), as shadcn's `DialogContent` renders its `DialogOverlay`.
-- **`DialogClose` is a `Button`** that closes the dialog (shadcn's footer `Close` is a `Button` inside a
-  `DialogPrimitive.Close asChild`): it takes `Button`'s props, `variant="outline"` by default.
+  `DialogContent` (`overlayClass` / `overlayStyle`): the overlay belongs to the panel it sits behind.
+- **`DialogClose` is a `Button`** that closes the dialog, rather than a wrapper around one: it takes `Button`'s props,
+  `variant="outline"` by default.
 
-From shadcn, for an app written after its docs:
+Coming from a part-based API:
 
-| shadcn | This library |
+| Part-based | This library |
 |---|---|
 | `<Dialog><DialogTrigger asChild><Button>Open</Button></DialogTrigger><DialogContent>…</DialogContent></Dialog>` | `<Dialog trigger={<Button>Open</Button>}><DialogContent>…</DialogContent></Dialog>` |
 | `<DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>` | `<DialogClose>Cancel</DialogClose>` (a `Button`, `outline` by default) |
@@ -137,11 +136,11 @@ showed covers them. A tooltip shows above the popup it belongs to only if NSH pu
   controlled layer waits for the app's `open`. `onOpen` follows when it is all there (refs inside it name their
   views, so `focus()` there works), `onClose` when it is all gone, after its exit.
 
-**Focus.** A modal traps the focus (NSH's newest-modal focus scope) and gives it back as it goes (NSH). A popup does
-not trap it: `nsh/base` gives it back to the trigger as the popup starts to go, except after a press outside (which
-put it where it pressed). The library moves the focus in only where shadcn's primitive does and NSH does not
-already: `AlertDialog` focuses its `AlertDialogCancel` as it opens (Radix's default). Otherwise, the app focuses
-what it wants in `onOpen` (an `Input`'s `autoFocus` also works).
+**Focus.** A modal traps the focus (NSH's newest-modal focus scope) and gives it back as it goes (NSH). A popup does not
+trap it: `nsh/base` gives it back to the trigger as the popup starts to go, except after a press outside (which put it
+where it pressed). The library moves the focus in only where an alert needs it and NSH does not do it already:
+`AlertDialog` focuses its `AlertDialogCancel` as it opens. Otherwise, the app focuses what it wants in `onOpen` (an
+`Input`'s `autoFocus` also works).
 
 **The theme scope.** An overlay's content is made by the component, under the component's place in the tree: its
 reactive owner and context are those of where the app put the component, whatever native layer it is drawn in
@@ -155,19 +154,19 @@ bold). Each surface resets them as `Tooltip`'s bubble does (normal wrapping, reg
 change, no letter spacing) and sets its own size, line height and color.
 
 **Shadows and radii.** Modal panels take shadow tier 4 (`lg`) and `radius-lg`; popup surfaces tier 3 (`md`) and
-`radius-md`; a toast tier 3 and `radius-lg` (Sonner's `--border-radius: var(--radius)`). Each is its component's
+`radius-md`; a toast tier 3 and `radius-lg`. Each is its component's
 token (`dialog-shadow`, `popover-shadow`, `toast-shadow`), drawn by `foundation`'s `shadow()` as an inline style.
 
 **Motion.** Entrances and exits use the transitions `foundation::motion` already has (`transition_all`'s easing,
-`cubic-bezier(0.4, 0, 0.2, 1)`); a popup's over `duration` (150, shadcn's `tw-animate-css` default), a modal's over
-`dialog-duration` (200, shadcn's `duration-200`). With reduced motion every overlay shows and goes at once (the
-conventions' rule; `nsh/base`'s presence skips the states). Each component's `<component>-animate` token (1 / 0)
-turns its motion off, as `tooltip-animate` does.
+`cubic-bezier(0.4, 0, 0.2, 1)`); a popup's over `duration` (150), a modal's over `dialog-duration` (200, `duration-200`:
+a larger layer moves a little longer). With reduced motion every overlay shows and goes at once (the conventions' rule;
+`nsh/base`'s presence skips the states). Each component's `<component>-animate` token (1 / 0) turns its motion off, as
+`tooltip-animate` does.
 
 **Touch screens.** A layer keeps its form unless the platform's habit differs and `nsh/base` already does it: menus
 and `Select`'s list become bottom sheets (`nsh/base`); a `Popover` stays anchored (`nsh/base`); a `Dialog` stays a
 centered panel (iOS and Android alerts and dialogs are centered; a bottom-sheet form is a different component, the
-later `Drawer`); toasts span the width of a narrow window (Sonner's mobile layout).
+later `Drawer`); toasts span the width of a narrow window.
 
 ## API
 
@@ -198,8 +197,8 @@ later `Drawer`); toasts span the width of a narrow window (Sonner's mobile layou
 | `accessibilityLabel` | `accessibility_label` | `string?` | the title's text | The dialog's name for screen readers, when there is no `DialogTitle` or it should say something else |
 | `children` | `.child(..)` | elements | — | Usually one `DialogContent`; made on each opening (lazy) |
 
-No `class` / `style`: the root draws nothing (shadcn's `Dialog` renders no element). The trigger is the app's
-element and takes its own classes. Radix's `modal={false}` is not offered: a non-modal panel is a `Popover`.
+No `class` / `style`: the root draws nothing. The trigger is the app's element and takes its own classes. A non-modal
+mode is not offered: a non-modal panel is a `Popover`.
 
 ### `DialogContent` props
 
@@ -250,44 +249,43 @@ The builder setters follow the props; `trigger` takes any element, as `nsh/base`
 
 ## Variants and sizes
 
-- No `variant` (shadcn has one).
-- No `size`: the panel is as wide as `dialog-max-width` (512, shadcn's `sm:max-w-lg`) and no wider than the window
-  less `dialog-margin` on each side (shadcn's `max-w-[calc(100%-2rem)]`). A wider dialog sets `class="max-w-[640px]"`
-  on `DialogContent`, as shadcn's examples do (`sm:max-w-[425px]`).
+- No `variant`: one look.
+- No `size`: the panel is as wide as `dialog-max-width` (512, `sm:max-w-lg`) and no wider than the window
+  less `dialog-margin` on each side (`max-w-[calc(100%-2rem)]`). A wider or narrower dialog sets a width on
+  `DialogContent` (`class="max-w-[640px]"`, `class="max-w-[425px]"`).
 
 ### Look
 
-| Part | shadcn classes | This library |
+| Part | Classes | Layout |
 |---|---|---|
 | overlay | `fixed inset-0 z-50 bg-black/50` | `inset-0`, fill `dialog-overlay` (`overlay`, black at 50%) |
 | layer | `fixed top-[50%] left-[50%] translate-…` | `inset-0`, centered both ways, `pointer-events: box-none`; bottom padding the software keyboard's height (`keyboard_height()`) so the panel stays centered above a software keyboard |
 | panel | `grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border bg-background p-6 shadow-lg sm:max-w-lg` | A column, gap `dialog-gap` (16), padding `dialog-padding` (24), width 100% of the layer up to `dialog-max-width` (512) with `dialog-margin` (16) kept on each side; corners `dialog-radius` (`radius-lg`, 10); border `border-width` × `dialog-border`; fill `dialog`; text `dialog-foreground`, 14 (`text-sm`, see Decisions 4); shadow tier `dialog-shadow` (4) |
-| close | `absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 … size-4` | An `nsh/base` `Button` with the `x` icon at `icon-size-md` (16), absolutely placed `dialog-close-offset` (16) from the panel's top and right; opacity `dialog-close-opacity` (0.7), 1 under the pointer and while focused; corners `radius-xs` (2, Tailwind's `rounded-xs`); focus ring: the library's (`ring-width` 3, `ring` at `ring-opacity`, outside), not shadcn's 2 + offset; named "Close" (`labels`) |
+| close | `absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 … size-4` | An `nsh/base` `Button` with the `x` icon at `icon-size-md` (16), absolutely placed `dialog-close-offset` (16) from the panel's top and right; opacity `dialog-close-opacity` (0.7), 1 under the pointer and while focused; corners `radius-xs` (2, Tailwind's `rounded-xs`); focus ring: the library's (`ring-width` 3, `ring` at `ring-opacity`, outside), not a 2 + offset one; named "Close" (`labels`) |
 | `DialogHeader` | `flex flex-col gap-2 text-center sm:text-left` | A column, gap `dialog-header-gap` (8); text centered while the window is narrower than 640 (Tailwind's `sm`), start-aligned from 640 |
-| `DialogTitle` | `text-lg leading-none font-semibold` | Size `dialog-title-font-size` (`text-lg`, 18), line height 1 (18, shadcn's `leading-none`), `font-weight-semibold` |
+| `DialogTitle` | `text-lg leading-none font-semibold` | Size `dialog-title-font-size` (`text-lg`, 18), line height 1 (18, `leading-none`), `font-weight-semibold` |
 | `DialogDescription` | `text-sm text-muted-foreground` | Size `dialog-description-font-size` (`text-sm`, 14), line height from foundation (20), color `dialog-description-foreground` (`muted-foreground`) |
 | `DialogFooter` | `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end` | Narrower than 640: a column in reverse order (the first button at the bottom, each as wide as the panel), gap `dialog-footer-gap` (8); from 640: a row at the end |
 
 - `sm:` is the window's width, as NSH's Tailwind breakpoints are (NSH supports `sm:` in classes; the library reads
   the window's width in a binding with the same 640).
-- The panel's content is not scrolled by the dialog (shadcn's isn't either): a tall form puts its body in a `Scroll`
+- The panel's content is not scrolled by the dialog: a tall form puts its body in a `Scroll`
   with a `max-h`. A panel taller than the window is cut at the window's edges.
 
 ### Motion
 
-| | shadcn (tw-animate-css) | This library |
-|---|---|---|
-| Overlay | `fade-in-0` / `fade-out-0`, 150 ms | Opacity 0 → 1 / 1 → 0 over `dialog-duration` |
-| Panel | `fade-in-0 zoom-in-95` / `fade-out-0 zoom-out-95`, `duration-200` | Opacity 0 → 1 and scale 0.95 → 1, back on exit, over `dialog-duration` (200), from the panel's center |
-| Reduced motion | not handled | No motion: shown and gone at once |
+| | |
+|---|---|
+| Overlay | Opacity 0 → 1 / 1 → 0 over `dialog-duration` |
+| Panel | Opacity 0 → 1 and scale 0.95 → 1, back on exit, over `dialog-duration` (200), from the panel's center |
+| Reduced motion | No motion: shown and gone at once |
 
-One duration for both (shadcn's overlay takes the default 150 while its panel takes 200: the difference cannot be
-seen and one value is simpler to tune). The values are animated values (the core's `animated_value`, bound with
-`bind_opacity` / `bind_scale` as `nsh/base`'s `Sheet` binds its own), so the motion runs on the platform's animation
-graph. Easing: `foundation::motion`'s curve. Closing: the modal stays mounted (taking no presses: the overlay and
-the panel turn `pointer-events: none`) until the exit's animation ends, then goes, and `onClose` follows. Opened
-again on its way out, it animates back from where it is, and neither `onClose` nor `onOpen` fires. `dialog-animate:
-0` turns the motion off.
+One duration for both (150 for the overlay and 200 for the panel could not be told apart, and one value is simpler to
+tune). The values are animated values (the core's `animated_value`, bound with `bind_opacity` / `bind_scale` as
+`nsh/base`'s `Sheet` binds its own), so the motion runs on the platform's animation graph. Easing:
+`foundation::motion`'s curve. Closing: the modal stays mounted (taking no presses: the overlay and the panel turn
+`pointer-events: none`) until the exit's animation ends, then goes, and `onClose` follows. Opened again on its way out,
+it animates back from where it is, and neither `onClose` nor `onOpen` fires. `dialog-animate: 0` turns the motion off.
 
 ## States
 
@@ -317,14 +315,15 @@ The buttons in the footer take `control-height-touch-*` on touch screens by them
 
 - The modal is a `dialog` for screen readers, named by `accessibilityLabel`, else by the text of its `DialogTitle`
   (read with `ElementRef::text_content` once the content is made, on each opening; see NSH gaps 1), and
-  described by its `DialogDescription` (`accessibilityDescribedBy` on the modal, the description's element). Radix
+  described by its `DialogDescription` (`accessibilityDescribedBy` on the modal, the description's element). The web
   links them with `aria-labelledby` / `aria-describedby`; see NSH gaps 1.
 - `DialogTitle` has the `header` role (as `CardTitle`).
-- A dialog without a title and without `accessibilityLabel` logs a warning in development builds (Radix warns too).
+- A dialog without a title and without `accessibilityLabel` logs a warning in development builds: screen readers would
+  have nothing to announce.
 - The "×" button is a `button` named "Close" (`labels`: a new `Label::Close`, `"close"`).
 - The focus is trapped and returned by NSH (see "Built on"); it is not moved in as the dialog opens (see NSH gaps
   2): the first Tab reaches the first stop inside.
-- The overlay is hidden from screen readers (`accessible(false)`), as shadcn's overlay is a plain `div`.
+- The overlay is hidden from screen readers (`accessible(false)`): it is decoration, not content.
 
 ## Tokens
 
@@ -354,9 +353,9 @@ Values are those of `nsh/base`'s default theme.
 | `dialog-duration` | number | `duration × 4 / 3` | 200 |
 | `dialog-animate` | number | `1` | 1 |
 <!-- /tokens -->
-- `dialog` is not a semantic token, so the panel's fill is the component's (`background`, shadcn's `bg-background`)
+- `dialog` is not a semantic token, so the panel's fill is the component's (`background`, `bg-background`)
   and the text on it `dialog-foreground`. A dialog the color of cards sets `"dialog": "var(--card)"`.
-- `dialog-overlay` is the semantic `overlay` (black at 50%, shadcn's `bg-black/50`) unless a theme changes it for
+- `dialog-overlay` is the semantic `overlay` (black at 50%, `bg-black/50`) unless a theme changes it for
   dialogs alone. `AlertDialog` uses the same tokens (it is drawn by the same parts).
 - `dialog-title-font-size` and `dialog-description-font-size` default to the semantic `text-lg` and `text-sm`
   (Tailwind's fixed sizes): a title and body text, not a control's (tokens.md). A theme that changes `text-lg`
@@ -442,18 +441,18 @@ dialog()
 
 ## NSH gaps
 
-1. **No `accessibilityLabelledBy`.** A modal's name is a string (`label`); Radix names it by its title element.
+1. **No `accessibilityLabelledBy`.** A modal's name is a string (`label`); the web names it by its title element.
    Workaround: the library reads the title's text (`ElementRef::text_content`) once the content is made, on each
    opening, and sets the modal's `label`; `accessibilityLabel` wins. A title whose text changes while the dialog is
    open keeps the name it had as it opened (NSH has no change notice for a view's text; a dialog whose title changes
    sets `accessibilityLabel`). The description uses
    `accessibilityDescribedBy`, which NSH has. A `labelledBy` would remove the read-back.
-2. **No "focus the first stop inside" (accepted).** Radix moves the focus to the first focusable element inside the
-   content as the dialog opens; this library's `Dialog` does not: NSH's modal leaves the focus on its container, and
+2. **No "focus the first stop inside" (accepted).** Web dialogs move the focus to the first focusable element inside
+   the content as they open; this library's `Dialog` does not: NSH's modal leaves the focus on its container, and
    NSH has no call to focus a subtree's first stop. So with a keyboard the first Tab enters the dialog, and a screen
    reader starts at the dialog itself. The app focuses a ref in `onOpen`, or gives an `Input` `autoFocus`;
    `AlertDialog` focuses its `AlertDialogCancel` through context (alert-dialog.md). A core call
-   (`ElementRef::focus_first()`) would let `Dialog` do Radix's default; revisit then (Decisions 3).
+   (`ElementRef::focus_first()`) would let `Dialog` do the same; revisit then (Decisions 3).
 3. **`nsh/base`'s popup machinery is private.** `OpenState`, `lifecycle`, `PopupPresence`, `keyboard_lift` and
    `focus_back` (hidden) live in `nsh-base`'s private `popup` module. The library re-implements a small open state
    (controlled or not, `request` with the reason), the presence (mounted while open or exiting) and its lifecycle
@@ -475,15 +474,14 @@ dialog()
 
 Settled in review.
 
-1. **One centered panel on every device**, not a bottom sheet on phones: shadcn's Dialog, iOS's and Android's own
-   dialogs and alerts are centered; the bottom-sheet form is a separate component (later `Drawer`, on `nsh/base`'s
-   `Sheet`), and choosing between them per device is the app's (shadcn's "responsive dialog" pattern).
+1. **One centered panel on every device**, not a bottom sheet on phones: iOS's and Android's own dialogs and alerts are
+   centered; the bottom-sheet form is a separate component (later `Drawer`, on `nsh/base`'s `Sheet`), and choosing
+   between them per device is the app's (a "responsive dialog").
 2. **A `trigger` slot instead of `DialogTrigger`**, and **`DialogClose` as a `Button`**: NSH has no `asChild`
-   (see "Differs from shadcn's structure").
+   (see "Why the trigger is a slot").
 3. **No initial focus move** in `Dialog` until NSH can focus a subtree's first stop (gap 2); to revisit then.
-4. **The panel's base text is 14 (`text-sm`)**: shadcn's panel inherits the page's (16 in a browser), but its
-   parts are `text-sm`; NSH's inherited text would be the trigger's surroundings, so the panel sets one size. The
-   app's content may set its own.
+4. **The panel's base text is 14 (`text-sm`)**: its parts are `text-sm`; NSH's inherited text would be the trigger's
+   surroundings, so the panel sets one size. The app's content may set its own.
 5. **`radius-xs` for the close button** (2): a new semantic token `radius-xs` = `max(radius − 8, 0)` (tokens.md), for
    which `NumExpr` gets `max` / `min`; both are added with this component.
 6. **`"select"` for `DialogClose`, `"cancel"` for "×"**: no reason is added to `nsh/base`'s set.

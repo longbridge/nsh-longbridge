@@ -1,8 +1,7 @@
 # DropdownMenu
 
 Status: implemented (P2). A menu of commands and settings that a trigger (usually a `Button`) opens: items,
-checkbox and radio items, labels, separators, shortcuts, submenus and destructive items. Reference: shadcn/ui
-new-york v4 `dropdown-menu.tsx` (Radix DropdownMenu).
+checkbox and radio items, labels, separators, shortcuts, submenus and destructive items.
 
 This spec also owns the **menu look** (`foundation::menu`, the `menu-*` tokens under [Tokens](#tokens)): the popup
 list's surface and its rows, which [Select](select.md)'s list shares now and the later ContextMenu, Combobox and
@@ -49,22 +48,22 @@ is `nsh/base`'s:
 | Accessibility | The trigger's `expanded` and `hasPopup`; the popup's `menu` role; items `menuitem`, `menuitemcheckbox`, `menuitemradio` with `checked` |
 | Terminal | Rows of text; a checkable item's mark (`✓`, `●`) at the row's end, a submenu's ` ›`, separators as `─`. This library's look does not apply there |
 
-### Differs from shadcn's structure
+### Why the trigger is a slot
 
-shadcn has `DropdownMenu > DropdownMenuTrigger + DropdownMenuContent > items`. In NSH the menu's trigger is a **slot
-of `Menu`** (`trigger`), which the menu binds (its press, keys, `expanded`, the anchor its popup is placed against),
-and its children are the items; a component cannot route a child component into its parent's slot. So:
+Some libraries spell a menu as parts: `DropdownMenu > DropdownMenuTrigger + DropdownMenuContent > items`. In NSH the
+menu's trigger is a **slot of `Menu`** (`trigger`), which the menu binds (its press, keys, `expanded`, the anchor its
+popup is placed against), and its children are the items; a component cannot route a child component into its parent's
+slot. So:
 
-- No `DropdownMenuTrigger`: the trigger is the `trigger` prop, any element (`trigger={<Button>Open</Button>}`), as
-  shadcn's `<DropdownMenuTrigger asChild>`. A library `Button` there takes the press itself and opens the menu
-  through the library (NSH gaps 8).
+- No `DropdownMenuTrigger`: the trigger is the `trigger` prop, any element (`trigger={<Button>Open</Button>}`). A
+  library `Button` there takes the press itself and opens the menu through the library (NSH gaps 8).
 - No `DropdownMenuContent`: its props are `DropdownMenu`'s (`placement`, `align`, `contentClass`, `contentStyle`), and
   `DropdownMenu`'s children are the items.
 - No `DropdownMenuPortal`: NSH's overlays are above everything already.
 - `DropdownMenuSub`'s trigger is its `trigger` prop as well (`trigger={<DropdownMenuSubTrigger>…}`), and its children
   are its items (no `DropdownMenuSubContent`).
 
-Every other part keeps shadcn's name and place: `DropdownMenuItem`, `DropdownMenuCheckboxItem`,
+Every other part is a child component in its place: `DropdownMenuItem`, `DropdownMenuCheckboxItem`,
 `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`,
 `DropdownMenuShortcut`, `DropdownMenuGroup`, `DropdownMenuSub`, `DropdownMenuSubTrigger`.
 
@@ -95,10 +94,11 @@ Every other part keeps shadcn's name and place: `DropdownMenuItem`, `DropdownMen
 
 ## API
 
-Coming from shadcn: `<DropdownMenuTrigger asChild>{x}</DropdownMenuTrigger>` is `trigger={x}`; `<DropdownMenuContent
-side align className>` is `DropdownMenu`'s `placement`, `align` and `contentClass`, its children `DropdownMenu`'s;
-`<DropdownMenuSubTrigger>` goes in `DropdownMenuSub`'s `trigger`, and `<DropdownMenuSubContent>`'s children are
-`DropdownMenuSub`'s; `onCheckedChange` / `onValueChange` are `onChange`. Every other part is written as in shadcn.
+Coming from a part-based API: `<DropdownMenuTrigger asChild>{x}</DropdownMenuTrigger>` is `trigger={x}`;
+`<DropdownMenuContent side align className>` is `DropdownMenu`'s `placement`, `align` and `contentClass`, its children
+`DropdownMenu`'s; `<DropdownMenuSubTrigger>` goes in `DropdownMenuSub`'s `trigger`, and `<DropdownMenuSubContent>`'s
+children are `DropdownMenuSub`'s; `onCheckedChange` / `onValueChange` are `onChange`. Every other part is written as a
+child.
 
 ### Components
 
@@ -112,7 +112,7 @@ side align className>` is `DropdownMenu`'s `placement`, `align` and `contentClas
 | `DropdownMenuLabel` | `<DropdownMenuLabel>` | `dropdown_menu_label()` | A heading over a group of items; not an item |
 | `DropdownMenuSeparator` | `<DropdownMenuSeparator>` | `dropdown_menu_separator()` | A line between groups |
 | `DropdownMenuShortcut` | `<DropdownMenuShortcut>` | `dropdown_menu_shortcut()` | The shortcut at the end of an item: text or `Kbd`s |
-| `DropdownMenuGroup` | `<DropdownMenuGroup>` | `dropdown_menu_group()` | A plain view around items (shadcn's, for structure) |
+| `DropdownMenuGroup` | `<DropdownMenuGroup>` | `dropdown_menu_group()` | A plain view around items, for structure |
 | `DropdownMenuSub` | `<DropdownMenuSub>` | `dropdown_menu_sub()` | A submenu: its trigger and its items |
 | `DropdownMenuSubTrigger` | `<DropdownMenuSubTrigger>` | `dropdown_menu_sub_trigger()` | The item that opens a submenu, with a chevron |
 
@@ -126,13 +126,13 @@ Every component takes `class` and `style` on its root, merged last.
 | `children` | `.child(..)` | items | — | The items (any of the parts above, and the app's own views); made on each opening |
 | `open` | `open` | `boolean` / `Prop<Option<bool>>` | Uncontrolled | Controlled: the app owns it and changes it in `onOpenChange` |
 | `defaultOpen` | `default_open` | `boolean` | `false` | Open at first while uncontrolled |
-| `placement` | `placement` | `"top"` \| `"bottom"` \| `"left"` \| `"right"` (`Placement`) | `"bottom"` | The side of the trigger (shadcn's `side`); the other side when only that one has room |
-| `align` | `align` | `"start"` \| `"center"` \| `"end"` (`Align`) | `"start"` | Alignment along that side (`nsh/base`'s default; Radix's is `center`, but shadcn's examples and the desktops' pull-down menus start at the trigger's edge) |
+| `placement` | `placement` | `"top"` \| `"bottom"` \| `"left"` \| `"right"` (`Placement`) | `"bottom"` | The side of the trigger; the other side when only that one has room |
+| `align` | `align` | `"start"` \| `"center"` \| `"end"` (`Align`) | `"start"` | Alignment along that side (`nsh/base`'s default; the desktops' pull-down menus start at the trigger's edge) |
 | `size` | `size` | `Size` | `"md"` | The items' height, type, icon and padding; see [Variants and sizes](#variants-and-sizes) |
 | `contentClass` / `contentStyle` | `content_class` / `content_style` | | | The popup (or sheet) surface. `contentStyle` is merged after the library's look and wins (a width, `{ width: 224 }`); `contentClass` is applied before the library's inline look, so it can add (`w-56`) but not override what the look sets (fill, edge, corners, padding, shadow): change those with tokens or `contentStyle` (NSH gaps 1) |
 | `class` / `style` | `class` / `style` | | | The root (`nsh/base`'s wrapper around the trigger): layout only |
 
-The distance to the trigger is the `popover-offset` token (shadcn's `sideOffset`), not a prop, as Tooltip's.
+The distance to the trigger is the `popover-offset` token, not a prop, as Tooltip's.
 
 ### `DropdownMenu` events
 
@@ -142,7 +142,7 @@ The distance to the trigger is the `popover-offset` token (shadcn's `sideOffset`
 | `onOpen` | `Open` | — | It is shown (a sheet once it came in) |
 | `onClose` | `Close` | — | It is gone (after its exit), whoever closed it |
 
-Passed through from `nsh/base`'s `Menu`. `onCancel` and `onPosition` are not exposed in P2 (shadcn has neither); they
+Passed through from `nsh/base`'s `Menu`. `onCancel` and `onPosition` are not exposed in P2 (no need yet); they
 are added under these names when a need comes.
 
 ### `DropdownMenuItem`
@@ -154,7 +154,7 @@ are added under these names when a need comes.
 | `icon` | `icon` | `IconName` | — | An icon before the label, in `menu-item-icon-foreground` (`destructive` in the destructive variant) |
 | `inset` | `inset` | `boolean` | `false` | The label starts where an icon's or a check's label would, lining up with such items |
 | `disabled` | `disabled` | `boolean` | `false` | Not chosen, skipped by the keys, dimmed |
-| `closeOnSelect` | `close_on_select` | `boolean` | `true` | Choosing it closes the menu (Radix's `onSelect` with `preventDefault()` keeps it open) |
+| `closeOnSelect` | `close_on_select` | `boolean` | `true` | Choosing it closes the menu; `false` keeps it open |
 | `accessibilityLabel` | `accessibility_label` | `string` | — | What screen readers say and typeahead matches, when the text is not enough |
 | `accessibilityDescription` | `accessibility_description` | `string` | — | Read after the name |
 | `labelClass` / `labelStyle`, `iconClass` / `iconStyle` | `label_class` …, `icon_class` … | | | The `label` and `icon` parts |
@@ -162,8 +162,9 @@ are added under these names when a need comes.
 Event: `onSelect` (`DropdownMenuItemEvent::Select`, `.on_select(..)`), `nsh/base`'s, when it is chosen (a press,
 Return or Space).
 
-An `Icon` given as a child takes the item's text color (shadcn turns every uncolored icon muted with `[&_svg]`;
-NSH has no descendant selectors). Use `icon` for the leading icon; an `Icon` child with its own class otherwise.
+An `Icon` given as a child takes the item's text color (turning every uncolored icon muted would need a `[&_svg]`
+descendant selector, which NSH does not have). Use `icon` for the leading icon; an `Icon` child with its own class
+otherwise.
 
 ### `DropdownMenuCheckboxItem`
 
@@ -176,7 +177,7 @@ As `DropdownMenuItem` without `variant` and `icon`, plus:
 
 Event: `onChange({ checked })` (`DropdownMenuCheckboxItemEvent::Change(bool)`, `#[args(checked)]`), the value it asks
 for (the opposite of `checked`), as the library's `Checkbox`. `nsh/base` reports `onSelect`; the library turns it into
-the requested value. Choosing it closes the menu unless `closeOnSelect={false}` (Radix's default closes too).
+the requested value. Choosing it closes the menu unless `closeOnSelect={false}`.
 
 ### `DropdownMenuRadioGroup` and `DropdownMenuRadioItem`
 
@@ -234,16 +235,16 @@ Rust style setter takes a fixed style; Checkbox's gap 3).
 
 ### The menu look
 
-shadcn's classes:
+In classes:
 
-- Content: `min-w-[8rem] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md`,
-  `sideOffset` 4. Sub content: the same with `shadow-lg`.
-- Item: `flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-accent focus:text-accent-foreground
+- Content: `min-w-[8rem] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md`, 4
+  from the trigger. Sub content: the same.
+- Item: `flex items-center gap-2 rounded-sm px-2 py-1 text-sm focus:bg-accent focus:text-accent-foreground
   data-[disabled]:opacity-50 data-[inset]:pl-8`, icons `size-4 text-muted-foreground`; destructive
   `text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20`, its icons `text-destructive`.
 - Checkbox and radio items: `pl-8`, the indicator `absolute left-2 size-3.5`, a `CheckIcon size-4` or a
   `CircleIcon size-2 fill-current`.
-- Label: `px-2 py-1.5 text-sm font-medium`, `pl-8` inset. Separator: `-mx-1 my-1 h-px bg-border`. Shortcut: `ml-auto
+- Label: `px-2 py-1 text-sm font-medium`, `pl-8` inset. Separator: `-mx-1 my-1 h-px bg-border`. Shortcut: `ml-auto
   text-xs tracking-widest text-muted-foreground`. Sub trigger: an item, `data-[state=open]:bg-accent`, a
   `ChevronRightIcon ml-auto size-4`.
 
@@ -252,18 +253,18 @@ shadcn's classes:
 | Surface | `foundation::popup::surface(t)`: fill `popover`, text `popover-foreground`, edge `border-width` × `popover-border`, corners `popover-radius` (8), shadow tier `popover-shadow` (3, `md`; submenus too, NSH gaps 3); plus padding `menu-padding` (4), at least `menu-min-width` (128) wide, as wide as its widest item |
 | Item | A row, items centered, `menu-item-gap` (8) apart; height `menu-item-height-<size>`, its content centered; padding `menu-item-padding-x` (8) at the sides; corners `menu-item-radius` (4); text `menu-item-font-size-<size>`, regular weight, one line (`truncate`); full width of the surface's inner box |
 | Icon | `icon-size-<size>` (16 at `md`), `menu-item-icon-foreground` |
-| Indicator column | Checkbox and radio items, and `inset`, start their label at `menu-item-padding-x` + `icon-size-<size>` + `menu-item-gap` (32 at `md`, shadcn's `pl-8`): the indicator is a box `icon-size-<size>` square before the label, the check `icon-size-<size>`, the dot `icon-size-<size>` / 2 (8) round, in the item's text color |
+| Indicator column | Checkbox and radio items, and `inset`, start their label at `menu-item-padding-x` + `icon-size-<size>` + `menu-item-gap` (32 at `md`, `pl-8`): the indicator is a box `icon-size-<size>` square before the label, the check `icon-size-<size>`, the dot `icon-size-<size>` / 2 (8) round, in the item's text color |
 | Label | As an item's geometry, `font-weight-medium`, `popover-foreground`; not highlighted |
 | Separator | `border-width` high, `menu-separator`, across the surface's padding (`-mx` `menu-padding`), `menu-padding` above and below |
 | Shortcut | At the row's end (the item's first child takes the room left), `menu-shortcut-font-size` (12), letter spacing 0.1 em (`tracking-widest`), `menu-shortcut-foreground` |
 | Sub trigger | An item, with `chevron-right` at its end (`icon-size-<size>`, `menu-item-icon-foreground`) |
 
-Differences from shadcn:
+Decisions on the look:
 
-- **Item heights follow `size`, one step below shadcn's** (as Button's): `md` is 28 (shadcn's `py-1.5` around a 20
-  line, 32), the desktop's medium density; gpui-kit's menu rows are 26, its Design Guides' "compact list and menu rows:
-  4 px vertical, 8–12 px horizontal". For shadcn's 32 use `size="lg"`.
-- **Concentric item corners**: `menu-item-radius` is `popover-radius − menu-padding` (4), not shadcn's `rounded-sm` (6):
+- **Item heights follow `size`** (as Button's): `md` is 28 (`py-1` around a 20 line), the desktop's medium density;
+  gpui-kit's menu rows are 26, its Design Guides' "compact list and menu rows: 4 px vertical, 8–12 px horizontal".
+  For 32 use `size="lg"`.
+- **Concentric item corners**: `menu-item-radius` is `popover-radius − menu-padding` (4), not a fixed `rounded-sm` (6):
   the highlight inside the surface's padding follows its corner (conventions, gpui-kit's concentric radii).
 - **Indicator in the row, not absolutely placed**: the label starts at the same 32 at `md` and lines up with other
   sizes too (the column grows with `icon-size-<size>`).
@@ -284,24 +285,24 @@ is 16 at `md` / `lg` (iOS's and Android's menus use 16–17), 14 at `xs` / `sm`.
 
 ### Variants
 
-`DropdownMenuItem`'s `variant`: `default` and `destructive` (shadcn's). The other kinds have none.
+`DropdownMenuItem`'s `variant`: `default` and `destructive`. The other kinds have none.
 
 ### Motion
 
-| | shadcn (tw-animate-css) | This library |
-|---|---|---|
-| Entrance | `fade-in-0 zoom-in-95`, `slide-in-from-*-2` (8) away from the side it went on, 150 ms, origin toward the trigger | Popover's: from opacity 0, scale 0.95 and 8 toward the trigger to its look over `duration` (150 ms), the scale origin on the trigger's side, through `nsh/base`'s `popupStartingClass` / `Style`; submenus the same (they take the menu's looks) |
-| Exit | `fade-out-0 zoom-out-95` | To opacity 0 and scale 0.95 (no slide) through `popupEndingClass` / `Style`, then unmounted |
-| Side | The side Radix reports | The side `onPosition` reports, the requested `placement` until the first report. If that report comes after the first frame (★ NSH gaps 4), the slide is dropped and only fade and zoom stay |
-| Reduced motion | Not handled | No transition (`nsh/base` skips the state looks) |
-| Sheet | — | `nsh/base`'s sheet motion; the backdrop fades with it |
-| Switch | — | `popover-animate` 0: no state looks, shown and gone in one frame (every popup at once) |
+| | |
+|---|---|
+| Entrance | Popover's: from opacity 0, scale 0.95 and 8 toward the trigger to its look over `duration` (150 ms), the scale origin on the trigger's side, through `nsh/base`'s `popupStartingClass` / `Style`; submenus the same (they take the menu's looks) |
+| Exit | To opacity 0 and scale 0.95 (no slide) through `popupEndingClass` / `Style`, then unmounted |
+| Side | The side `onPosition` reports, the requested `placement` until the first report. If that report comes after the first frame (★ NSH gaps 4), the slide is dropped and only fade and zoom stay |
+| Reduced motion | No transition (`nsh/base` skips the state looks) |
+| Sheet | `nsh/base`'s sheet motion; the backdrop fades with it |
+| Switch | `popover-animate` 0: no state looks, shown and gone in one frame (every popup at once) |
 
 The motion is [Popover](popover.md)'s, shared by every popup; the menu defines none of its own.
 
 ## States
 
-| State | Look | shadcn |
+| State | Look | Classes |
 |---|---|---|
 | Item highlighted (`focus:`: the keys or the pointer are on it) | Fill `menu-item-focus` (`accent`), text and icon `menu-item-focus-foreground` | `focus:bg-accent focus:text-accent-foreground` |
 | Item pressed on touch (`active:`) | As highlighted: touch moves no focus | — |
@@ -311,21 +312,20 @@ The motion is [Popover](popover.md)'s, shared by every popup; the menu defines n
 | Sub trigger, submenu open (`expanded:`) | As highlighted | `data-[state=open]:bg-accent` |
 | Trigger, menu open (`expanded:`) | The library's `Button` keeps its hover fill while its popup is open ([Button](button.md)'s States; Decisions 3) | none |
 
-No focus ring on items: the highlight is the focus (shadcn's `outline-hidden`). The cursor is the arrow everywhere
-(`cursor-default`). The highlight changes at once (shadcn's items have no transition; a menu swept by the pointer
-should not trail).
+No focus ring on items: the highlight is the focus (`outline-hidden`). The cursor is the arrow everywhere
+(`cursor-default`). The highlight changes at once (no transition: a menu swept by the pointer should not trail).
 
 ## Pointer and touch
 
 | | Desktops and desktop browsers (an iPad in a regular width too) | Phones, other tablets, an iPad in a compact width |
 |---|---|---|
-| Form | The popup at the trigger: the surface above | A sheet at the bottom, full width: fill `popover`, top corners `menu-sheet-radius` (10), a top edge in `popover-border`, padding `menu-sheet-padding` (8) and the bottom safe area, no shadow; the backdrop `overlay` (shadcn's Drawer: `rounded-t-lg border-t bg-background`, `bg-black/50`) |
+| Form | The popup at the trigger: the surface above | A sheet at the bottom, full width: fill `popover`, top corners `menu-sheet-radius` (10), a top edge in `popover-border`, padding `menu-sheet-padding` (8) and the bottom safe area, no shadow; the backdrop `overlay` (a drawer's look: `rounded-t-lg border-t bg-background`, `bg-black/50`) |
 | Item height | `control-height-<size> − 4` (20 / 24 / 28 / 32) | 44 / 44 / 44 / 48, full width; an iPad's popup uses these too |
 | Highlight | `focus:` from the pointer and the keys | `active:` while pressed |
 | Submenus | Cascade beside their item | Replace the items, a back row first (`chevron-left` and `backLabel`) |
 | Shortcuts | Shown | Shown if the app gives them; whether to show them on touch is the app's call (as Kbd says) |
 
-macOS draws the same popup as the web (shadcn's look, not `NSMenu`'s): the conventions take the look from shadcn.
+macOS draws the same popup as the web (the library's look, not `NSMenu`'s), so an app looks the same on every desktop.
 An app that wants the system's menu uses `MenuButton`.
 
 ## Accessibility
@@ -382,7 +382,7 @@ a test keeps it current.
 - `menu-item-radius` is drawn between 0 and half the item's height, so `radius: 0` gives square highlights rather than
   a negative radius.
 - `menu-shortcut-font-size` is Tailwind's fixed 12, as `tooltip-font-size`: explanatory text, not a control.
-- `menu-sub-offset` is negative because Radix places a submenu against its trigger item, which sits inside the
+- `menu-sub-offset` is negative because a submenu should sit against its trigger item, which sits inside the
   surface's padding and edge, while `nsh/base` measures the gap from the menu's edge.
 - An app that changes a touch value alone writes `<name>-touch` (tokens.md).
 
@@ -503,7 +503,7 @@ dropdown_menu()
    `is_catalyst`, `horizontal_size_class`) in the bound popup style, so it follows an iPad window resized across its
    size class. `nsh/base` exporting it, or taking separate `sheetClass` / `sheetStyle`, would remove the copy (asked of
    NSH).
-3. **Submenus take their menu's popup class and style**, so a submenu cannot have shadcn's `shadow-lg` while the menu
+3. **Submenus take their menu's popup class and style**, so a submenu cannot have a `shadow-lg` while the menu
    has `shadow-md`: both use `popover-shadow` (3). A per-level popup look in `nsh/base` would allow the `lg` tier.
 4. ★ **The slide follows the side only if `onPosition` comes before the first frame.** `Menu` reports its placement,
    but the starting look is applied as the popup is made. Checked with Popover's headless test: it comes before the
@@ -512,7 +512,7 @@ dropdown_menu()
 5. ★ **The popup reads the `ThemeScope` around the `DropdownMenu`**: it is made under the menu, so the context reaches
    it. Checked by a headless test: a menu in a dark scope that changes `menu-item-focus` has a dark popup and the
    scope's highlight.
-6. **No descendant selectors** (shadcn's `[&_svg]:size-4 text-muted-foreground`): an `Icon` child gets its size from the
+6. **No descendant selectors** (CSS's `[&_svg]:size-4 text-muted-foreground`): an `Icon` child gets its size from the
    item's context (`provide_icon_size`) but the item's text color. Workaround: the `icon` prop.
 7. **String children** (Button's G0): until NSH releases its fix, the gallery wraps them in `<Text>`.
 8. **A pressable in the trigger slot takes the press** (Popover's NSH gap 7): the library keeps the open state
@@ -525,12 +525,13 @@ dropdown_menu()
 ## Decisions
 
 1. **`trigger` is a prop and `DropdownMenu` takes the content's props**, not `DropdownMenuTrigger` /
-   `DropdownMenuContent` children: NSH's `Menu` binds its trigger as a slot (see "Differs from shadcn's structure").
+   `DropdownMenuContent` children: NSH's `Menu` binds its trigger as a slot (see "Why the trigger is a slot").
    The same for every overlay of the library (Dialog, Popover).
-2. **Item heights one step below shadcn's** (28 at `md`), as every control here; `size="lg"` is shadcn's 32. Item
+2. **Item heights follow the control density** (28 at `md`, 32 at `lg`), as every control here. Item
    corners concentric (4).
 3. **A trigger stays visibly open**: gpui-kit's Design Guides ask that "a Button that owns a dropdown remain visibly
-   pressed or open until the popup closes", and shadcn has nothing for it. `Menu` sets the trigger's `expanded` state,
+   pressed or open until the popup closes". `Menu` sets
+ the trigger's `expanded` state,
    so the library's `Button` draws its hover fill under `expanded:`, a public change to Button's look recorded in
    [Button](button.md)'s States and made with Popover's implementation; Select's trigger keeps its focus edge while
    open.

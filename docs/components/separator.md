@@ -1,6 +1,6 @@
 # Separator
 
-Status: implemented (P1). A thin line that divides content, horizontal or vertical. Reference: shadcn/ui new-york v4 `separator.tsx`.
+Status: implemented (P1). A thin line that divides content, horizontal or vertical.
 
 ## Usage
 
@@ -13,7 +13,7 @@ Status: implemented (P1). A thin line that divides content, horizontal or vertic
 - In a menu, use the separator item of P2's `DropdownMenu` (`nsh/base`'s `MenuSeparator`); in a toolbar, `nsh/base`'s
   `ToolbarSeparator`. Those mean something to screen readers and keyboard movement.
 - To give a block an edge, use that block's `class` (`border-b`) rather than a `Separator` under it.
-- A labelled divider ("line · or · line"): shadcn has none and neither does this library; put a `text` between two
+- A labelled divider ("line · or · line"): this library has none; put a `text` between two
   `Separator`s.
 
 ## Built on
@@ -39,13 +39,13 @@ No events, no children, no parts (`*Class` / `*Style`).
 
 | | Horizontal | Vertical |
 |---|---|---|
-| shadcn | `shrink-0 bg-border h-px w-full` | `shrink-0 bg-border h-full w-px` |
-| This library | `shrink-0`, height `separator-thickness`, `self-stretch` (spans the parent's width) | `shrink-0`, width `separator-thickness`, `self-stretch` (spans the parent's height) |
+| Classes | `shrink-0 bg-border h-px w-full` | `shrink-0 bg-border h-full w-px` |
+| Layout | `shrink-0`, height `separator-thickness`, `self-stretch` (spans the parent's width) | `shrink-0`, width `separator-thickness`, `self-stretch` (spans the parent's height) |
 | Color | `separator` | `separator` |
 
-Difference from shadcn: `self-stretch` instead of `w-full` / `h-full`. In a row, shadcn's vertical `h-full` needs a
+Why `self-stretch` and not `w-full` / `h-full`: in a row, a vertical `h-full` needs a
 parent with a definite height (a common pitfall: the line ends up 0 high and the app adds `h-4`); NSH lays out with flex,
-so `self-stretch` fills the row's height. For a shorter vertical line, give `class="h-4"` as in shadcn (`class` is merged
+so `self-stretch` fills the row's height. For a shorter vertical line, give `class="h-4"` (`class` is merged
 last and wins over `self-stretch`). An explicit height stops the stretch (Taffy's `align-self: stretch` leaves a definite
 size alone, as CSS does): verified by a headless test.
 
@@ -60,8 +60,8 @@ No difference. Not enlarged on touch screens and no hit slop (nothing to press).
 ## Accessibility
 
 - No Tab stop, no pointer events.
-- Always decorative: out of the accessibility tree (`accessible(false)` / TSX `accessible={false}`), as shadcn's default
-  `decorative`. NSH has no `separator` role, so shadcn's `decorative={false}` is not offered; see "NSH gaps".
+- Always decorative: out of the accessibility tree (`accessible(false)` / TSX `accessible={false}`). NSH has no
+  `separator` role, so a non-decorative separator is not offered; see "NSH gaps".
 
 ## Tokens
 
@@ -75,14 +75,14 @@ Values are those of `nsh/base`'s default theme.
 | `separator-thickness` | length | `border-width` | 1 |
 <!-- /tokens -->
 
-`separator` follows `border` (shadcn's dark `border` is white at 10%).
+`separator` follows `border` (the dark `border` is white at 10%).
 ## Examples
 
 ```tsx
 import { Separator } from "nsh-longbridge";
 
 <View class="gap-4">
-  <Text>Radix Primitives</Text>
+  <Text>Primitives</Text>
   <Separator />
   <View class="flex-row h-5 items-center gap-4">
     <Text>Blog</Text>
@@ -97,7 +97,7 @@ use nsh_core::geometry::Axis;
 use nsh_longbridge::separator;
 
 view().gap_4()
-    .child(text("Radix Primitives"))
+    .child(text("Primitives"))
     .child(separator())
     .child(
         view().flex_row().h_5().items_center().gap_4()
@@ -109,8 +109,9 @@ view().gap_4()
 
 ## NSH gaps
 
-- **No `separator` accessibility role** (absent from `nsh_core::props`' roles), so shadcn's `decorative={false}` (read as
-  "separator") cannot be done. Workaround: the separator is always decorative and has no `decorative` prop. Where a
+- **No `separator` accessibility role** (absent from `nsh_core::props`' roles), so a non-decorative separator (read as
+  "separator") cannot be done.
+ Workaround: the separator is always decorative and has no `decorative` prop. Where a
   screen reader must know that a new section starts, mark the section with a heading (`accessibilityRole="header"`),
   which is the better practice anyway.
 

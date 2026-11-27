@@ -1,8 +1,7 @@
 # Popover
 
 Status: implemented (P2). Rich content in a floating panel next to the element that opened it: a press on
-the trigger opens it, a press outside or Escape closes it. Reference: shadcn/ui new-york v4 `popover.tsx` (Radix
-Popover).
+the trigger opens it, a press outside or Escape closes it.
 
 This spec also owns the **popup surface** every popup of the library shares (the fill, edge, corners, shadow and
 open / close motion of `Popover`, `DropdownMenu`'s menus and `Select`'s list): see "The popup surface" under
@@ -39,23 +38,24 @@ is `nsh/base`'s:
 | Control | `open` / `defaultOpen` / `onOpenChange({ open, reason })`, `onOpen`, `onClose`, `onCancel`, `onPosition({ placement, bounds, available })` |
 | Toolbars | A trigger inside `nsh/base`'s `Toolbar` is one of its items; the content is not |
 
-### Differs from shadcn's structure
+### Why the trigger is a slot
 
-shadcn has `Popover > PopoverTrigger + PopoverContent` (+ `PopoverAnchor`). Here, as `nsh/base`'s `Popover`:
+Some libraries spell a popover as parts: `Popover > PopoverTrigger + PopoverContent` (+ `PopoverAnchor`). Here, as
+`nsh/base`'s `Popover`:
 
 - **No `PopoverTrigger`: a `trigger` slot**. NSH has no `asChild`, and `nsh/base` needs the trigger's element to place
   the popup against it and to give it the press and the accessibility state. A library `Button` there takes the press
   itself and opens the popover through the library (NSH gaps 7).
 - **No `PopoverContent`: `Popover`'s children are the content**, and `Popover`'s `class` / `style` style the popup
-  (the panel), as `Tooltip`'s style its bubble. shadcn's `PopoverContent` props `side`, `align`, `sideOffset` are
+  (the panel), as `Tooltip`'s style its bubble. The side, the alignment and the offset are
   `Popover`'s `placement`, `align` and the `popover-offset` token.
 - **No `PopoverAnchor`**: `nsh/base` places the popup against its trigger; an anchor apart from the trigger is not
   offered (see NSH gaps 3).
-- `PopoverHeader`, `PopoverTitle` and `PopoverDescription` are kept (shadcn's newer parts).
+- `PopoverHeader`, `PopoverTitle` and `PopoverDescription` are parts: they lay out the content, not the popup.
 
-A child component cannot fill its parent's slot in NSH, so the trigger is a prop. From shadcn:
+A child component cannot fill its parent's slot in NSH, so the trigger is a prop. Coming from a part-based API:
 
-| shadcn | This library |
+| Part-based | This library |
 |---|---|
 | `<Popover><PopoverTrigger asChild><Button>Open</Button></PopoverTrigger><PopoverContent>…</PopoverContent></Popover>` | `<Popover trigger={<Button>Open</Button>}>…</Popover>` |
 | `<PopoverContent side="top" align="start" sideOffset={8} className="w-80">` | `<Popover placement="top" align="start" style={{ width: 320 }}>`; the offset is the `popover-offset` token |
@@ -103,14 +103,14 @@ A child component cannot fill its parent's slot in NSH, so the trigger is a prop
 | `trigger` | `trigger` | element (slot) | — | What opens it and what it is placed against |
 | `open` | `open` | `boolean?` | uncontrolled | Controlled open state |
 | `defaultOpen` | `default_open` | `boolean` | `false` | Open at first, while `open` is not set |
-| `placement` | `placement` | `"top"` \| `"bottom"` \| `"left"` \| `"right"` (`Placement`) | `"bottom"` | The side of the trigger (shadcn's `side`); flipped when only the other side has room |
+| `placement` | `placement` | `"top"` \| `"bottom"` \| `"left"` \| `"right"` (`Placement`) | `"bottom"` | The side of the trigger (the side); flipped when only the other side has room |
 | `align` | `align` | `"start"` \| `"center"` \| `"end"` (`Align`) | `"center"` | Alignment along that side; start / end follow the layout direction |
 | `closeOnEscape` | `close_on_escape` | `boolean` | `true` | Escape and back close it; `onCancel` hears them either way |
 | `closeOnPressOutside` | `close_on_press_outside` | `boolean` | `true` | A press outside closes it; `onCancel` hears it either way |
 | `class` / `style` | `class` / `style` | | | The panel (the popup's box), merged after its own look (see "Implementation") |
 | `children` | `.child(..)` | elements | — | The content, made on each opening |
 
-`offset` and `margin` are not props: they are the `popover-offset` (4, shadcn's `sideOffset`) and `popover-margin`
+`offset` and `margin` are not props: they are the `popover-offset` (4) and `popover-margin`
 (4) tokens, the same across an app (as `Tooltip`'s). `popupStartingClass` / `popupEndingClass` are not exposed: the
 motion is the library's look (`popover-animate: 0` turns it off).
 
@@ -132,17 +132,16 @@ No `variant`, no `size`.
 
 ### Look
 
-| Part | shadcn classes | This library |
+| Part | Classes | Layout |
 |---|---|---|
 | popup | `z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden` | The popup surface (below), width `popover-width` (288), padding `popover-padding` (16); text `popover-foreground` at 14 / 20 (see Decisions 3); content in a column |
 | `PopoverHeader` | `flex flex-col gap-1 text-sm` | A column, gap `popover-header-gap` (4), text 14 |
 | `PopoverTitle` | `font-medium` | `font-weight-medium`; the inherited size and color |
 | `PopoverDescription` | `text-muted-foreground` | Color `popover-description-foreground` (`muted-foreground`) |
 
-The width is fixed, as shadcn's `w-72`; a content-sized popover sets `class="w-auto"`, a wider one `class="w-80"`,
-`style={{ width: 360 }}` or `popover-width` in a scope.
-The core lays an anchored popup out inside the safe area less the margin, so on a narrow screen it is never wider
-than the screen.
+The width is fixed (`w-72`), so a panel does not jump with its content; a content-sized popover sets `class="w-auto"`, a
+wider one `class="w-80"`, `style={{ width: 360 }}` or `popover-width` in a scope. The core lays an anchored popup out
+inside the safe area less the margin, so on a narrow screen it is never wider than the screen.
 
 ### The popup surface (shared)
 
@@ -156,12 +155,12 @@ count of open popups (`hold_open`).
 
 | | Value | Tokens | Used by |
 |---|---|---|---|
-| Fill / text | `popover` / `popover-foreground` | Semantic (shadcn's); no component token of the same name (tokens.md: `popover` is already the semantic name) | Popover, DropdownMenu, Select's list |
+| Fill / text | `popover` / `popover-foreground` | Semantic; no component token of the same name (tokens.md: `popover` is already the semantic name) | Popover, DropdownMenu, Select's list |
 | Edge | `border-width` × `popover-border` (`border`) | `popover-border` | All three |
-| Corners | `popover-radius` (`radius-md`, 8) | `popover-radius` | All three (shadcn: `rounded-md` on each) |
-| Shadow | Tier `popover-shadow` (3, `md`) | `popover-shadow` | All three (shadcn: `shadow-md` on each) |
+| Corners | `popover-radius` (`radius-md`, 8) | `popover-radius` | All three |
+| Shadow | Tier `popover-shadow` (3, `md`) | `popover-shadow` | All three |
 | Motion | See "Motion" | `popover-animate` | All three, on desktops (on touch screens menus and lists are `nsh/base`'s sheets, with their own motion) |
-| Offset from the trigger | `popover-offset` (4) | `popover-offset` | All three (shadcn: `sideOffset={4}` on each) |
+| Offset from the trigger | `popover-offset` (4) | `popover-offset` | All three |
 | Padding | Each its own: Popover `p-4` (`popover-padding`), the menus `p-1` (their tokens) | | |
 
 Settled in review: the menus read these through `foundation::popup::surface`; the item look (heights, highlight,
@@ -169,11 +168,11 @@ separators, check and chevron icons, the destructive item) is the menu family's 
 
 ### Motion
 
-| | shadcn (tw-animate-css) | This library |
-|---|---|---|
-| Entrance | `fade-in-0 zoom-in-95`, and `slide-in-from-{top,bottom,left,right}-2` by the side it went on (`data-[side=…]`), 150 ms, from Radix's transform origin (the trigger's side) | From `opacity-0 scale-95` and 8 toward the trigger (side `bottom`: `-translate-y-2`; `top`: `translate-y-2`; `right`: `-translate-x-2`; `left`: `translate-x-2`) to its look over `duration` (150), scale origin on the trigger's side (`origin-top` for `bottom`, …) |
-| Exit | `fade-out-0 zoom-out-95` | To `opacity-0 scale-95` (no slide), then unmounted |
-| Reduced motion | not handled | No transitions (`nsh/base`'s presence skips the states) |
+| | |
+|---|---|
+| Entrance | From `opacity-0 scale-95` and 8 toward the trigger (side `bottom`: `-translate-y-2`; `top`: `translate-y-2`; `right`: `-translate-x-2`; `left`: `translate-x-2`) to its look over `duration` (150), scale origin on the trigger's side (`origin-top` for `bottom`, …) |
+| Exit | To `opacity-0 scale-95` (no slide), then unmounted |
+| Reduced motion | No transitions (`nsh/base`'s presence skips the states) |
 
 The side is the one the popup went on (`onPosition`), not the requested `placement`: after a flip it slides from the
 right side. `onPosition` comes before the first display frame (a test checks a flipped popup's first frame), so the
@@ -204,8 +203,8 @@ No bottom-sheet form: `nsh/base` keeps a popover anchored everywhere, and phone 
 
 - The trigger is announced as having a popup, expanded while open (`nsh/base`).
 - The content is reached by Tab right after the trigger (`nsh/base`'s order); it is not a dialog for screen readers
-  (Radix's popover content has `role="dialog"`; `nsh/base`'s has no role). See NSH gaps 2.
-- `PopoverTitle` has no `header` role (shadcn's is a `div`; it is a label inside a panel, not a heading of the page).
+  (`nsh/base`'s has no role). See NSH gaps 2.
+- `PopoverTitle` has no `header` role (it is a label inside a panel, not a heading of the page).
 - Escape closes it and the focus goes back to the trigger.
 
 ## Tokens
@@ -228,9 +227,9 @@ the menus read too; the rest are `Popover`'s own.
 | `popover-header-gap` | length | `spacing` | 4 |
 | `popover-description-foreground` | color | `muted-foreground` |  |
 <!-- /tokens -->
-- `popover` and `popover-foreground` are shadcn's semantic tokens, used directly (as `card` by `Card`).
-- `popover-margin` 4 is `nsh/base`'s `Tooltip`'s default margin, kept the same for every popup (Radix's
-  `collisionPadding` is 0; a popup touching the window's edge looks cut).
+- `popover` and `popover-foreground` are semantic tokens, used directly (as `card` by `Card`).
+- `popover-margin` 4 is `nsh/base`'s `Tooltip`'s default margin, kept the same for every popup (not 0:
+  a popup touching the window's edge looks cut).
 - `popover-animate` is a switch: at 0 the library passes no starting or ending look, and the popup shows and goes in
   one frame.
 - Other tokens it reads: `border-width`, `text-sm`, `font-weight-medium`, `duration`, `shadow`.
@@ -297,11 +296,11 @@ popover()
    provide an "inside an open popup" context to their content (`foundation::popup::hold_open`); while one is open, a
    library `Tooltip` not inside an open popup is `disabled`. A test guards it. A tooltip of the app's own (not the
    library's) is not covered; the NSH fix would be a hint not shown while a popup anchored to its element is open.
-2. **No role on the popover's content.** Radix's popover content is a `dialog` for screen readers; `nsh/base`'s is a
+2. **No role on the popover's content.** On the web it would be a `dialog` for screen readers; `nsh/base`'s is a
    plain overlay. Noted; the library adds none (a non-modal `dialog` role would make screen readers treat it as
    modal on some platforms).
-3. **No separate anchor.** `nsh/base`'s `Popover` places the popup against its trigger only (shadcn's
-   `PopoverAnchor` places it against another element). An `anchor` prop on `nsh/base`'s `Popover` (the core's
+3. **No separate anchor.** `nsh/base`'s `Popover` places the popup against its trigger only (not
+   against another element). An `anchor` prop on `nsh/base`'s `Popover` (the core's
    overlay already takes any ref) would allow it.
 4. **`onPosition` timing** decides the slide after a flip (see "Motion"): verified on NSH 0.7.0, it comes before the
    first display frame, so a flipped popup slides from the right side; a test guards it.
@@ -320,18 +319,18 @@ popover()
    slot's view and the `Button` in it can both hear the next press; the library lets one through (presses closer
    than 50 ms are one). Shared with `Dialog`, `AlertDialog` and `DropdownMenu`; TSX tests guard each. An app's own
    pressable as the trigger is not covered. The NSH fix would be a slot's press listener hearing the presses of a
-   pressable inside it (as Radix's `asChild` merges them), or a way to hand a slot's press to its content.
+   pressable inside it (as an `asChild` merges them), or a way to hand a slot's press to its content.
 
 ## Decisions
 
 Settled in review.
 
-1. **The API follows `nsh/base`'s `trigger` slot**, not shadcn's `PopoverTrigger` / `PopoverContent`; the panel is
+1. **The API follows `nsh/base`'s `trigger` slot**, not `PopoverTrigger` / `PopoverContent` parts; the panel is
    styled by `Popover`'s `class` / `style`.
 2. **`Popover` owns the shared popup-surface tokens** (`popover-border`, `-radius`, `-shadow`, `-offset`,
    `-animate`), which the menus' group reads.
-3. **The popup's text is 14 / 20**: shadcn's inherits the page's, NSH's would inherit the trigger's (a button's
-   medium weight); the panel resets it to `text-sm`, the size of every shadcn part inside it.
+3. **The popup's text is 14 / 20**: NSH's popup would inherit the trigger's (a button's medium weight); the panel
+   resets it to `text-sm`, the size of every part inside it.
 4. **Anchored on touch screens too** (`nsh/base`'s choice), no sheet.
 5. **The surface is the library's panel inside the popup**, drawn by `foundation::popup::surface`; the app changes
    it with tokens, `class` or `style` (changed in implementation: `nsh/base`'s `popupStyle` cannot take the app's

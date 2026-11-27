@@ -1,6 +1,6 @@
 # Button
 
-Status: implemented (P0). The look follows shadcn/ui new-york v4 `button.tsx`; the behavior is `nsh/base`'s `Button`.
+Status: implemented (P0). The look is this library's; the behavior is `nsh/base`'s `Button`.
 This is the library's reference component: the others are written the same way.
 
 ## Usage
@@ -78,7 +78,7 @@ Each child gets its own `label` (see NSH gaps, G1): a string child's text takes 
 
 ### Variants
 
-| `variant` | At rest | Hover / pressed | Dark | shadcn classes |
+| `variant` | At rest | Hover / pressed | Dark | Classes |
 |---|---|---|---|---|
 | `default` | `button-default` (`primary`) fill, `button-default-foreground` text | fill at 90% | same | `bg-primary text-primary-foreground hover:bg-primary/90` |
 | `secondary` | `secondary` fill | fill at 80% | same | `bg-secondary text-secondary-foreground hover:bg-secondary/80` |
@@ -92,21 +92,21 @@ States).
 
 ### Sizes
 
-| `size` | Height (pointer / touch) | Horizontal padding (with an icon) | Gap | Type | Icon | shadcn |
+| `size` | Height (pointer / touch) | Horizontal padding (with an icon) | Gap | Type | Icon | Classes |
 |---|---|---|---|---|---|---|
-| `xs` | 24 / 32 | 8 (6) | 4 | 12 | 12 | `xs`: `h-6 px-2 has-[>svg]:px-1.5 text-xs gap-1 size-3` |
-| `sm` | 28 / 36 | 12 (10) | 6 | 13 | 14 | `sm`: `h-8 px-3 has-[>svg]:px-2.5 gap-1.5` |
-| `md` | 32 / 40 | 16 (12) | 8 | 14 | 16 | `default`: `h-9 px-4 has-[>svg]:px-3 gap-2` |
-| `lg` | 36 / 48 | 24 (16) | 8 | 14 | 16 | `lg`: `h-10 px-6 has-[>svg]:px-4` |
+| `xs` | 24 / 32 | 8 (6) | 4 | 12 | 12 | `h-6 px-2 has-[>svg]:px-1.5 gap-1 text-xs` |
+| `sm` | 28 / 36 | 12 (10) | 6 | 13 | 14 | `h-7 px-3 has-[>svg]:px-2.5 gap-1.5` |
+| `md` | 32 / 40 | 16 (12) | 8 | 14 | 16 | `h-8 px-4 has-[>svg]:px-3 gap-2 text-sm` |
+| `lg` | 36 / 48 | 24 (16) | 8 | 14 | 16 | `h-9 px-6 has-[>svg]:px-4 gap-2 text-sm` |
 
-- Heights are `control-height-*` (pointer) and `control-height-touch-*` (touch), one step below shadcn's (36 by
-  default, `md` here is 32): a medium desktop density. For shadcn's heights, set `control-height: 36`.
-- Paddings and gaps are multiples of `spacing`. With an icon (`icon`, `iconEnd` or loading) both sides shrink, as
-  shadcn's `has-[>svg]` does.
+- Heights are `control-height-*` (pointer) and `control-height-touch-*` (touch), 32 at `md`: a medium desktop
+  density. For roomier controls, set `control-height: 36`.
+- Paddings and gaps are multiples of `spacing`. With an icon (`icon`, `iconEnd` or loading) both sides shrink
+  (`has-[>svg]`), so the icon and the text sit balanced.
 - Type is `font-size-*`, its line height from foundation's `line_height`; weight `font-weight-medium` (500).
 - Icons are `icon-size-*` (12 / 14 / 16 / 16), paired with the type. The button puts its `size` in context, so an
-  `Icon` among its children without a size follows it. shadcn uses 16 at every size but `xs`; `sm` here uses 14 next
-  to 13pt type.
+  `Icon` among its children without a size follows it. `sm` uses 14, not 16, next to 13pt type, so the icon does not
+  outweigh the label.
 - The radius is `button-radius` (`radius-md`, 8) at every size.
 
 ## States
@@ -121,8 +121,8 @@ States).
 | loading | The spinner replaces the leading icon, **not dimmed**, no hover, no sink | No `onPress`, from the keyboard either; announced as busy; still focusable |
 | expanded (P2) | The hover fill (and text color) of its variant, held while the popup it opens is open (a `Dialog`, `AlertDialog`, `Popover` or menu trigger); no sink | Set by the popup on its trigger (`accessibilityState.expanded`); drawn with NSH's `expanded` styles (Rust `.expanded_style(..)`, Tailwind `aria-expanded:`); announced as expanded. When the trigger slot's view holds that state instead (a TSX trigger), the overlay's open state reaches the button through `foundation::trigger` (popover.md, NSH gaps 7) |
 
-Colors, shadow and the sink transition over `duration` (150ms, `cubic-bezier(0.4, 0, 0.2, 1)`), as shadcn's
-`transition-all`; with reduced motion they take no time. The spinner keeps turning with reduced motion: it says that
+Colors, shadow and the sink transition over `duration` (150ms, `cubic-bezier(0.4, 0, 0.2, 1)`, Tailwind's
+`transition-all`); with reduced motion they take no time. The spinner keeps turning with reduced motion: it says that
 something is happening.
 
 ## Pointer and touch
@@ -248,11 +248,10 @@ button().variant(ButtonVariant::Ghost).icon_only(true).icon(IconName::Plus).acce
 
 ## Decisions
 
-- **`iconOnly`, not `size="icon"`.** shadcn v4 has `size` values `icon`, `icon-xs`, `icon-sm` and `icon-lg`. Here
+- **`iconOnly`, not `size="icon"`.** Some libraries put the square shape into `size` (`icon`, `icon-sm`, …). Here
   `size` is foundation's four-step `Size` in every component; putting a shape into it would make its values differ
-  by component. `iconOnly` is orthogonal: `<Button iconOnly size="sm">` is shadcn's `icon-sm`, with the same height,
-  icon and press area as a text button of that size, so they line up in a row. shadcn's `icon` (36) is `md` (32)
-  here, one density step down.
+  by component. `iconOnly` is orthogonal: `<Button iconOnly size="sm">` is a small square, with the same height,
+  icon and press area as a text button of that size, so they line up in a row.
 - **`loading` replaces the leading icon and does not dim.** With an `icon` the width stays the same; dimming would read
   as disabled.
 - **The cursor is an arrow** except for `link`, as desktop apps do.

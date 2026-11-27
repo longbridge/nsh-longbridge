@@ -1,8 +1,7 @@
 # AlertDialog
 
 Status: implemented (P2). A modal dialog that interrupts the user with an important question and expects an
-answer: a title, a sentence, and a Cancel and an action button. Reference: shadcn/ui new-york v4 `alert-dialog.tsx`
-(Radix AlertDialog).
+answer: a title, a sentence, and a Cancel and an action button.
 
 It is a [`Dialog`](dialog.md) with an alert's rules: the same modal layer, overlay, panel, motion and tokens, and the
 shared overlay rules settled there ("Overlays: what every layer shares").
@@ -29,13 +28,13 @@ an app using both renames one (`import { AlertDialog as SystemAlert } from "nsh/
 The library's `Dialog` parts, which sit on `nsh/base`'s `Dialog` (the core's modal: focus trap and return, Escape
 and back, screen readers; see dialog.md "Built on"). What differs from `Dialog`:
 
-| | `Dialog` | `AlertDialog` (Radix's rules) |
+| | `Dialog` | `AlertDialog` (an alert's rules) |
 |---|---|---|
 | Role | `dialog` | `alertdialog` (the modal's `role`) |
 | Press on the overlay | Closes (`closeOnBackdropPress`) | Never closes; still reported to `onCancel`. Not a prop |
 | Escape and back | Close (`closeOnEscape`) | Close (`closeOnEscape`, default true), reported as `"cancel"` |
 | Close button "×" | `showCloseButton` (default true) | None |
-| Focus as it opens | Not moved (dialog.md, NSH gaps 2) | On the `AlertDialogCancel` (Radix focuses Cancel), else on the first `AlertDialogAction` |
+| Focus as it opens | Not moved (dialog.md, NSH gaps 2) | On the `AlertDialogCancel`, else on the first `AlertDialogAction` |
 | Buttons | `DialogClose` | `AlertDialogCancel` (outline) and `AlertDialogAction` (default), both `Button`s that close it |
 
 Focusing Cancel uses context: `AlertDialogCancel` and `AlertDialogAction` register their element refs with the
@@ -59,9 +58,9 @@ AlertDialog                    root: open state, trigger, the modal (role alertd
 
 As with `Dialog`, there is no `AlertDialogTrigger` (a `trigger` slot: a child component cannot fill its parent's
 slot in NSH), no `AlertDialogPortal` and no `AlertDialogOverlay` component (`overlayClass` / `overlayStyle` on the
-content). From shadcn:
+content). Coming from a part-based API:
 
-| shadcn | This library |
+| Part-based | This library |
 |---|---|
 | `<AlertDialog><AlertDialogTrigger asChild><Button>Delete</Button></AlertDialogTrigger><AlertDialogContent>…` | `<AlertDialog trigger={<Button>Delete</Button>}><AlertDialogContent>…` |
 | `<AlertDialogContent size="sm">` | `<AlertDialogContent size="sm">` (`Size`: see "Variants and sizes") |
@@ -103,17 +102,17 @@ the same `dialog-*` tokens, plus the few of their own below. `AlertDialogCancel`
 |---|---|---|---|---|
 | `open` / `defaultOpen` | `open` / `default_open` | `boolean?` / `boolean` | uncontrolled / `false` | As `Dialog` |
 | `trigger` | `trigger` | element (slot) | — | As `Dialog` |
-| `closeOnEscape` | `close_on_escape` | `boolean` | `true` | Escape and back close it (Radix's alert dialog closes on Escape); either way `onCancel` hears them |
+| `closeOnEscape` | `close_on_escape` | `boolean` | `true` | Escape and back close it (a way out without choosing); either way `onCancel` hears them |
 | `accessibilityLabel` | `accessibility_label` | `string?` | the title's text | As `Dialog` |
 | `children` | `.child(..)` | elements | — | Usually one `AlertDialogContent`; made on each opening |
 
-No `closeOnBackdropPress`: an alert dialog is answered with a button (Radix prevents the outside press).
+No `closeOnBackdropPress`: an alert dialog is answered with a button, so a press outside does nothing.
 
 ### `AlertDialogContent` props
 
 | TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `size` | `size` | `Size` | `"md"` | `"sm"` (and `"xs"`): shadcn's `size="sm"`, a narrow, centered alert with the buttons side by side; `"md"` (and `"lg"`): shadcn's `default` |
+| `size` | `size` | `Size` | `"md"` | `"sm"` (and `"xs"`): a narrow, centered alert with the buttons side by side; `"md"` (and `"lg"`): as wide as a dialog |
 | `class` / `style` | `class` / `style` | | | The panel |
 | `overlayClass` / `overlayStyle` | `overlay_class` / `overlay_style` | | | The overlay |
 | `children` | `.child(..)` | elements | — | Header and footer |
@@ -140,14 +139,14 @@ on the overlay, which does not close it). Rust: `AlertDialogEvent`, the same var
 ## Variants and sizes
 
 No `variant`; the action's look is the `Button`'s `variant`. `size` on `AlertDialogContent` is `foundation`'s
-`Size`, whose four values draw shadcn's two sizes, two by two:
+`Size`, whose four values draw two looks, two by two:
 
-| `size` | Draws shadcn's | Panel width | Header | Footer |
+| `size` | Look | Panel width | Header | Footer |
 |---|---|---|---|---|
-| `xs` | `sm` | up to 320 | centered | two equal columns |
-| `sm` | `sm` | up to 320 | centered | two equal columns |
-| `md` (default) | `default` | up to 512 | centered below 640, start-aligned from 640 | reversed column below 640, a row at the end from 640 |
-| `lg` | `default` | up to 512 | as `md` | as `md` |
+| `xs` | narrow | up to 320 | centered | two equal columns |
+| `sm` | narrow | up to 320 | centered | two equal columns |
+| `md` (default) | wide | up to 512 | centered below 640, start-aligned from 640 | reversed column below 640, a row at the end from 640 |
+| `lg` | wide | up to 512 | as `md` | as `md` |
 
 `xs` looks the same as `sm`, and `lg` the same as `md`.
 
@@ -155,7 +154,7 @@ No `variant`; the action's look is the `Button`'s `variant`. `size` on `AlertDia
 
 Panel, overlay and motion: `Dialog`'s (dialog.md "Look" and "Motion"), except:
 
-| Part | shadcn classes | This library |
+| Part | Classes | Layout |
 |---|---|---|
 | panel, `md` | `max-w-[calc(100%-2rem)] … sm:max-w-lg` | As `Dialog`: up to `dialog-max-width` (512) |
 | panel, `sm` | `data-[size=sm]:max-w-xs` | Up to `alert-dialog-max-width-sm` (320) at every window width |
@@ -165,9 +164,9 @@ Panel, overlay and motion: `Dialog`'s (dialog.md "Look" and "Motion"), except:
 | `AlertDialogDescription` | `text-sm text-muted-foreground` | As `DialogDescription` |
 | `AlertDialogFooter` | `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end`; size `sm`: `grid grid-cols-2` | `md`: as `DialogFooter` (a reversed column below 640, a row at the end from 640). `sm`: two equal columns at every width (Cancel left, action right), gap 8 |
 
-- "Has media" (shadcn's `has-data-[slot=alert-dialog-media]:`) is context, not a selector (NSH has no `:has()`): the
+- "Has media" (CSS's `has-data-[slot=alert-dialog-media]:`) is context, not a selector (NSH has no `:has()`): the
   media registers with the header on mount and clears on cleanup, as `CardAction` does with `CardHeader`.
-- "Size `sm`" (shadcn's `group-data-[size=sm]/alert-dialog-content:`) is context the content provides to the header
+- "Size `sm`" (CSS's `group-data-[size=sm]/alert-dialog-content:`) is context the content provides to the header
   and the footer.
 
 ## States
@@ -176,15 +175,15 @@ As `Dialog` (entering, exiting). The buttons have `Button`'s states. No close bu
 
 ## Pointer and touch
 
-As `Dialog`. On a phone (narrower than 640) a `md` alert stacks its buttons full width, the action on top (shadcn's
-`flex-col-reverse`), as iOS stacks more than two alert actions and Android's Material dialogs place the confirming
+As `Dialog`. On a phone (narrower than 640) a `md` alert stacks its buttons full width, the action on top
+(`flex-col-reverse`), as iOS stacks more than two alert actions and Android's Material dialogs place the confirming
 action nearest the thumb; a `sm` alert keeps them side by side (iOS's two-button alert).
 
 ## Accessibility
 
 - Role `alertdialog`, named by its title (or `accessibilityLabel`), described by its description (dialog.md
   "Accessibility" and its NSH gap 1).
-- The focus starts on `AlertDialogCancel`, so Return or Space right away does the safe thing (Radix). It stays
+- The focus starts on `AlertDialogCancel`, so Return or Space right away does the safe thing. It stays
   trapped and goes back to the trigger as it closes (NSH).
 - `AlertDialogMedia` is decorative: hidden from screen readers.
 - Without `AlertDialogCancel` and without `AlertDialogAction`, nothing closes it but Escape and the app: a warning in
@@ -206,7 +205,7 @@ It reads every `dialog-*` token (dialog.md "Tokens"). Its own, generated from th
 <!-- /tokens -->
 - The panel, overlay, radius, shadow, padding, gaps, title and description of an alert dialog follow the `dialog-*`
   tokens: a theme that rounds dialogs rounds alerts too. A scope can still change them for alerts alone.
-- The media's corners are `radius-md` (shadcn's `rounded-md`), not a token of its own.
+- The media's corners are `radius-md` (`rounded-md`), not a token of its own.
 
 ## Examples
 
@@ -281,7 +280,7 @@ focusing Cancel through context), and:
 1. **No `:has()`**: the header's layout with media is context (see "Look"), as `CardHeader`'s action.
 2. **An `auto` grid row next to a `1fr` one** (found on NSH 0.7.0): with `grid-template-rows: auto 1fr` and an item
    spanning both rows (the 64-high media), the `auto` row (the title's) gets no height and its text is not shown.
-   The library writes `auto minmax(0, 1fr)`, which lays out as shadcn's does (a test guards it).
+   The library writes `auto minmax(0, 1fr)`, which lays out as intended (a test guards it).
 3. **No `justify-items` setter in Rust** (the style property exists, for classes): the media is centered in its
    column by auto margins, the title and description by their text alignment.
 
@@ -289,10 +288,11 @@ focusing Cancel through context), and:
 
 Settled in review.
 
-1. **A drawn alert, not the system's.** shadcn's AlertDialog is drawn in the app's look; `nsh/base`'s
+1. **A drawn alert, not the system's.** `AlertDialog` is drawn in the app's look; `nsh/base`'s
    `AlertDialog.show` remains the way to the system's alert ("When not to use").
-2. **`size` is `foundation`'s `Size`**, as the conventions ask: `xs` / `sm` draw shadcn's `sm`, `md` / `lg` its
-   `default` (the table in "Variants and sizes"). A separate `"default" | "sm"` type would break "one `Size`
+2. **`size` is `foundation`'s `Size`**, as the conventions ask: `xs` / `sm` draw the narrow alert, `md` / `lg` the
+   wide one (the table in "Variants and sizes"). A separate `"default" | "sm"` type would break "one `Size`
    everywhere"; the price is two sizes that look the same as two others.
-3. **Focus on Cancel as it opens** (Radix), including on touch screens.
+3. **Focus on Cancel as it opens**, including on touch screens: the safe answer is the default.
+
 4. **`"cancel"` for `AlertDialogCancel`, `"select"` for `AlertDialogAction`** (no new reasons).

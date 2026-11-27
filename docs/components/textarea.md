@@ -5,8 +5,8 @@ covers only what is particular to several lines.
 
 ## Usage
 
-Multi-line text entry: notes, descriptions, feedback, a message draft. The look is shadcn/ui new-york v4's `Textarea`:
-Input's frame, growing with its content (shadcn's `field-sizing-content`) from a least height of 64.
+Multi-line text entry: notes, descriptions, feedback, a message draft. The look:
+Input's frame, growing with its content (`field-sizing-content`) from a least height of 64.
 
 ## When not to use
 
@@ -45,7 +45,7 @@ Particular to several lines:
 |---|---|---|---|---|
 | `submitBehavior` | `submit_behavior` | NSH's `SubmitBehavior`: `"newline"` / `"submit"` / `"blurAndSubmit"` | `"newline"` | What Return does, passed through (the host's rules) |
 
-No `rows` / `minRows` / `maxRows`: shadcn uses no `rows`, only `min-h-16` and the content's height. The app gives a
+No `rows` / `minRows` / `maxRows`: only `min-h-16` and the content's height. The app gives a
 maximum height with `class` (`max-h-40`) or `style` (`maxHeight`), past which the field scrolls inside. For a fixed
 height write `h-32`: the app's `class` / `style` merge last, over the height the component computes, which turns growing
 off.
@@ -78,21 +78,21 @@ Input and a Textarea in one form line up their text; the height follows the cont
 
 - The text size and the horizontal padding are Input's `input-font-size-*` and `input-padding-x-*` (the text size per
   pointer / touch, as Input).
-- The line height comes from foundation's text size → line height function (14 → 20, shadcn's `text-sm`); the component
+- The line height comes from foundation's text size → line height function (14 → 20, `text-sm`); the component
   sets none, and it is no token.
-- The vertical padding is `textarea-padding-y` (8, shadcn's `py-2`), the same at every size and on touch screens.
+- The vertical padding is `textarea-padding-y` (8, `py-2`), the same at every size and on touch screens.
 
-Unlike shadcn, whose Textarea has no sizes: conventions.md makes sizes go through `Size`, and a 14-point Textarea next to
+Why sizes: conventions.md makes sizes go through `Size`, and a 14-point Textarea next to
 a `size="sm"` Input in a form would not line up. The least height `textarea-min-height` does not change with the size
-(shadcn has one `min-h-16`).
+(one `min-h-16`).
 
-Width: `w-full`, as shadcn.
+Width: `w-full`.
 
 ## States
 
 The edge, fill, shadow, focus ring, invalid, readonly, disabled, transitions, selection and caret are **all
 [Input's States](input.md#states)** (foundation's field look: no hover, the ring outside the box, the edge color alone on
-touch), with the same `input-*` tokens and the same shadcn classes (`border-input bg-transparent shadow-xs
+touch), with the same `input-*` tokens and the same classes (`border-input bg-transparent shadow-xs
 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:... disabled:opacity-50
 dark:bg-input/30`).
 
@@ -102,8 +102,8 @@ Particular to several lines:
   height is what the host measures as it lays the field out (the placeholder's while empty, at least one line); the
   component sets a least height and the paddings, no height. The app's `max-h-*` / `maxHeight` caps it, past which the
   field scrolls inside; the app's `h-*` / `height` overrides the whole rule.
-- **Text starts at the top left** (not centered vertically), as shadcn.
-- A height change is **not animated** (shadcn's `field-sizing-content` is instant too), so reduced motion changes nothing.
+- **Text starts at the top left** (not centered vertically).
+- A height change is **not animated** (CSS's `field-sizing-content` is instant too), so reduced motion changes nothing.
 - Scroll bars: the host's default (overlay bars that show while scrolling on most platforms); this library sets none.
 
 ## Pointer and touch
@@ -138,7 +138,8 @@ Generated from the code's declarations (`NSH_LONGBRIDGE_WRITE=1 cargo test --tes
 | `textarea-padding-y` | length | `spacing × 2` | 8 |
 <!-- /tokens -->
 
-`textarea-min-height` is shadcn's `min-h-16`, `textarea-padding-y` its `py-2`.
+`textarea-min-height` is `min-h-16`, `textarea-padding-y` is `py-2`.
+
 
 ## Examples
 

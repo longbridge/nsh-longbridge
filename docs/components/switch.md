@@ -1,6 +1,6 @@
 # Switch
 
-Status: implemented (P1). The look follows shadcn/ui new-york v4 `switch.tsx`; the
+Status: implemented (P1). The look is this library's; the
 behavior is `nsh/base`'s `Switch`.
 
 Focus, disabled, invalid, the label and the hit area are handled as in [`Checkbox`](checkbox.md) and
@@ -17,7 +17,7 @@ A switch: a setting that takes effect at once (notifications, dark mode, auto-re
 | An option that takes effect on submit, accepting terms, a required item | `Checkbox` |
 | One of a set | `RadioGroup` / `Select` (P2) |
 | A toolbar button that stays pressed | `Toggle` (later) |
-| The system switch in a phone's grouped list | A later list row component; this `Switch` draws shadcn's look on touch too and never becomes the system control |
+| The system switch in a phone's grouped list | A later list row component; this `Switch` draws the library's look on touch too and never becomes the system control |
 
 ## Built on
 
@@ -55,7 +55,7 @@ hit area and the press feedback.
 | `labelClass` / `labelStyle` | `label_class` / `label_style` | | | The view around `children`; not made without `children` |
 
 Controlled only: no `defaultChecked`. No `invalid` (decided in review): a switch takes effect at once, so there is
-nothing to validate on submit; shadcn's switch has no invalid look, and `nsh/base`'s `Switch` has neither `invalid`
+nothing to validate on submit; it has no invalid look, and `nsh/base`'s `Switch` has neither `invalid`
 nor `accessibilityDescribedBy`. An option that needs validating is a `Checkbox`.
 
 ### Events
@@ -93,14 +93,14 @@ No variants. All four sizes. The geometry follows from the thumb's diameter `t` 
 
 | size | Thumb t (pointer) | Track (pointer) | Thumb t (touch) | Track (touch) | Label font size |
 |---|---|---|---|---|---|
-| `xs` | 12 | 24 × 14 (shadcn's `size="sm"`) | 16 | 32 × 18 | `font-size-xs` 12 |
+| `xs` | 12 | 24 × 14 | 16 | 32 × 18 | `font-size-xs` 12 |
 | `sm` | 14 | 28 × 16 | 18 | 36 × 20 | `font-size-sm` 13 |
-| `md` | 16 | 32 × 18 (shadcn's `default`) | 20 | 40 × 22 | `font-size-md` 14 |
+| `md` | 16 | 32 × 18 | 20 | 40 × 22 | `font-size-md` 14 |
 | `lg` | 18 | 36 × 20 | 24 | 48 × 26 | `font-size-lg` 14 |
 
 t is half the control height of the size (`control-height-<size>` with a pointer, `control-height-touch-<size>` on
-touch), the side of a `Checkbox` of the same size, so the two line up. shadcn's default track is `1.15rem` (18.4) high;
-here it is a whole 18. The thumb's travel, 14, is shadcn's `translate-x-[calc(100%-2px)]`.
+touch), the side of a `Checkbox` of the same size, so the two line up. The medium track is a whole 18 high, not
+`1.15rem` (18.4). The thumb's travel, 14, is `translate-x-[calc(100%-2px)]`.
 
 Right to left, the whole track is mirrored (`rtl:-scale-x-100`): the thumb rests at the start while off and at the end
 while on.
@@ -108,29 +108,29 @@ while on.
 The label part is `Checkbox`'s: the root is `flex-row items-start`, with `switch-gap` between the track and the label;
 `label` has `min-height` = the track's height and `justify-center`; font size `font-size-<size>`, weight
 `label-font-weight`, color `label-foreground`, line height from foundation's font size → line height. The track is
-`flex-shrink: 0` and takes `Checkbox`'s top margin, so it stays centered on the label's first line. shadcn's examples put 8 (`space-x-2`) between a switch and its `Label`; so does this library.
+`flex-shrink: 0` and takes `Checkbox`'s top margin, so it stays centered on the label's first line. 8 (`space-x-2`) separates a switch and its label.
 
-The corners do not follow the `radius` seed (shadcn's `rounded-full`), but an app can change `switch-radius` (decided
+The corners do not follow the `radius` seed (`rounded-full`), but an app can change `switch-radius` (decided
 in review).
 
 ## States
 
-Every color is a token in Tokens; shadcn's classes are in parentheses. Only the states shadcn or the platform has.
+Every color is a token in Tokens; the classes are in parentheses. Only the states a switch or the platform needs.
 
 | State | Track | Thumb | Other |
 |---|---|---|---|
 | Off | `switch` (light `input`; dark `input` 80%, `data-[state=unchecked]:bg-input dark:…bg-input/80`) | `switch-thumb` (light `background`; dark `foreground`) | Track shadow `switch-shadow` (1, `shadow-xs`) |
 | On | `switch-checked` (`bg-primary`) | `switch-checked-thumb` (light `background`; dark `primary-foreground`) | |
-| hover | none | | shadcn has none |
+| hover | none | | The track already says where it is |
 | active (held) | | Stretches to 1.25 times its width, from its left end while off and its right end while on (`group-active/nlb-switch`; as macOS and iOS switches do) | No stretch with reduced motion |
 | focus-visible (pointer) | The border goes from transparent to `switch-border-focus` (`focus-visible:border-ring`) | | A ring outside the track: `ring-width` 3, color `switch-ring` (`ring-[3px] ring-ring/50`), outside layout |
 | focus-visible (touch) | Border `switch-border-focus` | | No ring |
 | invalid | not supported | | |
 | disabled | | | The whole root at `opacity-disabled`; no press feedback |
-| readonly, loading | not supported | | Neither shadcn nor `nsh/base` has them |
+| readonly, loading | not supported | | `nsh/base` has neither |
 
 Transitions: the thumb's travel and stretch (`transform`) and the track's fill, border and ring transition over
-`duration` (shadcn's `transition-all` / `transition-transform`, 150 ms) with foundation's easing; none with reduced
+`duration` (`transition-all` / `transition-transform`, 150 ms) with foundation's easing; none with reduced
 motion. A value changed elsewhere (not by a press) animates the same way.
 
 Cursor: always the default arrow.
@@ -188,7 +188,8 @@ Values are those of `nsh/base`'s default theme.
 <!-- /tokens -->
 
 - `switch-radius` 9999 is a pill: the track's corners are `min(switch-radius, track height / 2)`. It does not follow
-  `radius` (shadcn's `rounded-full`).
+  `radius` (`rounded-full`).
+
 - `switch-thumb` is light while off in dark (`foreground`); `switch-shadow` 0 draws none.
 - An app that changes the touch size alone writes `switch-thumb-size-<size>-touch`.
 - `checked` takes the variant's place (`switch-checked-thumb`): state suffixes are only `-hover`, `-active`, `-focus`,

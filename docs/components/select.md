@@ -3,7 +3,6 @@
 Status: implemented (P2). One value chosen from a list: a trigger that shows the chosen item (or a
 placeholder) and opens the list. The trigger is drawn by foundation's **field look** (the `input-*` tokens, as
 [Input](input.md)); the list by the **menu look** (the `menu-*` tokens, owned by [DropdownMenu](dropdown-menu.md)).
-Reference: shadcn/ui new-york v4 `select.tsx` (Radix Select).
 
 ## Usage
 
@@ -31,7 +30,7 @@ library adds the trigger it draws, the look of the list, its rows and headers, a
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
 | Value | `value` (controlled, `null` for none) / `defaultValue`, `onChange({ value })` only when it changes (choosing the chosen item again only closes the list) |
-| Presentation | Desktops: a popup at the trigger, as wide as the trigger, never taller than the room on its side, its rows scrolling. On macOS it opens with the chosen row **over the trigger** (the system's pop-up button; shadcn's default `position="item-aligned"`); elsewhere below it (Windows', Linux's and browsers' drop-down lists; shadcn's `position="popper"`). Touch screens: a sheet at the bottom over a backdrop |
+| Presentation | Desktops: a popup at the trigger, as wide as the trigger, never taller than the room on its side, its rows scrolling. On macOS it opens with the chosen row **over the trigger** (the system's pop-up button); elsewhere below it (Windows', Linux's and browsers' drop-down lists). Touch screens: a sheet at the bottom over a backdrop |
 | Trigger keys | Down, Up, Return, Space open it (Down / Return / Space on the first enabled item when nothing is chosen, Up on the last); letters and digits choose by typeahead **without opening it**, as a native select |
 | List keys | Up / Down (around the ends), Home / End, Page Up / Down by the rows in view, typeahead; Return or a press chooses and closes (`"select"`); Escape, back and a press outside close (`"cancel"`, `"pressOutside"`); Tab moves on and closes (`"focus"`) |
 | Pointer | Moving over a row highlights it; desktops choose on press down |
@@ -43,9 +42,9 @@ library adds the trigger it draws, the look of the list, its rows and headers, a
 | Accessibility | The trigger is a `combobox` (`expanded`, `hasPopup`, its value the chosen title, else the placeholder); the list a `listbox`; rows `option` with `selected` and `disabled`; headers `header` |
 | Terminal | A one-row trigger with `▾`, rows of titles with `✓`; this library's look does not apply there |
 
-### Differs from shadcn's structure
+### Why the options are data
 
-shadcn composes the list from children (`Select > SelectTrigger > SelectValue`, `SelectContent > SelectGroup >
+Some libraries compose the list from children (`Select > SelectTrigger > SelectValue`, `SelectContent > SelectGroup >
 SelectLabel + SelectItem`, `SelectSeparator`). `nsh/base`'s `Select` takes its options as **data** (`items`: value,
 title, disabled, group), because its list is virtualized and owns search, typeahead and highlight over the titles; a
 component cannot read its children's props. So:
@@ -92,10 +91,10 @@ component cannot read its children's props. So:
 
 ## API
 
-Coming from shadcn: `<SelectTrigger className size>` + `<SelectValue placeholder>` are `Select`'s `triggerClass`,
-`size` and `placeholder`; `<SelectContent position align>` is `cover` and `align`; each `<SelectItem value>Title</SelectItem>`
-is an entry `{ value, title }` of `items`, and a `<SelectGroup>` with its `<SelectLabel>` is those entries' `group`;
-`onValueChange` is `onChange`.
+Coming from a part-based API: `<SelectTrigger className size>` + `<SelectValue placeholder>` are `Select`'s
+`triggerClass`, `size` and `placeholder`; `<SelectContent position align>` is `cover` and `align`; each `<SelectItem
+value>Title</SelectItem>` is an entry `{ value, title }` of `items`, and a `<SelectGroup>` with its `<SelectLabel>` is
+those entries' `group`; `onValueChange` is `onChange`.
 
 ### Props
 
@@ -104,14 +103,14 @@ is an entry `{ value, title }` of `items`, and a `<SelectGroup>` with its `<Sele
 | `items` | `items` | `SelectItem[]` / `Vec<SelectItem>` | `[]` | The options, in order: `{ value, title, disabled?, group? }` (`nsh/base`'s type) |
 | `value` | `value` | `string \| null` / `SelectValue` | Uncontrolled | The chosen item's `value`, `null` for none; the app sets it in `onChange` |
 | `defaultValue` | `default_value` | `string` | — | The first value while uncontrolled |
-| `placeholder` | `placeholder` | `string` | — | What the trigger shows while nothing is chosen (shadcn's `SelectValue placeholder`) |
+| `placeholder` | `placeholder` | `string` | — | What the trigger shows while nothing is chosen (a `SelectValue placeholder`) |
 | `size` | `size` | `Size` | `"md"` | The trigger's height, type, padding and icon, and the rows'; see Variants and sizes |
 | `disabled` | `disabled` | `boolean` | `false` | It does not open, takes no focus, is dimmed |
 | `invalid` | `invalid` | `boolean` | `false` | The app's checks reject the value: the field look's red edge and ring; screen readers say invalid |
 | `open` / `defaultOpen` | `open` / `default_open` | `boolean` | Uncontrolled / `false` | The list's open state |
-| `placement` | `placement` | `Placement` | `"bottom"` | Desktops, below-the-trigger form: the side (shadcn's `side`) |
+| `placement` | `placement` | `Placement` | `"bottom"` | Desktops, below-the-trigger form: the side |
 | `align` | `align` | `Align` | `"start"` | Desktops, that form: the alignment along the side |
-| `cover` | `cover` | `boolean` | The platform's | Desktops: `true` opens with the chosen row over the trigger (shadcn's `item-aligned`), `false` on a side (`popper`); unset: over it on macOS, on a side elsewhere |
+| `cover` | `cover` | `boolean` | The platform's | Desktops: `true` opens with the chosen row over the trigger, `false` on a side; unset: over it on macOS, on a side elsewhere |
 | `renderItem` | `render_item` | `(entry: SelectEntry) => element` / `Renderer<SelectEntry>` | — | A row's content in place of its title (an icon and a title, a flag); the library still draws the row and its check. `entry` is what the item is (`value`, `title`, `disabled`, `index`, `group`), never its state |
 | `accessibilityLabel` | `accessibility_label` | `string` | — | What screen readers call it (what the choice is about); set it even beside a `Label` (Input's G1) |
 | `class` / `style` | `class` / `style` | | | The root, the box the trigger fills: width and layout (`w-[180px]`, `w-full`) |
@@ -123,7 +122,7 @@ is an entry `{ value, title }` of `items`, and a `<SelectGroup>` with its `<Sele
 | `labelClass` / `labelStyle` | `label_class` / `label_style` | | | Each group header |
 
 Not exposed in P2, though `nsh/base` has them: `searchable` and its search field (Combobox, P3, is the searchable
-choice), `cleanable` and its clear button (shadcn has none; added later with a look), `empty`, `listClass`,
+choice), `cleanable` and its clear button (added later with a look), `empty`, `listClass`,
 `renderGroup` (the header is the group's title).
 
 ### Events
@@ -134,7 +133,7 @@ choice), `cleanable` and its clear button (shadcn has none; added later with a l
 | `onOpenChange` | `OpenChange(open, reason)` | `{ open, reason }` | The user asks to open or close the list |
 | `onOpen` / `onClose` | `Open` / `Close` | — | The list is all there / all gone |
 
-`nsh/base`'s events, forwarded; `onChange` is NSH's name (conventions), shadcn's `onValueChange`.
+`nsh/base`'s events, forwarded; `onChange` is NSH's name (conventions), not `onValueChange`.
 
 ### Parts
 
@@ -150,14 +149,14 @@ choice), `cleanable` and its clear button (shadcn has none; added later with a l
 
 ## Variants and sizes
 
-No variants (shadcn has none).
+No variants.
 
 ### The trigger
 
-shadcn: `flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm
-whitespace-nowrap shadow-xs data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8
-dark:bg-input/30 dark:hover:bg-input/50`, the value `line-clamp-1`, a `ChevronDownIcon size-4 opacity-50`
-(`text-muted-foreground`), and the field's focus, invalid and disabled classes.
+In classes: `flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2
+text-sm whitespace-nowrap shadow-xs data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50`,
+the value `line-clamp-1`, a `ChevronDownIcon size-4 opacity-50` (`text-muted-foreground`), and the field's focus,
+invalid and disabled classes.
 
 | `size` | Height (pointer / touch) | Text (pointer / touch) | Padding | Chevron |
 |---|---|---|---|---|
@@ -167,29 +166,27 @@ dark:bg-input/30 dark:hover:bg-input/50`, the value `line-clamp-1`, a `ChevronDo
 | `lg` | 36 / 48 | 14 / 16 | 12 | 16 |
 
 - Height, text and padding are Input's (`input-height-<size>`, `input-font-size-<size>`, `input-padding-x-<size>`), so a
-  Select and an Input of a `size` line up in a row. shadcn's `default` (36) is `lg`, its `sm` (32) is `md`: one density
-  step down, as every control here.
+  Select and an Input of a `size` line up in a row: 32 at `md`, 36 at `lg`, as every control here.
 - A row: the value (one line, cut with an ellipsis, `flex: 1`, left-aligned), then the chevron (`icon-size-<size>`,
   `select-icon-foreground`), `spacing × 2` (8) apart.
 - The value's color is `input-foreground`; the placeholder's `input-placeholder-foreground`.
-- Width: as wide as its content, shadcn's `w-fit` (a column that stretches its children does not widen it, and a row's
+- Width: as wide as its content, `w-fit` (a column that stretches its children does not widen it, and a row's
   `items-center` still centers it); the app sets one with `class` (`w-[180px]`, `w-full`), which goes over `w-fit` and
   the trigger fills.
 
 ### The list
 
-The menu look (DropdownMenu's "The menu look"), with shadcn's select differences:
+The menu look (DropdownMenu's "The menu look"), with a select's own parts:
 
-| Part | This library | shadcn |
+| Part | Layout | Classes |
 |---|---|---|
-| Surface | The popup surface (`foundation::popup::surface`: `popover`, `popover-border`, `popover-radius`, `popover-shadow` 3, `md`); padding `menu-padding` (4) inside the scrolling list; as wide as the trigger, at least `menu-min-width` (128) | `rounded-md border bg-popover shadow-md min-w-[8rem]`, viewport `p-1`, `min-w-(--radix-select-trigger-width)` |
-| Row | Height `menu-item-height-<size>`; padding `menu-item-padding-x` (8) at the start; the title (one line, ellipsis) `flex: 1`; then a box `icon-size-<size>` wide holding the `check` while chosen, `menu-item-gap` (8) after the title and `menu-item-padding-x` before the end (32 at `md`, shadcn's `pr-8`); corners `menu-item-radius`; text `menu-item-font-size-<size>` | `py-1.5 pr-8 pl-2 text-sm rounded-sm`, the check `absolute right-2 size-3.5`, `CheckIcon size-4` |
+| Surface | The popup surface (`foundation::popup::surface`: `popover`, `popover-border`, `popover-radius`, `popover-shadow` 3, `md`); padding `menu-padding` (4) inside the scrolling list; as wide as the trigger, at least `menu-min-width` (128) | `rounded-md border bg-popover shadow-md min-w-[8rem]`, viewport `p-1`, at least the trigger's width |
+| Row | Height `menu-item-height-<size>`; padding `menu-item-padding-x` (8) at the start; the title (one line, ellipsis) `flex: 1`; then a box `icon-size-<size>` wide holding the `check` while chosen, `menu-item-gap` (8) after the title and `menu-item-padding-x` before the end (32 at `md`, `pr-8`); corners `menu-item-radius`; text `menu-item-font-size-<size>` | `py-1.5 pr-8 pl-2 text-sm rounded-sm`, the check `absolute right-2 size-3.5`, `CheckIcon size-4` |
 | Check | `icon-size-<size>`, the row's text color | — |
 | Group header | Height `menu-item-height-<size>`, padding `menu-item-padding-x` at the sides, `select-label-font-size` (12), `select-label-foreground` | `px-2 py-1.5 text-xs text-muted-foreground` |
 | Distance | `popover-offset` (4) from the trigger when on a side; none over it | `popper`: `translate-y-1` |
 
-The differences from shadcn are DropdownMenu's (row heights one step down, concentric row corners), and no separators
-or scroll buttons.
+The row heights and concentric row corners are DropdownMenu's; there are no separators or scroll buttons.
 
 ### Motion
 
@@ -202,7 +199,7 @@ over the trigger (macOS) no slide is wanted anyway. The sheet has `nsh/base`'s m
 The trigger takes the field look's states (Input's table): rest, focus-visible (`input-border-focus` edge and the
 `input-ring` ring), invalid, invalid + focus-visible, disabled (`opacity-disabled`, the arrow cursor). In addition:
 
-| State | Look | shadcn |
+| State | Look | Classes |
 |---|---|---|
 | Hover (pointer) | Fill `select-trigger-hover` (dark only: `input` at 50%; light unchanged) | `dark:hover:bg-input/50` |
 | Placeholder shown | Value text in `input-placeholder-foreground` | `data-[placeholder]:text-muted-foreground` |
@@ -237,7 +234,7 @@ select (Input's G1: no labelledby between elements).
 
 The trigger reads the `input-*` tokens ([Input](input.md#tokens)) and the rows and surface the `menu-*` tokens
 ([DropdownMenu](dropdown-menu.md#tokens)); a theme that changes `input-border` or `menu-item-focus` changes Select with
-them. Its own tokens are what shadcn's select adds. The table is generated (`<!-- tokens:select -->`).
+them. Its own tokens are what a select adds. The table is generated (`<!-- tokens:select -->`).
 
 <!-- tokens:select -->
 | Token | Type | Derived default | Value |
@@ -248,7 +245,7 @@ them. Its own tokens are what shadcn's select adds. The table is generated (`<!-
 | `select-label-font-size` | length | `12` | 12 |
 <!-- /tokens -->
 
-- `select-icon-foreground` is shadcn's `text-muted-foreground opacity-50` as one color.
+- `select-icon-foreground` is `text-muted-foreground opacity-50` as one color.
 - `select-label-font-size` is Tailwind's fixed 12 (`text-xs`), as `menu-shortcut-font-size`.
 - A select's own `select-radius` or `select-height-*` are not declared: the trigger is a field, and fields share one set
   of tokens; a different select uses `triggerClass` or a scope.
@@ -354,15 +351,15 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
    `itemClass` appended (its classes follow the library's, so an app's `focus:` fill wins); the check is bound to the
    value the library holds. Named `group_focus_named` / `group_selected_named` / `group_disabled_named` in nsh-core, or
    states in an inline style, would let the library draw the highlight without generated classes.
-2. **The trigger shows the title only**: shadcn's `SelectValue` repeats the chosen item's children (an icon too).
+2. **The trigger shows the title only**, not the chosen item's children (an icon too).
    `nsh/base` gives the trigger nothing but the value; the library shows the chosen item's title. A `renderValue`
    would follow `renderItem` later, if asked for.
 3. **No separators in the list**: `nsh/base`'s rows are items and headers; groups are split by their headers only.
-   shadcn's examples rarely use `SelectSeparator` between groups; a separator row kind in `listbox.rs` would add it.
+   Separators between groups are rarely needed; a separator row kind in `listbox.rs` would add it.
 4. **String children** do not apply (titles are data); `renderItem`'s elements follow Button's G0 in TSX.
 5. **The list is exactly as wide as the trigger** on desktops: `nsh/base` gives the popup the trigger's width, which
    `menu-min-width` only raises, so rows wider than the trigger (`renderItem`'s, a long title) are cut or truncated,
-   where shadcn's popper list is at least the trigger's width and grows with its rows. Workaround: a trigger wide
+   where a list should be at least the trigger's width and grow with its rows. Workaround: a trigger wide
    enough for the rows (`class`). A width mode in `nsh/base` (at least the trigger's, else its content's) would allow
    it.
 
@@ -371,10 +368,10 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
 1. **Options are data (`items`), not `SelectItem` children**, because `nsh/base`'s list is virtualized and owns search,
    typeahead and highlight over titles (see the time-zone example). The name `SelectItem` is the data type (`nsh/base`'s), not a component.
 2. **The open trigger keeps the focus edge** (`input-border-focus` while `expanded`): gpui-kit's Design Guides ask for
-   persistent feedback while an attached popup is open; shadcn draws none. The library-wide decision (DropdownMenu's
+   persistent feedback while an attached popup is open. The library-wide decision (DropdownMenu's
    3: a `Button` trigger keeps its hover fill).
-3. **macOS opens the list over the trigger, other desktops below it** (`nsh/base`'s default, `cover`): shadcn's
-   default is item-aligned everywhere; the platforms' own habit wins.
+3. **macOS opens the list over the trigger, other desktops below it** (`nsh/base`'s default, `cover`): the
+   platforms' own habit wins.
 4. **No search, no clear button in P2**: Combobox (P3) is the searchable choice; `cleanable` waits for a look.
 5. **As wide as its content through `w-fit`, not `align-self: flex-start`**: an `align-self` of its own would override
    the cross-axis alignment of a row it sits in (a filter bar), putting it at the top instead of the middle (as
@@ -382,5 +379,6 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
 
 ## Later
 
-- **A search field in the list** (`searchable`, `nsh/base`'s): shadcn's "popup" combobox, a trigger showing the value
+- **A search field in the list** (`searchable`, `nsh/base`'s): a "popup" combobox, a trigger showing the value
+
   with the search field inside the layer. Not in P3; [Combobox](combobox.md) is the searchable choice until then.

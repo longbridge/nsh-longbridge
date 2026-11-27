@@ -1,7 +1,6 @@
 # Spinner
 
-Status: implemented (P1). A spinning loading indicator: something is in progress and how long it takes is unknown. Reference: shadcn/ui
-new-york v4 `spinner.tsx`.
+Status: implemented (P1). A spinning loading indicator: something is in progress and how long it takes is unknown.
 
 ## Usage
 
@@ -17,7 +16,7 @@ new-york v4 `spinner.tsx`.
 
 ## Built on
 
-`nsh/base` has no counterpart; this library draws a foundation icon, lucide's `loader-circle` (shadcn's `Loader2Icon`),
+`nsh/base` has no counterpart; this library draws a foundation icon, lucide's `loader-circle`,
 turned by `foundation`'s `motion::spin`: one turn a second, linear, endless, as Tailwind's `animate-spin`, but played as
 an NSH motion that ignores reduced motion (see "States" and "NSH gaps"). It has no behavior.
 
@@ -36,28 +35,27 @@ No events, no children, no parts.
 - No `variant`. The color follows the text (see "Look").
 - `size`:
 
-| `size` | Edge | shadcn |
+| `size` | Edge | Class |
 |---|---|---|
 | `xs` | 12 | `size-3`, the icon in an xs button |
 | `sm` | 14 | `size-3.5` |
-| `md` | 16 | `size-4`, shadcn's default |
+| `md` | 16 | `size-4`, the default |
 | `lg` | 16 | `size-4`, same as `md`; for larger use `class="size-5"` or change the `icon-size-lg` token |
 
 The edge is the foundation's icon edge for that `Size`; the spinner declares no token of its own. Without `size` it takes
 the default from context as icons do, so in a `size="sm"` button it is 14.
 
-shadcn has only `size-4` and leaves the rest to `className`. This library gives the four `size`s of the conventions, so a
-spinner in a control of the same `size` matches its icons. Larger ones (32 in the middle of a page) use `class="size-8"`
-as in shadcn. Not enlarged on touch screens: it is not a control.
+The spinner has the four `size`s of the conventions, so a spinner in a control of the same `size` matches its icons.
+Larger ones (32 in the middle of a page) use `class="size-8"`. Not enlarged on touch screens: it is not a control.
 
 ### Look
 
-shadcn: `size-4 animate-spin`, color `currentColor` (the surrounding text).
+In classes: `size-4 animate-spin`, color `currentColor` (the surrounding text).
 
 | | Value |
 |---|---|
 | Shape | The `loader-circle` icon, with the icon set's stroke width (lucide's 2) |
-| Color | Inside a library part that colors its text (a `Button`, a `Card`, a menu row, a `Badge`…), that text color (shadcn's `currentColor`): the button's text color in a button. Elsewhere `foreground`, so it shows in both appearances. Another color: `class="text-…"`, which goes over both |
+| Color | Inside a library part that colors its text (a `Button`, a `Card`, a menu row, a `Badge`…), that text color (`currentColor`): the button's text color in a button. Elsewhere `foreground`, so it shows in both appearances. Another color: `class="text-…"`, which goes over both |
 | Animation | One turn per second, linear, endless (`animate-spin`'s timing; `foundation`'s `motion::spin`) |
 
 No color token: following the text keeps it right in every button variant; to change it everywhere, change the text
@@ -84,7 +82,7 @@ No difference.
 ## Accessibility
 
 - No Tab stop, no pointer events.
-- Role `progressbar` (indeterminate), label `accessibilityLabel` (default "Loading"), state `busy`. shadcn uses
+- Role `progressbar` (indeterminate), label `accessibilityLabel` (default "Loading"), state `busy`. The web would use
   `role="status"`; NSH has no `status` role, and an indeterminate `progressbar` is the role macOS and iOS give their own
   spinners (`NSProgressIndicator`, `UIActivityIndicatorView`).
 - Inside `Button`'s `loading`, the button removes the spinner's own accessibility node and reports busy on itself, so it

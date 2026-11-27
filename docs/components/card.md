@@ -1,7 +1,6 @@
 # Card
 
-Status: implemented (P1). A container with a border, a fill and a light shadow, laid out as header, content and footer. Reference: shadcn/ui
-new-york v4 `card.tsx`.
+Status: implemented (P1). A container with a border, a fill and a light shadow, laid out as header, content and footer.
 
 ## Usage
 
@@ -12,7 +11,7 @@ new-york v4 `card.tsx`.
 
 - A bordered area without the title structure: give a `view` `class="rounded-xl border bg-card"`; no `Card` needed.
 - Notices, warnings and errors: the later `Alert` (after P2), not a recolored card.
-- A whole card that is pressed or selected: shadcn's card is not interactive and neither is this one (decided in
+- A whole card that is pressed or selected: a card is not interactive (decided in
   review). Put pressable things in a `Button` inside `CardAction` or `CardFooter`.
 - A panel that pops up: `Popover` / `Dialog` (P2).
 
@@ -21,8 +20,8 @@ new-york v4 `card.tsx`.
 `nsh/base` has no counterpart; this library composes `view`s and `text`s. No behavior: not focusable, no presses; the
 controls inside work as usual.
 
-Following "composition over switches" in the conventions, the structure is made of child components, one for each of
-shadcn's:
+Following "composition over switches" in the conventions, the structure is made of child components, one for each
+part:
 
 ```
 Card
@@ -39,7 +38,7 @@ conventions' `<part>Class` is for parts that are not components of their own).
 
 ### Implementation
 
-- **CardHeader's two columns**: shadcn uses `has-data-[slot=card-action]:grid-cols-[1fr_auto]`. NSH has no `:has()`,
+- **CardHeader's two columns**: in CSS, `has-data-[slot=card-action]:grid-cols-[1fr_auto]`. NSH has no `:has()`,
   so this library uses context: `CardHeader` provides a "has an action" signal that `CardAction` sets when it mounts
   and clears in its `cleanup`, and the header's column template is bound to it. `1fr auto` is not used unconditionally:
   without an action the second column is 0 wide, but the column gap `gap-2` remains and narrows the title by 8 for
@@ -68,30 +67,29 @@ No events, no controlled values. Every part is optional; the order is the childr
 
 ## Variants and sizes
 
-- No `variant`: shadcn has one. A muted card or one without a shadow uses `class` or a scoped token (`card-shadow: 0`).
+- No `variant`: one look. A muted card or one without a shadow uses `class` or a scoped token (`card-shadow: 0`).
 - No `size` (none of `xs` / `sm` / `md` / `lg`): the padding is a token; for a denser layout change `card-padding` /
   `card-gap` or the `spacing` seed.
 
 ### Look
 
-| Part | shadcn classes | This library |
+| Part | Classes | Layout |
 |---|---|---|
 | `Card` | `flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm` | A column; `card-gap` between parts; `card-padding` top and bottom; corners `card-radius`; border `border-width` × `card-border`; fill `card`; text color `card-foreground` (inherited by the text inside); shadow tier `card-shadow` |
 | `CardHeader` | `grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6`, `grid-cols-[1fr_auto]` with an action; `[.border-b]:pb-6` | A grid: rows `auto auto`, `items-start`, gap `card-header-gap`; `card-padding` left and right. Columns `1fr auto` when it has a `CardAction` (see "Implementation") |
-| `CardTitle` | `leading-none font-semibold` | Size `card-title-font-size`, line height 1 (shadcn's `leading-none`, deliberately not the foundation's font size → line height), `font-weight-semibold` |
+| `CardTitle` | `leading-none font-semibold` | Size `card-title-font-size`, line height 1 (`leading-none`, deliberately not the foundation's font size → line height), `font-weight-semibold` |
 | `CardDescription` | `text-sm text-muted-foreground` | Size `card-description-font-size`, line height from the foundation's font size → line height (14 → 20, as `text-sm`), color `card-description-foreground` |
 | `CardAction` | `col-start-2 row-span-2 row-start-1 self-start justify-self-end` | Same |
 | `CardContent` | `px-6` | `card-padding` left and right |
 | `CardFooter` | `flex items-center px-6 [.border-t]:pt-6` | A row, centered vertically; `card-padding` left and right |
 
-**Header and footer with a divider**: shadcn's `[.border-b]:pb-6` adds bottom padding when the app gives the header a
+**Header and footer with a divider**: in CSS, `[.border-b]:pb-6` adds bottom padding when the app gives the header a
 `border-b`. NSH cannot match on whether an element has a class, so the app writes both:
 `<CardHeader class="border-b pb-6">`, `<CardFooter class="border-t pt-6">`. The docs and the gallery write it that way;
 see "Examples".
 
-No other differences from shadcn. The 24 padding is roomy for desktop density, but the conventions take the look from
-shadcn; the library's compact preset theme sets `card-padding` and `card-gap` to 16 (P0's `themes/` presets, not decided
-here).
+The 24 padding is roomy for desktop density; the library's compact preset theme sets `card-padding` and `card-gap` to 16
+(P0's `themes/` presets, not decided here).
 
 ## States
 
@@ -105,8 +103,8 @@ extra.
 ## Accessibility
 
 - Neither the card nor its parts are Tab stops; Tab moves between the controls inside as usual.
-- `CardTitle` has the `header` role, so screen readers can jump from card to card by heading. shadcn's `CardTitle` is a
-  `div` without heading semantics; this library adds it because NSH's screen reader navigation relies on the `header`
+- `CardTitle` has the `header` role, so screen readers can jump from card to card by heading. A plain `div`
+  title has no heading semantics; this library adds them because NSH's screen reader navigation relies on the `header`
   role, and without it a card reads as loose text.
 - The other parts have no role (`none`); their text is read as usual.
 
@@ -129,7 +127,7 @@ Values are those of `nsh/base`'s default theme.
 | `card-description-font-size` | length | `14` | 14 |
 <!-- /tokens -->
 
-- `card` and `card-foreground` are shadcn's semantic tokens, so the component uses them directly and declares no
+- `card` and `card-foreground` are semantic tokens, so the component uses them directly and declares no
   component tokens of the same name (they are absent from `tokens!` and so from the table above). To change only the cards' fill, change the semantic `card`, which only card-like surfaces use anyway.
 - `card-title-font-size` is Tailwind's fixed size, not a `font-size-*`: tokens.md gives body text and headings
   Tailwind's values, and `font-size-*` is for controls.
@@ -172,7 +170,7 @@ card().w(px(360.0))
 
 ## NSH gaps
 
-- **No `:has()` and no matching on an element's own classes** (shadcn's `has-data-[slot=card-action]:` and
+- **No `:has()` and no matching on an element's own classes** (CSS's `has-data-[slot=card-action]:` and
   `[.border-b]:`). Workaround: the action registers through context; the app writes the divider's padding itself (see
   "Look").
 - **Text color inheritance**: the root's `card-foreground` reaches the app's own `text`s inside through NSH's text

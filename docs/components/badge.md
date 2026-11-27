@@ -1,6 +1,6 @@
 # Badge
 
-Status: implemented (P1). A small mark: a status, a category, a count. Reference: shadcn/ui new-york v4 `badge.tsx`.
+Status: implemented (P1). A small mark: a status, a category, a count.
 
 ## Usage
 
@@ -21,15 +21,15 @@ Status: implemented (P1). A small mark: a status, a category, a count. Reference
 `nsh/base` has no counterpart; this library draws a `view` and a `text`. It has no behavior: not focusable, not
 pressable.
 
-shadcn's `asChild` (rendering the badge as an `<a>`, which brings the `[a&]:hover` colors and the focus ring) is not
-done: NSH has no `asChild`-style mechanism that puts one element's look on another, and something pressable should not be
-a badge. So the hover and focus looks shadcn gives link badges are absent, and so are the `ghost` and `link` variants,
-which exist only for links (see "Variants and sizes").
+A link badge (the badge rendered as an `<a>` through an `asChild`, which brings `[a&]:hover` colors and a focus ring) is
+not done: NSH has no `asChild`-style mechanism that puts one element's look on another, and something pressable should
+not be a badge. So link badges' hover and focus looks are absent, and so are the `ghost` and `link` variants, which
+exist only for links (see "Variants and sizes").
 
 ### Implementation
 
 - Icon edge: the badge sets the foundation's icon size context to `xs`, so the library's `Icon` without a size is 12
-  (shadcn's `[&>svg]:size-3`). No `badge-icon-size` token.
+  (`[&>svg]:size-3`). No `badge-icon-size` token.
 - Children: as `Button` does (its NSH gap G1), every child is wrapped in a `label` text, since a component cannot tell a
   string child from an element. A string's text takes the label's styles; an element sits in its label unchanged.
 
@@ -51,7 +51,7 @@ With NSH 0.7.0, write a string child inside `<Text>` for now (`Button`'s G0).
 
 ## Variants and sizes
 
-| `variant` | Fill | Text | Border | shadcn |
+| `variant` | Fill | Text | Border | Classes |
 |---|---|---|---|---|
 | `default` | `badge-default` | `badge-default-foreground` | Transparent | `bg-primary text-primary-foreground` |
 | `secondary` | `badge-secondary` | `badge-secondary-foreground` | Transparent | `bg-secondary text-secondary-foreground` |
@@ -61,15 +61,15 @@ With NSH 0.7.0, write a string child inside `<Text>` for now (`Button`'s G0).
 - No `ghost` or `link`: they differ from the others only in `[a&]:hover` (hovered as a link). Without interaction what is
   left is "transparent fill, foreground text" and "transparent fill, `primary` text", which `outline` with
   `class="border-transparent"` or a text color `class` gives. Not worth a variant each.
-- No `success` / `warning` / `info`: shadcn has none. The semantic `success` tokens and their kin are there for scoped
+- No `success` / `warning` / `info`. The semantic `success` tokens and their kin are there for scoped
   tokens or `class="bg-success text-success-foreground"`. Decided in review: not added; status colors are revisited with
   Alert in P2.
-- **No `size`** (none of `xs` / `sm` / `md` / `lg`): shadcn has one. A badge marks content and does not line up with
+- **No `size`** (none of `xs` / `sm` / `md` / `lg`): one size. A badge marks content and does not line up with
   control heights.
 
 ### Look
 
-shadcn: `inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border
+In classes: `inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border
 border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `size-3`.
 
 | | Value |
@@ -80,17 +80,18 @@ border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap`, icons `si
 | Corners | `badge-radius` |
 | Text | `badge-font-size` (12), `font-weight-medium`, line height from the foundation's font size → line height (12 → 16, Tailwind's `text-xs`), one line |
 | Icons | 12 (the `xs` icon size the badge gives as context), colored as the text; `badge-gap` (4) between icon and text |
-| Height | 16 line height + 2 × 2 padding + 2 × 1 border = 22, as shadcn |
+| Height | 16 line height + 2 × 2 padding + 2 × 1 border = 22 |
 
-Long text is truncated with an ellipsis (one line, as Rust's `number_of_lines(1)`) at the parent's width; shadcn clips it
-(`overflow-hidden whitespace-nowrap`) and lets the badge overflow a narrower parent. An ellipsis is the desktop norm, and
-screen readers still read the full text.
+Long text is truncated with an ellipsis (one line, as Rust's `number_of_lines(1)`) at the parent's width, rather than
+clipped (`overflow-hidden whitespace-nowrap`) with the badge overflowing a narrower parent. An ellipsis is the desktop
+norm, and screen readers still read the full text.
 
 ## States
 
 No hover / active / focus-visible / disabled: not interactive.
 
-shadcn's `aria-invalid:border-destructive aria-invalid:ring-destructive/20` is for link badges in forms; not done here.
+An invalid look (`aria-invalid:border-destructive aria-invalid:ring-destructive/20`) is for link badges in forms; not
+done here.
 
 ## Pointer and touch
 
@@ -124,12 +125,12 @@ Values are those of `nsh/base`'s default theme.
 | `badge-font-size` | length | `font-size-xs` | 12 |
 <!-- /tokens -->
 
-`badge-destructive` is shadcn's `dark:bg-destructive/60`. `badge-destructive-foreground` follows the library's semantic
-`destructive-foreground` (white by default) where shadcn hard-codes `text-white`.
+`badge-destructive` is `dark:bg-destructive/60`. `badge-destructive-foreground` follows the library's semantic
+`destructive-foreground` (white by default) rather than a fixed `text-white`.
 
-`badge-radius` does not refer to `radius-*`: shadcn v4's badge is a pill (`rounded-full`) and ignores the `radius` seed.
+`badge-radius` does not refer to `radius-*`: a badge is a pill (`rounded-full`) and ignores the `radius` seed.
 An app that wants squarer badges following the seed sets `"badge-radius": "var(--radius-sm)"` in its theme. With
-`radius: 0` everything else turns square while badges stay pills, as in shadcn.
+`radius: 0` everything else turns square while badges stay pills.
 
 ## Examples
 
@@ -164,11 +165,11 @@ view().flex_row().gap_2()
     )
 ```
 
-The count badge (`min-w-5 px-1 tabular-nums`) is how shadcn's docs write it: a `class`, not a variant.
+The count badge (`min-w-5 px-1 tabular-nums`) is a `class`, not a variant.
 
 ## NSH gaps
 
-- **No `asChild` and no selector by element type** (shadcn's `[a&]:hover`). Workaround: the badge is not interactive;
+- **No `asChild` and no selector by element type** (CSS's `[a&]:hover`). Workaround: the badge is not interactive;
   there are no link badges.
 
 ## Decisions

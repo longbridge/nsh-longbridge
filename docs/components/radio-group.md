@@ -1,7 +1,7 @@
 # RadioGroup
 
-Status: implemented (P1). The look follows shadcn/ui new-york v4 `radio-group.tsx`
-(`RadioGroup` and `RadioGroupItem`); the behavior is `nsh/base`'s `RadioGroup` and `Radio`.
+Status: implemented (P1). `RadioGroup` and `RadioGroupItem`: the look is this library's, the behavior is `nsh/base`'s
+`RadioGroup` and `Radio`.
 
 Focus, disabled, invalid, the label and the hit area are handled as in [`Checkbox`](checkbox.md) and
 [`Switch`](switch.md). A change to one of those rules in one spec is made in all three.
@@ -34,9 +34,9 @@ A radio group: exactly one of a small set of options, all visible (a plan, a sor
 - Terminal: `nsh/base` shows `[●]` / `[ ]` before the item. This library draws no circle there (no `indicator` part
   while `platform.idiom === "terminal"`); the label shows as usual.
 
-`nsh/base`'s `RadioGroup` holds no value; each `Radio` takes its own `checked`. As in shadcn, this library puts the
-value on the group: `RadioGroup` takes `value` and passes it to its items through context; an item is checked when
-the group's `value` equals the item's `value`; when an item reports `Change(true)`, the group reports
+`nsh/base`'s `RadioGroup` holds no value; each `Radio` takes its own `checked`. This library puts the value on the
+group, where the choice belongs: `RadioGroup` takes `value` and passes it to its items through context; an item is
+checked when the group's `value` equals the item's `value`; when an item reports `Change(true)`, the group reports
 `onChange({ value: <the item's value> })`.
 
 This library adds the group's value and event, the circle and dot, the label's layout, each state's colors, sizes, the
@@ -85,7 +85,7 @@ is only layout, set with `class`); `required` / `name` (NSH has no form submissi
 | `RadioGroup` | `onChange({ value })` | `RadioGroupEvent::Change(SharedString)` (`#[args(value)]`); builder `.on_change(\|value: &SharedString\| ..)` | An item reports `Change(true)`: an unchecked item was pressed, or an arrow key moved the focus to it |
 
 `RadioGroupItem` has no events. The name and payload follow NSH's value state (`value` with `onChange({ value })`),
-not Radix's `onValueChange`.
+not `onValueChange`.
 
 ### Parts
 
@@ -99,18 +99,18 @@ RadioGroup root (nsh/base RadioGroup, flex-col, gap radio-group-gap)
 
 ## Variants and sizes
 
-No variants (shadcn has none). All four sizes, set on the group:
+No variants. All four sizes, set on the group:
 
 | size | Circle (pointer) | Circle (touch) | Dot | Label font size |
 |---|---|---|---|---|
 | `xs` | 12 | 16 | circle / 2 | `font-size-xs` 12 |
 | `sm` | 14 | 18 | circle / 2 | `font-size-sm` 13 |
-| `md` | 16 | 20 | circle / 2 (8, shadcn's `size-2`) | `font-size-md` 14 |
+| `md` | 16 | 20 | circle / 2 (8, `size-2`) | `font-size-md` 14 |
 | `lg` | 18 | 24 | circle / 2 | `font-size-lg` 14 |
 
 The circle's side is half the control height of the size (`control-height-<size>` with a pointer,
 `control-height-touch-<size>` on touch): the side of a `Checkbox`'s box and a `Switch`'s thumb of the same size, so
-the three line up side by side. `md` with a pointer is 16, shadcn's `size-4`.
+the three line up side by side. `md` with a pointer is 16, `size-4`.
 
 Fixed geometry, in the component:
 
@@ -121,31 +121,30 @@ Fixed geometry, in the component:
   `font-size-<size>`, weight `label-font-weight`, color `label-foreground`, line height from foundation's font size →
   line height; text children inherit them. The circle takes `Checkbox`'s top margin, so it stays centered on the
   label's first line.
-- The group's root is `flex-col` with `radio-group-gap` between items (shadcn's `grid gap-3`, the same in one column).
+- The group's root is `flex-col` with `radio-group-gap` between items (`grid gap-3`, the same in one column).
 
-Differences from shadcn: shadcn's item is the circle alone and its label a separate `Label`. Here the label is the
-item's `children`, since `nsh/base` puts them in the press target and the accessible name.
+The label is the item's `children`, since `nsh/base` puts them in the press target and the accessible name.
 
 ## States
 
-Every color is a token in Tokens; shadcn's classes are in parentheses. Only the states shadcn has.
+Every color is a token in Tokens; the classes are in parentheses. Only the states a radio needs.
 
 | State | Circle fill | Circle border | Dot | Other |
 |---|---|---|---|---|
 | Unchecked | `radio-group-item` (light: transparent; dark: `input` 30%, `dark:bg-input/30`) | `radio-group-item-border` (`border-input`) | none | Shadow `radio-group-item-shadow` (1, `shadow-xs`) |
-| Checked | unchanged | `radio-group-item-checked-border` (the unchecked border by default: shadcn keeps it) | `radio-group-item-dot` (`fill-primary`) | |
-| hover | none | | | shadcn has none |
+| Checked | unchanged | `radio-group-item-checked-border` (the unchecked border by default: the dot alone marks the choice) | `radio-group-item-dot` (`fill-primary`) | |
+| hover | none | | | A circle's edge already says where it is |
 | active (pressed) | | | | foundation `press(0.9)` on the circle; no scaling with reduced motion |
 | focus-visible (pointer) | | `radio-group-item-border-focus` (`focus-visible:border-ring`) | | A ring outside the circle: `ring-width` 3, color `radio-group-item-ring` (`ring-[3px] ring-ring/50`), outside layout |
 | focus-visible (touch) | | `radio-group-item-border-focus` | | No ring |
 | invalid | | `radio-group-item-border-invalid` (`aria-invalid:border-destructive`), checked too | | With a pointer, the focus ring is `radio-group-item-ring-invalid` (`aria-invalid:ring-destructive/20 dark:…/40`) |
 | disabled | | | | The item's whole root at `opacity-disabled` (circle and label together); no press feedback; skipped by the arrows |
-| readonly, loading | not supported | | | Neither shadcn nor `nsh/base` has them |
+| readonly, loading | not supported | | | `nsh/base` has neither |
 
-The border's precedence: invalid > focus-visible > checked > rest (shadcn has no checked border, and its `aria-`
-variants come after `focus-visible`). The same with a pointer and on touch.
+The border's precedence: invalid > focus-visible > checked > rest (the checked border is the unchecked one by default,
+and the `aria-` variants come after `focus-visible`). The same with a pointer and on touch.
 
-Transitions: the circle's border color and the ring transition (shadcn's `transition-[color,box-shadow]`, over
+Transitions: the circle's border color and the ring transition (`transition-[color,box-shadow]`, over
 `duration`); the dot appears and disappears with the value at once.
 
 Cursor: always the default arrow.

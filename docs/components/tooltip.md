@@ -1,7 +1,7 @@
 # Tooltip
 
 Status: implemented (P1). A hint bubble: a line of explanation beside an element while the pointer rests on it or the keyboard focus is on it.
-The library's first popup. Reference: shadcn/ui new-york v4 `tooltip.tsx` (Radix Tooltip).
+The library's first popup.
 
 ## Usage
 
@@ -26,7 +26,7 @@ The library's first popup. Reference: shadcn/ui new-york v4 `tooltip.tsx` (Radix
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
 | Showing | After the pointer rests on the element for `delay` ms; leaving or pressing it hides the tooltip |
-| Reading along | When the pointer leaves an element **whose tooltip showed** and enters another within 300 ms, that one shows at once (the core's fixed grace period, Radix's default `skipDelayDuration`), so the tools of a toolbar can be swept in turn; a press or Escape ends the grace period |
+| Reading along | When the pointer leaves an element **whose tooltip showed** and enters another within 300 ms, that one shows at once (the core's fixed grace period), so the tools of a toolbar can be swept in turn; a press or Escape ends the grace period |
 | Keyboard | Shows **at once** when the keyboard moves the focus to the element (Tab, an arrow, a shortcut, the app's `focus()` after a key) and hides when the focus leaves; focus from a click does not count (as `focus-visible:`), so the tooltip does not linger after a click; Escape hides it |
 | Position | On the element's `placement` side, flipped to the opposite side when only that one has room; aligned along the side by `align`; `offset` from the element and at least `margin` from the safe area's edges; above everything |
 | Out of the way | Takes no pointer events (`pointer-events: none`); the element stays pressable and hoverable |
@@ -35,16 +35,16 @@ The library's first popup. Reference: shadcn/ui new-york v4 `tooltip.tsx` (Radix
 | Touch screens | No hover: it shows only when a hardware keyboard moves the focus to the element, otherwise only when the app sets `open` |
 | Terminal | A line on the status line in the terminal's colors; this library's look does not apply |
 
-### Differs from shadcn's structure
+### Why the trigger is a prop
 
-shadcn (Radix) has four pieces: `TooltipProvider > Tooltip > TooltipTrigger + TooltipContent`. In NSH a tooltip is an
-**element's `tooltip` prop** (as GPUI's `.tooltip(..)`): the trigger is the element with the prop, the tooltip is its
-value. This library follows NSH's model:
+Some libraries spell a tooltip as four pieces: `TooltipProvider > Tooltip > TooltipTrigger + TooltipContent`. In NSH a
+tooltip is an **element's `tooltip` prop** (as GPUI's `.tooltip(..)`): the trigger is the element with the prop, the
+tooltip is its value. This library follows NSH's model:
 
 - No `TooltipTrigger`: any element (the library's `Button`, the app's `View`) with `tooltip={<Tooltip>…</Tooltip>}` is
   the trigger.
 - No `TooltipContent`: `Tooltip` itself is the bubble.
-- No `TooltipProvider`: shadcn uses it to set `delayDuration` for all; here the `tooltip-delay` token does, and NSH
+- No `TooltipProvider`: the delay for all comes from the `tooltip-delay` token, and NSH
   fixes the grace period.
 
 The reason: NSH only recognizes a tooltip given as an element's `tooltip` prop (the core makes it a hint layer on the
@@ -70,8 +70,8 @@ element); a tooltip placed among children would not follow hover and focus.
 - **Scope**: the hint layer lives in the trigger (the core places it among the element's children), so it reads the
   `ThemeScope` the trigger is in: a button in a dark scope gets a dark tooltip. Guarded by tests.
 - **Text styles from the trigger**: for the same reason it inherits the trigger's text styles: a button's medium weight,
-  a truncated label's no-wrap (the hint then stays one line, cut at the maximum width). shadcn's, in a portal,
-  inherits none. So the root resets them: normal wrapping, regular weight, no underline, no case change, no letter
+  a truncated label's no-wrap (the hint then stays one line, cut at the maximum width). A bubble should read the same
+  over any trigger. So the root resets them: normal wrapping, regular weight, no underline, no case change, no letter
   spacing. Italics and alignment have no reset setter and still pass through (see "NSH gaps" 7). Guarded by tests.
 
 ## API
@@ -115,7 +115,7 @@ around a button that works; on the icon **inside** a button it does not show whe
 | `labelClass` / `labelStyle` | `label_class` / `label_style` | | | The text made from string children |
 
 `offset` (distance from the element) and `margin` (distance from the screen's edges) are not props: they are the
-`tooltip-offset` token and `nsh/base`'s default of 4. shadcn exposes `sideOffset`, but it should be the same across an
+`tooltip-offset` token and `nsh/base`'s default of 4. They should be the same across an
 app; change the token.
 
 `startingClass` / `endingClass` are not exposed: the entrance and exit are this library's look (see "Motion"). To turn
@@ -142,43 +142,41 @@ No arrow part (decided in review; see "Decisions" 1).
 
 ## Variants and sizes
 
-- No `variant`: shadcn has one (the inverted bubble).
+- No `variant`: one look (the inverted bubble).
 - No `size` (none of `xs` / `sm` / `md` / `lg`): a tooltip's size does not follow its trigger.
 
 ### Look
 
-shadcn: `w-fit rounded-md bg-foreground px-3 py-1.5 text-xs text-balance text-background`, with an arrow
-`size-2.5 rotate-45 rounded-[2px] bg-foreground` and `sideOffset` 0 (the arrow fills the gap).
+In classes: `w-fit rounded-md bg-foreground px-3 py-1.5 text-xs text-balance text-background`, no arrow.
 
 | | Value |
 |---|---|
-| Fill / text | `tooltip` / `tooltip-foreground`: inverted by default (dark on a light theme, light on a dark one), as shadcn |
+| Fill / text | `tooltip` / `tooltip-foreground`: inverted by default (dark on a light theme, light on a dark one), so it stands apart from the page |
 | Corners | `tooltip-radius` (`radius-md`, 8) |
 | Padding | `tooltip-padding-x` (12) horizontally, `tooltip-padding-y` (6) vertically |
 | Text | `tooltip-font-size` (12), line height from the foundation's font size → line height (12 → 16), regular weight |
 | Layout | A row, centered vertically, `spacing` × 2 (8) apart: the gap before a trailing `Kbd` |
 | Width | As wide as its content, at most `tooltip-max-width` (320), wrapping beyond |
 | Distance from the element | `tooltip-offset` (4) |
-| Shadow | None (shadcn has none) |
+| Shadow | None |
 | One-line height | 16 + 6 × 2 = 28 |
 
-Differences from shadcn:
+Decisions on the look:
 
-- **No arrow**, so `offset` is 4 instead of 0. See "Decisions" 1.
-- **A maximum width**: shadcn has none (it relies on `text-balance` for even lines). Without one a long hint spreads to
-  the window's edge (seen in a real app: a long description running out of the window). 320 at 12 points is about 24
-  CJK or 50 Latin characters per line. NSH reads `text-balance` as ordinary wrapping (no balanced lines), so the text
-  wraps normally.
-- Regular weight, as shadcn (gpui-kit uses medium; not followed).
+- **No arrow**, so `offset` is 4, not 0. See "Decisions" 1.
+- **A maximum width**, beside `text-balance` for even lines. Without one a long hint spreads to the window's edge (seen
+  in a real app: a long description running out of the window). 320 at 12 points is about 24 CJK or 50 Latin characters
+  per line. NSH reads `text-balance` as ordinary wrapping (no balanced lines), so the text wraps normally.
+- Regular weight: a hint is explanatory text, not a label.
 
 ### Motion
 
-| | shadcn (tw-animate-css) | This library |
-|---|---|---|
-| Entrance | `fade-in-0 zoom-in-95`, plus `slide-in-from-*-2` (8) by the actual side, 150 ms | From `opacity-0 scale-95` to its look over `duration` (150 ms), no slide |
-| Exit | `fade-out-0 zoom-out-95` | To `opacity-0 scale-95`, then unmounted |
-| Scale origin | The point toward the trigger Radix computes | The bubble's center |
-| Reduced motion | Not handled | No transition: shown and hidden at once (built into `nsh/base`) |
+| | |
+|---|---|
+| Entrance | From `opacity-0 scale-95` to its look over `duration` (150 ms), no slide |
+| Exit | To `opacity-0 scale-95`, then unmounted |
+| Scale origin | The bubble's center |
+| Reduced motion | No transition: shown and hidden at once (built into `nsh/base`) |
 
 No slide and a centered origin, because both need the side the bubble **finally** went on (it may flip), and
 `nsh/base`'s `Tooltip` does not report its position (`Popover` and `HoverCard` have `onPosition`; `Tooltip` has not).
@@ -203,7 +201,7 @@ No invalid / loading.
 |---|---|---|
 | Shows | After the pointer rests for `delay`; at once on keyboard focus | At once when a hardware keyboard moves the focus to it; otherwise only on the app's `open` |
 | Hides | Pointer leaves or presses; focus leaves; Escape | Focus leaves; Escape; the app sets `open=false` |
-| Long press | — | **Does not show it.** NSH does not do it, and neither do Radix or the iOS and Android system controls (Android's long-press hint on toolbar icons is system behavior the app does not draw); a long press means other things on touch screens (context menus, dragging) |
+| Long press | — | **Does not show it.** NSH does not do it, and neither do the iOS and Android system controls (Android's long-press hint on toolbar icons is system behavior the app does not draw); a long press means other things on touch screens (context menus, dragging) |
 | Form | A bubble | The same bubble, same size (it only shows with a keyboard attached, when the user sits about as far from the screen as at a desktop) |
 | Hit area | The trigger itself | Same |
 
@@ -309,7 +307,7 @@ view().tooltip(
    `__hint_tooltip` are `#[doc(hidden)]`, and the blanket implementation for `ComponentElement` adds a layer. Workaround:
    call `__hint_tooltip` as `nsh/base` does, pin the NSH version, guard upgrades with tests. A public way would help
    (for example, a component whose root is a hint layer being recognized as a tooltip).
-2. **Unconfirmed whether screen readers read the tooltip**: Radix uses `aria-describedby` so that the tooltip is read as
+2. **Unconfirmed whether screen readers read the tooltip**: on the web, `aria-describedby` makes the tooltip read as
    the trigger's description. NSH's docs do not say whether a tooltip becomes the trigger's accessibility description.
    Workaround: triggers carry their own name / `accessibilityHint` (see "Accessibility"). In NSH 0.7.0's accessibility
    model a shown tooltip is neither the trigger's description nor its `describedBy` (a headless test pins this, so a
@@ -339,10 +337,10 @@ view().tooltip(
 1. **No arrow; `offset` 4.** `Tooltip` does not report its actual side (gap 3), so after a flip an arrow would point the
    wrong way; gpui-kit's and the NSH gallery's tooltips have no arrow either. Revisit once NSH reports `onPosition`; the
    arrow would then be an `arrowClass` / `arrowStyle` part.
-2. **Default delay 500 ms** (`tooltip-delay`). shadcn's `TooltipProvider` sets 0, a web habit; on a desktop a pointer
-   crossing a toolbar should not flash tooltips all the way, and the grace period already makes reading along
-   immediate. Where the user is there to read it (the full text of a truncation), set `delay={0}` there.
-3. **shadcn's inverted colors** (`foreground` fill). The light style (`popover` fill and border) is the two-token theme
+2. **Default delay 500 ms** (`tooltip-delay`), not 0, a web habit: on a desktop a pointer crossing a toolbar should not
+   flash tooltips all the way, and the grace period already makes reading along immediate. Where the user is there to
+   read it (the full text of a truncation), set `delay={0}` there.
+3. **Inverted colors** (`foreground` fill). The light style (`popover` fill and border) is the two-token theme
    change described under "Tokens".
-4. **The API follows NSH's `tooltip` prop**, not shadcn's four pieces. The core recognizes the TSX wrapper as a hint
+4. **The API follows NSH's `tooltip` prop**, not four pieces. The core recognizes the TSX wrapper as a hint
    layer (verified by headless tests).

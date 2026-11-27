@@ -1,17 +1,16 @@
 # Toast
 
 Status: implemented (P2). Brief messages that appear at a corner of the window, stack, and go by
-themselves: "Event created", "Copied", a failed upload with "Retry". Reference: shadcn/ui new-york v4 `sonner.tsx`
-(shadcn's toast is Sonner, styled with shadcn's tokens) and Sonner's own defaults for what `sonner.tsx` leaves to it.
+themselves: "Event created", "Copied", a failed upload with "Retry".
 
-Two exports, as shadcn's: `Toaster`, placed once, draws the toasts; `toast(..)`, called from anywhere, shows one.
+Two exports: `Toaster`, placed once, draws the toasts; `toast(..)`, called from anywhere, shows one.
 
 ## Usage
 
 - The result of an action the user started and can ignore: saved, copied, sent, failed (with "Retry"), deleted
   (with "Undo").
 - Progress of background work that the user may want to see end: a loading toast replaced by its result.
-- Search terms: toast, sonner, snackbar, notification, flash message.
+- Search terms: toast, snackbar, notification, flash message.
 
 ## When not to use
 
@@ -31,7 +30,7 @@ styled library (`docs/dev/components.md` "Toasts"; NSH's gallery builds its own 
 | Provided by `nsh/base` (not rewritten here) | |
 |---|---|
 | `ToastManager` | Ordered storage and the lifecycle of each toast: entering, present, its timeout, paused, ending, removed; `visible(limit)`, `push`, `dismiss`, `dismissAll`, `advance(now, paused)` |
-| `ToastStack` | Measures the toasts and lays them out from the placement's edge, the newest nearest it: collapsed, overlapping layers 14 apart, each 5% narrower, 3 shown, the content of those behind the newest hidden by the library (NSH gap 6); expanded (pointer over it, a finger down on it), a list 14 apart; arrivals, departures and expansion move with springs (Sonner's `ToastMotion`); `onExpandedChange` pauses the timeouts |
+| `ToastStack` | Measures the toasts and lays them out from the placement's edge, the newest nearest it: collapsed, overlapping layers 14 apart, each 5% narrower, 3 shown, the content of those behind the newest hidden by the library (NSH gap 6); expanded (pointer over it, a finger down on it), a list 14 apart; arrivals, departures and expansion move with springs (`ToastMotion`); `onExpandedChange` pauses the timeouts |
 | `Toast` | The semantic root (role `alert`), read once by screen readers as it shows (`accessibilityLabel`); `transitionStatus` with `startingClass` / `endingClass` / `swipingClass` for the entrance and exit; a swipe toward `swipeDirection` past 50 points, or a flick, asks to dismiss it |
 | Terminal | Only the newest toast, on the status line; nothing stacks or moves |
 
@@ -55,7 +54,7 @@ the per-toast duration and the answer (`toast()` resolves with the button that c
 
 ### Above dialogs
 
-A toast must show above an open dialog (Sonner's toaster has the topmost z-index), but NSH's overlays show in their
+A toast must show above an open dialog (a message the user must not miss), but NSH's overlays show in their
 root view and a dialog is a native layer above the page's. So the stack is drawn where the topmost layer is:
 
 - No dialog of this library open: the `Toaster` draws its stack in an overlay of the page (its root view).
@@ -87,9 +86,9 @@ TSX: `toast(title: string, options?: ToastOptions): Promise<{ action: string | n
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `id` | `string` | a new one | Names the toast. Showing one with the `id` of a toast still shown changes that toast in place (a loading toast becoming its result) and starts its time over, as Sonner's `toast(…, { id })` |
+| `id` | `string` | a new one | Names the toast. Showing one with the `id` of a toast still shown changes that toast in place (a loading toast becoming its result) and starts its time over |
 | `description` | `string` | — | A second line under the title |
-| `kind` | `"default"` \| `"success"` \| `"info"` \| `"warning"` \| `"error"` \| `"loading"` | `"default"` | The icon before the text (Sonner's `toast.success(…)` and the others); `"loading"` spins and never times out |
+| `kind` | `"default"` \| `"success"` \| `"info"` \| `"warning"` \| `"error"` \| `"loading"` | `"default"` | The icon before the text (`toast.success(…)` and the others elsewhere); `"loading"` spins and never times out |
 | `duration` | `number` (ms) | `Toaster`'s `duration` (4000) | How long it stays; `Infinity` until dismissed. Paused while the stack is expanded |
 | `action` | `{ id: string, label: string }` | — | A button after the text (`Button` `xs`, default variant); a press closes the toast and resolves `{ action: id }` |
 | `cancel` | `{ id: string, label: string }` | — | A secondary button before the action (`Button` `xs`, secondary); a press closes it and resolves `{ action: id }` |
@@ -98,7 +97,7 @@ TSX: `toast(title: string, options?: ToastOptions): Promise<{ action: string | n
 The promise resolves with `{ action: null }` when the toast goes any other way (its time ran out, a swipe, the "×",
 `dismissToast`). Every call that showed or changed the same `id` resolves with the same answer.
 
-Departures from Sonner's API, with the reason:
+Where the API differs from the common toast API (`toast.success(…)`, `onClick` callbacks), and why:
 
 - **`toast.success(…)` and the others are `kind`**: an nshm exports functions and modules, and a function with
   methods of its own (`toast` callable and `toast.success`) is not one of them (see NSH gaps 2). `kind` is the
@@ -109,14 +108,14 @@ Departures from Sonner's API, with the reason:
   `const { action } = await toast("Deleted", { action: { id: "undo", label: "Undo" } }); if (action === "undo") …`.
 - **No `toast.promise`**: write it with `id` (`toast("Saving…", { id, kind: "loading" })`, then
   `toast("Saved", { id, kind: "success" })`).
-- **No rich colors, `invert`, JSX content or `unstyled`** in P2 (shadcn's `sonner.tsx` uses none). A toast of the
+- **No rich colors, `invert`, JSX content or `unstyled`** in P2: one look, colored by the theme. A toast of the
   app's own layout is `nsh/base`'s `Toast`.
 
-From shadcn / Sonner:
+Coming from the common toast API:
 
-| shadcn / Sonner | This library |
+| Common API | This library |
 |---|---|
-| `<Toaster />` from `@/components/ui/sonner`, `position="top-center"` | `<Toaster />`, `placement="topCenter"` |
+| `<Toaster position="top-center" />` | `<Toaster placement="topCenter" />` |
 | `toast("Saved", { description })` | The same |
 | `toast.success("Saved")`, `.error`, `.warning`, `.info`, `.loading` | `toast("Saved", { kind: "success" })`, … |
 | `toast("Deleted", { action: { label: "Undo", onClick: undo } })` | `const { action } = await toast("Deleted", { action: { id: "undo", label: "Undo" } }); if (action === "undo") undo();` |
@@ -145,10 +144,10 @@ label)`, `cancel(id, label)`, `close_button(bool)`, then `show()`. Dropping the 
 
 | TSX | Rust | Type | Default | Description |
 |---|---|---|---|---|
-| `placement` | `placement` | `"topLeft"` \| `"topCenter"` \| `"topRight"` \| `"bottomLeft"` \| `"bottomCenter"` \| `"bottomRight"` (`ToastPlacement`) | `"bottomRight"` | Where the stack is (Sonner's `position`, in `nsh/base`'s `Anchor` names; its left and right middles are not offered, so the library has its own `ToastPlacement`) |
-| `visibleToasts` | `visible_toasts` | `number` (`u32`) | `3` | How many are mounted at once; older ones wait (Sonner's) |
-| `duration` | `duration` | `number` (ms; Rust `Option<f64>`) | `toast-duration` (4000) | The default time a toast stays (Sonner's `duration`) |
-| `closeButton` | `close_button` | `boolean` | `false` | Every toast shows the "×" (Sonner's) |
+| `placement` | `placement` | `"topLeft"` \| `"topCenter"` \| `"topRight"` \| `"bottomLeft"` \| `"bottomCenter"` \| `"bottomRight"` (`ToastPlacement`) | `"bottomRight"` | Where the stack is (in `nsh/base`'s `Anchor` names; its left and right middles are not offered, so the library has its own `ToastPlacement`) |
+| `visibleToasts` | `visible_toasts` | `number` (`u32`) | `3` | How many are mounted at once; older ones wait |
+| `duration` | `duration` | `number` (ms; Rust `Option<f64>`) | `toast-duration` (4000) | The default time a toast stays |
+| `closeButton` | `close_button` | `boolean` | `false` | Every toast shows the "×" |
 | `class` / `style` | `class` / `style` | | | The stack |
 | `toastClass` / `toastStyle` | `toast_class` / `toast_style` | | | Each toast's box |
 | `iconClass` / `iconStyle` | `icon_class` / `icon_style` | | | The kind's icon |
@@ -158,10 +157,9 @@ label)`, `cancel(id, label)`, `close_button(bool)`, then `show()`. Dropping the 
 | `cancelClass` / `cancelStyle` | `cancel_class` / `cancel_style` | | | The cancel button |
 | `closeClass` / `closeStyle` | `close_class` / `close_style` | | | The "×" button |
 
-The parts are Sonner's `toastOptions.classNames` (`toast`, `icon`, `title`, `description`, `actionButton`,
-`cancelButton`, `closeButton`) as the conventions' `<part>Class` / `<part>Style`. Sonner's `theme` is the
-`ThemeScope` (or the app's appearance), `offset` and `gap` are tokens, `richColors`, `expand`, `invert`, `hotkey` and
-`dir` are not offered (see "Decisions" and NSH gaps 3).
+Each part (`toast`, `icon`, `title`, `description`, `action`, `cancel`, `close`) has the conventions' `<part>Class` /
+`<part>Style`. The appearance is the `ThemeScope` (or the app's), the offset and the gap are tokens; rich colors, an
+always-expanded stack, `invert`, a hotkey and a text direction are not offered (see "Decisions" and NSH gaps 3).
 
 ### Events
 
@@ -183,53 +181,51 @@ Toaster
 
 ## Variants and sizes
 
-No `variant` and no `size`: Sonner's one look, with `kind` changing only the icon (shadcn's `sonner.tsx` sets the
-icons and no colors per kind).
+No `variant` and no `size`: one look, with `kind` changing only the icon (no colors per kind: a toast's words carry
+its kind, and the theme's colors stay calm).
 
 ### Look
 
-shadcn's `sonner.tsx` sets `--normal-bg: var(--popover)`, `--normal-text: var(--popover-foreground)`,
-`--normal-border: var(--border)`, `--border-radius: var(--radius)` and the icons; the rest is Sonner's stylesheet.
+A toast is a popup surface (`popover`, `popover-foreground`, `border`) with `radius-lg` corners.
 
-| Part | Sonner | This library |
-|---|---|---|
-| toast | `padding: 16px; background: var(--normal-bg); border: 1px solid var(--normal-border); color: var(--normal-text); border-radius: var(--border-radius); box-shadow: 0 4px 12px rgba(0,0,0,.1); width: 356px; font-size: 13px; display: flex; align-items: center; gap: 6px` | A row centered vertically, gap `toast-gap` (6), padding `toast-padding` (16), as wide as the stack (`toast-width`, 356); fill `toast` (`popover`), text `toast-foreground` (`popover-foreground`), 13 (`toast-font-size`); border `border-width` × `toast-border`; corners `toast-radius` (`radius-lg`, 10); shadow tier `toast-shadow` (3, `md`) |
-| icon | lucide `circle-check` / `info` / `triangle-alert` / `octagon-x` / `loader-2` (spinning), `size-4`; Sonner's icon box `16×16`, margins −3 / 4 | `toast-icon-size` (16) in a 16 box, the start margin −3 and end margin 4 (Sonner's), the text color; `"loading"` turns with `foundation::motion::spin` (it keeps turning with reduced motion, as `Spinner`) |
-| content | `flex-direction: column; gap: 2px` | A column, gap 2, `flex: 1`, shrinkable (`min-w-0`) |
-| title | `font-weight: 500; line-height: 1.5` | `font-weight-medium`, line height from foundation (13 → 18) |
-| description | `font-weight: 400; line-height: 1.4`; `#3f3f3f` (dark: `hsl(0 0% 91%)`) | Regular, line height 18, color `toast-description-foreground` (`muted-foreground`: see Decisions 3) |
-| action | `height: 24px; padding: 0 8px; font-size: 12px; font-weight: 500; border-radius: 4px; background: var(--normal-text); color: var(--normal-bg); margin-left: auto` | The library's `Button` `size="xs"` `variant="default"` (24 high, 8 padding, 12 / medium), pushed to the end (`ml-auto` when it is the first button) |
-| cancel | as the action, `background: rgba(0,0,0,.08)` (dark `rgba(255,255,255,.3)`), `color: var(--normal-text)` | `Button` `size="xs"` `variant="secondary"` |
-| close | `20×20`, circle, `border: 1px solid var(--gray4)`, `background: var(--normal-bg)`, icon 12, at the top-left corner moved out by 35% | A 20 square circle (`toast-close-size`), border `toast-border`, fill `toast`, `x` icon 12, at the toast's top-start corner moved out by 35% of its size (7, from inside the toast's edge, as Sonner's `left: 0; top: 0` with its translate); opacity 1; under the pointer the fill turns `accent` |
+| Part | Look |
+|---|---|
+| toast | A row centered vertically, gap `toast-gap` (6), padding `toast-padding` (16), as wide as the stack (`toast-width`, 356); fill `toast` (`popover`), text `toast-foreground` (`popover-foreground`), 13 (`toast-font-size`); border `border-width` × `toast-border`; corners `toast-radius` (`radius-lg`, 10); shadow tier `toast-shadow` (3, `md`) |
+| icon | lucide `circle-check` / `info` / `triangle-alert` / `octagon-x` / `loader-2`: `toast-icon-size` (16) in a 16 box, the start margin −3 and end margin 4, the text color; `"loading"` turns with `foundation::motion::spin` (it keeps turning with reduced motion, as `Spinner`) |
+| content | A column, gap 2, `flex: 1`, shrinkable (`min-w-0`) |
+| title | `font-weight-medium`, line height from foundation (13 → 18) |
+| description | Regular, line height 18, color `toast-description-foreground` (`muted-foreground`: see Decisions 3) |
+| action | The library's `Button` `size="xs"` `variant="default"` (24 high, 8 padding, 12 / medium), pushed to the end (`ml-auto` when it is the first button) |
+| cancel | `Button` `size="xs"` `variant="secondary"` |
+| close | A 20 square circle (`toast-close-size`), border `toast-border`, fill `toast`, `x` icon 12, at the toast's top-start corner moved out by 35% of its size (7, from inside the toast's edge); opacity 1; under the pointer the fill turns `accent` |
 
-Departures: the action and cancel are the library's buttons (corners `button-radius`, 8, not 4; colors `primary` /
-`secondary`, which are Sonner's near-black and 8% grey on shadcn's neutral theme), so a brand theme colors a toast's
-action as its other main buttons; the shadow is the library's tier 3 (`md`), the nearest to Sonner's
-`0 4px 12px` at 10%.
+The action and cancel are the library's buttons (corners `button-radius`, 8; colors `primary` / `secondary`), so a
+brand theme colors a toast's action as its other main buttons; the shadow is the library's tier 3 (`md`).
 
 ### Placement and geometry
 
 | | Pointer (desktop) | Touch, or a window narrower than 600 |
 |---|---|---|
-| Stack width | `toast-width` (356) | The window less `toast-offset` on each side (Sonner's mobile layout: `@media (max-width: 600px)`) |
+| Stack width | `toast-width` (356) | The window less `toast-offset` on each side (the phone layout) |
 | From the edges | `toast-offset` (24 with a pointer, also on a narrow window), inside the safe area | `toast-offset` (16) |
 | Horizontal place | The placement's (left, center, right) | Centered (full width) |
 | Collapsed / expanded | `nsh/base`'s stack: 3 layers 14 apart, each 5% narrower; expanded under the pointer, a list 14 apart | Expanded while a finger is down on it |
 
-`ToastMotion` is `nsh/base`'s `sonner()` (400 ms springs, 200 ms exit, peek 14, gap 14, scale step 0.05, 3 shown).
+`ToastMotion` is `nsh/base`'s default toast motion (400 ms springs, 200 ms exit, peek 14, gap 14, scale step 0.05, 3
+shown).
 
 ### Motion
 
-| | Sonner | This library |
-|---|---|---|
-| Entrance | From `translateY(100%)` (bottom placements; −100% at the top) and opacity 0, 400 ms ease | `startingClass="opacity-0 translate-y-full"` (`-translate-y-full` at the top), `transition-all` over 400 ms (Sonner's; the stack's `ToastMotion` duration) |
-| Exit | Back toward the edge and opacity 0 | `endingClass="opacity-0 translate-y-full"` (`-translate-y-full` at the top), over the stack's exit (200 ms) |
-| Swipe | Follows the finger, out past the threshold | `nsh/base`'s swipe; `swipingClass="transition-none"` |
-| Reduced motion | not handled | No starting / ending classes: toasts show and go at once; the stack's layers are set at once (`nsh/base`'s, see NSH gaps 4) |
+| | |
+|---|---|
+| Entrance | `startingClass="opacity-0 translate-y-full"` (`-translate-y-full` at the top), `transition-all` over 400 ms (the stack's `ToastMotion` duration) |
+| Exit | `endingClass="opacity-0 translate-y-full"` (`-translate-y-full` at the top), over the stack's exit (200 ms) |
+| Swipe | Follows the finger, out past the threshold: `nsh/base`'s swipe; `swipingClass="transition-none"` |
+| Reduced motion | No starting / ending classes: toasts show and go at once; the stack's layers are set at once (`nsh/base`'s, see NSH gaps 4) |
 
 `toast-animate: 0` turns the entrance and exit off.
 
-Swipe direction (Sonner's default is the placement's sides): right for `*Right`, left for `*Left`, down for
+Swipe direction: right for `*Right`, left for `*Left`, down for
 `bottomCenter`, up for `topCenter`; on touch screens, down at the bottom and up at the top.
 
 ## States
@@ -251,7 +247,7 @@ Swipe direction (Sonner's default is the placement's sides): right for `*Right`,
 | Dismiss | "×", a button, a swipe with the mouse, its time | A swipe, "×", a button, its time |
 | Hit areas | Buttons 24 high | The buttons take their touch heights (`control-height-touch-xs`, 32) and hit slop; the "×" gets a hit slop to 44 |
 
-Android's Snackbar and iOS's banners sit at the bottom and the top of a phone, full width; Sonner's mobile layout
+Android's Snackbar and iOS's banners sit at the bottom and the top of a phone, full width; the phone layout
 matches them.
 
 ## Accessibility
@@ -259,11 +255,11 @@ matches them.
 - Each toast is an `alert` and is read once as it shows: title, then description (`nsh/base`'s announcement), on
   every platform.
 - Its buttons are reachable by Tab where the stack's overlay is in the Tab order (after the page's content, or the
-  dialog's). Sonner's `alt+T` hotkey to jump to the toasts is not offered (NSH gaps 3).
+  dialog's). A hotkey to jump to the toasts is not offered (NSH gaps 3).
 - The "×" is a `button` named "Close" (`labels`, shared with `Dialog`).
-- A toast with an action stays long enough to reach: an action toast's default `duration` is still 4000, as Sonner;
+- A toast with an action stays long enough to reach: an action toast's default `duration` is still 4000;
   apps give important actions `Infinity` or a longer time.
-- Escape does not dismiss toasts (Sonner does not, and Escape belongs to the dialog or popup in front): the stack's
+- Escape does not dismiss toasts (Escape belongs to the dialog or popup in front): the stack's
   `closeOnEscape` is false.
 
 ## Tokens
@@ -290,13 +286,12 @@ Values are those of `nsh/base`'s default theme.
 | `toast-duration` | number | `4000` | 4000 |
 | `toast-animate` | number | `1` | 1 |
 <!-- /tokens -->
-- `toast` and `toast-foreground` follow the popup surface (`popover`, as shadcn's `--normal-bg`) but are the
+- `toast` and `toast-foreground` follow the popup surface (`popover`) but are the
   toast's own, so a theme can make toasts inverted or colored without touching popovers.
-- `toast-radius` is `radius-lg` (shadcn's `--border-radius: var(--radius)`), one step rounder than a popover.
-- `toast-width` and `toast-font-size` are Sonner's fixed values (356, 13), not derived.
-- A window narrower than 600 spans the stack across it (Sonner's breakpoint, fixed); with a pointer it keeps the
-  pointer's `toast-offset` (24), so a theme's offset holds there too (Sonner's mobile layout uses 16; changed in
-  implementation: a fixed 16 would ignore the token).
+- `toast-radius` is `radius-lg`, one step rounder than a popover.
+- `toast-width` and `toast-font-size` are fixed values (356, 13), not derived.
+- A window narrower than 600 spans the stack across it (a fixed breakpoint); with a pointer it keeps the
+  pointer's `toast-offset` (24), so a theme's offset holds there too (a fixed 16 would ignore the token).
 
 ## Examples
 
@@ -365,21 +360,21 @@ spawn(async move {
    (above every modal of the surface, taking no focus) would remove the workaround and cover `nsh/base`'s modals.
 2. **No callable namespace.** An nshm exports components, functions and modules; `toast` cannot also have
    `toast.success`. Workaround: the `kind` option. If NSH's JS face allowed a module function with sub-functions,
-   Sonner's spelling could be added without breaking.
-3. **No app-wide hotkey to reach the toasts** (Sonner's `alt+T` focuses the toaster region) and no landmark role for
+   the `toast.success` spelling could be added without breaking.
+3. **No app-wide hotkey to reach the toasts** (such as `alt+T` focusing the toaster region) and no landmark role for
    the region. Not offered; could be added with `keymap.bind` and a `focus()` on the newest toast's first button.
 4. **Reduced motion and the stack's springs**: verified on NSH 0.7.0, `nsh/base`'s stack sets its layers' places at
    once with reduced motion (its springs run only without it), and its `Toast` counts as entered from the start, so
    no starting look shows; the library passes no starting or ending classes then. A test checks that a toast's
    first frame is its look with reduced motion (and its starting look without). No fallback is needed; it is
    undocumented in NSH, so a note there would keep it.
-5. **Expanded by default** (Sonner's `expand`): `nsh/base`'s stack expands only for the pointer or a finger, so
-   `expand` is not offered.
-6. **Collapsed layers keep their own height.** Sonner gives the toasts behind the newest the newest's height and hides
+5. **Expanded by default**: `nsh/base`'s stack expands only for the pointer or a finger, so
+   an always-expanded stack is not offered.
+6. **Collapsed layers keep their own height.** The toasts behind the newest should take the newest's height and hide
    their content, so they read as cards behind it; `nsh/base`'s stack lays each layer out at its measured height. The
-   library hides the content of the layers behind the newest while the stack is collapsed (fading in as it spreads
-   out; a test guards it); a taller layer behind still peeks further. A collapsed height option on the stack would
-   close the gap.
+   library hides the content of the layers behind the newest while the stack is collapsed (fading in as it spreads out;
+   a test guards it); a taller layer behind still peeks further. A collapsed height option on the stack would close the
+   gap.
 
 ## Decisions
 
@@ -387,8 +382,9 @@ Settled in review.
 
 1. **`toast()` resolves with an `id`** instead of taking callbacks (see "Departures").
 2. **`kind` instead of `toast.success(…)`** (NSH gap 2).
-3. **Description color `muted-foreground`**: Sonner's `#3f3f3f` / 91% white are greys no shadcn token names; the
-   nearest semantic role is `muted-foreground` (lighter than Sonner's in light, about the same in dark).
+3. **Description color `muted-foreground`**: the semantic role for secondary text, so the description follows the
+   theme rather than a fixed grey.
+
 4. **The action and cancel are the library's `Button`s** (radius 8, `primary` / `secondary`).
 5. **Escape does not dismiss toasts.**
 6. **Toasts move into the topmost library dialog** while one is open; under `nsh/base`'s own `Dialog` and `Sheet`

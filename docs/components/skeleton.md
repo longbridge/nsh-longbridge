@@ -1,7 +1,6 @@
 # Skeleton
 
 Status: implemented (P1). A loading placeholder: while content has not arrived, a slowly pulsing block holds its future place and shape.
-Reference: shadcn/ui new-york v4 `skeleton.tsx`.
 
 ## Usage
 
@@ -13,14 +12,14 @@ Reference: shadcn/ui new-york v4 `skeleton.tsx`.
 - A button or a small area is waiting: use `Spinner` (a button's own `loading` already has one).
 - The shape of the content is unknown, or loading is fast (< 300 ms): show nothing, or a `Spinner`; a skeleton far from
   the real shape makes the layout jump more, not less.
-- Shimmering text: shadcn has none and neither does this library.
+- Shimmering text: this library has none; a pulsing block says "loading" without drawing the eye.
 
 ## Built on
 
 `nsh/base` has no counterpart; this library draws a `view`. It has no behavior.
 
-Width, height and corner shape are the app's, given with `class` / `style` as in shadcn
-(`<Skeleton className="h-4 w-[250px]" />`). There is no default size: without one it is 0 × 0 and invisible.
+Width, height and corner shape are the app's, given with `class` / `style`
+(`<Skeleton class="h-4 w-[250px]" />`). There is no default size: without one it is 0 × 0 and invisible.
 
 ## API
 
@@ -37,7 +36,7 @@ No events, no children, no parts.
 
 ### Look
 
-shadcn: `animate-pulse rounded-md bg-accent`.
+In classes: `animate-pulse rounded-md bg-accent`.
 
 | | Value |
 |---|---|
@@ -51,8 +50,7 @@ The animation is not a token: its period and curve are Tailwind's fixed values, 
 
 - **Reduced motion**: no pulse, it stays opaque (`motion-reduce:animate-none`), in line with conventions.md (transitions
   go to zero under reduced motion). NSH's core starts no keyframe animation under reduced motion, so the component needs
-  nothing of its own for it. The pulse is decoration only, so stopping it loses nothing. shadcn does not handle
-  this.
+  nothing of its own for it. The pulse is decoration only, so stopping it loses nothing.
 - No hover / active / focus / disabled.
 
 ## Pointer and touch
@@ -78,7 +76,7 @@ Values are those of `nsh/base`'s default theme.
 | `skeleton-radius` | length | `radius-md` | 8 |
 <!-- /tokens -->
 
-`skeleton` follows `accent` (shadcn neutral: light `oklch(0.97 0 0)`, dark `oklch(0.269 0 0)`).
+`skeleton` follows `accent` (`neutral`: light `oklch(0.97 0 0)`, dark `oklch(0.269 0 0)`).
 ## Examples
 
 ```tsx

@@ -6,7 +6,7 @@ Every component follows these conventions. Change this document before changing 
 
 | Aspect | Decided by |
 |---|---|
-| The look (colors, radii, type, shadows, spacing) | shadcn/ui new-york v4, its values as tokens ([tokens.md](tokens.md)) |
+| The look (colors, radii, type, shadows, spacing) | A quiet, neutral look, its values as tokens ([tokens.md](tokens.md)) |
 | Behavior, keys, focus, accessibility | `nsh/base`: a component wraps its `nsh/base` counterpart where there is one, never rewriting its behavior |
 | The form of an interaction | The platform's conventions (a popup on a desktop, a sheet on a touch screen); what `nsh/base` already does per platform is used as is |
 | Desktop conventions | gpui-kit's Design Guides: the arrow cursor on buttons, the pointing hand on links only; medium density by default; concentric radii; every state visible |
@@ -21,11 +21,11 @@ mobile-first single column.
 - **Props are a struct**, events an enum, choices a `PropEnum`. The TypeScript declarations are generated from them,
   so every field has an English doc comment.
 - **Controlled**: the app owns the value and the component reports changes. Events are named as NSH names them
-  (`nsh/base`, NSH's `docs/dev/api-naming.md`), not as Radix does: `onChange({ checked })`, `onChange({ value })`,
+  (`nsh/base`, NSH's `docs/dev/api-naming.md`): `onChange({ checked })`, `onChange({ value })`,
   `onOpenChange({ open })`, `onPress`. Apps use this library beside `nsh/base`, so one thing has one name.
-- **Exports named like NSH's** (`Input`, `Button`) keep shadcn's names; an app using both renames one
+- **Exports named like NSH's** (`Input`, `Button`) keep their names; an app using both renames one
   (`import { Input as BaseInput } from "nsh/base"`).
-- **`variant` and `size`**: variants have shadcn's names (`default`, `secondary`, `outline`, `ghost`, `destructive`,
+- **`variant` and `size`**: variants have the usual names (`default`, `secondary`, `outline`, `ghost`, `destructive`,
   `link`; only those a component needs). `size` is `foundation`'s `Size` (`xs`, `sm`, `md`, `lg`; `md` by default),
   which changes the height, type, icon and padding together; there is no separate height prop.
 - **Styled parts**: the root takes `class` and `style` (merged last, over the component's own). Each meaningful part
@@ -53,11 +53,12 @@ mobile-first single column.
 
 - Colors, radii and sizes are read from the `theme()` handle. A component declares its tokens with `tokens!` in its
   file, their defaults derived from semantic tokens. A color literal in `src/components/` fails a test.
-- States: a component has the states shadcn or the platform gives it, and no others (fields and checkboxes have no
-  hover, as in shadcn). The states are: hover; active (pressed); focus-visible (a ring in `ring` at `ring-width` and
-  `ring-opacity`, the edge turning `ring`, drawn outside the control); disabled (`opacity-disabled`, no hover or press,
-  the arrow cursor kept); read-only (focusable and selectable, drawn as at rest); invalid (a `destructive` edge, and
-  the `ring-invalid` ring only while focused); loading (not pressable, not dimmed).
+- States: a component has the states its role or the platform gives it, and no others (fields and checkboxes have no
+  hover: a field's edge already says where it is). The states are: hover; active (pressed); focus-visible (a ring in
+  `ring` at `ring-width` and `ring-opacity`, the edge turning `ring`, drawn outside the control); disabled
+  (`opacity-disabled`, no hover or press, the arrow cursor kept); read-only (focusable and selectable, drawn as at
+  rest); invalid (a `destructive` edge, and the `ring-invalid` ring only while focused); loading (not pressable, not
+  dimmed).
 - On a touch screen focus changes only the edge color, without a ring (as iOS's and Android's own controls).
 - A press goes through `foundation`'s `press(scale)`: 0.97 for buttons, 0.9 for small controls such as checkboxes and
   radios; no scale with reduced motion. Color transitions take `duration`.
@@ -84,8 +85,8 @@ mobile-first single column.
   styles there) is drawn by the library, on `nsh/base`'s behavior, rather than styled through `nsh/base`'s part.
 - Decorative components (`Separator`, `Skeleton`) are hidden from accessibility: `accessible(false)` and
   `accessibility_elements_hidden(true)`.
-- Both appearances must look right; dark follows shadcn's dark treatment (an outline button in dark: an `input`
-  edge on `input` at 30%).
+- Both appearances must look right; dark has its own treatment, not an inverted light (an outline button in dark:
+  an `input` edge on `input` at 30%).
 
 ## Overlays
 

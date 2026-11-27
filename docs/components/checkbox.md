@@ -1,6 +1,6 @@
 # Checkbox
 
-Status: implemented (P1). The look follows shadcn/ui new-york v4 `checkbox.tsx`; the
+Status: implemented (P1). The look is this library's; the
 behavior is `nsh/base`'s `Checkbox`.
 
 `Checkbox`, [`Switch`](switch.md) and [`RadioGroup`](radio-group.md) are one family of choice controls: they handle
@@ -87,18 +87,18 @@ prop that changes) after the library's own (NSH gaps, 3). `indicatorClass` and `
 
 ## Variants and sizes
 
-No variants (shadcn has none). All four sizes. The box's side is the token `checkbox-size-<size>`; the rest follows it:
+No variants. All four sizes. The box's side is the token `checkbox-size-<size>`; the rest follows it:
 
 | size | Box (pointer) | Box (touch) | Check / dash icon | Label font size |
 |---|---|---|---|---|
 | `xs` | 12 | 16 | box − 2 | `font-size-xs` 12 |
 | `sm` | 14 | 18 | box − 2 | `font-size-sm` 13 |
-| `md` | 16 | 20 | box − 2 (14, shadcn's `size-3.5`) | `font-size-md` 14 |
+| `md` | 16 | 20 | box − 2 (14, `size-3.5`) | `font-size-md` 14 |
 | `lg` | 18 | 24 | box − 2 | `font-size-lg` 14 |
 
 The box's side is half the control height of the size (`control-height-<size>` with a pointer,
 `control-height-touch-<size>` on touch), so it scales with the `control-height` seed. `md` with a pointer is 16,
-shadcn's `size-4`.
+`size-4`.
 
 Fixed geometry, in the component, not tokens:
 
@@ -114,34 +114,34 @@ Fixed geometry, in the component, not tokens:
 - The box is `flex-shrink: 0`. With a label whose line height is taller than the box, the box takes a top margin of
   half the difference, so it stays centered on the label's first line however many lines follow.
 
-Differences from shadcn: shadcn's checkbox has one size, 16, and its label is a separate `Label`. Here there are four
-sizes (conventions), and the label is `children`, since `nsh/base` puts `children` in the press target and the
-accessible name: a press on the label is a press on the box, with no `htmlFor`. Box-to-label gap 8 (shadcn's examples
-use `gap-3`, 12; `Label` itself uses `gap-2`, 8): the desktop's medium density.
+Why four sizes and a label child: sizes come from the conventions, and the label is `children`, since `nsh/base` puts
+`children` in the press target and the accessible name: a press on the label is a press on the box, with no `htmlFor`.
+Box-to-label gap 8 (`Label` itself uses `gap-2`, 8): the desktop's medium density.
 
 ## States
 
-Every color is a token in Tokens; shadcn's classes are in parentheses. Only the states shadcn has (conventions, "States").
+Every color is a token in Tokens; the classes are in parentheses. Only the states a checkbox needs (conventions,
+"States").
 
 | State | Box fill | Box border | Mark | Other |
 |---|---|---|---|---|
 | Unchecked | `checkbox` (light: transparent; dark: `input` 30%, `dark:bg-input/30`) | `checkbox-border` (`border-input`) | none | Shadow `checkbox-shadow` (1, `shadow-xs`) |
 | Checked | `checkbox-checked` (`bg-primary`) | `checkbox-checked-border` (`border-primary`) | `check` in `checkbox-checked-foreground` (`text-primary-foreground`) | |
-| Indeterminate | as checked | as checked | `minus`, same color | shadcn v4 draws none; `nsh/base` has the state, so the dash is added |
-| hover | none | | | shadcn has none |
+| Indeterminate | as checked | as checked | `minus`, same color | `nsh/base` has the state, so the dash is drawn |
+| hover | none | | | A box's edge already says where it is |
 | active (pressed) | | | | foundation `press(0.9)` on the box; no scaling with reduced motion |
 | focus-visible (pointer) | | `checkbox-border-focus` while unchecked (`focus-visible:border-ring`); checked / indeterminate keep their border | | A ring outside the box: `ring-width` 3, color `checkbox-ring` (`ring-[3px] ring-ring/50`), outside layout |
 | focus-visible (touch) | | `checkbox-border-focus` in every state (`checkbox-border-invalid` while invalid) | | No ring |
 | invalid | | `checkbox-border-invalid` while unchecked (`aria-invalid:border-destructive`); checked / indeterminate keep their border | | With a pointer, the focus ring is `checkbox-ring-invalid` (`aria-invalid:ring-destructive/20 dark:…/40`) |
-| disabled | | | | The whole root at `opacity-disabled` (box and label together, as shadcn's `disabled:opacity-50` with Label's `peer-disabled:opacity-50`); no press feedback |
-| readonly, loading | not supported | | | Neither shadcn nor `nsh/base` has them |
+| disabled | | | | The whole root at `opacity-disabled` (box and label together, `disabled:opacity-50`); no press feedback |
+| readonly, loading | not supported | | | `nsh/base` has neither |
 
-The border's precedence with a pointer (the order of shadcn's classes in Tailwind 4): checked / indeterminate > invalid
+The border's precedence with a pointer (the order of the classes in Tailwind 4): checked / indeterminate > invalid
 > focus-visible > rest. On touch there is no ring, so the focus border wins over the checked one and yields only to
 invalid.
 
-Transitions: only the ring transitions (shadcn's `transition-shadow`, over `duration`); fill, border and mark change
-with the value at once (shadcn's indicator is `transition-none`). The press's sink changes at once too: NSH takes one
+Transitions: only the ring transitions (`transition-shadow`, over `duration`); fill, border and mark change
+with the value at once (the indicator is `transition-none`). The press's sink changes at once too: NSH takes one
 set of transitioned properties per view (the last `transition-*` wins), and shadow and transform together come only
 with colors (`transition`).
 
@@ -209,7 +209,7 @@ Values are those of `nsh/base`'s default theme.
 
 - `checkbox` is transparent in light and `input` at 30% in dark (`dark:bg-input/30`); `checkbox-ring-invalid` is
   `destructive` at 20%, 40% in dark; `checkbox-shadow` 0 draws none.
-- `checkbox-radius` is drawn between 0 and a quarter of the box's side (4 at `md`, shadcn's `rounded-[4px]`); the clamp
+- `checkbox-radius` is drawn between 0 and a quarter of the box's side (4 at `md`, `rounded-[4px]`); the clamp
   is the component's, as a token default has no `max()`.
 - An app that changes the touch size alone writes `checkbox-size-<size>-touch` (tokens.md's general rule).
 - `checked` takes the variant's place (`checkbox-checked-border`): state suffixes are only `-hover`, `-active`, `-focus`,
