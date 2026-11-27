@@ -163,6 +163,20 @@ pub enum Label {
     /// the values' text.
     #[prop(rename = "value-range")]
     ValueRange,
+    /// "Start date": a date range picker's typed start.
+    #[prop(rename = "start-date")]
+    StartDate,
+    /// "End date": a date range picker's typed end.
+    #[prop(rename = "end-date")]
+    EndDate,
+    /// "Date": a date picker's typed date.
+    Date,
+    /// "Cancel": the button that drops a pending choice (a date picker's
+    /// `confirm`).
+    Cancel,
+    /// "Apply": the button that commits a pending choice (a date picker's
+    /// `confirm`).
+    Apply,
 }
 
 impl Label {
@@ -217,6 +231,11 @@ impl Label {
         Label::Clear,
         Label::Remove,
         Label::ValueRange,
+        Label::StartDate,
+        Label::EndDate,
+        Label::Date,
+        Label::Cancel,
+        Label::Apply,
     ];
 
     /// Its key, which a translator is given (`"loading"`).
@@ -271,6 +290,11 @@ impl Label {
             Label::Clear => "clear",
             Label::Remove => "remove",
             Label::ValueRange => "value-range",
+            Label::StartDate => "start-date",
+            Label::EndDate => "end-date",
+            Label::Date => "date",
+            Label::Cancel => "cancel",
+            Label::Apply => "apply",
         }
     }
 
@@ -326,6 +350,11 @@ impl Label {
             Label::Clear => "Clear",
             Label::Remove => "Remove",
             Label::ValueRange => "{start} – {end}",
+            Label::StartDate => "Start date",
+            Label::EndDate => "End date",
+            Label::Date => "Date",
+            Label::Cancel => "Cancel",
+            Label::Apply => "Apply",
         }
     }
 

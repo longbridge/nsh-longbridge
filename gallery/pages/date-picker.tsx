@@ -1,6 +1,7 @@
 // The DatePicker page: a meeting scheduled with a date and a time and a
-// report's period, sizes beside fields, states, ranges and presets, dates
-// and times, the app's own trigger.
+// report's period, sizes beside fields, states, ranges and presets, a
+// dashboard's period applied with Apply, dates and times, the app's own
+// trigger.
 
 import { signal, Text, View } from "nsh";
 import {
@@ -34,6 +35,12 @@ function isoDate(d: Date): string {
 function addDays(iso: string, n: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   return isoDate(new Date(y, m - 1, d + n));
+}
+
+/** The first and last ISO dates of the month `n` months from `iso`'s. */
+function monthOf(iso: string, n: number): [string, string] {
+  const [y, m] = iso.split("-").map(Number);
+  return [isoDate(new Date(y, m - 1 + n, 1)), isoDate(new Date(y, m + n, 0))];
 }
 
 const states: { label: string; note: string; value?: string; invalid?: boolean; disabled?: boolean }[] = [
@@ -105,6 +112,24 @@ export function DatePickerPage() {
         description="With range the first press starts the range and the second ends it and closes the popup. Presets sit beside the calendar on desktops and above it in a sheet; past days are out of reach here."
       >
         <PeriodDemo />
+      </Section>
+
+      <Section
+        title="Apply to commit"
+        description="confirm keeps the choice pending until Apply: a pick or a preset fills the calendar and the typed fields, and the popup stays open; Cancel, Escape or a press outside drop it. Each preset shows the dates it stands for. Type a date in the field's format or as 2026-10-28; what does not read turns the field red when you leave it. On a touch screen the sheet ends with the pending value and Cancel / Apply."
+      >
+        <Demos>
+          <AnalyticsDemo />
+          <Demo label="confirm with timePrecision: the time row, then Apply">
+            <DatePicker
+              class="w-64"
+              confirm
+              timePrecision="minute"
+              defaultValue="2026-11-26T14:30"
+              accessibilityLabel="Publish at"
+            />
+          </Demo>
+        </Demos>
       </Section>
 
       <Section
@@ -220,6 +245,50 @@ function PeriodDemo() {
         disabledMatcher={{ before: today }}
         accessibilityLabel="Report period"
       />
+    </Demo>
+  );
+}
+
+/** A dashboard's period: nothing reloads until Apply. */
+function AnalyticsDemo() {
+  const today = isoDate(new Date());
+  const period = signal<DatePickerValue>([addDays(today, -29), today]);
+  const reloads = signal(0);
+  const presets: DateRangePreset[] = [
+    { label: "Today", value: [today, today] },
+    { label: "Last 7 days", value: [addDays(today, -6), today] },
+    { label: "Last 30 days", value: [addDays(today, -29), today] },
+    { label: "Last month", value: monthOf(today, -1) },
+    { label: "This month", value: [monthOf(today, 0)[0], today] },
+    { label: "Year to date", value: [`${today.slice(0, 4)}-01-01`, today] },
+  ];
+  return (
+    <Demo label={`reloaded ${reloads()} time${reloads() === 1 ? "" : "s"}`}>
+      <View class="w-full max-w-[560px] gap-4 rounded-xl border border-border bg-card p-5">
+        <View class="flex-row items-start justify-between gap-4 flex-wrap">
+          <View class="gap-1">
+            <Text class="text-sm text-muted-foreground">Revenue</Text>
+            <Text class="text-2xl font-semibold text-foreground">$48,210.00</Text>
+          </View>
+          <DatePicker
+            class="w-[260px]"
+            range
+            confirm
+            numberOfMonths={2}
+            value={period()}
+            onChange={(e) => {
+              period.set(e.value);
+              reloads.set(reloads() + 1);
+            }}
+            presets={presets}
+            disabledMatcher={{ after: today }}
+            accessibilityLabel="Report period"
+          />
+        </View>
+        <Text class="text-xs text-muted-foreground">
+          {Array.isArray(period()) ? `Showing ${(period() as string[]).join(" to ")}` : "No period"}
+        </Text>
+      </View>
     </Demo>
   );
 }

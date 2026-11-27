@@ -516,3 +516,338 @@ fn in_a_horizontal_field_it_shrinks_to_share_the_row() {
         "{label:?} {picker:?}"
     );
 }
+
+/// Confirmed pickers (`confirm`): a controlled range with a preset, an
+/// empty single date and a date and time, writing down what they report.
+#[component]
+fn Confirmed() -> impl IntoElement {
+    let period = signal(DateTime::from((d(2026, 10, 5), d(2026, 10, 9))));
+    let log = signal(Vec::<String>::new());
+    let note = move |s: String| log.update(|l| l.push(s));
+    view()
+        .pt(px(40.0))
+        .pl(px(40.0))
+        .items_start()
+        .gap(px(8.0))
+        .child(
+            date_picker()
+                .range(true)
+                .confirm(true)
+                .first_day_of_week(Some(0))
+                .value(move || period.get())
+                .presets(vec![DateRangePreset::range(
+                    "Holidays",
+                    d(2026, 12, 24),
+                    d(2026, 12, 26),
+                )])
+                .accessibility_label("Period")
+                .on_change(move |picked: &PickedDate| {
+                    let v = picked.value;
+                    note(format!(
+                        "change:{:?}..{:?}",
+                        v.start().map(|v| v.date()),
+                        v.end().map(|v| v.date())
+                    ));
+                    period.set(v);
+                })
+                .on_open_change(move |e: &DatePickerEvent| {
+                    if let DatePickerEvent::OpenChange(open, reason) = e {
+                        note(format!("open:{open}:{reason:?}"));
+                    }
+                })
+                .on_cancel(move || note("cancel".into())),
+        )
+        .child(
+            date_picker()
+                .confirm(true)
+                .first_day_of_week(Some(0))
+                .accessibility_label("Due"),
+        )
+        .child(
+            date_picker()
+                .confirm(true)
+                .time_precision(Some(TimePrecision::Minute))
+                .hour_cycle(Some(HourCycle::H23))
+                .date_format(Some("%Y-%m-%d".into()))
+                .default_value(DateTime::from(
+                    d(2026, 11, 26).and_hms_opt(9, 30, 0).unwrap(),
+                ))
+                .accessibility_label("Meeting"),
+        )
+        .child(view().test_id("away").w(px(200.0)).h(px(40.0)))
+        .child(text(move || format!("log:{}", log.get().join(","))))
+}
+
+fn field_text(app: &Headless, name: &str) -> String {
+    app.screen()
+        .input_text(&format!("label:{name}"))
+        .unwrap()
+        .unwrap_or_default()
+        .to_owned()
+}
+
+fn apply_enabled(app: &Headless) -> bool {
+    app.screen().enabled("role:button[Apply]").unwrap()
+}
+
+#[test]
+fn confirm_keeps_a_complete_range_pending_until_apply() {
+    let mut app = start::<Confirmed>(true);
+    open(&mut app, "Period");
+    assert_eq!(field_text(&app, "Start date"), "Oct 5, 2026");
+    assert_eq!(field_text(&app, "End date"), "Oct 9, 2026");
+    app.press(&day("2026-10-12")).unwrap();
+    app.press(&day("2026-10-14")).unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    // Still open, nothing reported, the field unchanged.
+    assert!(app.screen().matches(&day("2026-10-14")).unwrap());
+    assert!(
+        app.shows("log:open:true:TriggerPress"),
+        "{:?}",
+        app.screen().texts()
+    );
+    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+    assert_eq!(field_text(&app, "Start date"), "Oct 12, 2026");
+    assert_eq!(field_text(&app, "End date"), "Oct 14, 2026");
+    app.press("role:button[Apply]").unwrap();
+    app.wait_for(
+        "text:log:open:true:TriggerPress,change:Some(2026-10-12)..Some(2026-10-14),open:false:Select",
+    )
+    .unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.screen().matches(&day("2026-10-14")).unwrap());
+    assert!(app.shows("Oct 12, 2026 - Oct 14, 2026"));
+}
+
+#[test]
+fn confirm_presets_show_their_dates_fill_the_calendar_and_cancel_drops_them() {
+    let mut app = start::<Confirmed>(true);
+    open(&mut app, "Period");
+    // The dates under the label, in the field's format.
+    assert!(app.shows("Dec 24, 2026 - Dec 26, 2026"));
+    let preset = app
+        .screen()
+        .accessibility(Some("role:button[Holidays]"))
+        .unwrap()
+        .unwrap();
+    assert!(!preset.selected);
+    app.press("role:button[Holidays]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    // Open, the fields and the calendar on it, the preset lit.
+    assert_eq!(field_text(&app, "Start date"), "Dec 24, 2026");
+    assert_eq!(field_text(&app, "End date"), "Dec 26, 2026");
+    assert!(app.screen().matches(&day("2026-12-24")).unwrap());
+    let preset = app
+        .screen()
+        .accessibility(Some("role:button[Holidays]"))
+        .unwrap()
+        .unwrap();
+    assert!(preset.selected);
+    app.press("role:button[Cancel]").unwrap();
+    app.wait_for("text:log:open:true:TriggerPress,cancel,open:false:Cancel")
+        .unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+    // Opening again starts from the committed value.
+    open(&mut app, "Period");
+    assert_eq!(field_text(&app, "Start date"), "Oct 5, 2026");
+}
+
+#[test]
+fn confirm_escape_drops_the_pending_value() {
+    let mut app = start::<Confirmed>(true);
+    open(&mut app, "Period");
+    app.press("role:button[Holidays]").unwrap();
+    app.press_key("escape").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.screen().matches("role:button[Apply]").unwrap());
+    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+    assert!(!app.screen().matches("text:/change:/").unwrap());
+}
+
+#[test]
+fn confirm_typed_fields_set_the_ends_and_return_applies() {
+    let mut app = start::<Confirmed>(true);
+    open(&mut app, "Period");
+    // An ISO date reads; a start after the end drops the end.
+    app.type_text("label:Start date", "2026-10-20").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert_eq!(field_text(&app, "Start date"), "2026-10-20");
+    assert_eq!(field_text(&app, "End date"), "");
+    assert!(!apply_enabled(&app));
+    // The field's format reads, in any case.
+    app.type_text("label:End date", "oct 25, 2026").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(apply_enabled(&app));
+    app.submit("label:End date").unwrap();
+    app.wait_for("text:/change:Some\\(2026-10-20\\)..Some\\(2026-10-25\\)/")
+        .unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(app.shows("Oct 20, 2026 - Oct 25, 2026"));
+}
+
+#[test]
+fn confirm_refused_text_is_kept_and_shown_invalid_on_leaving() {
+    let mut app = start::<Confirmed>(true);
+    open(&mut app, "Period");
+    app.type_text("label:End date", "someday").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    // Not while typing.
+    let state = app.screen().accessibility_state("label:End date").unwrap();
+    assert!(!state.invalid);
+    app.press_key("tab").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    let state = app.screen().accessibility_state("label:End date").unwrap();
+    assert!(state.invalid);
+    assert_eq!(field_text(&app, "End date"), "someday");
+    assert!(!apply_enabled(&app));
+    // An end before the start is refused too.
+    app.type_text("label:End date", "Oct 1, 2026").unwrap();
+    app.submit("label:End date").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(
+        app.screen()
+            .accessibility_state("label:End date")
+            .unwrap()
+            .invalid
+    );
+    // A date that reads clears it, and leaving writes it in the format.
+    app.type_text("label:End date", "2026-10-07").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(
+        !app.screen()
+            .accessibility_state("label:End date")
+            .unwrap()
+            .invalid
+    );
+    app.press_key("tab").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert_eq!(field_text(&app, "End date"), "Oct 7, 2026");
+    assert!(apply_enabled(&app));
+}
+
+#[test]
+fn confirm_a_single_date_and_time_waits_for_apply() {
+    let mut app = start::<Confirmed>(true);
+    open(&mut app, "Due");
+    assert_eq!(field_text(&app, "Date"), "");
+    assert!(!apply_enabled(&app));
+    app.press(&day("2026-11-27")).unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert_eq!(field_text(&app, "Date"), "Nov 27, 2026");
+    assert!(apply_enabled(&app));
+    app.press("role:button[Apply]").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(app.shows("Nov 27, 2026"));
+
+    open(&mut app, "Meeting");
+    assert!(app.screen().matches("label:Time").unwrap());
+    app.press(&day("2026-11-27")).unwrap();
+    app.type_text("label:Time", "1").unwrap();
+    app.type_text("label:Time", "4").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    // Pending: the field still shows the committed value.
+    assert!(app.shows("2026-11-26 09:30"));
+    app.press("role:button[Apply]").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(app.shows("2026-11-27 14:30"), "{:?}", app.screen().texts());
+}
+
+#[test]
+fn confirm_keeps_the_fields_combobox_and_its_keys() {
+    let mut app = start::<Confirmed>(true);
+    let node = app
+        .screen()
+        .accessibility(Some(&combobox("Period")))
+        .unwrap()
+        .unwrap();
+    assert_eq!(node.value.as_deref(), Some("Oct 5, 2026 - Oct 9, 2026"));
+    assert_eq!(node.expanded, Some(false));
+    // Return on the focused field opens it, the focus going to the first
+    // typed field.
+    app.press_key("tab").unwrap();
+    app.press_key("enter").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(
+        app.screen()
+            .accessibility_state(&combobox("Period"))
+            .unwrap()
+            .expanded,
+        Some(true)
+    );
+    assert!(app.screen().matches("role:button[Apply]").unwrap());
+    // Below the field, from its start, at least as wide.
+    let popup = popup_of(&app, "role:button[Apply]");
+    let b = bounds(&app, &format!("view:{popup}"));
+    let field = bounds(&app, &combobox("Period"));
+    assert_eq!(b.origin.x, field.origin.x);
+    assert_eq!((b.origin.y - field.origin.y - field.size.height).0, 4.0);
+    assert!(b.size.width >= field.size.width);
+    // A press outside (on another picker) drops the pending value and
+    // closes it.
+    app.press("role:button[Holidays]").unwrap();
+    app.press(&combobox("Due")).unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert_eq!(
+        app.screen()
+            .accessibility_state(&combobox("Period"))
+            .unwrap()
+            .expanded,
+        Some(false)
+    );
+    assert!(
+        app.screen()
+            .matches("text:/open:false:PressOutside/")
+            .unwrap()
+    );
+    assert!(app.shows("Oct 5, 2026 - Oct 9, 2026"));
+}
+
+#[test]
+fn confirm_escape_gives_the_focus_back_and_delete_clears() {
+    let mut app = start::<Confirmed>(true);
+    app.press_key("tab").unwrap();
+    app.press_key("enter").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    app.press_key("escape").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.screen().matches("role:button[Apply]").unwrap());
+    // The focus is back on the field: Delete on the closed field clears it.
+    app.press_key("delete").unwrap();
+    app.wait_for("text:/change:None..None/").unwrap();
+}
+
+#[test]
+fn confirm_on_touch_screens_is_a_sheet_with_the_footer() {
+    let mut app = start::<Confirmed>(false);
+    open(&mut app, "Period");
+    app.run_for(Duration::from_millis(400)).unwrap();
+    // No typed fields; the pending value above Cancel and Apply.
+    assert!(!app.screen().matches("label:Start date").unwrap());
+    assert!(app.screen().matches("role:button[Apply]").unwrap());
+    assert!(app.screen().matches("role:button[Holidays]").unwrap());
+    // The presets show their labels only; the footer what is pending.
+    assert!(!app.shows("Dec 24, 2026 - Dec 26, 2026"));
+    app.press("role:button[Holidays]").unwrap();
+    app.run_for(Duration::from_millis(100)).unwrap();
+    assert!(app.shows("Dec 24, 2026 - Dec 26, 2026"));
+    let sheet = popup_of(&app, &day("2026-12-24"));
+    assert_eq!(size(&app, &format!("view:{sheet}")).0, 800.0);
+    app.press("role:button[Apply]").unwrap();
+    app.wait_for("text:/change:Some\\(2026-12-24\\)..Some\\(2026-12-26\\)/")
+        .unwrap();
+}
+
+#[test]
+fn tsx_gets_confirm_and_its_parts() {
+    let registry = nsh_longbridge::registry();
+    let ts = nsh_core::element::declarations(&registry, &[]);
+    for wanted in [
+        "confirm?:",
+        "presetDescriptionClass?:",
+        "fieldsClass?:",
+        "footerStyle?:",
+    ] {
+        assert!(ts.contains(wanted), "{wanted}");
+    }
+}
