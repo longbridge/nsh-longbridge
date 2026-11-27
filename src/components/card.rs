@@ -1,4 +1,4 @@
-//! `Card` and its parts: shadcn/ui's card, a bordered surface laid out as
+//! `Card` and its parts: a card, a bordered surface laid out as
 //! a header (title, description, action), content and footer. No behavior.
 //! API: `docs/components/card.md`.
 
@@ -48,7 +48,7 @@ pub struct CardProps {
     pub children: Prop<Children>,
 }
 
-/// A card, shadcn/ui's: a bordered surface with a light shadow, laid out
+/// A card: a bordered surface with a light shadow, laid out
 /// as `CardHeader` (`CardTitle`, `CardDescription`, `CardAction`),
 /// `CardContent` and `CardFooter`. Not interactive: the controls inside
 /// work as usual.
@@ -111,7 +111,7 @@ pub fn CardTitle(props: CardTitleProps, _cx: Scope<NoEvent>) -> impl IntoElement
     text("")
         .role(AccessibilityRole::Header)
         .text_size(font_size)
-        // shadcn's `leading-none`.
+        // `leading-none`: the line exactly as tall as the text.
         .line_height(font_size)
         .font_weight(semibold(t))
         .child(props.children)
@@ -159,7 +159,8 @@ pub fn CardAction(props: CardActionProps, _cx: Scope<NoEvent>) -> impl IntoEleme
         }
     }
     // The span first: it sets the row's start too, which `row_start` then
-    // replaces (shadcn's `col-start-2 row-span-2 row-start-1`).
+    // replaces (`col-start-2 row-span-2 row-start-1`).
+
     view()
         .row_span(2u16)
         .row_start(1i16)

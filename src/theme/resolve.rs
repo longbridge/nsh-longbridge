@@ -255,7 +255,7 @@ impl<'a> Cx<'a> {
     }
 }
 
-/// shadcn's color `name` in `nsh/base`'s default theme.
+/// The base color `name` in `nsh/base`'s default theme.
 fn base_color(name: &str) -> Option<AdaptiveColor> {
     nsh_base::Theme::default().color(name)
 }

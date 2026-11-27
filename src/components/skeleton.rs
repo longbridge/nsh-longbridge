@@ -1,4 +1,4 @@
-//! `Skeleton`: shadcn/ui's skeleton, a pulsing block holding the place of
+//! `Skeleton`: a skeleton, a pulsing block holding the place of
 //! content that has not arrived. No behavior, out of the accessibility
 //! tree. API: `docs/components/skeleton.md`.
 
@@ -23,7 +23,7 @@ tokens! {
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct SkeletonProps {}
 
-/// A loading placeholder, shadcn/ui's: a block in the shape of the content
+/// A loading placeholder: a block in the shape of the content
 /// to come, pulsing slowly (not with reduced motion). It has no size of its
 /// own: give it one (`class="h-4 w-[250px]"`, `class="size-12
 /// rounded-full"`). Screen readers skip it: say "loading" on its container

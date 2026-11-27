@@ -1,4 +1,4 @@
-//! `Checkbox`: shadcn/ui's checkbox on `nsh/base`'s `Checkbox` (presses on
+//! `Checkbox`: a checkbox on `nsh/base`'s `Checkbox` (presses on
 //! the box and its label, the keyboard, the checkbox role and its checked,
 //! mixed, invalid and disabled states for screen readers). API:
 //! `docs/components/checkbox.md`.
@@ -43,7 +43,7 @@ tokens! {
     CHECKBOX_SIZE_XS: Length = "checkbox-size-xs" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_XS) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_XS) * 0.5),
     /// A small box's side.
     CHECKBOX_SIZE_SM: Length = "checkbox-size-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_SM) * 0.5),
-    /// A medium box's side (16, shadcn's `size-4`).
+    /// A medium box's side (16, `size-4`).
     CHECKBOX_SIZE_MD: Length = "checkbox-size-md" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_MD) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_MD) * 0.5),
     /// A large box's side.
     CHECKBOX_SIZE_LG: Length = "checkbox-size-lg" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_LG) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_LG) * 0.5),
@@ -139,7 +139,7 @@ pub enum CheckboxEvent {
     Change(bool),
 }
 
-/// A checkbox, shadcn/ui's: a box that is checked, unchecked or
+/// A checkbox: a box that is checked, unchecked or
 /// indeterminate (a dash), with its label beside it. Four sizes; a press on
 /// the label checks it too. The keyboard focus draws a ring around the box;
 /// on touch screens the box is larger, and without a label it takes presses

@@ -1,4 +1,4 @@
-//! `Tooltip`: shadcn/ui's tooltip on `nsh/base`'s `Tooltip` (when it shows
+//! `Tooltip`: a tooltip on `nsh/base`'s `Tooltip` (when it shows
 //! and hides, where it goes, the keyboard, the events). An element's
 //! `tooltip` prop takes it. API: `docs/components/tooltip.md`.
 
@@ -20,15 +20,15 @@ use crate::{
 
 tokens! {
     /// The bubble's fill: `foreground`, so it is inverted (dark on a light
-    /// theme), as shadcn's.
+    /// theme), so it stands apart from the page.
     TOOLTIP: Color = "tooltip" => |t| t.color(FOREGROUND),
     /// The bubble's text.
     TOOLTIP_FOREGROUND: Color = "tooltip-foreground" => |t| t.color(BACKGROUND),
     /// The bubble's corner radius.
     TOOLTIP_RADIUS: Length = "tooltip-radius" => |t| t.length(RADIUS_MD),
-    /// The bubble's horizontal padding (shadcn `px-3`).
+    /// The bubble's horizontal padding (`px-3`).
     TOOLTIP_PADDING_X: Length = "tooltip-padding-x" => |t| t.length(SPACING) * 3.0,
-    /// The bubble's vertical padding (shadcn `py-1.5`).
+    /// The bubble's vertical padding (`py-1.5`).
     TOOLTIP_PADDING_Y: Length = "tooltip-padding-y" => |t| t.length(SPACING) * 1.5,
     /// The text size: Tailwind's `text-xs`, explanatory text rather than a
     /// control's.
@@ -108,7 +108,7 @@ pub enum TooltipEvent {
     Close,
 }
 
-/// A hint bubble, shadcn/ui's: a line about an element shown while the
+/// A hint bubble: a line about an element shown while the
 /// pointer rests on it or the keyboard focus is on it. Give it as the
 /// element's `tooltip` (`<Button tooltip={<Tooltip>Save</Tooltip>}>`). It
 /// is inverted (dark on a light theme), fades and zooms in, never takes the
@@ -158,7 +158,7 @@ pub fn Tooltip(props: TooltipProps, cx: Scope<TooltipEvent>) -> impl IntoElement
         .line_height(move || line_height(font_size()))
         // The bubble is the trigger's child, so it would inherit the
         // trigger's text styles: a truncated label's tooltip would not wrap,
-        // a title's would be bold. shadcn's, portaled, inherits none.
+        // a title's would be bold. A bubble reads the same over any trigger.
         .whitespace_normal()
         .font_weight(FontWeight::NORMAL)
         .no_underline()

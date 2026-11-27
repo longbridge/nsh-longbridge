@@ -1,4 +1,4 @@
-//! `Popover`: shadcn/ui's popover on `nsh/base`'s `Popover` (the trigger,
+//! `Popover`: a popover on `nsh/base`'s `Popover` (the trigger,
 //! opening and closing, placement, focus, presence). The popup surface it
 //! draws is `foundation::popup`'s, which the menus share. API:
 //! `docs/components/popover.md`.
@@ -22,9 +22,9 @@ use crate::{
 };
 
 tokens! {
-    /// The popup's width (shadcn's `w-72`).
+    /// The popup's width (`w-72`).
     POPOVER_WIDTH: Length = "popover-width" => |t| t.length(SPACING) * 72.0,
-    /// The popup's padding (shadcn's `p-4`).
+    /// The popup's padding (`p-4`).
     POPOVER_PADDING: Length = "popover-padding" => |t| t.length(SPACING) * 4.0,
     /// The gap between a `PopoverHeader`'s title and description.
     POPOVER_HEADER_GAP: Length = "popover-header-gap" => |t| t.length(SPACING),
@@ -94,8 +94,8 @@ pub enum PopoverEvent {
     Position(Placement, Bounds<Points>, Size<Points>),
 }
 
-/// Rich content in a floating panel next to the element that opened it,
-/// shadcn/ui's: a press on the trigger opens it, a press outside or Escape
+/// Rich content in a floating panel next to the element that opened it:
+/// a press on the trigger opens it, a press outside or Escape
 /// closes it, and the focus goes back to the trigger. It does not block
 /// the page. It fades, zooms and slides in from its trigger's side.
 #[component]

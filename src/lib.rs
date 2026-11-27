@@ -1,6 +1,6 @@
-//! nsh-longbridge: Longbridge's shared NSH component library. shadcn/ui's
-//! look (`new-york` v4, `neutral` by default) on `nsh/base`'s behavior, one
-//! Rust implementation for TSX apps (`import { Button } from
+//! nsh-longbridge: Longbridge's shared NSH component library. A quiet,
+//! neutral look (the `neutral` palette by default) on `nsh/base`'s
+//! behavior, one Rust implementation for TSX apps (`import { Button } from
 //! "nsh-longbridge"`) and Rust apps (`use nsh_longbridge::button`).
 //!
 //! - [`theme`]: tokens in three layers (seeds, semantic, per component),

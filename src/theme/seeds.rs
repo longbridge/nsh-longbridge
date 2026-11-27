@@ -4,7 +4,7 @@
 use crate::tokens;
 
 tokens! {
-    /// The base corner radius (shadcn's `--radius`, 0.625rem). `radius-sm`
+    /// The base corner radius (`--radius`, 0.625rem). `radius-sm`
     /// to `radius-xl` derive from it. Its default is `nsh/base`'s theme's.
     RADIUS: Length = "radius",
     /// The spacing unit (Tailwind 4's `--spacing`): paddings and gaps are

@@ -27,7 +27,7 @@ tokens! {
     POPOVER_RADIUS: Length = "popover-radius" => |t| t.length(RADIUS_MD),
     /// A popup's shadow level (3: `md`).
     POPOVER_SHADOW: Number = "popover-shadow" => |t| t.value(3.0),
-    /// The gap between a popup and its trigger (shadcn's `sideOffset`).
+    /// The gap between a popup and its trigger (the side offset).
     POPOVER_OFFSET: Length = "popover-offset" => |t| t.length(SPACING),
     /// The distance a popup keeps from the edges of the safe area.
     POPOVER_MARGIN: Length = "popover-margin" => |t| t.length(SPACING),

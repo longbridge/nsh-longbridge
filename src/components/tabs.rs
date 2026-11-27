@@ -1,4 +1,4 @@
-//! `Tabs`, `TabsList`, `TabsTrigger` and `TabsContent`: shadcn/ui's tabs on
+//! `Tabs`, `TabsList`, `TabsTrigger` and `TabsContent`: tabs on
 //! `nsh/base`'s `Tabs` and `Tab` (one stop of the keyboard focus, the
 //! arrows, Home and End, the tablist and tab roles and their states for
 //! screen readers). `nsh/base` holds no value and no content: `Tabs` holds
@@ -41,8 +41,7 @@ tokens! {
     TABS_LIST: Color = "tabs-list" => |t| t.color(MUTED),
     /// The list's corner radius (the `default` variant).
     TABS_LIST_RADIUS: Length = "tabs-list-radius" => |t| t.length(RADIUS_LG),
-    /// The space between the list's edge and its triggers (shadcn's
-    /// `p-[3px]`).
+    /// The space between the list's edge and its triggers (`p-[3px]`).
     TABS_LIST_PADDING: Length = "tabs-list-padding" => |t| t.length(SPACING) * 0.75,
     /// An extra small list's height.
     TABS_LIST_HEIGHT_XS: Length = "tabs-list-height-xs" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_XS), t.length(CONTROL_HEIGHT_TOUCH_XS)),
@@ -50,12 +49,12 @@ tokens! {
     TABS_LIST_HEIGHT_SM: Length = "tabs-list-height-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM), t.length(CONTROL_HEIGHT_TOUCH_SM)),
     /// A medium list's height.
     TABS_LIST_HEIGHT_MD: Length = "tabs-list-height-md" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_MD), t.length(CONTROL_HEIGHT_TOUCH_MD)),
-    /// A large list's height (shadcn's `h-9`).
+    /// A large list's height (`h-9`).
     TABS_LIST_HEIGHT_LG: Length = "tabs-list-height-lg" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_LG), t.length(CONTROL_HEIGHT_TOUCH_LG)),
     /// A trigger's corner radius: concentric with the list's. Drawn between
     /// 0 and half the trigger's height.
     TABS_TRIGGER_RADIUS: Length = "tabs-trigger-radius" => |t| t.length(TABS_LIST_RADIUS) - t.length(TABS_LIST_PADDING),
-    /// A trigger's horizontal padding (shadcn's `px-2`).
+    /// A trigger's horizontal padding (`px-2`).
     TABS_TRIGGER_PADDING_X: Length = "tabs-trigger-padding-x" => |t| t.length(SPACING) * 2.0,
     /// A trigger's text and icon at rest: `foreground` at 60 %,
     /// `muted-foreground` in the dark.
@@ -85,8 +84,7 @@ tokens! {
 /// A tab list's look.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, PropEnum)]
 pub enum TabsVariant {
-    /// shadcn's segmented list: a muted track, the selected tab raised on
-    /// it.
+    /// A segmented list: a muted track, the selected tab raised on it.
     #[default]
     Default,
     /// Tabs on no fill, the selected one underlined.
@@ -151,7 +149,7 @@ pub enum TabsEvent {
     Change(SharedString),
 }
 
-/// Tabs, shadcn/ui's: views of one page, one shown at a time, switched by
+/// Tabs: views of one page, one shown at a time, switched by
 /// a row (or column) of tabs. It holds the selected value (the app's
 /// `value`, or its own from `defaultValue`), a [`TabsList`] of
 /// [`TabsTrigger`]s and the [`TabsContent`] panels, the selected one made.
@@ -177,7 +175,7 @@ pub fn Tabs(props: TabsProps, cx: Scope<TabsEvent>) -> impl IntoElement {
 /// The props of [`TabsList`].
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct TabsListProps {
-    /// Its look: `default` (shadcn's segmented list) or `line` (underlined
+    /// Its look: `default` (a segmented list) or `line` (underlined
     /// tabs on no fill).
     #[prop(default)]
     pub variant: Prop<TabsVariant>,
@@ -213,7 +211,7 @@ pub fn TabsList(props: TabsListProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         return root.child(props.children);
     }
     root.flex_shrink_0()
-        // shadcn's `w-fit` (and `h-fit` beside vertical panels): as long as
+        // `w-fit` (and `h-fit` beside vertical panels): as long as
         // its triggers where the root stretches its children, while a row's
         // `items-center` still centers it (an `align-self` would override
         // the row's alignment). The app's class goes over it.
@@ -299,7 +297,7 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
     let selected =
         move || tabs.is_some_and(|c| c.value.with(|v| v.as_ref() == Some(&props.value.get())));
     let disabled = move || props.disabled.get();
-    // shadcn's `h-[calc(100%-1px)]` inside the list's padding.
+    // `h-[calc(100%-1px)]` inside the list's padding.
     let height =
         move || t.length(list_height_token(size())) - t.length(TABS_LIST_PADDING) * 2.0 - px(1.0);
     let font_size = move || t.length(font_size_token(size()));
@@ -332,7 +330,7 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
     let root = root
         .flex_row()
         .items_center()
-        // Grows from its content (`flex: 1 1 auto`): shadcn's `flex-1` relies
+        // Grows from its content (`flex: 1 1 auto`): a plain `flex-1` relies
         // on a flex item's content minimum (`min-width: auto`), which NSH
         // does not apply, so from 0 a long label would get less than its
         // width in a list as wide as its triggers.

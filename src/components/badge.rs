@@ -1,4 +1,4 @@
-//! `Badge`: shadcn/ui's badge, a small mark for a status, a category or a
+//! `Badge`: a badge, a small mark for a status, a category or a
 //! count. No behavior. API: `docs/components/badge.md`.
 
 use nsh_core::{element::Style, element::TextPartStyle, prelude::*};
@@ -38,12 +38,12 @@ tokens! {
     BADGE_OUTLINE_BORDER: Color = "badge-outline-border" => |t| t.color(BORDER),
     /// The outline variant's text and icons.
     BADGE_OUTLINE_FOREGROUND: Color = "badge-outline-foreground" => |t| t.color(FOREGROUND),
-    /// The corner radius: a pill (shadcn's `rounded-full`), not following
+    /// The corner radius: a pill (`rounded-full`), not following
     /// the `radius` seed.
     BADGE_RADIUS: Length = "badge-radius" => |t| t.px(9999.0),
-    /// The horizontal padding (shadcn `px-2`).
+    /// The horizontal padding (`px-2`).
     BADGE_PADDING_X: Length = "badge-padding-x" => |t| t.length(SPACING) * 2.0,
-    /// The vertical padding (shadcn `py-0.5`).
+    /// The vertical padding (`py-0.5`).
     BADGE_PADDING_Y: Length = "badge-padding-y" => |t| t.length(SPACING) * 0.5,
     /// The gap between an icon and the text.
     BADGE_GAP: Length = "badge-gap" => |t| t.length(SPACING),
@@ -51,7 +51,7 @@ tokens! {
     BADGE_FONT_SIZE: Length = "badge-font-size" => |t| t.length(FONT_SIZE_XS),
 }
 
-/// A badge's colors (shadcn's variants).
+/// A badge's colors.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, PropEnum)]
 pub enum BadgeVariant {
     /// The `primary` fill.
@@ -84,7 +84,7 @@ pub struct BadgeProps {
     pub children: Prop<Children>,
 }
 
-/// A badge, shadcn/ui's: a small pill marking a status, a category, a
+/// A badge: a small pill marking a status, a category, a
 /// version or a count. Four variants, one size, one line (truncated when
 /// too long). Not interactive: it is not pressed or focused.
 #[component]
@@ -98,7 +98,7 @@ pub fn Badge(props: BadgeProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         .flex_row()
         .items_center()
         .justify_center()
-        // shadcn's `w-fit`: as wide as its content where a column stretches
+        // `w-fit`: as wide as its content where a column stretches
         // its children, while a row's `items-center` still centers it (an
         // `align-self` would override the row's alignment). A class, as
         // `fit-content` has no typed setter; the app's class goes over it.

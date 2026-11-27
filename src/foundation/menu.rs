@@ -30,9 +30,9 @@ use crate::{
 };
 
 tokens! {
-    /// The space between the surface's edge and its rows (shadcn's `p-1`).
+    /// The space between the surface's edge and its rows (`p-1`).
     MENU_PADDING: Length = "menu-padding" => |t| t.length(SPACING),
-    /// The narrowest a menu's surface gets (shadcn's `min-w-[8rem]`).
+    /// The narrowest a menu's surface gets (`min-w-[8rem]`).
     MENU_MIN_WIDTH: Length = "menu-min-width" => |t| t.px(128.0),
     /// The gap between a menu and its submenu's popup: negative, so the
     /// submenu's first row is level with its trigger row, across the
@@ -44,7 +44,7 @@ tokens! {
     MENU_ITEM_HEIGHT_SM: Length = "menu-item-height-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM) - 4.0, t.length(TOUCH_TARGET)),
     /// A medium row's height.
     MENU_ITEM_HEIGHT_MD: Length = "menu-item-height-md" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_MD) - 4.0, t.length(TOUCH_TARGET)),
-    /// A large row's height (shadcn's 32).
+    /// A large row's height (32).
     MENU_ITEM_HEIGHT_LG: Length = "menu-item-height-lg" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_LG) - 4.0, t.length(CONTROL_HEIGHT_TOUCH_LG)),
     /// An extra small row's text size: 14 on touch screens.
     MENU_ITEM_FONT_SIZE_XS: Length = "menu-item-font-size-xs" => |t| t.pointer_touch(t.length(FONT_SIZE_XS), t.px(14.0)),
@@ -55,7 +55,7 @@ tokens! {
     MENU_ITEM_FONT_SIZE_MD: Length = "menu-item-font-size-md" => |t| t.pointer_touch(t.length(FONT_SIZE_MD), t.px(16.0)),
     /// A large row's text size: 16 on touch screens.
     MENU_ITEM_FONT_SIZE_LG: Length = "menu-item-font-size-lg" => |t| t.pointer_touch(t.length(FONT_SIZE_LG), t.px(16.0)),
-    /// A row's horizontal padding (shadcn's `px-2`).
+    /// A row's horizontal padding (`px-2`).
     MENU_ITEM_PADDING_X: Length = "menu-item-padding-x" => |t| t.length(SPACING) * 2.0,
     /// The space between a row's icon or indicator, its label and its end.
     MENU_ITEM_GAP: Length = "menu-item-gap" => |t| t.length(SPACING) * 2.0,

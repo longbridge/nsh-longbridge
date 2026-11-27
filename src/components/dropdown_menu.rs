@@ -1,4 +1,4 @@
-//! `DropdownMenu` and its parts: shadcn/ui's dropdown menu on `nsh/base`'s
+//! `DropdownMenu` and its parts: a dropdown menu on `nsh/base`'s
 //! `Menu`, `MenuItem`, `MenuSeparator` and `Submenu` (the popup at the
 //! trigger or a sheet on touch screens, the keys, typeahead, submenus,
 //! dismissal, the menu roles and their states for screen readers). The
@@ -93,7 +93,7 @@ pub enum DropdownMenuEvent {
     Close,
 }
 
-/// A dropdown menu, shadcn/ui's: a list of commands and settings its
+/// A dropdown menu: a list of commands and settings its
 /// `trigger` opens, at the trigger on desktops (a sheet at the bottom on
 /// phones). Its items are [`DropdownMenuItem`]s, checkbox and radio items,
 /// labels, separators and submenus. The keys move between the items and
@@ -197,7 +197,7 @@ fn popup_look(t: Theme, side: Placement) -> StyleRefinement {
 
 /// The menu's sheet: the popup surface's fill and text, its top corners
 /// `menu-sheet-radius`, a top edge, `menu-sheet-padding` inside and the
-/// bottom safe area below, no shadow (shadcn's Drawer).
+/// bottom safe area below, no shadow (a drawer's look).
 pub(crate) fn sheet_look(t: Theme) -> StyleRefinement {
     popup::surface(StyleRefinement::default(), t)
         .rounded(px(0.0))

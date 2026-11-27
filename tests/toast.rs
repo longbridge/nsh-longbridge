@@ -215,7 +215,7 @@ fn the_close_button_dismisses_it() {
     let alert = bounds(&app, "role:alert[Event created. Sunday at 9:00]");
     let close = bounds(&app, "role:button[Close]");
     assert_eq!((close.size.width.0, close.size.height.0), (20.0, 20.0));
-    // Out by 35% (7) from inside the edge (1), as Sonner's CSS places it.
+    // Out by 35% (7) from inside the edge (1).
     assert_eq!(close.origin.x.0, alert.origin.x.0 - 6.0, "out by 35%");
     assert_eq!(close.origin.y.0, alert.origin.y.0 - 6.0);
     app.press("role:button[Close]").unwrap();
@@ -436,8 +436,8 @@ fn Layered() -> impl IntoElement {
     app(make_layered, toaster().into_element())
 }
 
-/// Collapsed, a layer behind the newest hides its content (Sonner's
-/// cards behind the front one); the pointer on the stack spreads it out
+/// Collapsed, a layer behind the newest hides its content (cards behind
+/// the front one); the pointer on the stack spreads it out
 /// and shows it.
 #[test]
 fn a_collapsed_stacks_back_layers_hide_their_content() {

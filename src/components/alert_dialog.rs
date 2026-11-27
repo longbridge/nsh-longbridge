@@ -1,4 +1,4 @@
-//! `AlertDialog`: shadcn/ui's alert dialog, a `Dialog` with an alert's
+//! `AlertDialog`: an alert dialog, a `Dialog` with an alert's
 //! rules (role `alertdialog`, the overlay never closes it, no "×", the
 //! focus on Cancel as it opens), drawn by `Dialog`'s parts. API:
 //! `docs/components/alert-dialog.md`.
@@ -30,10 +30,10 @@ use crate::{
 };
 
 tokens! {
-    /// The panel's widest at size `sm` and `xs` (shadcn's `max-w-xs`).
+    /// The panel's widest at size `sm` and `xs` (`max-w-xs`).
     ALERT_DIALOG_MAX_WIDTH_SM: Length = "alert-dialog-max-width-sm" => |t| t.length(SPACING) * 80.0,
     /// The gap between the header's media, title and description
-    /// (shadcn's `gap-1.5`).
+    /// (`gap-1.5`).
     ALERT_DIALOG_HEADER_GAP: Length = "alert-dialog-header-gap" => |t| t.length(SPACING) * 1.5,
     /// The media tile's fill.
     ALERT_DIALOG_MEDIA: Color = "alert-dialog-media" => |t| t.color(MUTED),
@@ -120,7 +120,7 @@ pub fn AlertDialog(props: AlertDialogProps, cx: Scope<AlertDialogEvent>) -> impl
 #[derive(Debug, Clone, PartialEq, Props)]
 pub struct AlertDialogContentProps {
     /// `sm` (and `xs`): a narrow alert, centered, its buttons side by side
-    /// (shadcn's `size="sm"`); `md` (and `lg`): as wide as a dialog.
+    /// (`size="sm"`); `md` (and `lg`): as wide as a dialog.
     #[prop(default)]
     pub size: Prop<Size>,
     /// Tailwind classes of the panel, after its own look.
@@ -228,7 +228,7 @@ pub fn AlertDialogHeader(props: AlertDialogHeaderProps, _cx: Scope<NoEvent>) -> 
                 s.text_center()
             };
             if beside {
-                // shadcn's `grid-rows-[auto_1fr]`; `minmax(0, 1fr)`, as
+                // `grid-rows-[auto_1fr]`; `minmax(0, 1fr)`, as
                 // NSH 0.7.0 gives an `auto` row nothing next to a `1fr`
                 // one an item spans (alert-dialog.md, NSH gaps 2).
                 s.grid_template_columns("auto minmax(0, 1fr)")

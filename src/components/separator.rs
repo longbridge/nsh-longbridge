@@ -1,4 +1,4 @@
-//! `Separator`: shadcn/ui's separator, a thin line between content,
+//! `Separator`: a separator, a thin line between content,
 //! horizontal or vertical. Decorative: no behavior, out of the
 //! accessibility tree. API: `docs/components/separator.md`.
 
@@ -29,7 +29,7 @@ pub struct SeparatorProps {
     pub orientation: Prop<Axis>,
 }
 
-/// A separator, shadcn/ui's: a one-point line in the `border` color that
+/// A separator: a one-point line in the `border` color that
 /// divides sections (horizontal) or the items of a row (vertical). It
 /// stretches across its parent; it takes no pointer events and screen
 /// readers skip it.

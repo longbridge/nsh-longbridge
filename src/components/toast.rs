@@ -1,5 +1,5 @@
-//! `Toaster` and `toast()`: shadcn/ui's toasts (Sonner, styled with
-//! shadcn's tokens) on `nsh/base`'s toast pieces: its `ToastManager`
+//! `Toaster` and `toast()`: toasts, styled with the library's tokens,
+//! on `nsh/base`'s toast pieces: its `ToastManager`
 //! keeps the queue and the lifecycle, its `ToastStack` lays the toasts out
 //! and moves them, its `Toast` is each toast's semantic root and swipe.
 //! The library adds the queue behind `toast()` (a surface global), the
@@ -48,7 +48,7 @@ use crate::{
 };
 
 tokens! {
-    /// A toast's fill (shadcn's `--normal-bg: var(--popover)`).
+    /// A toast's fill (`popover`).
     TOAST: Color = "toast" => |t| t.color(POPOVER),
     /// A toast's text.
     TOAST_FOREGROUND: Color = "toast-foreground" => |t| t.color(POPOVER_FOREGROUND),
@@ -56,17 +56,17 @@ tokens! {
     TOAST_BORDER: Color = "toast-border" => |t| t.color(BORDER),
     /// A toast's description.
     TOAST_DESCRIPTION_FOREGROUND: Color = "toast-description-foreground" => |t| t.color(MUTED_FOREGROUND),
-    /// A toast's corner radius (shadcn's `--border-radius: var(--radius)`).
+    /// A toast's corner radius (`radius-lg`).
     TOAST_RADIUS: Length = "toast-radius" => |t| t.length(RADIUS_LG),
     /// A toast's shadow level (3: `md`).
     TOAST_SHADOW: Number = "toast-shadow" => |t| t.value(3.0),
-    /// The stack's width with a pointer on a wide window (Sonner's 356).
+    /// The stack's width with a pointer on a wide window (356).
     TOAST_WIDTH: Length = "toast-width" => |t| t.px(356.0),
     /// A toast's padding.
     TOAST_PADDING: Length = "toast-padding" => |t| t.length(SPACING) * 4.0,
     /// The gap between a toast's icon, text and buttons.
     TOAST_GAP: Length = "toast-gap" => |t| t.length(SPACING) * 1.5,
-    /// A toast's text size (Sonner's 13).
+    /// A toast's text size (13).
     TOAST_FONT_SIZE: Length = "toast-font-size" => |t| t.px(13.0),
     /// The side of a toast's kind icon.
     TOAST_ICON_SIZE: Length = "toast-icon-size" => |t| t.px(16.0),
@@ -80,16 +80,14 @@ tokens! {
     TOAST_ANIMATE: Number = "toast-animate" => |t| t.value(1.0),
 }
 
-/// Narrower than this, the stack spans the window (Sonner's mobile
-/// layout).
+/// Narrower than this, the stack spans the window (the phone layout).
 const NARROW: f32 = 600.0;
 /// How often the lifecycle advances while toasts are mounted.
 const TICK: Duration = Duration::from_millis(50);
 
 // What `toast()` shows.
 
-/// The icon before a toast's text (Sonner's `toast.success(…)` and the
-/// others).
+/// The icon before a toast's text (`toast.success(…)` and the others).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, PropEnum)]
 pub enum ToastKind {
     /// No icon.
@@ -497,7 +495,7 @@ pub(crate) fn modal_outlet() -> impl IntoElement {
 
 // The `Toaster`.
 
-/// Where the stack is (Sonner's `position`).
+/// Where the stack is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, PropEnum)]
 pub enum ToastPlacement {
     /// The top left corner.
@@ -781,8 +779,8 @@ fn one(
     item: impl Fn() -> Item + Copy + 'static,
 ) -> impl IntoElement {
     let id = untracked(|| item().0);
-    // Behind the front layer of a collapsed stack: its content hidden, as
-    // Sonner's, so the layers read as cards behind the newest.
+    // Behind the front layer of a collapsed stack: its content hidden, so
+    // the layers read as cards behind the newest.
     let behind_id = id.clone();
     let behind =
         computed(move || !state.is_expanded() && front.with(|f| f.as_ref() != Some(&behind_id)));

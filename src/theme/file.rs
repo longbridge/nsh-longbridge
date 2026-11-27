@@ -42,12 +42,12 @@ pub fn registry() -> Vec<TokenDecl> {
 }
 
 /// The tokens the app would have with no theme of its own: `nsh/base`'s
-/// defaults (shadcn `neutral`).
+/// defaults (the `neutral` palette).
 fn default_app_tokens() -> Tokens {
     nsh_base::Theme::default().into_tokens()
 }
 
-/// `nsh/base`'s default theme file, for the values of shadcn's own tokens.
+/// `nsh/base`'s default theme file, for the values of the base tokens.
 fn base_theme() -> JsonValue {
     serde_json::from_str(nsh_base::DEFAULT_THEME).expect("nsh/base's default theme is JSON")
 }
@@ -182,7 +182,7 @@ fn is_color(decl: &TokenDecl) -> bool {
 }
 
 /// `themes/default.json`: every token the library declares with its
-/// default, shadcn's `cssVars` format. Numbers go in `theme`, colors in
+/// default, in the `cssVars` format. Numbers go in `theme`, colors in
 /// `light` and `dark`. Derived lengths are written as `calc()`, which NSH
 /// does not read (the library derives them); derived colors as `var()` and
 /// `color-mix()`, which NSH reads.

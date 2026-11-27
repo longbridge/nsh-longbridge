@@ -1,4 +1,4 @@
-//! `Switch`: shadcn/ui's switch on `nsh/base`'s `Switch` (presses on the
+//! `Switch`: a switch on `nsh/base`'s `Switch` (presses on the
 //! track and its label, the keyboard, the switch role and its on / off and
 //! disabled states for screen readers). API: `docs/components/switch.md`.
 
@@ -45,7 +45,7 @@ tokens! {
     SWITCH_THUMB_SIZE_XS: Length = "switch-thumb-size-xs" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_XS) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_XS) * 0.5),
     /// A small switch's thumb.
     SWITCH_THUMB_SIZE_SM: Length = "switch-thumb-size-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_SM) * 0.5),
-    /// A medium switch's thumb (a 32 × 18 track, shadcn's).
+    /// A medium switch's thumb (a 32 × 18 track).
     SWITCH_THUMB_SIZE_MD: Length = "switch-thumb-size-md" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_MD) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_MD) * 0.5),
     /// A large switch's thumb.
     SWITCH_THUMB_SIZE_LG: Length = "switch-thumb-size-lg" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_LG) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_LG) * 0.5),
@@ -124,7 +124,7 @@ pub enum SwitchEvent {
     Change(bool),
 }
 
-/// A switch, shadcn/ui's: a setting on or off that takes effect at once, a
+/// A switch: a setting on or off that takes effect at once, a
 /// thumb moving along a track, with its label beside it. Four sizes; a
 /// press on the label toggles it too, and the thumb stretches while it is
 /// held (not with reduced motion). The keyboard focus draws a ring around

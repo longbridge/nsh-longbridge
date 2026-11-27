@@ -1,4 +1,4 @@
-//! `Kbd` and `KbdGroup`: shadcn/ui's key caps, a key or a key combination
+//! `Kbd` and `KbdGroup`: key caps, a key or a key combination
 //! drawn as small caps. No behavior. API: `docs/components/kbd.md`.
 
 use nsh_core::prelude::*;
@@ -24,7 +24,7 @@ tokens! {
     /// The cap's text and icons.
     KBD_FOREGROUND: Color = "kbd-foreground" => |t| t.color(MUTED_FOREGROUND),
     /// The cap's fill inside a tooltip: its text color at 20 %, 10 % in the
-    /// dark (shadcn's `bg-background/20`, `dark:bg-background/10` there).
+    /// dark (`bg-background/20`, `dark:bg-background/10`).
     KBD_TOOLTIP: Color = "kbd-tooltip" => |t| t.light_dark(t.color(TOOLTIP_FOREGROUND).opacity(0.2), t.color(TOOLTIP_FOREGROUND).opacity(0.1)),
     /// The cap's text inside a tooltip.
     KBD_TOOLTIP_FOREGROUND: Color = "kbd-tooltip-foreground" => |t| t.color(TOOLTIP_FOREGROUND),
@@ -48,7 +48,7 @@ pub struct KbdProps {
     pub children: Prop<Children>,
 }
 
-/// A key cap, shadcn/ui's: a key's name as a small muted cap, for
+/// A key cap: a key's name as a small muted cap, for
 /// shortcuts in buttons, menus and tooltips. It does not parse key names:
 /// give it the platform's form (`keymap.label("mod+k")`). Inside a
 /// `Tooltip` it takes the tooltip's colors.

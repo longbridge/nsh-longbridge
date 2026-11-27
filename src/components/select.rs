@@ -1,4 +1,4 @@
-//! `Select`: shadcn/ui's select on `nsh/base`'s `Select` (the value, the
+//! `Select`: a select on `nsh/base`'s `Select` (the value, the
 //! popup at the trigger or over it, the sheet on touch screens, the keys,
 //! typeahead, the virtualized list, the combobox, listbox and option roles
 //! and their states for screen readers). The library draws the trigger
@@ -162,7 +162,7 @@ pub enum SelectEvent {
     Close,
 }
 
-/// A select, shadcn/ui's: one value chosen from a list. A trigger drawn as
+/// A select: one value chosen from a list. A trigger drawn as
 /// a field shows the chosen item's title (or the placeholder) and opens the
 /// list: a popup at the trigger on desktops (over it on macOS), a sheet at
 /// the bottom on touch screens. Its options are data (`items`), so a list
@@ -230,7 +230,7 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
             }
             cx.emit(SelectEvent::Close)
         })
-        // shadcn's `w-fit`: as wide as its content where a column stretches
+        // `w-fit`: as wide as its content where a column stretches
         // its children, while a row's `items-center` still centers it (an
         // `align-self` would override the row's alignment). The app's class
         // goes over it.

@@ -1,4 +1,4 @@
-//! `RadioGroup` and `RadioGroupItem`: shadcn/ui's radio group on
+//! `RadioGroup` and `RadioGroupItem`: a radio group on
 //! `nsh/base`'s `RadioGroup` and `Radio` (the keyboard's roving focus and
 //! arrows, presses on the circle and its label, the radiogroup and radio
 //! roles and their states for screen readers). The group holds the value,
@@ -40,13 +40,13 @@ use crate::{
 const GROUP: &str = "nlb-radio";
 
 tokens! {
-    /// The space between the items (shadcn's `gap-3`).
+    /// The space between the items (`gap-3`).
     RADIO_GROUP_GAP: Length = "radio-group-gap" => |t| t.length(SPACING) * 3.0,
     /// An extra small item's circle: half the control height.
     RADIO_GROUP_ITEM_SIZE_XS: Length = "radio-group-item-size-xs" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_XS) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_XS) * 0.5),
     /// A small item's circle.
     RADIO_GROUP_ITEM_SIZE_SM: Length = "radio-group-item-size-sm" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_SM) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_SM) * 0.5),
-    /// A medium item's circle (16, shadcn's `size-4`).
+    /// A medium item's circle (16, `size-4`).
     RADIO_GROUP_ITEM_SIZE_MD: Length = "radio-group-item-size-md" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_MD) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_MD) * 0.5),
     /// A large item's circle.
     RADIO_GROUP_ITEM_SIZE_LG: Length = "radio-group-item-size-lg" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_LG) * 0.5, t.length(CONTROL_HEIGHT_TOUCH_LG) * 0.5),
@@ -56,7 +56,8 @@ tokens! {
     RADIO_GROUP_ITEM: Color = "radio-group-item" => |t| t.light_dark(TRANSPARENT, t.color(INPUT).opacity(0.3)),
     /// The circle's edge.
     RADIO_GROUP_ITEM_BORDER: Color = "radio-group-item-border" => |t| t.color(INPUT),
-    /// The circle's edge while checked: the unchecked one (shadcn's).
+    /// The circle's edge while checked: the unchecked one (the dot alone
+    /// marks the choice).
     RADIO_GROUP_ITEM_CHECKED_BORDER: Color = "radio-group-item-checked-border" => |t| t.color(RADIO_GROUP_ITEM_BORDER),
     /// The circle's edge while focused.
     RADIO_GROUP_ITEM_BORDER_FOCUS: Color = "radio-group-item-border-focus" => |t| t.color(RING),
@@ -117,7 +118,7 @@ pub enum RadioGroupEvent {
     Change(SharedString),
 }
 
-/// A radio group, shadcn/ui's: exactly one of a small set of options, all
+/// A radio group: exactly one of a small set of options, all
 /// visible. It holds the value and the size, disabled and invalid states
 /// its [`RadioGroupItem`]s follow. It is one stop of the keyboard focus;
 /// the arrow keys move between its items and check them. A column by

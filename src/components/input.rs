@@ -1,4 +1,4 @@
-//! `Input`: shadcn/ui's input on NSH's host text field (editing, input
+//! `Input`: a text input on NSH's host text field (editing, input
 //! methods, the software keyboard, autofill and screen readers are the
 //! host's). The look is foundation's field look. API:
 //! `docs/components/input.md`.
@@ -165,7 +165,7 @@ impl InputApi {
     }
 }
 
-/// A text field, shadcn/ui's: one line of text, four sizes, an invalid
+/// A text field: one line of text, four sizes, an invalid
 /// state, read-only and disabled. On touch screens it is taller, its text
 /// 16 points at `md` and `lg`, and it takes presses up to 44 points tall.
 #[component(methods = InputApi)]

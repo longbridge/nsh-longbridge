@@ -50,7 +50,7 @@ impl Kind for kind::Number {
 /// A derived default: builds the expression from a [`Derive`].
 pub type DefaultFn<E> = fn(&Derive) -> E;
 
-/// A token's name and its derived default (`None`: shadcn's own tokens,
+/// A token's name and its derived default (`None`: the base tokens,
 /// whose defaults are `nsh/base`'s theme). Made by `tokens!`, read through
 /// [`crate::theme::Theme`].
 pub struct Token<K: Kind> {

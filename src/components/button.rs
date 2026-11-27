@@ -1,4 +1,4 @@
-//! `Button`: shadcn/ui's button on `nsh/base`'s `Button` (presses, the
+//! `Button`: a button on `nsh/base`'s `Button` (presses, the
 //! disabled and busy states, its role for screen readers). API:
 //! `docs/components/button.md`.
 
@@ -44,7 +44,7 @@ tokens! {
     BUTTON_HEIGHT_MD: Length = "button-height-md" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_MD), t.length(CONTROL_HEIGHT_TOUCH_MD)),
     /// A large button's height.
     BUTTON_HEIGHT_LG: Length = "button-height-lg" => |t| t.pointer_touch(t.length(CONTROL_HEIGHT_LG), t.length(CONTROL_HEIGHT_TOUCH_LG)),
-    /// An extra small button's horizontal padding (shadcn `px-2`); with an
+    /// An extra small button's horizontal padding (`px-2`); with an
     /// icon, `spacing` × 0.5 less on each side.
     BUTTON_PADDING_X_XS: Length = "button-padding-x-xs" => |t| t.length(SPACING) * 2.0,
     /// A small button's horizontal padding (`px-3`); with an icon, `spacing`
@@ -107,7 +107,7 @@ tokens! {
     BUTTON_RING_INVALID: Color = "button-ring-invalid" => |t| t.color(RING_INVALID),
 }
 
-/// A button's look (shadcn's variants).
+/// A button's look.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, PropEnum)]
 pub enum ButtonVariant {
     /// The main action: the `primary` fill.
@@ -188,7 +188,7 @@ pub enum ButtonEvent {
     Press,
 }
 
-/// A button, shadcn/ui's: six variants, four sizes, icons before and after
+/// A button: six variants, four sizes, icons before and after
 /// its label, an icon-only square, a loading state. Press feedback sinks it
 /// slightly (not with reduced motion); the keyboard focus draws a ring
 /// around it. On touch screens it is taller and takes presses up to 44

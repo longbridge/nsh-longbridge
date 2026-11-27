@@ -1,4 +1,4 @@
-//! `Textarea`: shadcn/ui's textarea on NSH's host text field with several
+//! `Textarea`: a text area on NSH's host text field with several
 //! lines. Foundation's field look with Input's tokens; it grows with its
 //! text from `textarea-min-height`. API: `docs/components/textarea.md`.
 
@@ -117,7 +117,7 @@ impl TextareaApi {
     }
 }
 
-/// A text field of several lines, shadcn/ui's: Input's look, growing with
+/// A text field of several lines: Input's look, growing with
 /// its text from 64 points (an app's `max-h-*` caps it, past which it
 /// scrolls inside; an `h-*` fixes it).
 #[component(methods = TextareaApi)]

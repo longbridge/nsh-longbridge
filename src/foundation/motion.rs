@@ -17,7 +17,7 @@ pub fn duration(t: Theme) -> f32 {
 
 /// Transitions every property `el` changes between states over
 /// [`duration`], with Tailwind's default easing (`cubic-bezier(0.4, 0,
-/// 0.2, 1)`, shadcn's `transition-all`).
+/// 0.2, 1)`, `transition-all`).
 pub fn transition_all<E: Styled>(el: E, t: Theme) -> E {
     timing(el.transition_all(), t)
 }

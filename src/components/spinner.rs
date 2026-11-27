@@ -1,4 +1,4 @@
-//! `Spinner`: shadcn/ui's spinner, a turning loader: something is going on
+//! `Spinner`: a spinner, a turning loader: something is going on
 //! and how long it takes is unknown. API: `docs/components/spinner.md`.
 
 use nsh_core::prelude::*;
@@ -25,7 +25,7 @@ pub struct SpinnerProps {
     pub accessibility_label: Prop<Option<SharedString>>,
 }
 
-/// A loading spinner, shadcn/ui's: lucide's `loader-circle` turning once a
+/// A loading spinner: lucide's `loader-circle` turning once a
 /// second, in the color of the text around it inside this library's parts
 /// (a button, a card, a menu), and `foreground` outside them, where NSH
 /// passes no color (a `class` color on it wins either way). It keeps

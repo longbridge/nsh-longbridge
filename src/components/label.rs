@@ -1,4 +1,4 @@
-//! `Label`: shadcn/ui's label. The text naming a field; pressing it moves
+//! `Label`: a label, the text naming a field; pressing it moves
 //! the focus into the field `htmlFor` names. API:
 //! `docs/components/label.md`.
 
@@ -38,7 +38,7 @@ pub struct LabelProps {
     pub children: Prop<Children>,
 }
 
-/// A label, shadcn/ui's: medium 14-point text in a row with what it holds.
+/// A label: medium 14-point text in a row with what it holds.
 /// Pressing it moves the focus into the field `htmlFor` names. It is no
 /// control: no focus, no press feedback, its text not selectable.
 #[component]
@@ -59,7 +59,7 @@ pub fn Label(props: LabelProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         .items_center()
         .gap(move || t.length(LABEL_GAP))
         .text_size(font_size)
-        // shadcn's `leading-none`: the one line height a component sets
+        // `leading-none`: the one line height a component sets
         // itself.
         .line_height(font_size)
         // Not bindable: read when it is built.

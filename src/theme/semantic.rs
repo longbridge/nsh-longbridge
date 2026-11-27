@@ -1,5 +1,5 @@
-//! Semantic tokens: shadcn/ui's names (whose defaults are `nsh/base`'s
-//! theme, shadcn's `neutral`), the colors this library adds, and the scales
+//! Semantic tokens: the base names (whose defaults are `nsh/base`'s
+//! theme, the `neutral` palette), the colors this library adds, and the scales
 //! the seeds derive.
 
 use crate::{
@@ -71,7 +71,7 @@ tokens! {
     /// Focus rings in the sidebar.
     SIDEBAR_RING: Color = "sidebar-ring",
 
-    /// Text on `destructive` (shadcn writes `text-white`).
+    /// Text on `destructive`: white.
     DESTRUCTIVE_FOREGROUND: Color = "destructive-foreground" => |t| t.css("oklch(1 0 0)"),
     /// Success: a confirmed result, a positive state.
     SUCCESS: Color = "success" => |t| t.light_dark(t.css("oklch(0.627 0.194 149.214)"), t.css("oklch(0.723 0.219 149.579)")),
@@ -85,7 +85,7 @@ tokens! {
     INFO: Color = "info" => |t| t.light_dark(t.css("oklch(0.546 0.245 262.881)"), t.css("oklch(0.623 0.214 259.815)")),
     /// Text on `info`.
     INFO_FOREGROUND: Color = "info-foreground" => |t| t.css("oklch(0.985 0 0)"),
-    /// The veil behind a modal (shadcn's `bg-black/50`).
+    /// The veil behind a modal (`bg-black/50`).
     OVERLAY: Color = "overlay" => |t| t.css("oklch(0 0 0 / 50%)"),
     /// The color of shadows; each shadow level scales its alpha.
     SHADOW: Color = "shadow" => |t| t.css("oklch(0 0 0)"),
@@ -134,10 +134,10 @@ tokens! {
     ICON_SIZE_XS: Length = "icon-size-xs" => |t| t.length(FONT_SIZE) - 2.0,
     /// Small controls' icons: `font-size` (14).
     ICON_SIZE_SM: Length = "icon-size-sm" => |t| t.length(FONT_SIZE),
-    /// Medium controls' icons: `font-size` + 2 (16, shadcn's `size-4`).
+    /// Medium controls' icons: `font-size` + 2 (16, `size-4`).
     ICON_SIZE_MD: Length = "icon-size-md" => |t| t.length(FONT_SIZE) + 2.0,
-    /// Large controls' icons: `font-size` + 2 (16: shadcn's buttons use
-    /// `size-4` at every size but `xs`).
+    /// Large controls' icons: `font-size` + 2 (16: buttons keep `size-4` at
+    /// every size but `xs`).
     ICON_SIZE_LG: Length = "icon-size-lg" => |t| t.length(FONT_SIZE) + 2.0,
 
     /// Tailwind's `text-xs`.
@@ -155,9 +155,9 @@ tokens! {
 
     /// Borders' width.
     BORDER_WIDTH: Length = "border-width" => |t| t.px(1.0),
-    /// The focus ring's width (shadcn's `ring-[3px]`).
+    /// The focus ring's width (`ring-[3px]`).
     RING_WIDTH: Length = "ring-width" => |t| t.px(3.0),
-    /// The focus ring's opacity over `ring` (shadcn's `ring-ring/50`).
+    /// The focus ring's opacity over `ring` (`ring-ring/50`).
     RING_OPACITY: Number = "ring-opacity" => |t| t.value(0.5),
     /// The ring of a focused control whose value the app rejects:
     /// `destructive` at 20 % (40 % in the dark).

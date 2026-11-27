@@ -1,4 +1,4 @@
-//! `Dialog`: shadcn/ui's dialog on `nsh/base`'s `Dialog` (the core's modal:
+//! `Dialog`: a dialog on `nsh/base`'s `Dialog` (the core's modal:
 //! its layer above the window, the focus trap and its return, Escape and
 //! back, screen readers). The library adds the open state, the trigger,
 //! the overlay and the panel, their motion and the closing, as `nsh/base`'s
@@ -37,7 +37,7 @@ use crate::{
 };
 
 tokens! {
-    /// The panel's fill (shadcn's `bg-background`).
+    /// The panel's fill (`bg-background`).
     DIALOG: Color = "dialog" => |t| t.color(BACKGROUND),
     /// The panel's text.
     DIALOG_FOREGROUND: Color = "dialog-foreground" => |t| t.color(FOREGROUND),
@@ -49,13 +49,13 @@ tokens! {
     DIALOG_RADIUS: Length = "dialog-radius" => |t| t.length(RADIUS_LG),
     /// The panel's shadow level (4: `lg`).
     DIALOG_SHADOW: Number = "dialog-shadow" => |t| t.value(4.0),
-    /// The panel's padding (shadcn's `p-6`).
+    /// The panel's padding (`p-6`).
     DIALOG_PADDING: Length = "dialog-padding" => |t| t.length(SPACING) * 6.0,
-    /// The gap between the panel's parts (shadcn's `gap-4`).
+    /// The gap between the panel's parts (`gap-4`).
     DIALOG_GAP: Length = "dialog-gap" => |t| t.length(SPACING) * 4.0,
     /// The room the panel keeps from the window's sides.
     DIALOG_MARGIN: Length = "dialog-margin" => |t| t.length(SPACING) * 4.0,
-    /// The panel's widest (shadcn's `sm:max-w-lg`).
+    /// The panel's widest (`sm:max-w-lg`).
     DIALOG_MAX_WIDTH: Length = "dialog-max-width" => |t| t.length(SPACING) * 128.0,
     /// The gap between a `DialogHeader`'s title and description.
     DIALOG_HEADER_GAP: Length = "dialog-header-gap" => |t| t.length(SPACING) * 2.0,
@@ -356,8 +356,8 @@ pub(crate) fn root(
                     );
                 }
                 if alert {
-                    // Radix's alert dialog focuses its Cancel, else its
-                    // first action.
+                    // An alert dialog focuses its Cancel, else its first
+                    // action: the choice that loses nothing.
                     let answers = answers.get_untracked();
                     let target = answers
                         .iter()
@@ -527,7 +527,7 @@ impl From<RootEvent> for DialogEvent {
     }
 }
 
-/// A modal window over the app, shadcn/ui's: a panel in the middle of the
+/// A modal window over the app: a panel in the middle of the
 /// window over a dimmed overlay. It keeps the keyboard focus and screen
 /// readers inside it until it closes, then gives the focus back. Escape,
 /// back, the overlay, the "×" and a `DialogClose` close it. Its trigger is
@@ -776,7 +776,7 @@ pub fn DialogTitle(props: DialogTitleProps, _cx: Scope<NoEvent>) -> impl IntoEle
         .element_ref(&node)
         .role(AccessibilityRole::Header)
         .text_size(font_size)
-        // shadcn's `leading-none`.
+        // `leading-none`: the line exactly as tall as the text.
         .line_height(font_size)
         .font_weight(semibold(t))
         .child(props.children)

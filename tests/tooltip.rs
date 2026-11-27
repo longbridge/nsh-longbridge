@@ -338,7 +338,8 @@ fn StyledTrigger() -> impl IntoElement {
 }
 
 /// The bubble sits in its trigger's tree, yet takes none of the trigger's
-/// text styles, as shadcn's portaled one.
+/// text styles: a bubble reads the same over any trigger.
+
 #[test]
 fn the_tooltip_takes_none_of_its_triggers_text_styles() {
     let mut app = start::<StyledTrigger>();
