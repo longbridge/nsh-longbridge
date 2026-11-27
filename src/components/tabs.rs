@@ -13,6 +13,7 @@ use nsh_core::{
 };
 
 use crate::{
+    components::button::content_gap,
     foundation::{
         focus::focus_ring,
         icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
@@ -336,7 +337,7 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
         // width in a list as wide as its triggers.
         .when(horizontal, |v| v.flex_auto().justify_center())
         .when(!horizontal, |v| v.justify_start())
-        .gap(move || t.length(SPACING) * 1.5)
+        .gap(move || content_gap(t, size()))
         .h(height)
         .px(move || t.length(TABS_TRIGGER_PADDING_X))
         .rounded(move || t.length(TABS_TRIGGER_RADIUS).clamp(px(0.0), height() / 2.0))

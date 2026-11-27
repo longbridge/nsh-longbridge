@@ -313,7 +313,7 @@ pub(crate) fn draw_with(
         .items_center()
         .justify_center()
         .flex_shrink_0()
-        .gap(move || t.length(SPACING) * size().pick(1.0, 1.5, 2.0, 2.0))
+        .gap(move || content_gap(t, size()))
         .h(height)
         .style_when(props.icon_only, move |s| s.w(height))
         .px(padding)
@@ -432,6 +432,14 @@ pub(crate) fn draw_with(
                 .map(|name| icon_part(name, false))
         }))
         .children(extras.hint)
+}
+
+/// The gap between a control's icon and its label (and between its parts):
+/// `spacing` (4) at `xs` and `sm`, `spacing` × 2 (8) at `md` and `lg`
+/// (gpui-kit's Design Guides: 4 at small sizes, 8 at normal ones). Button,
+/// Toggle, a tab and Pagination's steps share it.
+pub(crate) fn content_gap(t: Theme, size: Size) -> Points {
+    t.length(SPACING) * size.pick(1.0, 1.0, 2.0, 2.0)
 }
 
 fn height_token(size: Size) -> Token<kind::Length> {

@@ -106,14 +106,15 @@ Dark has no values of its own: it takes the same roles in their dark values.
 | `size` | Height (pointer / touch) | Min width | Horizontal padding | Gap | Type | Icon |
 |---|---|---|---|---|---|---|
 | `xs` | 24 / 32 | = height | 4 (`spacing`) | 4 | 12 | 12 |
-| `sm` | 28 / 36 | = height | 6 (`spacing × 1.5`) | 6 | 13 | 14 |
+| `sm` | 28 / 36 | = height | 6 (`spacing × 1.5`) | 4 | 13 | 14 |
 | `md` | 32 / 40 | = height | 8 (`spacing × 2`) | 8 | 14 | 16 |
 | `lg` | 36 / 48 | = height | 10 (`spacing × 2.5`) | 8 | 14 | 16 |
 
 - Heights are Button's (`md` is 32, a medium desktop density), so a Toggle and a Button of one `size` line up in a
   toolbar; the padding grows by half a `spacing` unit a size, tighter than Button's, as an icon toggle is a square.
 - The minimum width is the height, so an icon alone makes a square.
-- Gap and icon sizes are Button's (foundation's gap by size, `icon-size-<size>`); type `font-size-<size>` at
+- Gap and icon sizes are Button's (the gap by size Button, Toggle, a tab and Pagination share: 4 at `xs` and `sm`, 8 at
+  `md` and `lg`; `icon-size-<size>`); type `font-size-<size>` at
   `font-weight-medium`, one line.
 - Corners `toggle-radius` (`radius-md`, 8) at every size.
 

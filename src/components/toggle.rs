@@ -8,6 +8,7 @@ use nsh_base::toggle as base_toggle;
 use nsh_core::{element::Style, element::TextPartStyle, prelude::*};
 
 use crate::{
+    components::button::content_gap,
     foundation::{
         focus::focus_ring,
         icon::{provide_icon_size, provide_text_color},
@@ -260,7 +261,7 @@ pub(crate) fn draw(
         .items_center()
         .justify_center()
         .flex_shrink_0()
-        .gap(move || t.length(SPACING) * size().pick(1.0, 1.5, 2.0, 2.0))
+        .gap(move || content_gap(t, size()))
         .h(height)
         .min_w(move || if item.is_some() { px(0.0) } else { height() })
         .px(padding_x)
