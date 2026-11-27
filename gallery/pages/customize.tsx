@@ -2,7 +2,7 @@
 // preview of the showcase, a Copy theme button, and ThemeScope.
 
 import { Clipboard, signal, Text, View, type JSX } from "nsh";
-import { Badge, Button, Separator, ThemeScope } from "nsh-longbridge";
+import { Badge, Button, Separator, Slider, ThemeScope, ToggleGroup, ToggleGroupItem } from "nsh-longbridge";
 import {
   colorGroups,
   colorPreset,
@@ -25,7 +25,6 @@ import {
   themeJson,
 } from "../theme";
 import { ColorEdit } from "../ui/color-edit";
-import { Segmented, Slider } from "../ui/controls";
 import { Check, Copy, Glyph, RotateCcw } from "../ui/icons";
 import { Demo, Demos, Section } from "../ui/layout";
 import { compact, contentWidth } from "../ui/screen";
@@ -162,13 +161,20 @@ function Presets() {
           </Button>
         ))}
       </View>
-      <Segmented
+      <ToggleGroup
+        variant="outline"
+        size="sm"
         accessibilityLabel="Density"
         class="self-start"
-        options={densityPresets.map((p) => ({ id: p.id, label: p.label }))}
-        value={densityPreset}
-        onChange={(id) => densityPreset.set(id)}
-      />
+        value={[densityPreset()]}
+        onChange={({ value }) => value[0] && densityPreset.set(value[0])}
+      >
+        {densityPresets.map((p) => (
+          <ToggleGroupItem value={p.id}>
+            <Text>{p.label}</Text>
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
     </View>
   );
 }
@@ -200,8 +206,8 @@ function Seeds() {
             min={s.min}
             max={s.max}
             step={s.step}
-            value={() => numberOf(s.name)}
-            onChange={(v) => setSeed(s.name, v)}
+            value={numberOf(s.name)}
+            onChange={({ value }) => setSeed(s.name, value as number)}
           />
         </View>
       ))}

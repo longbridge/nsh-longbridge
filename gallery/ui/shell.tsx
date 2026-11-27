@@ -3,7 +3,17 @@
 
 import { keymap, openUrl, platform, Scroll, signal, Text, View, type JSX } from "nsh";
 import { TitleBar, Sheet } from "nsh/base";
-import { Button, Input, type InputRef, Kbd, Separator, ThemeScope, Tooltip } from "nsh-longbridge";
+import {
+  Button,
+  Input,
+  type InputRef,
+  Kbd,
+  Separator,
+  ThemeScope,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+} from "nsh-longbridge";
 import { catalog, type PageEntry, pageById, pages } from "../catalog";
 import { navigate, route } from "../router";
 import {
@@ -17,7 +27,7 @@ import {
   presetPrimary,
   scheme,
 } from "../theme";
-import { Segmented, Select } from "./controls";
+import { Select } from "./controls";
 import { GalleryToaster } from "./toaster";
 import { compact, narrow, pagePadding } from "./screen";
 import { GitHub, Glyph, Menu, Monitor, Moon, Search, Sun } from "./icons";
@@ -43,23 +53,37 @@ export function ThemeControls(props: { narrow?: boolean }) {
         leading={(id) => <Dot color={presetPrimary(id)} />}
       />
       <If when={!props.narrow}>
-        <Segmented
+        <ToggleGroup
+          variant="outline"
+          size="sm"
           accessibilityLabel="Density"
-          options={densityPresets.map((p) => ({ id: p.id, label: p.label }))}
-          value={densityPreset}
-          onChange={(id) => densityPreset.set(id)}
-        />
+          value={[densityPreset()]}
+          onChange={({ value }) => value[0] && densityPreset.set(value[0])}
+        >
+          {densityPresets.map((p) => (
+            <ToggleGroupItem value={p.id}>
+              <Text>{p.label}</Text>
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </If>
-      <Segmented
+      <ToggleGroup
+        variant="outline"
+        size="sm"
         accessibilityLabel="Appearance"
-        options={[
-          { id: "light", icon: Sun, name: "Light" },
-          { id: "dark", icon: Moon, name: "Dark" },
-          { id: "system", icon: Monitor, name: "System" },
-        ]}
-        value={appearance}
-        onChange={(id) => appearance.set(id as Appearance)}
-      />
+        value={[appearance()]}
+        onChange={({ value }) => value[0] && appearance.set(value[0] as Appearance)}
+      >
+        <ToggleGroupItem value="light" accessibilityLabel="Light">
+          <Glyph icon={Sun} size={14} />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="dark" accessibilityLabel="Dark">
+          <Glyph icon={Moon} size={14} />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="system" accessibilityLabel="System">
+          <Glyph icon={Monitor} size={14} />
+        </ToggleGroupItem>
+      </ToggleGroup>
     </View>
   );
 }
