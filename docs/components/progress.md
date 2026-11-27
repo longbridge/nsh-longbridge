@@ -34,7 +34,7 @@ look.
 | Terminal | A one-row bar of `━` and `─` in the indicator's color, a moving segment while indeterminate; this library's look does not apply there |
 
 This library adds the look (the track and indicator from tokens), the indicator's motion as the value changes (a
-scale, not a width, so it can transition), and the indeterminate form's moving segment.
+move, not a width, so it can transition), and the indeterminate form's moving segment.
 
 ### Implementation
 
@@ -46,11 +46,12 @@ scale, not a width, so it can transition), and the indeterminate form's moving s
 - **The track**: `w-full`, height `progress-height`, corners `progress-radius`, fill `progress`, clipped
   (`overflow: hidden`).
 - **The indicator** is the full width of the track (`w-full`, which wins over `nsh/base`'s width by value: its rule,
-  a `w-*` in `indicatorClass` is the app's) and is scaled along x to `value / 100` from its start
-  (`origin-left`, `origin-right` in a right-to-left layout), fill `progress-indicator`. A width changes at once in NSH;
-  a scale transitions. The track's clip and corners round its start; its end is straight, as an indicator slid in
-  from the start (`translateX(-…%)` inside `overflow-hidden rounded-full`) would be.
-- The scale is the one inline style the library writes (`indicatorStyle`, bound to `value`; the app's
+  a `w-*` in `indicatorClass` is the app's), with the track's corners (`progress-radius`), fill `progress-indicator`.
+  It is moved back along x by what the value leaves (`translateX(value − 100 %)`, mirrored in a right-to-left layout)
+  and the track clips the rest. A width changes at once in NSH; a move transitions. The indicator sits in the track
+  with no gap, so its corners are the track's (concentric: `max(0, outer − gap)`): the track's clip rounds its start,
+  its own corners its end, which a scale would flatten.
+- The move is the one inline style the library writes (`indicatorStyle`, bound to `value`; the app's
   `indicatorStyle` merged after), and transitions over `duration`, none with reduced motion.
 - **Indeterminate**: the indicator is a segment of `progress-indeterminate-width` (40%) of the track that moves from
   beyond the start to beyond the end, again and again, each pass taking `progress-indeterminate-duration` (1500 ms),
@@ -91,7 +92,7 @@ here; a class that styles the track (`h-1`) is `trackClass="h-1"` here, and `w-[
 | Part | In classes | This library |
 |---|---|---|
 | track | `relative h-2 w-full overflow-hidden rounded-full bg-primary/20` | Height `progress-height` (8), `w-full`, corners `progress-radius` (half the height), fill `progress` (`primary` at 20%), clipped |
-| indicator | `h-full w-full flex-1 bg-primary transition-all`, `translateX(-(100 − value)%)` | Full size, fill `progress-indicator` (`primary`), scaled along x to `value` % from the start, transitioning over `duration` |
+| indicator | `h-full w-full flex-1 bg-primary transition-all`, `translateX(-(100 − value)%)` | Full size, fill `progress-indicator` (`primary`), corners `progress-radius`, moved back by `100 − value` % from the start, transitioning over `duration` |
 
 The same in dark: `primary` is light there, its 20% a dark track.
 
@@ -113,7 +114,7 @@ state, and its terminal form moves a segment along the bar; this library does th
 | 0 | The track only |
 | 1–99 | The indicator's share of the track |
 | 100 | The full track in `progress-indicator` |
-| Value changing | The indicator's scale transitions over `duration` (none with reduced motion) |
+| Value changing | The indicator's move transitions over `duration` (none with reduced motion) |
 | Indeterminate | The moving segment (above) |
 
 No hover, focus, press or disabled: a progress bar is not interactive.
@@ -198,12 +199,12 @@ progress().indeterminate(true).accessibility_label("Connecting")
    past the end with one. The motion runs only while indeterminate and shown, and not with reduced motion. Headless
    test: the segment is 40% of the track and keeps it through passes; with reduced motion it is the whole track at
    50%.
-2. ★ **A width does not transition** (NSH animates transforms, not layout): the indicator scales instead (see
-   Implementation). Headless test: `value` 30 → 60 transitions the indicator's scale from 0.3 to 0.6 from its start,
-   and the track's clip rounds its start. **Verified**: the indicator keeps the track's width through a change of
-   `value` (it is scaled). If a later NSH animates widths, nothing changes in the API.
+2. ★ **A width does not transition** (NSH animates transforms, not layout): the indicator moves instead (see
+   Implementation; a scale would also flatten its round end). Headless test: `value` 30 → 60 moves the indicator
+   from 70% to 40% back from its start, and the track's clip rounds its start. **Verified**: the indicator keeps the
+   track's width through a change of `value` (it is moved). If a later NSH animates widths, nothing changes in the API.
 3. **The track and the indicator are `nsh/base`'s parts** (conventions, "Drawing"): generated classes, and the
-   indicator's scale as a bound `indicatorStyle` with the app's merged after.
+   indicator's move as a bound `indicatorStyle` with the app's merged after.
 
 ## Decisions
 

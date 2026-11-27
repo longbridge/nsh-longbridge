@@ -1,5 +1,5 @@
 //! `Progress` in a headless engine: what screen readers get, the track's
-//! size, the indicator's width (scaled, not resized), the moving segment
+//! size, the indicator's width (moved, not resized), the moving segment
 //! and its still form with reduced motion, the app's classes and a scope's
 //! tokens reaching the look.
 
@@ -85,10 +85,10 @@ fn screen_readers_get_one_named_progress_bar() {
 }
 
 /// ★ NSH gaps 2: the indicator spans the track whatever the value (it is
-/// scaled to it, which transitions; a width would change at once), and a
-/// new value leaves its width as it is.
+/// moved back by what it leaves, which transitions; a width would change at
+/// once), and a new value leaves its width as it is.
 #[test]
-fn the_indicator_spans_the_track_and_is_scaled() {
+fn the_indicator_spans_the_track_and_is_moved() {
     let mut app = start::<Bars>(true);
     let (track, indicator) = parts(&app, "Upload");
     assert_eq!(width_height(&app, track), (400.0, 8.0));
