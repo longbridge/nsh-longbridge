@@ -16,7 +16,8 @@
 //!   button and a combobox's chevron take at the field's end, with the
 //!   ghost button's hover ([`field_button_frame`], [`field_button_hover`]);
 //!   an input group's buttons take its height and corners
-//!   ([`field_button_side`], [`field_button_radius`]).
+//!   ([`field_button_side`], [`field_button_radius`]), all of them
+//!   [`field_button_inset`] from the field's outer edge on every side.
 
 use std::rc::Rc;
 
@@ -440,16 +441,30 @@ pub fn join(host: NodeId, kind: Kind, disabled: impl Fn() -> bool + 'static) -> 
     joined
 }
 
+/// How far a button in a field sits from the field's outer edge, on every
+/// side (`spacing`, 4): the same above, below and at the end, so its
+/// corners are concentric with the field's.
+pub(crate) fn field_button_inset(t: Theme) -> Points {
+    t.length(SPACING)
+}
+
+/// [`field_button_inset`] measured from the field's inner edge (inside its
+/// border): the padding or margin that puts a button there, as a field
+/// lays out its children inside its border.
+pub(crate) fn field_button_inner_inset(t: Theme) -> Points {
+    (field_button_inset(t) - t.length(INPUT_BORDER_WIDTH)).max(px(0.0))
+}
+
 /// The side of a square button in a field of `size`: the field's height
-/// less 4 above and below.
+/// less [`field_button_inset`] above and below.
 pub(crate) fn field_button_side(t: Theme, size: Size) -> Points {
-    t.length(input::height_token(size)) - px(8.0)
+    t.length(input::height_token(size)) - field_button_inset(t) * 2.0
 }
 
 /// The corners of a button in a field: concentric with the field's
-/// (`input-radius` less 4).
+/// (`input-radius` less [`field_button_inset`]).
 pub(crate) fn field_button_radius(t: Theme) -> Points {
-    (t.length(INPUT_RADIUS) - px(4.0)).max(px(0.0))
+    (t.length(INPUT_RADIUS) - field_button_inset(t)).max(px(0.0))
 }
 
 /// A square button's frame in a field of `size` (a select's or combobox's

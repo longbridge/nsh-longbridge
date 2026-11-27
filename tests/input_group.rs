@@ -366,11 +366,14 @@ fn sizes_follow_pointer_and_touch() {
         // The field inside: the frame's height less its edges.
         let field = format!("label:{}", s.as_str());
         assert_eq!(size(&desktop, &field).1, pointer_h - 2.0, "{s:?}");
-        // The button 4 from the frame's inner edge at the end.
+        // The button 4 from the frame's outer edge at the end, as above
+        // and below it: concentric with the frame's corners.
         let frame = bounds(&desktop, &id);
         let b = bounds(&desktop, &button);
-        let inset = (frame.origin.x + frame.size.width) - (b.origin.x + b.size.width);
-        assert_eq!(inset.0, 4.0 + 1.0, "{s:?}");
+        let end = (frame.origin.x + frame.size.width) - (b.origin.x + b.size.width);
+        let top = b.origin.y - frame.origin.y;
+        assert_eq!(end.0, 4.0, "{s:?}");
+        assert_eq!(top.0, 4.0, "{s:?}");
     }
 }
 
@@ -385,14 +388,14 @@ fn Message() -> impl IntoElement {
                 input_group_addon()
                     .test_id("toolbar")
                     .align(InputGroupAlign::BlockEnd)
-                    .child(text("0 / 280"))
                     .child(
                         input_group_button()
                             .variant(nsh_longbridge::ButtonVariant::Default)
                             .icon_only(true)
                             .icon(IconName::ArrowRight)
                             .accessibility_label("Send"),
-                    ),
+                    )
+                    .child(text("0 / 280")),
             ),
     )
 }
@@ -414,6 +417,14 @@ fn a_block_addon_makes_a_column() {
         frame.size.height,
         area.size.height + toolbar.size.height + px(2.0)
     );
+    // The toolbar is a row as tall as the field (32 at `md`, inside the
+    // edges), and the send button in the corner is 4 from the frame's
+    // outer edge below and at the start: concentric with its corner.
+    assert_eq!(toolbar.size.height, px(30.0));
+    let send = bounds(&app, "label:Send");
+    let start = send.origin.x - frame.origin.x;
+    let bottom = (frame.origin.y + frame.size.height) - (send.origin.y + send.size.height);
+    assert_eq!((start.0, bottom.0), (4.0, 4.0), "{frame:?} {send:?}");
 }
 
 /// The same addon outside and inside a scope that changes its color.

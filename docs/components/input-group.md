@@ -139,10 +139,13 @@ No variants of the group. The group's `size` sets everything inside:
 - An inline addon has the field's padding (`input-padding-x-*`) on its outer side and `input-group-gap` between its
   children; the field leaves `input-group-gap` toward an addon and the field's padding toward the edge.
 - A button is as tall as the field less 4 above and below (`input-height-*` − 8), its corners `input-radius` − 4 (the
-  frame's, inset), so it sits concentric in the frame. At the frame's edge it moves out to 4 from the inner edge (a
-  negative margin on the addon's first or last child), as Combobox's buttons do.
-- The block addons (`blockStart` / `blockEnd`) span the frame, with the field's padding at the sides and on their
-  outer edge; the column grows with a `Textarea`.
+  frame's, inset), so it sits concentric in the frame. At the frame's edge it moves out to 4 from the frame's outer
+  edge, the same inset as above and below it (a negative margin on the addon's first or last child), so its corners
+  share the frame's corner centers.
+- The block addons (`blockStart` / `blockEnd`) span the frame, a row as tall as the field (a button's side and the
+  button inset above and below it), with the field's padding at the sides for words; their first and last buttons move
+  out to the button inset, so a button in a corner of the frame is concentric with it, as in an inline addon. The
+  column grows with a `Textarea`.
 - Width: `w-full min-w-0`, as `Input`; in a horizontal `Field` the group takes the row's equal share.
 
 ## States
