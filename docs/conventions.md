@@ -41,7 +41,8 @@ mobile-first single column.
   of boolean props that show or hide pieces.
 - **Content is slots and children**, not fixed markup.
 - **A component's own text** (accessibility labels, "Loading") is English by default; an app translates it with
-  `labels::set_translator` in Rust or `setTranslator` in TSX.
+  `labels::set_translator` in Rust or `setTranslator` in TSX. A multi-word key is kebab-case (`no-items`,
+  `pick-a-date`).
 - **Examples** write a string child as a string (`<Button>Save</Button>`). Until NSH releases its fix for string
   children of Rust components (NSH 0.7.0 shows none), the gallery wraps them in `<Text>` and each spec says so once.
 - **In TSX examples**, an element that refers to an element after it keeps the ref in a signal (JSX reads a plain
@@ -62,8 +63,9 @@ mobile-first single column.
 - On a touch screen focus changes only the edge color, without a ring (as iOS's and Android's own controls).
 - A press goes through `foundation`'s `press(scale)`: 0.97 for buttons, 0.9 for small controls such as checkboxes and
   radios; no scale with reduced motion. Color transitions take `duration`.
-- Fields (`Input`, `Textarea`, and later a `Select`'s trigger, `NumberInput`, `Combobox`) share `foundation`'s field
-  look (edge, fill, shadow, focus, invalid, disabled) on the `input-*` tokens, rather than each drawing its own.
+- Fields (`Input`, `Textarea`, `Select`'s trigger, `Combobox`, `DatePicker`'s trigger, and later `NumberInput`) share
+  `foundation`'s field look (edge, fill, shadow, focus, invalid, disabled) on the `input-*` tokens, rather than each
+  drawing its own.
 - Icons: sized by `icon-size-*` with the control's `size`, from the context when not given; colored as their text,
   `foreground` outside the library's parts (below).
 - A part that colors its own text provides that color to what is inside it (`provide_text_color()`, as it provides
@@ -71,6 +73,10 @@ mobile-first single column.
   a plain view black text in both appearances).
 - "As wide as its content" is `w-fit` (an internal `app_class`), never `align-self`, which would override the row's
   alignment around it.
+- A control that fills its parent's width or fits its content (`Input`, `Textarea`, `Combobox`, `Slider`,
+  `DatePicker`) shrinks in a row: it reads `Joined::in_row()` from its `field::join` and adds `flex-shrink: 1` and
+  `min-width: 0` there. NSH's layout shrinks nothing unless told to, so without it the control keeps its width and
+  pushes the row past its field.
 - Styles NSH cannot bind (font weight, underline, cursor) are read once when the component is made; the spec's NSH
   gaps section names them.
 - Shadows come from `foundation`'s `shadow()` as the root's inline style; the app's `style` is merged after it.
@@ -102,7 +108,7 @@ Every overlay follows these rules; [dialog.md](components/dialog.md) has the ful
 
 - **Two kinds of layers.** A modal layer (`Dialog`, `AlertDialog`, later `Sheet`, `Drawer`) is `nsh/base`'s
   `Dialog` with the library's own motion and closing: it dims and blocks the page, traps the focus and gives it back.
-  A popup layer (`Popover`, `Tooltip`, `DropdownMenu`, `Select`'s list, later `Combobox`, `ContextMenu`) is the
+  A popup layer (`Popover`, `Tooltip`, `DropdownMenu`, `Select`'s and `Combobox`'s lists, later `ContextMenu`) is the
   `nsh/base` component's overlay: it does not trap the focus, and on the desktops a press outside closes it and goes
   on.
 - **The trigger is a `trigger` slot** of the component, not a `…Trigger` part (an NSH child component cannot fill
@@ -117,8 +123,10 @@ Every overlay follows these rules; [dialog.md](components/dialog.md) has the ful
 - **Text styles**: each surface resets the inherited ones (as `Tooltip`'s bubble does) and sets its own.
 - **Surfaces**: modal panels take `radius-lg` and shadow tier 4; popup surfaces take `foundation::popup::surface`
   (`popover` fill, the `popover-*` tokens: `radius-md`, shadow tier 3), which every popup shares; menu-like lists
-  (`DropdownMenu`, `Select`, later `Combobox`, `ContextMenu`, `Command`) share `foundation::menu` and the `menu-*`
-  tokens for their rows. A surface is built when it opens, so a theme change while it is open shows at the next open.
+  (`DropdownMenu`, `Select`, `Combobox`, later `ContextMenu`, `Command`) share `foundation::menu` and the `menu-*`
+  tokens for their rows. A list of options is drawn by `menu::list_look!`, its group headings by the `menu-label-*`
+  tokens; a list adds no `<component>-label-*` tokens of its own. A surface is built when it opens, so a theme change
+  while it is open shows at the next open.
 - **Motion**: popups fade and zoom from 95% and slide 8 from the trigger's side over `duration`; modals fade (and
   zoom their panel) over `dialog-duration`; nothing moves with reduced motion; `<component>-animate` 0 turns it off.
 - **Touch screens**: a layer keeps its form unless the platform's habit differs and `nsh/base` already does it
