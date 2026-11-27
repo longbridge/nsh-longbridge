@@ -638,7 +638,7 @@ fn checkbox_width(t: Theme, size: Size) -> Points {
 /// table's text color.
 fn root_class(t: Theme) -> SharedString {
     Classes::new()
-        .push("overflow-hidden")
+        .push("overflow-hidden tabular-nums")
         .length("", "border", t.length(BORDER_WIDTH))
         .color("", "border", t.color(DATA_TABLE_BORDER))
         .length("", "rounded", t.length(DATA_TABLE_RADIUS))

@@ -182,7 +182,7 @@ pub fn Table(props: TableProps, _cx: Scope<NoEvent>) -> impl IntoElement {
             let font_size = t.length(font_size_token(size.get()));
             Some(
                 Classes::new()
-                    .push("flex-col w-full")
+                    .push("flex-col w-full tabular-nums")
                     .color("", "text", t.color(FOREGROUND))
                     .length("", "text", font_size)
                     .length("", "leading", line_height(font_size))
