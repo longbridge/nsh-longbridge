@@ -1,5 +1,6 @@
-# Builds the gallery for the web and publishes it on GitHub Pages. Pull
-# requests only build it; pushes to main also deploy.
+# Builds the website (the Astro home page around the gallery's live demos, and
+# the gallery's web build for every component page) and publishes it on GitHub
+# Pages. Pull requests only build it; pushes to main also deploy.
 name: Gallery Pages
 
 on:
@@ -9,6 +10,7 @@ on:
       - "src/**"
       - "themes/**"
       - "gallery/**"
+      - "website/**"
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/gallery-pages.yml"
@@ -17,6 +19,7 @@ on:
       - "src/**"
       - "themes/**"
       - "gallery/**"
+      - "website/**"
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/gallery-pages.yml"
@@ -56,33 +59,23 @@ jobs:
           curl -fsSL https://nsh.dev/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Build the gallery for the web
-        working-directory: gallery
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+
+      - name: Install the website's packages
+        working-directory: website
+        run: bun install --frozen-lockfile
+
+      # `build-site.sh` builds the gallery for the web (every component page at
+      # `<id>.html` with `<base href>`, `404.html` and the home page's demos at
+      # `embed/<name>.html`) and puts the Astro home page in front of it.
+      - name: Build the site
         env:
           AR_wasm32_unknown_unknown: llvm-ar
-        run: |
-          nsh package --target web App.tsx -o "$RUNNER_TEMP/web"
-          site="$RUNNER_TEMP/web/nsh-longbridge Gallery"
-          # Pages compresses on its own; the precompressed copies only add weight.
-          find "$site" \( -name '*.br' -o -name '*.gz' \) -delete
-          mv "$site" "$RUNNER_TEMP/site"
-
-      # The gallery routes by path (`/nsh-longbridge/button`). Pages serves
-      # `button.html` for `/button`, so every page gets a copy of the entry;
-      # `<base>` keeps the relative files resolving from the site's root, and
-      # `404.html` opens the gallery on any other address.
-      - name: Give every page its own address
-        env:
           SITE_BASE: /${{ github.event.repository.name }}/
-        run: |
-          site="$RUNNER_TEMP/site"
-          sed -i "s|<head>|<head><base href=\"$SITE_BASE\">|" "$site/index.html"
-          grep -q "<base href=\"$SITE_BASE\">" "$site/index.html"
-          for page in gallery/pages/*.tsx; do
-            id="$(basename "$page" .tsx)"
-            [ "$id" = home ] || cp "$site/index.html" "$site/$id.html"
-          done
-          cp "$site/index.html" "$site/404.html"
+          PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io
+        run: sh website/scripts/build-site.sh "$RUNNER_TEMP/site"
 
       - uses: actions/upload-pages-artifact@v3
         with:
