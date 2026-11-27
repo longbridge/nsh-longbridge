@@ -13,7 +13,9 @@
 // network: shots and times count from the start of the load with `--wait 0`),
 // `--no-js`, `--pre <js>` (run in every document before its scripts),
 // `--eval <js>`... (run in the page after the clicks), `--after <js>`... (after the shots), `--scroll y` and
-// `--report` (bytes over the wire, the layout shift and the time to `load`), `--gl` (WebGL2 in software).
+// `--report` (bytes over the wire, the layout shift and the time to `load`), `--gl` (WebGL2 in software),
+// `--moves "x,y …"` with `--probe <js>` (the pointer moved through points, the page probed at each) and
+// `--sweep x1,y1,x2,y2` (with `--times`: the pointer crossing from one point to the other).
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -94,6 +96,17 @@ for (const k of all("--key")) {
 for (const js of all("--eval")) { const v = await evaluate(js); if (v !== undefined) console.log(`eval ${typeof v === "string" ? v : JSON.stringify(v)}`); await sleep(Number(opt("--eval-wait", "700"))); }
 const scroll = opt("--scroll");
 if (scroll) { await evaluate(`window.scrollTo(0, ${scroll})`); await sleep(900); }
+// `--moves "x,y x,y …"`: the pointer moved through those points, `--move-wait` ms apart (300),
+// each followed by every `--probe <js>`, printed.
+const moves = opt("--moves");
+if (moves) {
+  for (const pt of moves.trim().split(/\s+/)) {
+    const [x, y] = pt.split(",").map(Number);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+    await sleep(Number(opt("--move-wait", "300")));
+    for (const js of all("--probe")) console.log(`probe ${x},${y} ${await evaluate(js)}`);
+  }
+}
 const hover = opt("--hover");
 if (hover) { const [x, y] = hover.split(",").map(Number); await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y }); await sleep(500); }
 const frames = Number(opt("--frames", "0"));
@@ -107,8 +120,18 @@ if (times) {
   const stem = out.replace(/\.png$/, "");
   // Each from the same start, however long the captures before it took.
   const from = Date.now();
-  for (const t of times.split(",").map(Number)) {
-    await sleep(Math.max(0, from + t - Date.now()));
+  // `--sweep x1,y1,x2,y2`: the pointer moves from one point to the other across the times, in steps of 25 ms.
+  const sweep = opt("--sweep")?.split(",").map(Number);
+  const list = times.split(",").map(Number);
+  const end = list[list.length - 1] || 1;
+  for (const t of list) {
+    if (sweep) {
+      while (Date.now() < from + t) {
+        const k = Math.min(1, (Date.now() - from) / end);
+        await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: sweep[0] + (sweep[2] - sweep[0]) * k, y: sweep[1] + (sweep[3] - sweep[1]) * k });
+        await sleep(Math.min(25, Math.max(0, from + t - Date.now())));
+      }
+    } else await sleep(Math.max(0, from + t - Date.now()));
     await capture(`${stem}-${t}.png`);
   }
 } else if (frames > 0) {

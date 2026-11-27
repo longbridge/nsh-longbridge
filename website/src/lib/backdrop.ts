@@ -11,9 +11,12 @@
 //   shadow) is the stylesheet's, so the CSS gradient without WebGL2 has it
 //   too.
 //
-// - At rest it drifts, almost still; with the pointer over the stage it
-//   slowly comes alive (the flow and the warp ease up) and its light leans
-//   to the pointer; it eases back as the pointer leaves.
+// - At rest it drifts, almost still. With the pointer over the stage it
+//   comes alive within half a second: the silk streams and folds at five to
+//   six times the rest speed, a wide glow of the preset's light follows the
+//   pointer (rimming the sheet when the pointer is on it), and the pointer's
+//   motion drags the silk and ripples it a little. It eases back over about
+//   800 ms as the pointer leaves.
 // - Its colors are the stage's `--silk-*` (`theme-css.ts`), read again when
 //   the page's theme changes, and crossfaded.
 // - It draws only while the stage is on screen and the tab is shown; with
@@ -34,6 +37,8 @@ uniform vec2 uRes;
 uniform float uTime;
 uniform vec2 uPointer;
 uniform float uHover;
+uniform float uPhase;
+uniform vec2 uDrag;
 uniform vec3 uInk;
 uniform vec3 uLow;
 uniform vec3 uHigh;
@@ -64,13 +69,18 @@ void main() {
   vec2 p = vec2(uv.x * aspect, uv.y) * 0.7;
   vec2 m = vec2(uPointer.x * aspect, uPointer.y) * 0.7;
 
-  // The light leans to the pointer: the field swells toward it.
+  // Around the pointer the silk is drawn along with it (its motion, uDrag),
+  // swells toward it and ripples a little.
   vec2 d = p - m;
-  float near = exp(-dot(d, d) * 7.0) * uHover;
-  p -= d * near * 0.3;
+  float r2 = dot(d, d);
+  float near = exp(-r2 * 28.0) * uHover;
+  float wide = exp(-r2 * 8.0) * uHover;
+  p -= uDrag * exp(-r2 * 4.0) * 0.35;
+  p -= d * wide * 0.18;
+  p += d * sin(sqrt(r2) * 16.0 - uPhase * 2.5) * wide * 0.03;
 
   float t = uTime;
-  float warp = 1.7 + uHover * 0.5;
+  float warp = 1.7 + uHover * 0.6;
   vec2 q = vec2(fbm(p * 0.8 + vec2(0.0, t * 0.6)), fbm(p * 0.8 + vec2(5.2, 1.3) - t * 0.45));
   vec2 r = vec2(fbm(p + warp * q + vec2(1.7, 9.2) + t * 0.3), fbm(p + warp * q + vec2(8.3, 2.8) - t * 0.25));
   float f = fbm(p + warp * r);
@@ -78,16 +88,22 @@ void main() {
   // Three tones over the ink; depth from light and dark more than from color.
   vec3 c = mix(uInk, uLow, smoothstep(0.2, 0.8, f));
   c = mix(c, uHigh, smoothstep(0.42, 0.95, f * 0.55 + r.x * 0.65) * 0.9);
-  // The silk: broad, soft bands bent by the field, lit where they crest.
-  float band = 0.5 + 0.5 * sin((p.x * 0.8 + p.y * 0.5) * 3.6 + f * 5.5 + r.x * 1.6 + t * 1.4);
-  c += uSheen * smoothstep(0.55, 1.0, band) * 0.12 * (0.4 + f);
+  // The silk: broad, soft bands bent by the field, lit where they crest; they
+  // stream on their own clock (uPhase), quick while hovered.
+  float band = 0.5 + 0.5 * sin((p.x * 0.8 + p.y * 0.5) * 3.6 + f * 5.5 + r.x * 1.6 + uPhase);
+  c += uSheen * smoothstep(0.55, 1.0, band) * (0.12 + 0.08 * uHover) * (0.4 + f);
   c -= c * smoothstep(0.4, 0.0, band) * 0.16;
-  c += mix(uHigh, uSheen, 0.5) * near * 0.22;
 
-  // Quieter toward the middle and the floor, where the sheet and the controls are.
+  // Quieter toward the middle and the floor, where the sheet and the controls
+  // are; less so while hovered, so the light and the flow read there too.
   float centre = smoothstep(0.0, 0.55, length((uv - vec2(0.5, 0.48)) * vec2(1.0, 1.25)));
-  c = mix(c, uInk, (1.0 - centre) * 0.25);
-  c = mix(uInk, c, 0.6 + 0.4 * smoothstep(0.0, 0.65, uv.y));
+  c = mix(c, uInk, (1.0 - centre) * 0.25 * (1.0 - 0.75 * uHover));
+  c = mix(uInk, c, mix(0.6 + 0.4 * smoothstep(0.0, 0.65, uv.y), 1.0, 0.7 * uHover));
+
+  // The pointer's light, last: a wide glow of the high tone and a brighter
+  // core of the sheen, wide enough to rim the sheet when the pointer is on it.
+  vec3 glow = mix(uHigh, uSheen, 0.35);
+  c += glow * wide * 0.42 + mix(glow, uSheen, 0.6) * near * 0.3;
   color = vec4(c, 1.0);
 }`;
 
@@ -137,6 +153,10 @@ function rgb(hex: string): Rgb {
 export interface Backdrop {
   /** The frames drawn so far and the size they are drawn at. */
   stats(): { frames: number; width: number; height: number };
+  /** Whether the pointer is over the stage, and the hover's eased amount (0 to 1). */
+  state(): { over: boolean; hover: number; pointer: { x: number; y: number }; aim: { x: number; y: number } };
+  /** How much the backdrop moves: the mean absolute difference (0-255, per channel) of two frames 500 ms apart, hovered or at rest. */
+  flow(hovered: boolean, at?: { x: number; y: number }): { meanAbsDiff: number; hover: boolean; width: number; height: number };
   /** Draws `n` frames one after another, each waited for (a pixel read back), and gives the average time of one in ms. */
   bench(n: number): { ms: number; width: number; height: number };
 }
@@ -173,7 +193,7 @@ export function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: number; y
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
   const u = (pr: WebGLProgram, name: string) => gl.getUniformLocation(pr, name);
-  const at = { res: u(silk, 'uRes'), time: u(silk, 'uTime'), pointer: u(silk, 'uPointer'), hover: u(silk, 'uHover') };
+  const at = { res: u(silk, 'uRes'), time: u(silk, 'uTime'), pointer: u(silk, 'uPointer'), hover: u(silk, 'uHover'), phase: u(silk, 'uPhase'), drag: u(silk, 'uDrag') };
   const colorAt = Object.fromEntries(NAMES.map((n) => [n, u(silk, `u${n[0].toUpperCase()}${n.slice(1)}`)])) as Record<(typeof NAMES)[number], WebGLUniformLocation | null>;
   const glassAt = { silk: u(glass, 'uSilk'), res: u(glass, 'uRes'), silkRes: u(glass, 'uSilkRes'), aspect: u(glass, 'uAspect') };
 
@@ -209,6 +229,9 @@ export function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: number; y
   let hover = 0;
   let over = false;
   let time = 7.3;
+  // The bands' own clock, and the silk dragged along by the pointer's motion (in the field's units).
+  let phase = 0;
+  let drag = { x: 0, y: 0 };
 
   // The silk's size, and the canvas's (the screen's pixels, at most 2 per point).
   let width = 0;
@@ -246,6 +269,8 @@ export function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: number; y
     gl.uniform1f(at.time, time);
     gl.uniform2f(at.pointer, pointer.x, pointer.y);
     gl.uniform1f(at.hover, hover);
+    gl.uniform1f(at.phase, phase);
+    gl.uniform2f(at.drag, drag.x, drag.y);
     colors(now).forEach((c, i) => gl.uniform3f(colorAt[NAMES[i]], c[0], c[1], c[2]));
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -267,16 +292,35 @@ export function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: number; y
   let last = 0;
   let drawn = 0;
   const still = () => reduced.matches;
+  /**
+   * The motion over `dt` seconds. The hover eases in over about 400 ms and
+   * out over about 800; the light follows the pointer in about 200 ms. At
+   * rest the field and the bands barely drift; hovered they stream at five
+   * to six times that.
+   */
+  const step = (dt: number) => {
+    const target = over ? 1 : 0;
+    hover += (target - hover) * (1 - Math.exp(-dt / (over ? 0.13 : 0.27)));
+    const k = 1 - Math.exp(-dt / 0.07);
+    const px = pointer.x;
+    const py = pointer.y;
+    pointer.x += (aim.x - pointer.x) * k;
+    pointer.y += (aim.y - pointer.y) * k;
+    // The pointer's speed drags the silk; the drag settles back in about 600 ms.
+    const aspect = width / height || 1;
+    drag.x = drag.x * Math.exp(-dt / 0.3) + (pointer.x - px) * aspect * 0.7 * hover;
+    drag.y = drag.y * Math.exp(-dt / 0.3) + (pointer.y - py) * 0.7 * hover;
+    time += dt * (0.02 + hover * 0.09);
+    phase += dt * (0.25 + hover * 1.15);
+  };
   const tick = (now: number) => {
     raf = 0;
-    const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
+    // Frames may come slowly (a busy page): a long gap is taken as at most 100 ms.
+    const dt = Math.min(0.1, last ? (now - last) / 1000 : 0);
     last = now;
-    hover += ((over ? 1 : 0) - hover) * (1 - Math.exp(-dt / 0.45));
-    pointer.x += (aim.x - pointer.x) * (1 - Math.exp(-dt / 0.35));
-    pointer.y += (aim.y - pointer.y) * (1 - Math.exp(-dt / 0.35));
-    time += dt * (0.016 + hover * 0.07);
+    step(dt);
     // At rest the drift is slow enough for a frame in three.
-    if (hover > 0.01 || now - drawn > 45 || now - mixStart < MIX) {
+    if (hover > 0.005 || Math.abs(drag.x) + Math.abs(drag.y) > 1e-4 || now - drawn > 45 || now - mixStart < MIX) {
       drawn = now;
       draw(now);
     }
@@ -339,13 +383,14 @@ export function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: number; y
     } else {
       leave();
     }
-    schedule();
+    // With less motion the still frame stands: nothing to draw for the pointer.
+    if (!still()) schedule();
   };
   const leave = () => {
     if (!over) return;
     over = false;
     onPointer?.(null);
-    schedule();
+    if (!still()) schedule();
   };
   addEventListener('pointermove', (e) => point(e.clientX, e.clientY), { passive: true });
   document.documentElement.addEventListener('mouseleave', () => leave());
@@ -380,6 +425,34 @@ export function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: number; y
   const pixel = new Uint8Array(4);
   return {
     stats: () => ({ frames, width, height }),
+    state: () => ({ over, hover, pointer: { ...pointer }, aim: { ...aim } }),
+    flow: (hovered, at = { x: 0.3, y: 0.6 }) => {
+      // Two frames 500 ms apart on a steady 60 fps clock, after a second's
+      // settling, with the pointer over the stage (still) or away from it.
+      const saved = { over, hover, time, phase, pointer: { ...pointer }, aim: { ...aim }, drag: { ...drag } };
+      over = hovered;
+      aim = { ...at };
+      pointer = { ...at };
+      const read = () => {
+        const out = new Uint8Array(width * height * 4);
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, out);
+        return out;
+      };
+      for (let i = 0; i < 60; i++) step(1 / 60);
+      draw(performance.now() + MIX);
+      const a = read();
+      for (let i = 0; i < 30; i++) step(1 / 60);
+      draw(performance.now() + MIX);
+      const b = read();
+      let sum = 0;
+      for (let i = 0; i < a.length; i += 4) sum += Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]);
+      ({ over, hover, time, phase } = saved);
+      pointer = saved.pointer;
+      aim = saved.aim;
+      drag = saved.drag;
+      draw(performance.now() + MIX);
+      return { meanAbsDiff: sum / ((a.length / 4) * 3), hover: hovered, width, height };
+    },
     bench: (n) => {
       const start = performance.now();
       for (let i = 0; i < n; i++) {
