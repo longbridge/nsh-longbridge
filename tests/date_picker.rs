@@ -3,7 +3,8 @@
 //! presets, the time row, Delete clearing; what screen readers get; the
 //! field's sizes on pointer and touch screens (a sheet on touch screens);
 //! joining a `Field`; a token changed while the popup is open reaching the
-//! popup, a day and a segment; the time field's focus edge and ring.
+//! popup, a day and a segment; the time field's focus edge and ring; the
+//! time label's color.
 
 mod common;
 
@@ -13,7 +14,7 @@ use std::{
     time::Duration,
 };
 
-use common::{bounds, css, light, size, start};
+use common::{bounds, css, dark, light, size, start, start_dark};
 use nsh_core::{Command, MountItem, NodeId, prelude::*};
 use nsh_longbridge::{
     DatePicker, DatePickerEvent, DateRangePreset, DateTime, HourCycle, PickedDate, ScopeTokens,
@@ -23,7 +24,7 @@ use nsh_longbridge::{
     date_picker, field, field_label,
     foundation::field::{INPUT_BORDER, INPUT_BORDER_FOCUS, INPUT_PLACEHOLDER_FOREGROUND},
     label,
-    theme::semantic::POPOVER,
+    theme::semantic::{POPOVER, POPOVER_FOREGROUND},
     theme_scope,
 };
 use nsh_testing::Headless;
@@ -150,6 +151,16 @@ fn the_time_row_edits_the_time_and_the_field_shows_it() {
     app.type_text("label:Time", "4").unwrap();
     app.run_for(Duration::from_millis(100)).unwrap();
     assert!(app.shows("2026-11-27 14:30"), "{:?}", app.screen().texts());
+}
+
+/// The time row's label takes the popup's text color, in the dark
+/// appearance too (by default a text is black).
+#[test]
+fn the_time_label_takes_the_popup_foreground() {
+    let (mut app, _) = start_dark::<Pickers>();
+    open(&mut app, "Meeting");
+    let label = app.screen().span_style("text:Time").unwrap();
+    assert_eq!(label.color, dark(POPOVER_FOREGROUND));
 }
 
 #[test]

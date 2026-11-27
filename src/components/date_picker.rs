@@ -55,7 +55,9 @@ use crate::{
     theme::{
         Theme,
         seeds::SPACING,
-        semantic::{BORDER, BORDER_WIDTH, OPACITY_DISABLED, OVERLAY, RADIUS_XS, TEXT_SM},
+        semantic::{
+            BORDER, BORDER_WIDTH, OPACITY_DISABLED, OVERLAY, POPOVER_FOREGROUND, RADIUS_XS, TEXT_SM,
+        },
         theme,
     },
     tokens,
@@ -466,7 +468,10 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
             text(move || labels::text(Label::Time))
                 .text_size(move || t.length(TEXT_SM))
                 .line_height(move || line_height(t.length(TEXT_SM)))
-                .font_weight(medium(t)),
+                .font_weight(medium(t))
+                // Its own color: nsh/base's time row does not pass on the
+                // popup's.
+                .text_color(move || t.color(POPOVER_FOREGROUND)),
         );
     let content_style = props.content_style;
     set_popup_style(&mut root, move || {
