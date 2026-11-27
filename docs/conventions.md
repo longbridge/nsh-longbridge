@@ -64,6 +64,11 @@ mobile-first single column.
 - Fields (`Input`, `Textarea`, and later a `Select`'s trigger, `NumberInput`, `Combobox`) share `foundation`'s field
   look (edge, fill, shadow, focus, invalid, disabled) on the `input-*` tokens, rather than each drawing its own.
 - Icons: sized by `icon-size-*` with the control's `size`, from the context when not given; colored as their text.
+- A part that colors its own text provides that color to what is inside it (`provide_text_color()`, as it provides
+  the icon size): icons and spinners follow it, and outside the library's parts fall back to `foreground` (NSH gives
+  a plain view black text in both appearances).
+- "As wide as its content" is `w-fit` (an internal `app_class`), never `align-self`, which would override the row's
+  alignment around it.
 - Styles NSH cannot bind (font weight, underline, cursor) are read once when the component is made; the spec's NSH
   gaps section names them.
 - Shadows come from `foundation`'s `shadow()` as the root's inline style; the app's `style` is merged after it.

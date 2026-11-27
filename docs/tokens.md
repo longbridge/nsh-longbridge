@@ -57,8 +57,9 @@ Names follow shadcn's and Tailwind 4's variables: kebab-case, without `--`.
   ring-[3px]`).
 - **Invalid**: `ring-invalid` = `destructive` at 20% (40% in dark): the ring of a focused invalid field.
 - **States**: `opacity-disabled` 0.5.
-- **Motion**: `duration-fast` = duration × 2/3, `duration-slow` = duration × 5/3. Easing curves are fixed in
-  `foundation`; with reduced motion a press does not scale and transitions take no time.
+- **Motion**: `duration-fast` = duration × 2/3, `duration-slow` = duration × 5/3; derived durations are whole
+  milliseconds (rounded). Easing curves are fixed in `foundation`; with reduced motion a press does not scale and
+  transitions take no time.
 - **Shadows**: the geometry of each tier is fixed in `foundation` (`xs`, `sm`, `md`, `lg`, as Tailwind's), colored
   with the `shadow` token. A component picks a tier with its number token `<component>-shadow`: 0 none, 1 `xs`,
   2 `sm`, 3 `md`, 4 `lg`.
