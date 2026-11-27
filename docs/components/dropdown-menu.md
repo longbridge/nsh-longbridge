@@ -71,8 +71,8 @@ Every other part keeps shadcn's name and place: `DropdownMenuItem`, `DropdownMen
 ### Implementation
 
 - **Structure**: `DropdownMenu` is a `#[component]` whose root is `nsh_base::menu()` with `open`, `defaultOpen`,
-  `placement`, `align`, `trigger` and the children passed through; `offset` is `popover-offset`, `margin` `nsh/base`'s
-  default. It provides a `MenuLook` context (the `size`, the presentation) that every part reads. Each item kind is
+  `placement`, `align`, `trigger` and the children passed through; `offset` is `popover-offset`, `margin`
+  `popover-margin` (4) from the safe area's edges, as Popover's (submenus: [NSH gaps](#nsh-gaps) 9). It provides a `MenuLook` context (the `size`, the presentation) that every part reads. Each item kind is
   a component whose root is `nsh_base::menu_item()` (`menu_separator()`, `submenu()`), styled on its root element with
   bindings, the app's `class` / `style` merged last (as Checkbox's root).
 - **The popup surface** is `foundation::popup::surface(t)`, the one every popup shares (fill, edge, corners, shadow
@@ -518,6 +518,9 @@ dropdown_menu()
 8. **A pressable in the trigger slot takes the press** (Popover's NSH gap 7): the library keeps the open state
    (`nsh/base`'s menu is controlled) and a library `Button` as the trigger opens it through `foundation::trigger`;
    the items are drawn under a component of their own that ends the context. A TSX test guards it.
+9. **A submenu keeps no margin from the window's edges**: `nsh/base`'s `Submenu` takes no `margin` (its popup is placed
+   beside its row with `offset` only), so a submenu flipped or shifted at an edge can touch it, where the menu keeps
+   `popover-margin`. A `margin` on `Submenu` (or the menu's passed down) would close it.
 
 ## Decisions
 

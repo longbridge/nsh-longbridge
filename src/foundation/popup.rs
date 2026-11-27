@@ -6,7 +6,7 @@
 //! lists them); each popup adds its own padding and width.
 
 use nsh_core::{
-    element::{StyleRefinement, global},
+    element::{Style, StyleRefinement, global},
     prelude::*,
 };
 
@@ -142,4 +142,36 @@ pub(crate) fn hold_open() {
 pub(crate) fn covered() -> bool {
     use_context::<InPopup>().is_none()
         && try_global::<OpenPopups>().is_some_and(|open| open.get().0 > 0)
+}
+
+/// Gives `el`'s popup (an `nsh/base` popup component's `popupStyle`) the
+/// style `style` makes, bound: `nsh/base`'s Rust setter takes a style
+/// built once, which could neither follow the tokens nor merge the app's
+/// `contentStyle`, a prop. The prop is set as the setter sets it.
+pub(crate) fn set_popup_style<B>(el: &mut B, style: impl Fn() -> Style + 'static)
+where
+    B: ComponentBuilder,
+    <B::Component as Component>::Props: PopupStyleProp,
+{
+    el.__element()
+        .__props_mut()
+        .set_popup_style(Prop::from(IntoReactive::<Style>::into_reactive(style)));
+}
+
+/// The props of an `nsh/base` popup component with a `popupStyle`.
+pub(crate) trait PopupStyleProp {
+    /// Sets `popupStyle`.
+    fn set_popup_style(&mut self, style: Prop<Style>);
+}
+
+impl PopupStyleProp for nsh_base::MenuProps {
+    fn set_popup_style(&mut self, style: Prop<Style>) {
+        self.popup_style = style;
+    }
+}
+
+impl PopupStyleProp for nsh_base::SelectProps {
+    fn set_popup_style(&mut self, style: Prop<Style>) {
+        self.popup_style = style;
+    }
 }

@@ -456,3 +456,31 @@ fn a_triggers_tooltip_stays_out_of_its_open_list() {
     app.run_for(Duration::from_millis(400)).unwrap();
     assert!(!app.screen().matches("role:option[Apple]").unwrap());
 }
+
+/// A long list from a trigger at the bottom of the window.
+#[component]
+fn Years() -> impl IntoElement {
+    let years: Vec<SelectItem> = (0..120)
+        .map(|i| {
+            let year = (2026 - i).to_string();
+            SelectItem::new(year.clone(), year)
+        })
+        .collect();
+    view().pt(px(540.0)).pl(px(40.0)).child(
+        select()
+            .items(years)
+            .cover(Some(false))
+            .accessibility_label("Year"),
+    )
+}
+
+/// The list keeps `popover-margin` (4) from the window's edges, as a
+/// popover does.
+#[test]
+fn the_list_keeps_the_popover_margin_from_the_edges() {
+    let mut app = start::<Years>(true);
+    open(&mut app, "Year");
+    let popup = popup_of(&app, "role:option[2026]");
+    let b = bounds(&app, &format!("view:{popup}"));
+    assert_eq!(b.origin.y.0, 4.0, "{b:?}");
+}

@@ -18,7 +18,7 @@ pub use nsh_base::{SelectEntry, SelectItem, SelectValue};
 
 use crate::{
     components::{
-        dropdown_menu::{set_popup_style, sheet_look},
+        dropdown_menu::sheet_look,
         input::{self, vertical_hit_slop},
     },
     foundation::{
@@ -32,7 +32,7 @@ use crate::{
             MENU_MIN_WIDTH, MENU_PADDING, MENU_SHEET_PADDING, item_height_token, item_row,
             list_as_sheet,
         },
-        popup::{self, POPOVER_OFFSET},
+        popup::{self, POPOVER_MARGIN, POPOVER_OFFSET, set_popup_style},
         size::Size,
         typography::line_height,
     },
@@ -207,6 +207,7 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
         .align(props.align)
         .cover(props.cover)
         .offset(move || t.length(POPOVER_OFFSET))
+        .margin(move || t.length(POPOVER_MARGIN))
         .on_change(move |value: &Option<SharedString>| {
             if props.value.get_untracked() == SelectValue::Uncontrolled {
                 own.set(value.clone());

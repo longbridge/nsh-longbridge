@@ -439,3 +439,26 @@ fn from_tsx_a_button_trigger_opens_and_closes_it() {
     app.run_for(Duration::from_millis(400)).unwrap();
     assert!(!app.shows("Settings"), "an item closes it");
 }
+
+/// A menu whose trigger is at the window's right edge.
+#[component]
+fn AtTheEdge() -> impl IntoElement {
+    view().items_end().child(
+        dropdown_menu()
+            .content_class(Some("w-[200px]".into()))
+            .trigger(button().child("Edge"))
+            .child(dropdown_menu_item().child("Profile")),
+    )
+}
+
+/// The popup keeps `popover-margin` (4) from the window's edges, as a
+/// popover does.
+#[test]
+fn the_popup_keeps_the_popover_margin_from_the_edges() {
+    let mut app = start::<AtTheEdge>(true);
+    app.press("role:button[Edge]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    let popup = popup_of(&app);
+    let b = common::bounds(&app, &format!("view:{popup}"));
+    assert_eq!((b.origin.x + b.size.width).0, 800.0 - 4.0, "{b:?}");
+}

@@ -63,7 +63,7 @@ component cannot read its children's props. So:
 
 - **Structure**: a `#[component] fn Select` whose root is `nsh_base::select()`, `items`, `open`, `defaultOpen`,
   `placeholder`, `disabled`, `accessibilityLabel`, `placement`, `align` and `cover` passed through; `offset` is
-  `popover-offset`.
+  `popover-offset`, `margin` `popover-margin` (4) from the safe area's edges, as Popover's.
 - **The value**: the library always passes `nsh/base` a controlled `value`, its own signal when the app gives none
   (from `defaultValue`), so the trigger's text and the rows' checks read it. `onChange` is `nsh/base`'s, forwarded;
   the own signal follows it first.

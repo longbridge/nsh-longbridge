@@ -26,7 +26,7 @@ use crate::{
             ROW_GROUP, highlight, item_row, menu_as_sheet, menu_size, provide_menu_look,
             row_icon_color, separator, shortcut,
         },
-        popup::{self, POPOVER_BORDER, POPOVER_OFFSET},
+        popup::{self, POPOVER_BORDER, POPOVER_MARGIN, POPOVER_OFFSET, set_popup_style},
         size::Size,
         trigger,
         typography::medium,
@@ -129,6 +129,7 @@ pub fn DropdownMenu(props: DropdownMenuProps, cx: Scope<DropdownMenuEvent>) -> i
         .placement(props.placement)
         .align(props.align)
         .offset(move || t.length(POPOVER_OFFSET))
+        .margin(move || t.length(POPOVER_MARGIN))
         .trigger(props.trigger.place(|slot| slot))
         .on_open_change(move |e: &BaseMenuEvent| {
             if let BaseMenuEvent::OpenChange(open, reason) = e {
@@ -206,38 +207,6 @@ pub(crate) fn sheet_look(t: Theme) -> StyleRefinement {
         .style_with(|s| s.shadow(Vec::<BoxShadow>::new()))
         .p(move || t.length(MENU_SHEET_PADDING))
         .pb(move || t.length(MENU_SHEET_PADDING) + safe_area().bottom)
-}
-
-/// Gives `el`'s popup (an `nsh/base` popup component's `popupStyle`) the
-/// style `style` makes, bound: `nsh/base`'s Rust setter takes a style
-/// built once, which could neither follow the tokens nor merge the app's
-/// `contentStyle`, a prop. The prop is set as the setter sets it.
-pub(crate) fn set_popup_style<B>(el: &mut B, style: impl Fn() -> Style + 'static)
-where
-    B: ComponentBuilder,
-    <B::Component as Component>::Props: PopupStyleProp,
-{
-    el.__element()
-        .__props_mut()
-        .set_popup_style(Prop::from(IntoReactive::<Style>::into_reactive(style)));
-}
-
-/// The props of an `nsh/base` popup component with a `popupStyle`.
-pub(crate) trait PopupStyleProp {
-    /// Sets `popupStyle`.
-    fn set_popup_style(&mut self, style: Prop<Style>);
-}
-
-impl PopupStyleProp for nsh_base::MenuProps {
-    fn set_popup_style(&mut self, style: Prop<Style>) {
-        self.popup_style = style;
-    }
-}
-
-impl PopupStyleProp for nsh_base::SelectProps {
-    fn set_popup_style(&mut self, style: Prop<Style>) {
-        self.popup_style = style;
-    }
 }
 
 /// A menu item's look.
