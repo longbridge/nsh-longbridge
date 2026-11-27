@@ -6,6 +6,7 @@
 //! own.
 
 pub mod choice;
+pub mod class;
 pub mod field;
 pub mod field_ref;
 pub mod focus;
