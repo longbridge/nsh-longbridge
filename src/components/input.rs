@@ -5,18 +5,22 @@
 
 use nsh_core::{
     element::{
-        AutoFill, EdgeInsets, JsIn, JsOwned, JsValue, PropError, TsTypes, input as host_input,
+        AutoFill, EdgeInsets, JsIn, JsOwned, JsValue, PropError, Selection, TsTypes,
+        input as host_input,
     },
     js::host::HostValue,
     prelude::*,
 };
 
+use std::{cell::Cell, rc::Rc};
+
+use super::input_group;
 use crate::{
     foundation::{
         field::{
             self, INPUT_FONT_SIZE_LG, INPUT_FONT_SIZE_MD, INPUT_FONT_SIZE_SM, INPUT_FONT_SIZE_XS,
-            INPUT_HEIGHT_LG, INPUT_HEIGHT_MD, INPUT_HEIGHT_SM, INPUT_HEIGHT_XS, INPUT_PADDING_X_LG,
-            INPUT_PADDING_X_MD, INPUT_PADDING_X_SM, INPUT_PADDING_X_XS,
+            INPUT_FOREGROUND, INPUT_HEIGHT_LG, INPUT_HEIGHT_MD, INPUT_HEIGHT_SM, INPUT_HEIGHT_XS,
+            INPUT_PADDING_X_LG, INPUT_PADDING_X_MD, INPUT_PADDING_X_SM, INPUT_PADDING_X_XS,
             INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_look,
         },
         field_ref::FieldRef,
@@ -73,11 +77,12 @@ pub struct InputProps {
     /// Shown while it is empty (the app's words).
     pub placeholder: Prop<Option<SharedString>>,
     /// Its size (`xs`, `sm`, `md`, `lg`): height, text and padding change
-    /// together.
+    /// together. Inside an `InputGroup`, the group's size is taken instead.
     #[prop(default)]
     pub size: Prop<Size>,
     /// No editing and no focus, out of the Tab order, at half opacity. Or'ed
-    /// with an enclosing `Field`'s or `FieldSet`'s.
+    /// with an enclosing `Field`'s or `FieldSet`'s. Inside an `InputGroup`,
+    /// the whole group dims and its buttons are disabled too.
     #[prop(default)]
     pub disabled: Prop<bool>,
     /// Its text can be focused, selected and copied, not changed; it looks
@@ -86,10 +91,11 @@ pub struct InputProps {
     pub readonly: Prop<bool>,
     /// The app's checks reject the value: a destructive edge (and ring
     /// while focused); screen readers say it is invalid. Or'ed with an
-    /// enclosing `Field`'s.
+    /// enclosing `Field`'s. Inside an `InputGroup`, the group's edge.
     #[prop(default)]
     pub invalid: Prop<bool>,
-    /// Hides what is typed: a password field.
+    /// Hides what is typed: a password field. An `InputGroupPasswordToggle`
+    /// in its group shows it while pressed.
     #[prop(default)]
     pub masked: Prop<bool>,
     /// The software keyboard's layout (`email-address`, `url`,
@@ -174,7 +180,9 @@ impl InputApi {
 #[component(methods = InputApi)]
 pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
     let t = theme();
-    let size = move || props.size.get();
+    // Inside an `InputGroup`: the group draws the frame and sets the size.
+    let group = input_group::current();
+    let size = move || group.map_or_else(|| props.size.get(), |g| g.size());
     let height = move || t.length(height_token(size()));
     let field = element_ref();
     let joined = field::join(cx.__host(), Kind::Focus(field), move || {
@@ -182,11 +190,21 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
     });
     let disabled = move || props.disabled.get() || joined.disabled();
     let invalid = move || props.invalid.get() || joined.invalid();
+    let main = group.is_some_and(|g| g.join(field, invalid, disabled));
     cx.methods(InputApi {
         field,
         disabled: props.disabled,
         joined,
     });
+    // The group's password toggle shows a masked field.
+    let masked = move || props.masked.get() && !(main && group.is_some_and(|g| g.shown()));
+    let focused = signal(false);
+    let report_focus = move |on: bool| {
+        focused.set(on);
+        if main && let Some(g) = group {
+            g.set_focused(on);
+        }
+    };
 
     let controlled = props.value.get_untracked().is_some();
     let el = host_input()
@@ -204,7 +222,7 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
                 .map(|s| s.to_string())
                 .unwrap_or_default()
         })
-        .masked(props.masked)
+        .masked(masked)
         .keyboard_type(props.keyboard_type)
         .return_key_type(props.return_key_type)
         .when(props.auto_capitalize.get_untracked().is_some(), |el| {
@@ -231,21 +249,72 @@ pub fn Input(props: InputProps, cx: Scope<InputEvent>) -> impl IntoElement {
         .accessibility_described_by_target(move || joined.described_by())
         .on_change(move |text: &str| cx.emit(InputEvent::Change(text.to_owned())))
         .on_submit(move |text: &str| cx.emit(InputEvent::Submit(text.to_owned())))
-        .on_focus(move || cx.emit(InputEvent::Focus))
-        .on_blur(move || cx.emit(InputEvent::Blur))
+        .on_focus(move || {
+            report_focus(true);
+            cx.emit(InputEvent::Focus)
+        })
+        .on_blur(move || {
+            report_focus(false);
+            cx.emit(InputEvent::Blur)
+        })
         .hit_slop(move || vertical_hit_slop(t, height()))
-        .w_full()
         .min_w(px(0.0))
-        // Beside a label in a horizontal field: an equal share of the row.
-        .style_when(move || joined.in_row(), |s| s.flex_1())
-        .h(height)
-        .px(move || t.length(padding_token(size())))
         .text_size(move || t.length(font_size_token(size())))
         .style_when(true, move |s| {
             s.placeholder_color(move || t.color(INPUT_PLACEHOLDER_FOREGROUND))
         })
         .disabled_style(|s| s.cursor(Cursor::Default));
-    field_look(el, t, invalid)
+    let el = if props.masked.get_untracked() {
+        keep_selection(el, field, masked, focused)
+    } else {
+        el
+    };
+    match group {
+        // The group draws the frame: a transparent field in the room its
+        // addons leave, its padding by its place among them.
+        Some(g) => el
+            .style_when(move || !g.column(), |s| s.flex_1())
+            .h(move || input_group::field_height(t, size()))
+            .app_class(move || Some(input_group::field_class(t, g)))
+            .bg(AdaptiveColor::TRANSPARENT)
+            .text_color(move || t.color(INPUT_FOREGROUND)),
+        None => {
+            let el = el
+                .w_full()
+                // Beside a label in a horizontal field: an equal share of
+                // the row.
+                .style_when(move || joined.in_row(), |s| s.flex_1())
+                .h(height)
+                .px(move || t.length(padding_token(size())));
+            field_look(el, t, invalid)
+        }
+    }
+}
+
+/// Puts the selection back after `masked` changes while the field has the
+/// focus: a platform may rebuild its field for it (AppKit's secure and
+/// plain fields are separate classes), which puts the caret at the end.
+/// The selection last seen is set again on the next frame.
+fn keep_selection(
+    el: nsh_core::element::Input,
+    field: ElementRef,
+    masked: impl Fn() -> bool + 'static,
+    focused: Signal<bool>,
+) -> nsh_core::element::Input {
+    let seen = Rc::new(Cell::new(None::<(u32, u32)>));
+    let before = Cell::new(None::<bool>);
+    let at = seen.clone();
+    effect(move || {
+        let now = masked();
+        let changed = before.replace(Some(now)).is_some_and(|was| was != now);
+        if changed
+            && untracked(|| focused.get())
+            && let Some((start, end)) = at.get()
+        {
+            request_animation_frame(move |_| field.set_selection(start, end));
+        }
+    });
+    el.on_selection_change(move |s: &Selection| seen.set(Some((s.start, s.end))))
 }
 
 /// Rust: `label().html_for(email)` with `email` this input's ref.

@@ -14,7 +14,7 @@ Input's frame, growing with its content (`field-sizing-content`) from a least he
 |---|---|
 | One line is enough (a name, an email, a search term) | [Input](input.md) |
 | Rich text, Markdown editing, code | `nsh/base`'s `RichEditor` / `Editor` |
-| A chat composer (a send button, attachments, Return sends) | A later composer block (`src/blocks/`), not in P1; until then a Textarea with `submitBehavior="submit"` |
+| A chat composer (a send button, attachments, Return sends) | A Textarea in an [InputGroup](input-group.md) with a `blockEnd` toolbar (and `submitBehavior="submit"`); a later composer block (`src/blocks/`) for more |
 | A character count, a description, an error line | [Field](field.md) around it |
 
 ## Built on
@@ -64,6 +64,11 @@ As Input: `TextareaRef` / `ComponentRef<TextareaApi>`, with `focus()`, `blur()`,
 
 As Input ([Input's](input.md#inside-a-field)): the field's `invalid`, `disabled` and description or error; its
 `FieldLabel` focuses it.
+
+### Inside an `InputGroup`
+
+As Input ([Input's](input.md#inside-an-inputgroup)): the group draws the frame and sets the size. In a group with a
+`blockStart` or `blockEnd` addon (a header, a toolbar) it spans the column and keeps growing with its text.
 
 ### Parts
 

@@ -102,7 +102,8 @@ export function InputPage() {
       <TokensSection
         prefix="input"
         component="Input"
-        note="Textarea and every later field share these tokens: a change here reaches them too."
+        note="Textarea, Input Group and every later field share these tokens: a change here reaches them too."
+        exclude={["input-group"]}
       />
     </Page>
   );

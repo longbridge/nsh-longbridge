@@ -420,7 +420,7 @@ fn padding_token(size: Size) -> Token<kind::Length> {
     )
 }
 
-fn rest_fill(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
+pub(crate) fn rest_fill(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     match variant {
         ButtonVariant::Default => t.color(BUTTON_DEFAULT),
         ButtonVariant::Secondary => t.color(BUTTON_SECONDARY),
@@ -430,7 +430,7 @@ fn rest_fill(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     }
 }
 
-fn hover_fill(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
+pub(crate) fn hover_fill(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     match variant {
         ButtonVariant::Default => t.color(BUTTON_DEFAULT_HOVER),
         ButtonVariant::Secondary => t.color(BUTTON_SECONDARY_HOVER),
@@ -441,7 +441,7 @@ fn hover_fill(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     }
 }
 
-fn rest_foreground(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
+pub(crate) fn rest_foreground(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     match variant {
         ButtonVariant::Default => t.color(BUTTON_DEFAULT_FOREGROUND),
         ButtonVariant::Secondary => t.color(BUTTON_SECONDARY_FOREGROUND),
@@ -452,7 +452,7 @@ fn rest_foreground(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     }
 }
 
-fn hover_foreground(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
+pub(crate) fn hover_foreground(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     match variant {
         ButtonVariant::Outline => t.color(BUTTON_OUTLINE_HOVER_FOREGROUND),
         ButtonVariant::Ghost => t.color(BUTTON_GHOST_HOVER_FOREGROUND),
@@ -460,7 +460,7 @@ fn hover_foreground(t: Theme, variant: ButtonVariant) -> AdaptiveColor {
     }
 }
 
-fn ring(t: Theme, variant: ButtonVariant, invalid: bool) -> AdaptiveColor {
+pub(crate) fn ring(t: Theme, variant: ButtonVariant, invalid: bool) -> AdaptiveColor {
     if invalid {
         t.color(BUTTON_RING_INVALID)
     } else if variant == ButtonVariant::Destructive {

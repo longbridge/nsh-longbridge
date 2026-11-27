@@ -4,10 +4,16 @@
 
 use nsh_core::{element::input as host_input, prelude::*};
 
-use super::input::{font_size_token, padding_token};
+use super::{
+    input::{font_size_token, padding_token},
+    input_group,
+};
 use crate::{
     foundation::{
-        field::{self, INPUT_BORDER_WIDTH, INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_look},
+        field::{
+            self, INPUT_BORDER_WIDTH, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind,
+            field_look,
+        },
         field_ref::FieldRef,
         size::Size,
         typography::line_height,
@@ -37,7 +43,8 @@ pub struct TextareaProps {
     pub placeholder: Prop<Option<SharedString>>,
     /// Its size (`xs`, `sm`, `md`, `lg`): the text and the horizontal
     /// padding, so its text lines up with an Input's of the same size. Its
-    /// height follows its text.
+    /// height follows its text. Inside an `InputGroup`, the group's size is
+    /// taken instead.
     #[prop(default)]
     pub size: Prop<Size>,
     /// No editing and no focus, out of the Tab order, at half opacity. Or'ed
@@ -126,7 +133,9 @@ impl TextareaApi {
 #[component(methods = TextareaApi)]
 pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElement {
     let t = theme();
-    let size = move || props.size.get();
+    // Inside an `InputGroup`: the group draws the frame and sets the size.
+    let group = input_group::current();
+    let size = move || group.map_or_else(|| props.size.get(), |g| g.size());
     let font_size = move || t.length(font_size_token(size()));
     let field = element_ref();
     let joined = field::join(cx.__host(), Kind::Focus(field), move || {
@@ -134,6 +143,12 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
     });
     let disabled = move || props.disabled.get() || joined.disabled();
     let invalid = move || props.invalid.get() || joined.invalid();
+    let main = group.is_some_and(|g| g.join(field, invalid, disabled));
+    let report_focus = move |on: bool| {
+        if main && let Some(g) = group {
+            g.set_focused(on);
+        }
+    };
     cx.methods(TextareaApi {
         field,
         disabled: props.disabled,
@@ -178,18 +193,20 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
         .accessibility_described_by_target(move || joined.described_by())
         .on_change(move |text: &str| cx.emit(TextareaEvent::Change(text.to_owned())))
         .on_submit(move |text: &str| cx.emit(TextareaEvent::Submit(text.to_owned())))
-        .on_focus(move || cx.emit(TextareaEvent::Focus))
-        .on_blur(move || cx.emit(TextareaEvent::Blur))
-        .w_full()
-        // Beside a label in a horizontal field: an equal share of the row.
-        .style_when(move || joined.in_row(), |s| s.flex_1().min_w(px(0.0)))
+        .on_focus(move || {
+            report_focus(true);
+            cx.emit(TextareaEvent::Focus)
+        })
+        .on_blur(move || {
+            report_focus(false);
+            cx.emit(TextareaEvent::Blur)
+        })
         // No height: the host measures its text as it lays out, so the
         // field grows in the same layout as the edit (no frame late).
         .min_h(move || {
             t.length(TEXTAREA_MIN_HEIGHT)
                 .max(line_height(font_size()) + t.length(INPUT_BORDER_WIDTH) * 2.0)
         })
-        .px(move || t.length(padding_token(size())))
         .py(move || t.length(TEXTAREA_PADDING_Y))
         .text_size(font_size)
         .line_height(move || line_height(font_size()))
@@ -197,7 +214,26 @@ pub fn Textarea(props: TextareaProps, cx: Scope<TextareaEvent>) -> impl IntoElem
             s.placeholder_color(move || t.color(INPUT_PLACEHOLDER_FOREGROUND))
         })
         .disabled_style(|s| s.cursor(Cursor::Default));
-    field_look(el, t, invalid)
+    match group {
+        // The group draws the frame: a transparent area, the whole width of
+        // a column (header, area, footer), or the room inline addons leave.
+        Some(g) => el
+            .w_full()
+            .min_w(px(0.0))
+            .style_when(move || !g.column(), |s| s.flex_1().self_stretch())
+            .app_class(move || Some(input_group::field_class(t, g)))
+            .bg(AdaptiveColor::TRANSPARENT)
+            .text_color(move || t.color(INPUT_FOREGROUND)),
+        None => {
+            let el = el
+                .w_full()
+                // Beside a label in a horizontal field: an equal share of
+                // the row.
+                .style_when(move || joined.in_row(), |s| s.flex_1().min_w(px(0.0)))
+                .px(move || t.length(padding_token(size())));
+            field_look(el, t, invalid)
+        }
+    }
 }
 
 /// Rust: `label().html_for(notes)` with `notes` this textarea's ref.

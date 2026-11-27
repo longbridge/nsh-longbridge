@@ -15,7 +15,7 @@ Single-line text entry: a name, an email, a password, a search term, short text 
 | Several lines, notes, text with line breaks | [Textarea](textarea.md) |
 | A number with steps, a range, arrow-key nudges | `nsh/base`'s `NumberInput` (wrapped by this library later, P3), not `Input` + `keyboardType="numeric"` with checks of the app's own |
 | A choice from a fixed list | Select (P2) / Combobox (P3) |
-| Icons, units or buttons before or after the field | InputGroup (later); P1 gives `Input` no prefix / suffix |
+| Icons, units or buttons before or after the field, a password's eye | [InputGroup](input-group.md) around it; `Input` has no prefix / suffix of its own |
 | A verification code, one character per cell | `nsh/base`'s `OtpInput` |
 | A field's label, description, error line | [Field](field.md) around it (or a [Label](label.md) alone) |
 | Picking a file (HTML's `type="file"`) | Not supported: NSH has no file input; use the system's file dialog |
@@ -103,6 +103,20 @@ A [Field](field.md) around it hands it its `invalid` and `disabled` (or'ed with 
 input the app disabled), and its `FieldError` while that shows, else its `FieldDescription`, as what describes it for
 screen readers. Its `FieldLabel` focuses it. Outside a `Field` nothing changes.
 
+### Inside an `InputGroup`
+
+An [InputGroup](input-group.md) around it draws the frame (edge, fill, shadow, ring) and sets the size: the field then
+draws none of its own, is transparent, takes the group's `size` (its own is not read), fills the room the addons
+leave, and keeps `input-group-gap` toward an addon beside it (the field's padding toward the frame's edge). Its focus,
+`invalid` and `disabled` draw the frame and reach the group's buttons; an `InputGroupPasswordToggle` in the group shows a
+`masked` field while pressed. Outside a group nothing changes.
+
+### Masked
+
+A field made with `masked` keeps the last selection it saw and sets it again on the next frame when `masked` changes
+while it has the focus: a platform may rebuild its field to show or hide the text (AppKit's secure and plain fields are
+separate classes), which would put the caret at the end ([InputGroup's G3](input-group.md#nsh-gaps)).
+
 ### Parts
 
 The root alone, no `<part>Class` / `<part>Style`. The placeholder, caret and selection colors are the field's style keys
@@ -161,8 +175,8 @@ Notes for this component:
   tint), so copying it would put dark text on a dark fill in light mode. **`selectionColor` is left unset: the
   platform's selection** (G4 under [NSH gaps](#nsh-gaps)). Textarea sets none either.
 - Caret: the platform's; this library sets none.
-- Loading: a field has no loading state; an asynchronous check's spinner belongs in an InputGroup
-  (later).
+- Loading: a field has no loading state; an asynchronous check's spinner belongs in an
+  [InputGroup](input-group.md)'s addon.
 
 ## Pointer and touch
 

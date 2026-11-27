@@ -186,6 +186,15 @@ fn the_textarea_token_table_is_current() {
 }
 
 #[test]
+fn the_input_group_token_table_is_current() {
+    check_block(
+        &root().join("docs/components/input-group.md"),
+        "input-group",
+        &token_table(nsh_longbridge::components::input_group::TOKENS),
+    );
+}
+
+#[test]
 fn the_skeleton_token_table_is_current() {
     check_block(
         &root().join("docs/components/skeleton.md"),
