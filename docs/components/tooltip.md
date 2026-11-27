@@ -331,6 +331,9 @@ view().tooltip(
    label's did not wrap). The library resets what `Styled` can set; italics (`fontStyle: normal`) and start alignment
    have no setter and still pass through. The hint layer starting from the root's text styles, as a portal does,
    would lift this.
+8. **A tooltip held open outlives its trigger scrolling away** (Popover's NSH gap 8): with `open`, the hint stays
+   clamped at the window's edge once its trigger leaves the window. A hover tooltip closes as the pointer leaves, so
+   only a held one shows it.
 
 ## Decisions
 

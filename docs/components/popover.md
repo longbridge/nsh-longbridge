@@ -320,6 +320,11 @@ popover()
    than 50 ms are one). Shared with `Dialog`, `AlertDialog` and `DropdownMenu`; TSX tests guard each. An app's own
    pressable as the trigger is not covered. The NSH fix would be a slot's press listener hearing the presses of a
    pressable inside it (as an `asChild` merges them), or a way to hand a slot's press to its content.
+8. **A popup outlives its trigger scrolling away** (found on the web gallery on NSH 0.7.0). An open popup whose
+   trigger scrolls out of the window stays at the window's edge, clamped there, instead of closing or leaving with
+   it; `nsh/base` hides a submenu in that case, not a top-level popup. Not worked around in the library: an app that
+   holds a popup open can close it as its trigger leaves (the gallery's held-open scenes do). The overlay hiding or
+   closing a popup whose anchor is out of view would lift this.
 
 ## Decisions
 

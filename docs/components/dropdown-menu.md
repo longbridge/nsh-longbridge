@@ -526,6 +526,8 @@ dropdown_menu()
 9. **A submenu keeps no margin from the window's edges**: `nsh/base`'s `Submenu` takes no `margin` (its popup is placed
    beside its row with `offset` only), so a submenu flipped or shifted at an edge can touch it, where the menu keeps
    `popover-margin`. A `margin` on `Submenu` (or the menu's passed down) would close it.
+10. **A menu outlives its trigger scrolling away** (Popover's NSH gap 8): an open menu whose trigger scrolls out of
+    the window stays clamped at the window's edge; only submenus are hidden.
 
 ## Decisions
 
