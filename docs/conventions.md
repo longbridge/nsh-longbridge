@@ -135,7 +135,7 @@ Every overlay follows these rules; [dialog.md](components/dialog.md) has the ful
    reaching the look); the
    token table and `themes/default.json` agree with the code.
 5. Screenshots for review: web and macOS, light and dark, in the pull request.
-6. A row in the README's component index.
+6. A row in the component index (`docs/components/README.md`).
 
 ## Out of scope
 
