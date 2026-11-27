@@ -1,9 +1,20 @@
 //! What the component tests share: a headless engine on a desktop or a
-//! phone, and reading a view's size and fill.
+//! phone, reading a view's size and fill, and the color a drawing strokes
+//! in the dark appearance.
 
 #![allow(dead_code, unreachable_pub)]
 
-use nsh_core::{Size as Viewport, platform::Os, prelude::*};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
+use nsh_core::{
+    Color, MountItem, NodeId, Size as Viewport,
+    canvas::{CanvasOp, Paint},
+    platform::{ColorScheme, Os},
+    prelude::*,
+};
 use nsh_engine::EngineConfig;
 use nsh_longbridge::theme::{Token, kind};
 use nsh_testing::Headless;
@@ -75,4 +86,50 @@ pub fn light(token: Token<kind::Color>) -> Option<u32> {
 /// A CSS color as a fill reads.
 pub fn css(color: &str) -> Option<u32> {
     Some(nsh_core::Color::parse(color).unwrap().0)
+}
+
+/// The color each drawing strokes in, by node.
+pub type Strokes = Arc<Mutex<HashMap<NodeId, Option<Color>>>>;
+
+/// `C` as [`start`] makes it on a desktop, in the dark appearance, with the
+/// color each drawing strokes in (an svg's `currentColor`), as the host
+/// gets it.
+pub fn start_dark<C: Component<Props = ()>>() -> (Headless, Strokes) {
+    let mut config = EngineConfig {
+        viewport: Viewport::new(px(800.0), px(600.0)),
+        clock: nsh_engine::Clock::manual(std::time::SystemTime::now()),
+        ..EngineConfig::new(nsh_testing::windowed_root::<C>())
+    };
+    config.environment.os = Os::MacOs;
+    config.environment.color_scheme = ColorScheme::Dark;
+    let mut app = Headless::start(config).unwrap();
+    let strokes = Strokes::default();
+    let seen = strokes.clone();
+    app.observe(move |_, batch| {
+        for item in &batch.items {
+            if let MountItem::Canvas { id, drawing } = item {
+                let stroke = drawing.ops.iter().find_map(|op| match op {
+                    CanvasOp::StrokeStyle(Paint::Color(c)) => Some(*c),
+                    _ => None,
+                });
+                seen.lock().unwrap().insert(*id, stroke);
+            }
+        }
+    });
+    app.first_render().unwrap();
+    (app, strokes)
+}
+
+/// The color the drawing at `selector` strokes in.
+pub fn stroke(app: &Headless, strokes: &Strokes, selector: &str) -> Color {
+    let node = app.screen().id(selector).unwrap();
+    strokes.lock().unwrap()[&node].unwrap_or_else(|| panic!("{selector} strokes nothing"))
+}
+
+/// What `token` resolves to with `nsh/base`'s default theme, in the dark
+/// appearance.
+pub fn dark(token: Token<kind::Color>) -> Color {
+    let tokens = nsh_base::Theme::default().into_tokens();
+    let c = nsh_longbridge::theme::resolve_color_in(&tokens, &[], true, token);
+    Color::from(c.dark)
 }

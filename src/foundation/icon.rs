@@ -1,14 +1,15 @@
 //! Icons: a few of lucide's (ISC license, `icons/LICENSE-lucide.txt`),
-//! drawn with `currentColor`, so they take the color of the text around
-//! them. Their size follows `Size` (12 / 14 / 16 / 20), from the control
-//! they are in when not given.
+//! drawn with `currentColor`, so they take the color of the text of the
+//! library's part they are in (`foreground` outside every such part). Their
+//! size follows `Size` (12 / 14 / 16 / 16), from the control they are in
+//! when not given.
 
 use nsh_core::{element::ImageSrc, prelude::*};
 
 use super::size::Size;
 use crate::theme::{
     Theme, Token, kind,
-    semantic::{ICON_SIZE_LG, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_XS},
+    semantic::{FOREGROUND, ICON_SIZE_LG, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_XS},
     theme,
 };
 
@@ -131,8 +132,8 @@ pub fn icon_size_here() -> Memo<Size> {
 }
 
 /// Says the text here takes a color this library set (a button's, a
-/// card's, a tooltip's): a spinner inside follows the text around it. One
-/// outside every such part takes `foreground` instead, since NSH's own text
+/// card's, a tooltip's): an icon or a spinner inside follows the text
+/// around it. One outside every such part takes `foreground` instead, since NSH's own text
 /// color, where nothing sets one, is black in both appearances.
 #[derive(Debug, Clone, Copy)]
 pub struct TextColorContext;
@@ -177,8 +178,9 @@ pub struct IconProps {
     pub spin: Prop<bool>,
 }
 
-/// An icon of the library, in the color of the text around it (`class`
-/// `text-…` changes it).
+/// An icon of the library, in the color of the text of the library's part
+/// it is in (a button's, a badge's), `foreground` outside every such part;
+/// `class` `text-…` goes over both.
 #[component]
 pub fn Icon(props: IconProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
@@ -189,7 +191,15 @@ pub fn Icon(props: IconProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         (None, Some(side)) => side.get(),
         (None, None) => t.length(icon_size_token(here.get())),
     };
-    icon_view(t, move || props.name.get(), side).style_when(props.spin, |s| s.animate_spin())
+    let icon =
+        icon_view(t, move || props.name.get(), side).style_when(props.spin, |s| s.animate_spin());
+    // Inside a part that colors its text, it takes that color; elsewhere
+    // the text color NSH passes is black whatever the appearance.
+    if text_color_here() {
+        icon
+    } else {
+        icon.text_color(move || t.color(FOREGROUND))
+    }
 }
 
 /// The svg of icon `name`, `side` points square (for components drawing

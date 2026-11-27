@@ -65,7 +65,7 @@ color where it sits.
 
 Outside the library's parts NSH hands an svg black as its text color whatever the appearance, and a component cannot
 tell that default from a color an app set (see "NSH gaps"). So the parts that color their text say so through the
-foundation's text color context, and a spinner outside them takes `foreground`. A spinner inside an app's own colored
+foundation's text color context, and a spinner outside them takes `foreground`, as the library's `Icon` does. A spinner inside an app's own colored
 `View` (`class="text-muted-foreground"`) therefore also takes `foreground`: give the spinner the class itself.
 
 ## States
@@ -126,9 +126,9 @@ spinner().app_class(Some("size-8 text-primary".into())).accessibility_label("Loa
   to opt out. Workaround: `foundation`'s `motion::spin` (a `motion()` bound to the icon, played ignoring reduced motion).
   A per-animation opt-out (or `animate-spin` exempted, as the platforms' spinners are) would let this be a class again.
 - **The default text color is black, and an unset color cannot be told from a set one.** Outside any `text-…` class an
-  svg's `currentColor` is black, also in the dark appearance, so a bare spinner was black on black. Workaround: the
-  library's parts that color their text provide the foundation's text color context, and the spinner takes `foreground`
-  where none does. A theme-aware default text color (or a way to ask whether one is inherited) would let it follow the
+  svg's `currentColor` is black, also in the dark appearance, so a bare spinner (or `Icon`) was black on black.
+  Workaround: the library's parts that color their text provide the foundation's text color context, and the spinner
+  and `Icon` take `foreground` where none does. A theme-aware default text color (or a way to ask whether one is inherited) would let it follow the
   text everywhere.
 
 ## Decisions

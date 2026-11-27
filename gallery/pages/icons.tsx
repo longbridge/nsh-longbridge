@@ -40,14 +40,14 @@ export function IconsPage() {
     <Page
       eyebrow="Foundation"
       title="Icons"
-      description="The few icons the library ships, from Lucide, sized by the control they are in and colored as its text. An app brings its own set through nsh-icon, as this gallery does."
+      description="The few icons the library ships, from Lucide, sized by the control they are in and colored as its text (foreground outside the library's parts). An app brings its own set through nsh-icon, as this gallery does."
     >
       <Section title="The set" description="Each icon the library ships and what it is for. Any of them goes in an Icon, or in a Button's icon or iconEnd.">
         <View class="flex-row flex-wrap gap-4">
           {icons.map((i) => (
             <View class="items-center gap-4 rounded-xl border border-border px-3 py-6" style={{ width: tileWidth() }}>
               <View class="size-10 items-center justify-center rounded-lg bg-muted">
-                <Icon name={i.name} size="lg" class="text-foreground" spin={i.name === "loader-circle"} />
+                <Icon name={i.name} size="lg" spin={i.name === "loader-circle"} />
               </View>
               <View class="items-center gap-1">
                 <Text class="font-mono text-xs text-foreground">{i.name}</Text>
@@ -65,7 +65,7 @@ export function IconsPage() {
               <Text class="w-8 font-mono text-xs text-muted-foreground">{size}</Text>
               <View class="flex-1 flex-row flex-wrap items-center gap-x-6 gap-y-3 py-3">
                 {icons.map((ic) => (
-                  <Icon name={ic.name} size={size} class="text-foreground" />
+                  <Icon name={ic.name} size={size} />
                 ))}
               </View>
             </View>
@@ -73,7 +73,7 @@ export function IconsPage() {
         </View>
       </Section>
 
-      <Section title="In components" description="Left without a size, an icon takes its control's; its color is always its text's.">
+      <Section title="In components" description="Left without a size, an icon takes its control's. Its color is the text color of the part it sits in, foreground outside one, or a class color.">
         <Demos>
           <Demo row label="In buttons of each size">
             {sizes.map((size) => (
