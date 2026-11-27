@@ -232,6 +232,8 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
     let joined = field::join(cx.__host(), Kind::Focus(trigger_ref), move || {
         props.disabled.get()
     });
+    // One line of text in the middle of the trigger.
+    joined.report_first_line(move || t.length(input::height_token(size())) / 2.0);
     cx.methods(SelectApi {
         trigger: trigger_ref,
         disabled: props.disabled,
