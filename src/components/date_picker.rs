@@ -4,14 +4,21 @@
 //! combobox role and its value for screen readers). The library draws the
 //! trigger (the field look), the popup's surface (`foundation::popup`), the
 //! calendar (`Calendar`'s look, shared), the presets, the time row and its
-//! segments. API: `docs/components/date-picker.md`.
+//! segments. With `confirm` (nothing committed until Apply) the popup is
+//! composed from `nsh/base`'s `Popover` or `Sheet`, `Calendar` and
+//! `TimeField`, as `nsh/base`'s `DatePicker` has no place for typed fields
+//! or a footer: [`confirmed`]. API: `docs/components/date-picker.md`.
 
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use nsh_base::{
-    DatePickerEvent as BaseDatePickerEvent, OpenChangeReason, date_picker as base_date_picker,
-    terminal::is_terminal,
+    CalendarValue, Date, DatePickerEvent as BaseDatePickerEvent, OpenChangeReason,
+    PopoverEvent as BasePopoverEvent, SheetEvent as BaseSheetEvent, calendar as base_calendar,
+    date_picker as base_date_picker, popover as base_popover, sheet as base_sheet,
+    terminal::is_terminal, time_field as base_time_field,
 };
 use nsh_core::{
     element::{Renderer, Style, StyleRefinement, TextPartStyle, locale_settings, safe_area},
+    keymap::When,
     prelude::*,
 };
 
@@ -25,11 +32,11 @@ use crate::{
             BUTTON_GHOST_FOREGROUND, BUTTON_GHOST_HOVER, BUTTON_GHOST_HOVER_FOREGROUND,
             BUTTON_HEIGHT_SM, BUTTON_OUTLINE, BUTTON_OUTLINE_BORDER, BUTTON_OUTLINE_FOREGROUND,
             BUTTON_OUTLINE_HOVER, BUTTON_OUTLINE_HOVER_FOREGROUND, BUTTON_PADDING_X_SM,
-            BUTTON_RADIUS,
+            BUTTON_RADIUS, ButtonVariant, button,
         },
         calendar::{self, CALENDAR_PADDING, CalendarEntry, LookConfig, Matcher, Parts, YearRange},
         dropdown_menu::sheet_look,
-        input::{self, vertical_hit_slop},
+        input::{self, input, vertical_hit_slop},
         select::SELECT_TRIGGER_HOVER,
     },
     foundation::{
@@ -56,7 +63,8 @@ use crate::{
         Theme,
         seeds::SPACING,
         semantic::{
-            BORDER, BORDER_WIDTH, OPACITY_DISABLED, OVERLAY, POPOVER_FOREGROUND, RADIUS_XS, TEXT_SM,
+            BORDER, BORDER_WIDTH, FONT_SIZE_XS, MUTED_FOREGROUND, OPACITY_DISABLED, OVERLAY,
+            POPOVER_FOREGROUND, RADIUS_XS, TEXT_SM,
         },
         theme,
     },
@@ -72,6 +80,9 @@ tokens! {
     DATE_PICKER_SEGMENT_FOCUS: Color = "date-picker-segment-focus" => |t| t.color(MENU_ITEM_FOCUS),
     /// The text of the time segment the keys edit.
     DATE_PICKER_SEGMENT_FOCUS_FOREGROUND: Color = "date-picker-segment-focus-foreground" => |t| t.color(MENU_ITEM_FOCUS_FOREGROUND),
+    /// The dates under a preset's label (`confirm`): the muted text of
+    /// descriptions.
+    DATE_PICKER_PRESET_DESCRIPTION: Color = "date-picker-preset-description" => |t| t.color(MUTED_FOREGROUND),
 }
 
 /// The field's format without `dateFormat`: `Oct 28, 2026`.
@@ -90,9 +101,17 @@ pub struct DatePickerProps {
     #[prop(default)]
     pub default_value: Prop<DateTime>,
     /// Picks a range: the first press starts it, the second ends it and
-    /// closes the popup.
+    /// closes the popup (with `confirm`, keeps it open).
     #[prop(default)]
     pub range: Prop<bool>,
+    /// Nothing is committed until Apply: a pick or a preset fills the
+    /// calendar (and the typed fields) and the popup stays open, Cancel and
+    /// Apply at its foot; Escape, a press outside and Cancel drop the
+    /// pending value. On desktops the popup has typed Start / End fields
+    /// (Date for a single date) and each preset shows its dates. Read once,
+    /// when the picker is made; not in a terminal.
+    #[prop(default)]
+    pub confirm: Prop<bool>,
     /// What the field shows without a value: "Pick a date" (the library's
     /// words) when left out.
     pub placeholder: Prop<Option<SharedString>>,
@@ -131,7 +150,8 @@ pub struct DatePickerProps {
     /// out).
     pub default_time: Prop<Option<TimeOfDay>>,
     /// Buttons beside the calendar that set the value ("Today", "Last 7
-    /// days").
+    /// days"); with `confirm` they fill the calendar instead, and on
+    /// desktops show the dates they stand for under the label.
     #[prop(default)]
     pub presets: Prop<Vec<DateRangePreset>>,
     /// How many months show side by side (one in a window narrower than
@@ -208,6 +228,22 @@ pub struct DatePickerProps {
     /// The inline style of each preset, over the library's look.
     #[prop(default)]
     pub preset_style: Prop<TextPartStyle>,
+    /// `confirm`, desktops: Tailwind classes of each preset's dates line
+    /// (`hidden` hides it).
+    pub preset_description_class: Prop<Option<SharedString>>,
+    /// `confirm`, desktops: the inline style of each preset's dates line.
+    #[prop(default)]
+    pub preset_description_style: Prop<TextPartStyle>,
+    /// `confirm`, desktops: Tailwind classes of the typed fields' row.
+    pub fields_class: Prop<Option<SharedString>>,
+    /// `confirm`, desktops: the inline style of the typed fields' row.
+    #[prop(default)]
+    pub fields_style: Prop<Style>,
+    /// `confirm`: Tailwind classes of the footer (Cancel and Apply).
+    pub footer_class: Prop<Option<SharedString>>,
+    /// `confirm`: the inline style of the footer, over the library's look.
+    #[prop(default)]
+    pub footer_style: Prop<Style>,
     /// Tailwind classes of the time row (its label and the time field).
     pub time_class: Prop<Option<SharedString>>,
     /// The inline style of the time row, over the library's look.
@@ -359,6 +395,27 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
         }
     });
     let terminal = is_terminal();
+    if props.confirm.get_untracked() && !terminal {
+        return confirmed(
+            props.clone(),
+            cx,
+            Shared {
+                t,
+                size,
+                current,
+                own,
+                format,
+                hour_cycle,
+                first_day,
+                months,
+                held,
+                trigger_ref,
+                joined,
+            },
+            is_open,
+            request,
+        );
+    }
     let mut root = base_date_picker()
         .value(move || DatePickerValue::Controlled(current.get()))
         .open(move || Some(is_open()))
@@ -430,7 +487,8 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
         return match props.trigger.with_untracked(Option::is_some) {
             true => root.trigger(props.trigger.place(|trigger| trigger)),
             false => root.trigger(text(shown)),
-        };
+        }
+        .into_element();
     }
 
     root = if props.trigger.with_untracked(Option::is_some) {
@@ -523,91 +581,115 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
         Style::from(look).then(&props.calendar_style.get())
     });
     parts.presets_style = bound(move || {
-        let padding = t.length(CALENDAR_PADDING);
-        let look = if list_as_sheet() {
-            StyleRefinement::default()
-                .flex_row()
-                .flex_wrap()
-                .gap(t.length(SPACING) * 2.0)
-                .p(padding)
-                .pb(px(0.0))
-        } else {
-            StyleRefinement::default()
-                .flex_col()
-                .gap(t.length(SPACING))
-                .p(padding)
-                .min_w(t.length(MENU_MIN_WIDTH))
-                .border_r(t.length(BORDER_WIDTH))
-                .border_color(t.color(BORDER))
-        };
-        Style::from(look).then(&props.presets_style.get())
+        Style::from(presets_look(t, list_as_sheet())).then(&props.presets_style.get())
     });
     parts.preset_style = Prop::from(IntoReactive::<TextPartStyle>::into_reactive(move || {
-        let font_size = t.length(font_size_token(Size::Sm));
-        let look = StyleRefinement::default()
-            .flex_row()
-            .items_center()
-            .flex_shrink_0()
-            .h(t.length(BUTTON_HEIGHT_SM))
-            .rounded(t.length(BUTTON_RADIUS))
-            .text_size(font_size)
-            .line_height(line_height(font_size))
-            .font_weight(FontWeight::NORMAL)
-            .whitespace_nowrap()
-            .cursor(Cursor::Default);
-        let look = if list_as_sheet() {
-            // Outline buttons.
-            look.px(t.length(BUTTON_PADDING_X_SM))
-                .border(t.length(BORDER_WIDTH))
-                .border_color(t.color(BUTTON_OUTLINE_BORDER))
-        } else {
-            look.px(t.length(MENU_ITEM_PADDING_X))
-        };
+        let look = preset_look(t, list_as_sheet()).h(t.length(BUTTON_HEIGHT_SM));
         TextPartStyle::from(Style::from(look).then(&Style::from(props.preset_style.get())))
     }));
-    parts.time_style = bound(move || {
-        let look = StyleRefinement::default()
-            .gap(t.length(SPACING) * 2.0)
-            .p(t.length(CALENDAR_PADDING))
-            .border_t(t.length(BORDER_WIDTH))
-            .border_color(t.color(BORDER));
-        Style::from(look).then(&props.time_style.get())
-    });
-    parts.time_field_style = bound(move || {
-        let size = size.get();
-        let font_size = t.length(input::font_size_token(size));
-        // The field look, but its edge's color, which is a class (it
-        // changes with `focus-within:`, and an inline color would win).
-        let look = StyleRefinement::default()
-            .relative()
-            .items_center()
-            .h(t.length(input::height_token(size)))
-            .px(t.length(input::padding_token(size)))
-            .rounded(t.length(INPUT_RADIUS))
-            .border(t.length(INPUT_BORDER_WIDTH))
-            .bg(t.color(INPUT_BACKGROUND))
-            .text_color(t.color(INPUT_FOREGROUND))
-            .text_size(font_size)
-            .line_height(line_height(font_size))
-            .whitespace_nowrap()
-            .cursor(Cursor::Default);
-        Style::from(look)
-            .then(&shadow::shadow(t, shadow::level(t.number(INPUT_SHADOW))))
-            .then(&props.time_field_style.get())
-    });
+    parts.time_style = bound(move || Style::from(time_row_look(t)).then(&props.time_style.get()));
+    parts.time_field_style =
+        bound(move || time_field_style(t, size.get(), props.time_field_style.get()));
     parts.segment_style = Prop::from(IntoReactive::<TextPartStyle>::into_reactive(move || {
-        let look = StyleRefinement::default()
-            .px(px(2.0))
-            .rounded(t.length(RADIUS_XS))
-            .tabular_nums();
-        TextPartStyle::from(Style::from(look).then(&Style::from(props.segment_style.get())))
+        segment_style(t, props.segment_style.get())
     }));
     parts.separator_style = Prop::from(IntoReactive::<TextPartStyle>::into_reactive(move || {
-        TextPartStyle::from(Style::from(
-            StyleRefinement::default().text_color(t.color(INPUT_PLACEHOLDER_FOREGROUND)),
-        ))
+        separator_style(t)
     }));
-    root
+    root.into_element()
+}
+
+/// The presets' column beside the calendar, or (`sheet`) their wrapping
+/// row above it.
+fn presets_look(t: Theme, sheet: bool) -> StyleRefinement {
+    let padding = t.length(CALENDAR_PADDING);
+    if sheet {
+        StyleRefinement::default()
+            .flex_row()
+            .flex_wrap()
+            .gap(t.length(SPACING) * 2.0)
+            .p(padding)
+            .pb(px(0.0))
+    } else {
+        StyleRefinement::default()
+            .flex_col()
+            .gap(t.length(SPACING))
+            .p(padding)
+            .min_w(t.length(MENU_MIN_WIDTH))
+            .border_r(t.length(BORDER_WIDTH))
+            .border_color(t.color(BORDER))
+    }
+}
+
+/// A preset button's look but its height: ghost beside the calendar,
+/// outline (`sheet`) in the sheet's row.
+fn preset_look(t: Theme, sheet: bool) -> StyleRefinement {
+    let font_size = t.length(font_size_token(Size::Sm));
+    let look = StyleRefinement::default()
+        .flex_row()
+        .items_center()
+        .flex_shrink_0()
+        .rounded(t.length(BUTTON_RADIUS))
+        .text_size(font_size)
+        .line_height(line_height(font_size))
+        .font_weight(FontWeight::NORMAL)
+        .whitespace_nowrap()
+        .cursor(Cursor::Default);
+    if sheet {
+        look.px(t.length(BUTTON_PADDING_X_SM))
+            .border(t.length(BORDER_WIDTH))
+            .border_color(t.color(BUTTON_OUTLINE_BORDER))
+    } else {
+        look.px(t.length(MENU_ITEM_PADDING_X))
+    }
+}
+
+/// The time row under the calendar: an edge above, `calendar-padding`.
+fn time_row_look(t: Theme) -> StyleRefinement {
+    StyleRefinement::default()
+        .gap(t.length(SPACING) * 2.0)
+        .p(t.length(CALENDAR_PADDING))
+        .border_t(t.length(BORDER_WIDTH))
+        .border_color(t.color(BORDER))
+}
+
+/// The time field's look at `size` (the field look, but its edge's color,
+/// which is a class: it changes with `focus-within:`, and an inline color
+/// would win), then the app's style.
+fn time_field_style(t: Theme, size: Size, app: Style) -> Style {
+    let font_size = t.length(input::font_size_token(size));
+    let look = StyleRefinement::default()
+        .relative()
+        .items_center()
+        .h(t.length(input::height_token(size)))
+        .px(t.length(input::padding_token(size)))
+        .rounded(t.length(INPUT_RADIUS))
+        .border(t.length(INPUT_BORDER_WIDTH))
+        .bg(t.color(INPUT_BACKGROUND))
+        .text_color(t.color(INPUT_FOREGROUND))
+        .text_size(font_size)
+        .line_height(line_height(font_size))
+        .whitespace_nowrap()
+        .cursor(Cursor::Default);
+    Style::from(look)
+        .then(&shadow::shadow(t, shadow::level(t.number(INPUT_SHADOW))))
+        .then(&app)
+}
+
+/// A time segment's look, then the app's style.
+fn segment_style(t: Theme, app: TextPartStyle) -> TextPartStyle {
+    let look = StyleRefinement::default()
+        .px(px(2.0))
+        .rounded(t.length(RADIUS_XS))
+        .tabular_nums();
+    TextPartStyle::from(Style::from(look).then(&Style::from(app)))
+}
+
+/// The `:` between the time's segments.
+fn separator_style(t: Theme) -> TextPartStyle {
+    TextPartStyle::from(Style::from(
+        StyleRefinement::default().text_color(t.color(INPUT_PLACEHOLDER_FOREGROUND)),
+    ))
 }
 
 /// A style prop bound to `f`: run again when what it reads changes.
@@ -628,7 +710,7 @@ fn field_trigger(
     format: Memo<String>,
     trigger_ref: ElementRef,
     joined: Joined,
-) -> impl IntoElement {
+) -> View {
     let size = move || props.size.get();
     let height = move || t.length(input::height_token(size()));
     let font_size = move || t.length(input::font_size_token(size()));
@@ -730,7 +812,8 @@ fn preset_class(t: Theme, app: Option<SharedString>) -> SharedString {
         class = class.color("", "bg", rest);
     }
     class = class.color("", "text", rest_text);
-    for state in ["hover", "active"] {
+    // `selected`: the confirmed picker's preset whose value is pending.
+    for state in ["hover", "active", "selected"] {
         class = class.color(state, "bg", fill);
         class = class.color(state, "text", text);
     }
@@ -769,4 +852,824 @@ fn segment_class(t: Theme, app: Option<SharedString>) -> SharedString {
         t.color(DATE_PICKER_SEGMENT_FOCUS_FOREGROUND),
     );
     class.then(app)
+}
+
+/// What the picker's body computes that the confirmed path shares.
+#[derive(Clone, Copy)]
+struct Shared {
+    t: Theme,
+    size: Memo<Size>,
+    /// The committed value: the app's, else the picker's own.
+    current: Memo<DateTime>,
+    own: Signal<DateTime>,
+    /// The field's format (with the time's, as the field shows it).
+    format: Memo<String>,
+    hour_cycle: Memo<HourCycle>,
+    first_day: Memo<u32>,
+    months: Memo<u32>,
+    held: Signal<bool>,
+    trigger_ref: ElementRef,
+    joined: Joined,
+}
+
+/// `value` in the shape `range` asks for: a single date as a range's start,
+/// a range's start as the single date.
+fn shaped(value: DateTime, range: bool) -> DateTime {
+    match (value, range) {
+        (DateTime::Single(start), true) => DateTime::Range(start, None),
+        (DateTime::Range(start, _), false) => DateTime::Single(start),
+        (value, _) => value,
+    }
+}
+
+/// A value Apply can commit: a date, or a range with both ends.
+fn complete(value: &DateTime) -> bool {
+    matches!(
+        value,
+        DateTime::Single(Some(_)) | DateTime::Range(Some(_), Some(_))
+    )
+}
+
+/// The end of `value` a typed field edits: `0` the start (or the single
+/// date), `1` a range's end.
+fn end_at(value: &DateTime, at: usize) -> Option<NaiveDateTime> {
+    if at == 0 { value.start() } else { value.end() }
+}
+
+/// What a typed field's text reads as, `format` (`chrono`'s) first, then
+/// an ISO date: `Ok(None)` when empty, `Err` when it reads as neither.
+pub(crate) fn read_typed(text: &str, format: &str) -> Result<Option<NaiveDate>, ()> {
+    let text = text.trim();
+    if text.is_empty() {
+        return Ok(None);
+    }
+    NaiveDate::parse_from_str(text, format)
+        .or_else(|_| NaiveDate::parse_from_str(text, "%Y-%m-%d"))
+        .map(Some)
+        .map_err(|_| ())
+}
+
+/// `value` with its end `at` typed as `day`, at the time that end had,
+/// else `time`; `None` when refused (an end before the start). A start
+/// after the end starts the range again there, as a pick there does.
+fn typed(value: DateTime, at: usize, day: Option<NaiveDate>, time: NaiveTime) -> Option<DateTime> {
+    let keep = |was: Option<NaiveDateTime>| day.map(|d| d.and_time(was.map_or(time, |v| v.time())));
+    match value {
+        DateTime::Single(was) => Some(DateTime::Single(keep(was))),
+        DateTime::Range(start, end) if at == 0 => {
+            let start = keep(start);
+            let end = end.filter(|e| start.is_none_or(|s| s.date() <= e.date()));
+            Some(DateTime::Range(start, end))
+        }
+        DateTime::Range(start, end) => {
+            if let (Some(s), Some(d)) = (start, day)
+                && d < s.date()
+            {
+                return None;
+            }
+            Some(DateTime::Range(start, keep(end)))
+        }
+    }
+}
+
+/// Today in UTC: the typed fields' example (a placeholder, where a day off
+/// around midnight does not matter).
+fn example_day() -> NaiveDate {
+    let ms = nsh_core::time::unix_ms();
+    chrono::DateTime::from_timestamp_millis(ms as i64)
+        .unwrap_or_default()
+        .date_naive()
+}
+
+/// The confirmed picker (`confirm`): nothing is committed until Apply.
+///
+/// `nsh/base`'s `DatePicker` commits a complete pick and has no place for
+/// typed fields or a footer, so the popup is composed from `nsh/base`'s
+/// public parts: on desktops a `Popover` at the field (its anchoring,
+/// flipping, Escape, press outside and focus back), on touch screens a
+/// `Sheet` (its `footer` holds Cancel and Apply); `nsh/base`'s `Calendar`
+/// (controlled with the pending value) and `TimeField`, in the library's
+/// looks. The library adds the pending value, the typed fields' parsing,
+/// the presets with their dates and the footer, and binds the field's keys
+/// as `nsh/base`'s `DatePicker` does.
+fn confirmed(
+    props: DatePickerProps,
+    cx: Scope<DatePickerEvent>,
+    shared: Shared,
+    is_open: impl Fn() -> bool + Copy + 'static,
+    request: impl Fn(bool, OpenChangeReason) + Copy + 'static,
+) -> AnyElement {
+    let Shared {
+        t,
+        size,
+        current,
+        own,
+        format,
+        hour_cycle,
+        first_day,
+        months,
+        held,
+        trigger_ref,
+        joined,
+    } = shared;
+    let disabled = move || props.disabled.get() || joined.disabled();
+    let sheet = list_as_sheet();
+    let default_time = move || props.default_time.get().map_or(NaiveTime::MIN, |t| t.0);
+    // The typed fields' format: the date's alone (the time has its row).
+    let date_format = computed(move || {
+        props
+            .date_format
+            .get()
+            .map_or_else(|| DATE_FORMAT.to_owned(), |f| f.to_string())
+    });
+    let show = move |v: Option<NaiveDateTime>| {
+        v.map(|v| v.format(&date_format.get_untracked()).to_string())
+            .unwrap_or_default()
+    };
+
+    // The pending value; what the calendar is given (set by all but the
+    // calendar's own picks, so a pick does not turn its months); the time
+    // of a single date; the typed fields' texts and whether each shows
+    // refused.
+    let pending = signal(DateTime::default());
+    let shown = signal(Date::default());
+    let time = signal(NaiveTime::MIN);
+    let texts = [signal(String::new()), signal(String::new())];
+    let refused = [signal(false), signal(false)];
+    let fill = move |value: DateTime, from_calendar: bool| {
+        batch(|| {
+            pending.set(value);
+            if !from_calendar {
+                shown.set(value.date());
+            }
+            for at in 0..2 {
+                texts[at].set(show(end_at(&value, at)));
+                refused[at].set(false);
+            }
+        })
+    };
+    // Each opening starts from the committed value.
+    effect(move || {
+        if is_open() {
+            untracked(|| {
+                let value = shaped(current.get(), props.range.get());
+                time.set(value.start().map_or_else(default_time, |v| v.time()));
+                fill(value, false);
+            });
+        }
+    });
+    let can_apply = move || complete(&pending.get()) && !refused[0].get() && !refused[1].get();
+    let apply = move || {
+        if !untracked(can_apply) {
+            return;
+        }
+        let value = pending.get_untracked();
+        if props.value.get_untracked() == DatePickerValue::Uncontrolled {
+            own.set(value);
+        }
+        let mut picked = PickedDate::default();
+        picked.value = value;
+        picked.time_precision = props.time_precision.get_untracked();
+        cx.emit(DatePickerEvent::Change(picked));
+        request(false, OpenChangeReason::Select);
+    };
+    let cancel = move || {
+        cx.emit(DatePickerEvent::Cancel);
+        request(false, OpenChangeReason::Cancel);
+    };
+    // A typed field's text read: a date that reads becomes that end of the
+    // pending value; `false` when refused.
+    let take = move |at: usize, text: &str| -> bool {
+        let Ok(day) = read_typed(text, &date_format.get_untracked()) else {
+            return false;
+        };
+        let off = day.is_some_and(|d| {
+            props
+                .disabled_matcher
+                .with_untracked(|m| m.as_ref().and_then(|m| m.matched(&d)) == Some(true))
+        });
+        if off {
+            return false;
+        }
+        let fallback = if props.range.get_untracked() {
+            untracked(default_time)
+        } else {
+            time.get_untracked()
+        };
+        let Some(next) = typed(pending.get_untracked(), at, day, fallback) else {
+            return false;
+        };
+        batch(|| {
+            pending.set(next);
+            shown.set(next.date());
+            // A start after the end dropped the end.
+            if at == 0 && next.end().is_none() && props.range.get_untracked() {
+                texts[1].set(String::new());
+                refused[1].set(false);
+            }
+        });
+        true
+    };
+    let changed = move |at: usize, text: String| {
+        let read = take(at, &text);
+        texts[at].set(text);
+        if read {
+            refused[at].set(false);
+        }
+    };
+    // Leaving a field: a date that reads is written in the format again;
+    // what does not stays as typed, shown refused.
+    let left = move |at: usize| {
+        let text = texts[at].get_untracked();
+        if take(at, &text) {
+            texts[at].set(show(end_at(&pending.get_untracked(), at)));
+            refused[at].set(false);
+        } else {
+            refused[at].set(true);
+        }
+    };
+    let choose = move |value: DateTime| {
+        let value = shaped(value, props.range.get_untracked());
+        if !props.range.get_untracked()
+            && let Some(start) = value.start()
+        {
+            time.set(start.time());
+        }
+        fill(value, false);
+    };
+
+    // The parts, made on each opening.
+    let calendar = move || {
+        let look = calendar::look(
+            t,
+            LookConfig {
+                size,
+                first_day,
+                months,
+                parts: Parts {
+                    item_class: props.item_class,
+                    item_style: props.item_style,
+                    ..Parts::default()
+                },
+                render_item: props.render_item,
+            },
+        );
+        let mut grid = base_calendar()
+            .value(move || CalendarValue::Controlled(shown.get()))
+            .range(props.range)
+            .number_of_months(move || months.get())
+            .first_day_of_week(move || first_day.get())
+            .disabled_matcher(props.disabled_matcher)
+            .year_range(props.year_range)
+            .previous_accessibility_label(move || Some(labels::text(Label::PreviousMonth)))
+            .next_accessibility_label(move || Some(labels::text(Label::NextMonth)))
+            .on_change(move |picked: &Date| {
+                let was = pending.get_untracked();
+                let fallback = untracked(default_time);
+                let at = |day: Option<NaiveDate>, was: Option<NaiveDateTime>| {
+                    day.map(|d| d.and_time(was.map_or(fallback, |v| v.time())))
+                };
+                let next = match *picked {
+                    Date::Single(day) => {
+                        DateTime::Single(day.map(|d| d.and_time(time.get_untracked())))
+                    }
+                    Date::Range(start, end) => {
+                        DateTime::Range(at(start, was.start()), at(end, was.end()))
+                    }
+                };
+                fill(next, true);
+            });
+        let parts = grid.__element().__props_mut();
+        parts.header_class = look.header_class;
+        parts.header_style = look.header_style;
+        parts.body_class = look.body_class;
+        parts.body_style = look.body_style;
+        parts.month_class = look.month_class;
+        parts.month_style = look.month_style;
+        parts.row_class = look.row_class;
+        parts.row_style = look.row_style;
+        parts.item_class = look.item_class;
+        parts.item_style = look.item_style;
+        parts.render_item = look.render_item;
+        view()
+            .app_class(props.calendar_class)
+            .inline_style(move || {
+                Style::from(StyleRefinement::default().p(t.length(CALENDAR_PADDING)))
+                    .then(&props.calendar_style.get())
+            })
+            .child(grid)
+    };
+    let time_row = move || {
+        when(
+            move || props.time_precision.get().is_some() && !props.range.get(),
+            move || {
+                let mut field = base_time_field()
+                    .value(move || Some(TimeOfDay(time.get())))
+                    .precision(move || props.time_precision.get().unwrap_or_default())
+                    .hour_cycle(move || hour_cycle.get())
+                    .disabled(disabled)
+                    .accessibility_label(move || {
+                        Some(
+                            props
+                                .time_accessibility_label
+                                .get()
+                                .unwrap_or_else(|| labels::text(Label::Time)),
+                        )
+                    })
+                    .segment_class(move || Some(segment_class(t, props.segment_class.get())))
+                    .on_change(move |v: &TimeOfDay| {
+                        time.set(v.0);
+                        if let DateTime::Single(Some(at)) = pending.get_untracked() {
+                            pending.set(DateTime::Single(Some(at.date().and_time(v.0))));
+                        }
+                    });
+                let parts = field.__element().__props_mut();
+                parts.segment_style =
+                    Prop::from(IntoReactive::<TextPartStyle>::into_reactive(move || {
+                        segment_style(t, props.segment_style.get())
+                    }));
+                parts.separator_style =
+                    Prop::from(IntoReactive::<TextPartStyle>::into_reactive(move || {
+                        separator_style(t)
+                    }));
+                view()
+                    .flex_row()
+                    .items_center()
+                    .justify_between()
+                    .app_class(props.time_class)
+                    .inline_style(move || {
+                        Style::from(time_row_look(t)).then(&props.time_style.get())
+                    })
+                    .child(
+                        text(move || labels::text(Label::Time))
+                            .text_size(move || t.length(TEXT_SM))
+                            .line_height(move || line_height(t.length(TEXT_SM)))
+                            .font_weight(medium(t)),
+                    )
+                    .child(
+                        view()
+                            .flex_row()
+                            .disabled(disabled)
+                            .app_class(move || {
+                                Some(time_field_class(t, props.time_field_class.get()))
+                            })
+                            .inline_style(move || {
+                                time_field_style(t, size.get(), props.time_field_style.get())
+                            })
+                            .child(field),
+                    )
+            },
+        )
+    };
+    // The typed fields (desktops): Start and End, or Date.
+    let fields = move || {
+        let field = move |at: usize, name: Label| {
+            view()
+                .flex_col()
+                .flex_1()
+                .min_w(px(0.0))
+                .gap(move || t.length(SPACING) * 1.5)
+                .child(
+                    text(move || labels::text(name))
+                        .text_size(move || t.length(TEXT_SM))
+                        .line_height(move || line_height(t.length(TEXT_SM)))
+                        .font_weight(medium(t))
+                        .truncate(),
+                )
+                .child(
+                    input()
+                        .size(move || size.get())
+                        .value(move || Some(SharedString::from(texts[at].get())))
+                        .invalid(move || refused[at].get())
+                        .disabled(disabled)
+                        .placeholder(move || {
+                            Some(SharedString::from(
+                                example_day().format(&date_format.get()).to_string(),
+                            ))
+                        })
+                        .accessibility_label(move || Some(labels::text(name)))
+                        .auto_focus(at == 0)
+                        .select_text_on_focus(true)
+                        .on_change(move |text: &String| changed(at, text.clone()))
+                        .on_submit(move |_: &String| {
+                            left(at);
+                            apply();
+                        })
+                        .on_blur(move || left(at)),
+                )
+        };
+        let range = props.range.get_untracked();
+        view()
+            .flex_row()
+            .gap(move || t.length(SPACING) * 2.0)
+            .app_class(props.fields_class)
+            .inline_style(move || {
+                let padding = t.length(CALENDAR_PADDING);
+                Style::from(StyleRefinement::default().p(padding).pb(px(0.0)))
+                    .then(&props.fields_style.get())
+            })
+            .child(field(0, if range { Label::StartDate } else { Label::Date }))
+            .when(range, |row| row.child(field(1, Label::EndDate)))
+    };
+    let looks = PresetLooks {
+        range: props.range,
+        class: props.preset_class,
+        style: props.preset_style,
+        description_class: props.preset_description_class,
+        description_style: props.preset_description_style,
+    };
+    let presets = move || {
+        dynamic(move || {
+            let presets = props.presets.get();
+            if presets.is_empty() {
+                return None;
+            }
+            let buttons = presets
+                .into_iter()
+                .map(|p| confirm_preset(looks, t, format, pending, p, sheet, choose))
+                .collect::<Vec<_>>();
+            Some(
+                view()
+                    .app_class(props.presets_class)
+                    .inline_style(move || {
+                        Style::from(presets_look(t, sheet)).then(&props.presets_style.get())
+                    })
+                    .children(buttons)
+                    .into_element(),
+            )
+        })
+    };
+    // Cancel and Apply; in the sheet the pending value above them.
+    let footer = move || {
+        let button_size = if sheet { Size::Md } else { Size::Sm };
+        let cancel_button = button()
+            .variant(ButtonVariant::Outline)
+            .size(button_size)
+            .on_press(cancel)
+            .child(text(move || labels::text(Label::Cancel)));
+        let apply_button = button()
+            .size(button_size)
+            .disabled(move || !can_apply())
+            .on_press(apply)
+            .child(text(move || labels::text(Label::Apply)));
+        let padding = move || t.length(CALENDAR_PADDING);
+        let gap = move || t.length(SPACING) * 2.0;
+        let look = move || {
+            Style::from(
+                StyleRefinement::default()
+                    .p(padding())
+                    .border_t(t.length(BORDER_WIDTH))
+                    .border_color(t.color(BORDER)),
+            )
+            .then(&props.footer_style.get())
+        };
+        if !sheet {
+            return view()
+                .flex_row()
+                .justify_end()
+                .items_center()
+                .gap(gap)
+                .app_class(props.footer_class)
+                .inline_style(look)
+                .child(cancel_button)
+                .child(apply_button)
+                .into_element();
+        }
+        let summary = computed(move || pending.get().format(&format.get()));
+        view()
+            .flex_col()
+            .gap(gap)
+            .app_class(props.footer_class)
+            .inline_style(look)
+            .child(
+                text(move || {
+                    summary
+                        .get()
+                        .or_else(|| props.placeholder.get())
+                        .unwrap_or_else(|| labels::text(Label::PickADate))
+                })
+                .text_size(move || t.length(TEXT_SM))
+                .line_height(move || line_height(t.length(TEXT_SM)))
+                .text_color(move || {
+                    if summary.with(Option::is_some) {
+                        t.color(INPUT_FOREGROUND)
+                    } else {
+                        t.color(INPUT_PLACEHOLDER_FOREGROUND)
+                    }
+                })
+                .truncate(),
+            )
+            .child(
+                view()
+                    .flex_row()
+                    .gap(gap)
+                    .child(view().flex_1().child(cancel_button.w_full()))
+                    .child(view().flex_1().child(apply_button.w_full())),
+            )
+            .into_element()
+    };
+
+    // The field's keys while it has the focus, as `nsh/base`'s `DatePicker`
+    // binds them: Return opens and closes, Delete and Backspace clear the
+    // closed picker.
+    let focused = signal(false);
+    effect(move || {
+        if !focused.get() || disabled() {
+            return;
+        }
+        on_key_with(
+            "enter",
+            KeyOptions {
+                when: When::NotEditing,
+                repeat: false,
+                for_focus: true,
+                ..Default::default()
+            },
+            move |_| request(!untracked(is_open), OpenChangeReason::TriggerPress),
+        );
+        for key in ["delete", "backspace"] {
+            on_key_with(
+                key,
+                KeyOptions {
+                    when: When::NotEditing,
+                    repeat: false,
+                    ..Default::default()
+                },
+                move |_| {
+                    if untracked(is_open) {
+                        return;
+                    }
+                    let none = shaped(DateTime::Single(None), props.range.get_untracked());
+                    if props.value.get_untracked() == DatePickerValue::Uncontrolled {
+                        own.set(none);
+                    }
+                    let mut picked = PickedDate::default();
+                    picked.value = none;
+                    picked.time_precision = props.time_precision.get_untracked();
+                    cx.emit(DatePickerEvent::Change(picked));
+                },
+            );
+        }
+    });
+
+    // The field (or the app's trigger) as `nsh/base`'s `DatePicker` makes
+    // it: the combobox with the value, focusable unless disabled; on touch
+    // screens it also takes the press and says it is expanded (`Popover`
+    // does on desktops).
+    let width = signal(None::<Points>);
+    macro_rules! combobox {
+        ($el:expr) => {
+            $el.role(AccessibilityRole::Combobox)
+                .optional_label(props.accessibility_label)
+                .disabled(disabled)
+                .focusable(move || !disabled())
+                .accessibility_value(move || {
+                    current
+                        .get()
+                        .format(&format.get())
+                        .map(|text| nsh_core::AccessibilityValue {
+                            text: Some(text.as_str().into()),
+                            ..nsh_core::AccessibilityValue::default()
+                        })
+                })
+                .on_layout(move |frame: &Bounds<Points>| width.set(Some(frame.size.width)))
+                .on_focus(move || focused.set(true))
+                .on_blur(move || focused.set(false))
+                .when(sheet, |el| {
+                    el.accessibility_state(move || AccessibilityState {
+                        expanded: Some(is_open()),
+                        has_popup: true,
+                        disabled: disabled(),
+                        invalid: props.invalid.get() || joined.invalid(),
+                        ..AccessibilityState::default()
+                    })
+                    .on_press(move || request(!untracked(is_open), OpenChangeReason::TriggerPress))
+                })
+        };
+    }
+    let trigger = if props.trigger.with_untracked(Option::is_some) {
+        props.trigger.place(move |trigger| {
+            combobox!(
+                trigger
+                    .element_ref(&trigger_ref)
+                    .accessibility_described_by_target(move || joined.described_by())
+            )
+        })
+    } else {
+        combobox!(field_trigger(
+            props.clone(),
+            t,
+            current,
+            format,
+            trigger_ref,
+            joined
+        ))
+        .into_element()
+    };
+    let on_close = move || {
+        if !untracked(is_open) {
+            held.set(false);
+        }
+        cx.emit(DatePickerEvent::Close)
+    };
+    let root_class = move || {
+        Some(SharedString::from(if joined.in_row() {
+            "w-fit min-w-0 shrink"
+        } else {
+            "w-fit"
+        }))
+    };
+
+    if sheet {
+        // The sheet: the presets' row (labels), one month, the time row;
+        // the footer the sheet's own, at its bottom.
+        let panel = move || {
+            untracked(|| {
+                confirm_panel().child(
+                    view()
+                        .flex_col()
+                        .child(presets())
+                        .child(calendar())
+                        .child(time_row()),
+                )
+            })
+        };
+        let mut layer = base_sheet()
+            .open(move || Some(is_open()))
+            .accessibility_label(props.accessibility_label)
+            .popup_class(props.content_class)
+            .backdrop_style(move |s| s.bg(move || t.color(OVERLAY)))
+            .footer(dynamic(move || {
+                untracked(|| confirm_panel().child(footer()))
+            }))
+            .on_open_change(move |e: &BaseSheetEvent| {
+                if let BaseSheetEvent::OpenChange(open, reason) = e {
+                    request(*open, *reason);
+                }
+            })
+            .on_open(move || cx.emit(DatePickerEvent::Open))
+            .on_close(on_close)
+            .on_cancel(move || cx.emit(DatePickerEvent::Cancel))
+            .child(dynamic(panel));
+        layer.__element().__props_mut().popup_style = bound(move || {
+            Style::from(sheet_look(t).p(px(0.0)).pb(safe_area().bottom))
+                .then(&props.content_style.get())
+        });
+        return view()
+            .app_class(root_class)
+            .child(trigger)
+            .child(layer)
+            .into_element();
+    }
+
+    // The popup: presets beside the fields, the calendar and the time
+    // row; the footer under them all.
+    let panel = move || {
+        untracked(|| {
+            confirm_panel().child(
+                view()
+                    .flex_col()
+                    .child(
+                        view().flex_row().child(presets()).child(
+                            view()
+                                .flex_col()
+                                .child(fields())
+                                .child(calendar())
+                                .child(time_row()),
+                        ),
+                    )
+                    .child(footer()),
+            )
+        })
+    };
+    let mut layer = base_popover()
+        .trigger(trigger)
+        .open(move || Some(is_open()))
+        .placement(props.placement)
+        .align(props.align)
+        .offset(move || t.length(POPOVER_OFFSET))
+        .margin(move || t.length(POPOVER_MARGIN))
+        .popup_class(props.content_class)
+        // As the default path's: no slide, zooming from the middle.
+        .popup_starting_class(move || popup::ending_class(popup::animate(t)))
+        .popup_ending_class(move || popup::ending_class(popup::animate(t)))
+        .on_open_change(move |e: &BasePopoverEvent| {
+            if let BasePopoverEvent::OpenChange(open, reason) = e {
+                request(*open, *reason);
+            }
+        })
+        .on_open(move || cx.emit(DatePickerEvent::Open))
+        .on_close(on_close)
+        .on_cancel(move || cx.emit(DatePickerEvent::Cancel))
+        .child(dynamic(panel));
+    layer.__element().__props_mut().popup_style = bound(move || {
+        // At least the field's width, as the default path's popup.
+        let look =
+            popup::surface(StyleRefinement::default(), t).min_w(width.get().unwrap_or_default());
+        Style::from(look).then(&props.content_style.get())
+    });
+    view().app_class(root_class).child(layer).into_element()
+}
+
+/// The props of [`ConfirmPanel`].
+#[derive(Debug, Clone, PartialEq, Props)]
+struct ConfirmPanelProps {
+    /// The popup's (or the sheet's footer's) content.
+    children: Prop<Children>,
+}
+
+/// The confirmed picker's popup content: a component of its own so that
+/// the library `Button`s in it (Cancel, Apply) are not the picker's
+/// trigger (`trigger::clear`): the picker's trigger context is above them.
+#[component]
+fn ConfirmPanel(props: ConfirmPanelProps, _cx: Scope<NoEvent>) -> impl IntoElement {
+    trigger::clear();
+    view().flex_col().child(props.children)
+}
+
+/// The props a confirmed picker's presets read.
+#[derive(Clone, Copy)]
+struct PresetLooks {
+    range: Prop<bool>,
+    class: Prop<Option<SharedString>>,
+    style: Prop<TextPartStyle>,
+    description_class: Prop<Option<SharedString>>,
+    description_style: Prop<TextPartStyle>,
+}
+
+/// A preset of the confirmed picker: a button that fills the pending
+/// value; on desktops its dates under its label (the field's format,
+/// muted), lit while its value is the pending one.
+fn confirm_preset(
+    props: PresetLooks,
+    t: Theme,
+    format: Memo<String>,
+    pending: Signal<DateTime>,
+    preset: DateRangePreset,
+    sheet: bool,
+    choose: impl Fn(DateTime) + Copy + 'static,
+) -> AnyElement {
+    let value = preset.value;
+    let range = props.range;
+    // A range of one day shows as that day.
+    let dates = move || {
+        if sheet {
+            return None;
+        }
+        let shown = match shaped(value, range.get()) {
+            DateTime::Range(Some(start), Some(end)) if start.date() == end.date() => {
+                DateTime::Single(Some(start))
+            }
+            shown => shown,
+        };
+        shown.format(&format.get())
+    };
+    let lit = move || pending.get().date() == shaped(value, range.get()).date();
+    view()
+        .role(AccessibilityRole::Button)
+        .label(preset.label.clone())
+        .optional_hint(dates)
+        // Not a stop of Tab, as `nsh/base`'s presets.
+        .focusable(false)
+        .accessibility_state(move || AccessibilityState {
+            selected: lit(),
+            ..AccessibilityState::default()
+        })
+        .app_class(move || Some(preset_class(t, props.class.get())))
+        .inline_style(move || {
+            let look = preset_look(t, sheet);
+            let height = t.length(BUTTON_HEIGHT_SM);
+            let look = if sheet {
+                look.h(height)
+            } else {
+                // Two lines: the label, its dates.
+                look.flex_col()
+                    .items_start()
+                    .justify_center()
+                    .min_h(height)
+                    .py(t.length(SPACING) * 1.5)
+            };
+            Style::from(look).then(&Style::from(props.style.get()))
+        })
+        .on_press(move || choose(value))
+        .child(
+            text(preset.label)
+                .when(!sheet, |label| label.w_full())
+                .truncate(),
+        )
+        .child(when(
+            move || dates().is_some(),
+            move || {
+                let font_size = t.length(FONT_SIZE_XS);
+                text(move || dates().unwrap_or_default())
+                    .w_full()
+                    .truncate()
+                    .text_size(font_size)
+                    .line_height(line_height(font_size))
+                    .text_color(move || t.color(DATE_PICKER_PRESET_DESCRIPTION))
+                    .app_class(props.description_class)
+                    .inline_style(move || Style::from(props.description_style.get()))
+            },
+        ))
+        .into_element()
 }
