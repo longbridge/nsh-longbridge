@@ -67,8 +67,10 @@ tokens! {
     DIALOG_DESCRIPTION_FONT_SIZE: Length = "dialog-description-font-size" => |t| t.length(TEXT_SM),
     /// The description's text.
     DIALOG_DESCRIPTION_FOREGROUND: Color = "dialog-description-foreground" => |t| t.color(MUTED_FOREGROUND),
-    /// How far the close button sits from the panel's top and right edges.
-    DIALOG_CLOSE_OFFSET: Length = "dialog-close-offset" => |t| t.length(SPACING) * 4.0,
+    /// How far the close button sits inside the panel's right edge (on the
+    /// content's trailing edge, `dialog-padding`, by default) and from its
+    /// top to the title's first line, on whose middle it is centered.
+    DIALOG_CLOSE_OFFSET: Length = "dialog-close-offset" => |t| t.length(DIALOG_PADDING),
     /// The close button's opacity at rest (1 under the pointer or focused).
     DIALOG_CLOSE_OPACITY: Number = "dialog-close-opacity" => |t| t.value(0.7),
     /// How long the overlay and the panel take to come and go, in
@@ -603,10 +605,18 @@ pub fn DialogContent(props: DialogContentProps, _cx: Scope<NoEvent>) -> impl Int
         close_style: props.close_style,
         children: props.children,
     };
+    // A `DialogHeader` inside leaves the "×" its room.
+    let shown = props.show_close_button;
+    provide_context(CloseShown(computed(move || shown.get())));
     content(t, parts, props.show_close_button, move || {
         t.length(DIALOG_MAX_WIDTH)
     })
 }
+
+/// Whether the content a part is in shows the "×" (`DialogContent`'s
+/// `showCloseButton`).
+#[derive(Clone, Copy)]
+struct CloseShown(Memo<bool>);
 
 /// The styled parts of a dialog's content.
 #[derive(Clone, Copy)]
@@ -709,14 +719,18 @@ fn panel(t: Theme, parts: Parts, max_width: impl Fn() -> Points + 'static) -> Vi
         .child(parts.children)
 }
 
-/// The "×" button: an icon at the panel's top right, named "Close".
+/// The "×" button: an icon at the panel's top right, named "Close": its
+/// end on the content's trailing edge (`dialog-close-offset`), centered on
+/// the title's first line (`dialog-title-font-size`, the title's line
+/// height), so it sits in the header's row rather than above it.
 fn close(t: Theme, parts: Parts, cancel: Option<Rc<dyn Fn()>>) -> impl IntoElement {
     let side = move || t.length(ICON_SIZE_MD);
     let offset = move || t.length(DIALOG_CLOSE_OFFSET);
+    let top = move || offset() + (t.length(DIALOG_TITLE_FONT_SIZE) - side()) / 2.0;
     let el = nsh_base::button()
         .accessibility_label(move || Some(labels::text(Label::Close)))
         .absolute()
-        .top(offset)
+        .top(top)
         .right(offset)
         .w(side)
         .h(side)
@@ -755,18 +769,29 @@ pub struct DialogHeaderProps {
 }
 
 /// A column holding a dialog's title and description: centered while the
-/// window is narrower than 640, start-aligned from 640.
+/// window is narrower than 640, start-aligned from 640. Beside the "×" it
+/// leaves the button's room and a gap (`spacing × 2`) at its end (at both
+/// ends while centered, so it stays centered), so a long title wraps
+/// before it rather than under it.
 #[component]
 pub fn DialogHeader(props: DialogHeaderProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let t = theme();
+    let close = use_context::<CloseShown>().map(|c| c.0);
+    let room = move || {
+        if close.is_some_and(|c| c.get()) {
+            t.length(ICON_SIZE_MD) + t.length(SPACING) * 2.0
+        } else {
+            px(0.0)
+        }
+    };
     view()
         .flex_col()
         .gap(move || t.length(DIALOG_HEADER_GAP))
-        .style_with(|s| {
+        .style_with(move |s| {
             if wide() {
-                s.text_left()
+                s.text_left().pr(room())
             } else {
-                s.text_center()
+                s.text_center().px(room())
             }
         })
         .child(props.children)

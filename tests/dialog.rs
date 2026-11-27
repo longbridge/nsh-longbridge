@@ -193,11 +193,12 @@ fn the_panel_is_centered_and_512_wide() {
     assert_eq!(common::fill(&app, &panel_selector(&app)), light(DIALOG));
     let close = bounds(&app, "role:button[Close]");
     assert_eq!((close.size.width.0, close.size.height.0), (16.0, 16.0));
-    // 16 inside the panel's edge (1), as CSS's `top-4 right-4`.
-    assert_eq!(close.origin.y.0 - panel.origin.y.0, 17.0);
+    // On the content's edge, `dialog-padding` (24) inside the panel's edge
+    // (1), and centered on the title's 18 point line: 1 down more.
+    assert_eq!(close.origin.y.0 - panel.origin.y.0, 26.0);
     assert_eq!(
         panel.origin.x.0 + panel.size.width.0 - (close.origin.x.0 + 16.0),
-        17.0
+        25.0
     );
 }
 

@@ -140,7 +140,7 @@
       "dialog-footer-gap": "calc(var(--spacing) * 2)",
       "dialog-title-font-size": "calc(var(--text-lg))",
       "dialog-description-font-size": "calc(var(--text-sm))",
-      "dialog-close-offset": "calc(var(--spacing) * 4)",
+      "dialog-close-offset": "calc(var(--dialog-padding))",
       "dialog-close-opacity": "0.7",
       "dialog-duration": "calc(var(--duration) * 4 / 3)",
       "dialog-animate": "1",
