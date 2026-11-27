@@ -90,7 +90,7 @@ function PanelDemo() {
         <View class="flex-row items-center gap-2">
           <Glyph icon={Volume2} size={16} class="text-muted-foreground" />
           <Text class="flex-1 text-sm font-medium text-card-foreground">Volume</Text>
-          <Text class="font-mono text-xs tabular-nums text-muted-foreground">{`${volume()}%`}</Text>
+          <Text class="text-sm tabular-nums text-muted-foreground">{`${volume()}%`}</Text>
         </View>
         <Slider value={volume()} onChange={(e) => volume.set(e.value as number)} accessibilityLabel="Volume" />
       </View>
@@ -98,14 +98,14 @@ function PanelDemo() {
         <View class="flex-row items-center gap-2">
           <Glyph icon={Sun} size={16} class="text-muted-foreground" />
           <Text class="flex-1 text-sm font-medium text-card-foreground">Brightness</Text>
-          <Text class="font-mono text-xs tabular-nums text-muted-foreground">{`${brightness()}%`}</Text>
+          <Text class="text-sm tabular-nums text-muted-foreground">{`${brightness()}%`}</Text>
         </View>
         <Slider value={brightness()} onChange={(e) => brightness.set(e.value as number)} accessibilityLabel="Brightness" />
       </View>
       <View class="gap-3">
         <View class="flex-row items-center justify-between">
           <Text class="text-sm font-medium text-card-foreground">Balance</Text>
-          <Text class="font-mono text-xs tabular-nums text-muted-foreground">
+          <Text class="text-sm tabular-nums text-muted-foreground">
             {balance() === 0 ? "Center" : balance() < 0 ? `L ${-balance()}` : `R ${balance()}`}
           </Text>
         </View>
@@ -127,7 +127,7 @@ function PriceDemo() {
     <View class="w-full max-w-[360px] gap-3">
       <View class="flex-row items-center justify-between">
         <Text class="text-sm font-medium text-foreground">Price</Text>
-        <Text class="font-mono text-sm tabular-nums text-muted-foreground">{`$${price()[0]} – $${price()[1]}`}</Text>
+        <Text class="text-sm tabular-nums text-muted-foreground">{`$${price()[0]} – $${price()[1]}`}</Text>
       </View>
       <Slider
         min={0}
@@ -172,7 +172,7 @@ function SavedDemo() {
     <View class="w-full max-w-[280px] gap-3">
       <View class="flex-row items-center justify-between">
         <Text class="text-sm font-medium text-foreground">Font size</Text>
-        <Text class="font-mono text-xs tabular-nums text-muted-foreground">{`${size()} pt, saved ${saved()}`}</Text>
+        <Text class="text-sm tabular-nums text-muted-foreground">{`${size()} pt, saved ${saved()}`}</Text>
       </View>
       <Slider
         min={10}
@@ -201,7 +201,7 @@ function Band(props: { label: string; value: number }) {
   const gain = signal(props.value);
   return (
     <View class="items-center gap-2">
-      <Text class="font-mono text-xs tabular-nums text-muted-foreground">{`${gain() > 0 ? "+" : ""}${gain()}`}</Text>
+      <Text class="text-sm tabular-nums text-muted-foreground">{`${gain() > 0 ? "+" : ""}${gain()}`}</Text>
       <View class="h-40">
         <Slider
           axis="vertical"
