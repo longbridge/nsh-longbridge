@@ -67,8 +67,9 @@ tokens! {
     TOAST_WIDTH: Length = "toast-width" => |t| t.px(356.0),
     /// A toast's padding.
     TOAST_PADDING: Length = "toast-padding" => |t| t.length(SPACING) * 4.0,
-    /// The gap between a toast's icon, text and buttons.
-    TOAST_GAP: Length = "toast-gap" => |t| t.length(SPACING) * 1.5,
+    /// The gap between a toast's icon, text and buttons: three groups, a
+    /// content group's gap (gpui-kit's notifications).
+    TOAST_GAP: Length = "toast-gap" => |t| t.length(SPACING) * 3.0,
     /// A toast's text size (13).
     TOAST_FONT_SIZE: Length = "toast-font-size" => |t| t.px(13.0),
     /// The side of a toast's kind icon.
@@ -983,8 +984,6 @@ fn boxed(
             vec![
                 veiled(icon, behind)
                     .flex_shrink_0()
-                    .ml(px(-3.0))
-                    .mr(px(4.0))
                     .app_class(props.icon_class)
                     .inline_style(move || props.icon_style.get())
                     .into_element(),
@@ -996,7 +995,8 @@ fn boxed(
             .flex_col()
             .flex_1()
             .min_w_0()
-            .gap(px(2.0))
+            // Title and description: parts of one message.
+            .gap(move || t.length(SPACING))
             .child(
                 text(move || toast().title)
                     .font_weight(medium(t))
@@ -1016,43 +1016,64 @@ fn boxed(
                 },
             )),
     )
+    // The buttons: closely related controls, `spacing × 2` apart, one
+    // group `toast-gap` from the text.
     .child(when(
-        move || toast().options.cancel.is_some(),
         move || {
-            let id = cancel_id.clone();
-            vec![
-                veiled(button(), behind)
-                    .size(Size::Xs)
-                    .variant(ButtonVariant::Secondary)
-                    .on_press(move || {
-                        let answer = untracked(toast).options.cancel.map(|c| c.id);
-                        dismiss_with(&id, answer);
-                    })
-                    .app_class(props.cancel_class)
-                    .inline_style(move || props.cancel_style.get())
-                    .child(text(move || {
-                        toast().options.cancel.map(|c| c.label).unwrap_or_default()
-                    }))
-                    .into_element(),
-            ]
+            let options = toast().options;
+            options.cancel.is_some() || options.action.is_some()
         },
-    ))
-    .child(when(
-        move || toast().options.action.is_some(),
         move || {
-            let id = action_id.clone();
+            let (cancel_id, action_id) = (cancel_id.clone(), action_id.clone());
+            let cancel = when(
+                move || toast().options.cancel.is_some(),
+                move || {
+                    let id = cancel_id.clone();
+                    vec![
+                        veiled(button(), behind)
+                            .size(Size::Xs)
+                            .variant(ButtonVariant::Secondary)
+                            .on_press(move || {
+                                let answer = untracked(toast).options.cancel.map(|c| c.id);
+                                dismiss_with(&id, answer);
+                            })
+                            .app_class(props.cancel_class)
+                            .inline_style(move || props.cancel_style.get())
+                            .child(text(move || {
+                                toast().options.cancel.map(|c| c.label).unwrap_or_default()
+                            }))
+                            .into_element(),
+                    ]
+                },
+            );
+            let action = when(
+                move || toast().options.action.is_some(),
+                move || {
+                    let id = action_id.clone();
+                    vec![
+                        veiled(button(), behind)
+                            .size(Size::Xs)
+                            .on_press(move || {
+                                let answer = untracked(toast).options.action.map(|a| a.id);
+                                dismiss_with(&id, answer);
+                            })
+                            .app_class(props.action_class)
+                            .inline_style(move || props.action_style.get())
+                            .child(text(move || {
+                                toast().options.action.map(|a| a.label).unwrap_or_default()
+                            }))
+                            .into_element(),
+                    ]
+                },
+            );
             vec![
-                veiled(button(), behind)
-                    .size(Size::Xs)
-                    .on_press(move || {
-                        let answer = untracked(toast).options.action.map(|a| a.id);
-                        dismiss_with(&id, answer);
-                    })
-                    .app_class(props.action_class)
-                    .inline_style(move || props.action_style.get())
-                    .child(text(move || {
-                        toast().options.action.map(|a| a.label).unwrap_or_default()
-                    }))
+                view()
+                    .flex_row()
+                    .items_center()
+                    .flex_shrink_0()
+                    .gap(move || t.length(SPACING) * 2.0)
+                    .child(cancel)
+                    .child(action)
                     .into_element(),
             ]
         },

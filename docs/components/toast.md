@@ -200,13 +200,13 @@ A toast is a popup surface (`popover`, `popover-foreground`, `border`) with `rad
 
 | Part | Look |
 |---|---|
-| toast | A row centered vertically, gap `toast-gap` (6), padding `toast-padding` (16), as wide as the stack (`toast-width`, 356); fill `toast` (`popover`), text `toast-foreground` (`popover-foreground`), 13 (`toast-font-size`); border `border-width` × `toast-border`; corners `toast-radius` (`radius-lg`, 10); shadow tier `toast-shadow` (3, `md`) |
-| icon | lucide `circle-check` / `info` / `triangle-alert` / `octagon-x` / `loader-2`: `toast-icon-size` (16) in a 16 box, the start margin −3 and end margin 4, the text color; `"loading"` turns with `foundation::motion::spin` (it keeps turning with reduced motion, as `Spinner`) |
-| content | A column, gap 2, `flex: 1`, shrinkable (`min-w-0`) |
+| toast | A row centered vertically, gap `toast-gap` (12) between the icon, the content and the buttons, padding `toast-padding` (16), as wide as the stack (`toast-width`, 356); fill `toast` (`popover`), text `toast-foreground` (`popover-foreground`), 13 (`toast-font-size`); border `border-width` × `toast-border`; corners `toast-radius` (`radius-lg`, 10); shadow tier `toast-shadow` (3, `md`) |
+| icon | lucide `circle-check` / `info` / `triangle-alert` / `octagon-x` / `loader-2`: `toast-icon-size` (16) in a 16 box at the padding's edge (no margins of its own), the text color; `"loading"` turns with `foundation::motion::spin` (it keeps turning with reduced motion, as `Spinner`) |
+| content | A column, gap `spacing` (4) between the title and the description, `flex: 1`, shrinkable (`min-w-0`) |
 | title | `font-weight-medium`, line height from foundation (13 → 18) |
 | description | Regular, line height 18, color `toast-description-foreground` (`muted-foreground`: see Decisions 3) |
 | action | The library's `Button` `size="xs"` `variant="default"` (24 high, 8 padding, 12 / medium), pushed to the end (`ml-auto` when it is the first button) |
-| cancel | `Button` `size="xs"` `variant="secondary"` |
+| cancel | `Button` `size="xs"` `variant="secondary"`; the cancel and the action are a row of their own, `spacing × 2` (8) apart (Decisions 11) |
 | close | A 20 square circle (`toast-close-size`), border `toast-border`, fill `toast`, `x` icon 12, at the toast's top-start corner moved out by 35% of its size (7, from inside the toast's edge); opacity 1; under the pointer the fill turns `accent` |
 | timer | A bar `toast-timer-height` (2) high along the toast's edge on the placement's side (the bottom edge of a bottom stack, the top edge of a top one), just inside the border, filled `toast-timer`; the full width when the time starts, shrinking toward the inline start (the left, the right in a right-to-left layout) at a constant pace to nothing as the time runs out. It is clipped by the toast's inner corners (`toast-radius` less `border-width`), so its ends follow the curve. No track: the toast's fill is what is left |
 
@@ -299,7 +299,7 @@ Values are those of `nsh/base`'s default theme.
 | `toast-shadow` | number | `3` | 3 |
 | `toast-width` | length | `356` | 356 |
 | `toast-padding` | length | `spacing × 4` | 16 |
-| `toast-gap` | length | `spacing × 1.5` | 6 |
+| `toast-gap` | length | `spacing × 3` | 12 |
 | `toast-font-size` | length | `13` | 13 |
 | `toast-icon-size` | length | `16` | 16 |
 | `toast-close-size` | length | `20` | 20 |
@@ -449,3 +449,8 @@ Settled in review.
 10. **A transition, not a tick.** The bar is one linear transform transition per run (no layout, the renderer's own
     interpolation), restyled only when the toast is fully in, as the stack expands or collapses and when it is
     changed in place: nothing runs on the lifecycle's 50 ms timer for it, and a paused bar costs nothing.
+11. **Three groups on the spacing scale**: the icon, the message and the buttons are distinct groups, `toast-gap` (12)
+    apart, as gpui-kit's notifications (16 padding, a 12 column gap); the title and description are parts of one
+    message (`spacing`, 4) and the two buttons closely related controls (8). The icon used to be pulled 3 out and
+    pushed 4 in with margins of its own, around a 6 gap, so a toast with an icon started 3 points left of one without
+    and its text 10 from the icon, both off the scale.
