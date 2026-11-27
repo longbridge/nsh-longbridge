@@ -5,6 +5,7 @@ use nsh_core::{element::Style, element::TextPartStyle, prelude::*};
 
 use crate::{
     foundation::{
+        class::Classes,
         icon::{provide_icon_size, provide_text_color},
         size::Size,
         typography::{line_height, medium},
@@ -102,7 +103,14 @@ pub fn Badge(props: BadgeProps, _cx: Scope<NoEvent>) -> impl IntoElement {
         // its children, while a row's `items-center` still centers it (an
         // `align-self` would override the row's alignment). A class, as
         // `fit-content` has no typed setter; the app's class goes over it.
-        .app_class(Some(SharedString::from("w-fit")))
+        // At least as wide as it is tall, so one character (a count) makes
+        // a circle, not a pill narrower than its height.
+        .app_class(move || {
+            let height = line_height(font_size())
+                + t.length(BADGE_PADDING_Y) * 2.0
+                + t.length(BORDER_WIDTH) * 2.0;
+            Some(Classes::new().push("w-fit").length("", "min-w", height).build())
+        })
         .flex_shrink_0()
         // A long badge is cut to its parent's width with an ellipsis.
         .max_w(Length::Definite(relative(1.0)))

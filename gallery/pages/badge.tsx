@@ -108,7 +108,7 @@ export function BadgePage() {
                   <Text class="text-sm text-foreground">{item.label}</Text>
                   <View class="justify-center">
                     <If when={item.count}>
-                      <Badge variant={item.label === "Mentions" ? "default" : "secondary"} class="min-w-5 px-1 tabular-nums">
+                      <Badge variant={item.label === "Mentions" ? "default" : "secondary"} class="px-1 tabular-nums">
                         <Text>{item.count}</Text>
                       </Badge>
                     </If>
@@ -137,7 +137,7 @@ export function BadgePage() {
               <Text>Square</Text>
             </Badge>
             {counts.map((n) => (
-              <Badge variant="destructive" class="min-w-5 px-1 tabular-nums">
+              <Badge variant="destructive" class="px-1 tabular-nums">
                 <Text>{n}</Text>
               </Badge>
             ))}
