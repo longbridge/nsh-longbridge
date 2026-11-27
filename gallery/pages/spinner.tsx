@@ -39,7 +39,7 @@ export function SpinnerPage() {
                 <Text class="text-xs text-muted-foreground">{u.size}</Text>
               </View>
               {u.state === "done" ? (
-                <Badge variant="secondary" class="self-center">
+                <Badge variant="secondary">
                   <Icon name="check" />
                   <Text>Uploaded</Text>
                 </Badge>
@@ -56,13 +56,13 @@ export function SpinnerPage() {
         </View>
       </Demo>
 
-      <Section title="Sizes and colors" description="The icon sizes, 12 / 14 / 16 / 16, and larger with a class. It takes the color of the text around it.">
+      <Section title="Sizes and colors" description="The icon sizes, 12 / 14 / 16 / 16, and larger with a class. Foreground by default, the text color of the part it sits in, or a class color.">
         <Demos>
           <Demo row class="gap-8" label="xs, sm, md, lg and size-8">
             {sizes.map((s) => (
-              <Spinner size={s} class="text-foreground" />
+              <Spinner size={s} />
             ))}
-            <Spinner class="size-8 text-foreground" />
+            <Spinner class="size-8" />
           </Demo>
           <Demo row class="gap-8" label="foreground, muted, primary, destructive">
             {colors.map((c) => (
@@ -92,7 +92,7 @@ export function SpinnerPage() {
         </Demos>
       </Section>
 
-      <TokensSection prefix="spinner" component="Spinner" note="has no tokens of its own: its size is the icon size of its size, and its color is its class's text color." />
+      <TokensSection prefix="spinner" component="Spinner" note="has no tokens of its own: its size is the icon size of its size, and its color is foreground, the text color of the part it sits in, or its class's." />
     </Page>
   );
 }

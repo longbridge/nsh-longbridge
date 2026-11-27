@@ -93,7 +93,7 @@ function SettingsDemo() {
               <View class="flex-row items-center gap-2">
                 <Text class="text-sm font-medium text-card-foreground">{s.title}</Text>
                 <If when={s.id === "beta"}>
-                  <Badge variant="outline" class="self-center">
+                  <Badge variant="outline">
                     <Text>Beta</Text>
                   </Badge>
                 </If>

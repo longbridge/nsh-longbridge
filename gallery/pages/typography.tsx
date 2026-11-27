@@ -95,14 +95,14 @@ export function TypographyPage() {
       <Section title="Families" description="The system's own faces by default: font-sans and font-mono in the theme change them.">
         <View class="flex-row flex-wrap gap-4">
           <View class="flex-1 min-w-64 gap-3 rounded-xl border border-border p-5">
-            <Badge variant="secondary" class="self-start">
+            <Badge variant="secondary">
               <Text>font-sans</Text>
             </Badge>
             <Text class="text-2xl text-foreground">The quick brown fox jumps over the lazy dog</Text>
             <Text class="text-sm text-muted-foreground">显示名称 · 表示名 · 표시 이름</Text>
           </View>
           <View class="flex-1 min-w-64 gap-3 rounded-xl border border-border p-5">
-            <Badge variant="secondary" class="self-start">
+            <Badge variant="secondary">
               <Text>font-mono</Text>
             </Badge>
             <Text class="font-mono text-xl text-foreground">{"0123456789 { } [ ] ( ) => !="}</Text>

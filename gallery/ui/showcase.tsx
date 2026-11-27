@@ -66,7 +66,7 @@ const revenue = [42, 58, 49, 66, 72, 61, 80, 74, 91, 86, 98, 104];
 /** Initials in a circle: a secondary badge, so a scope colors it. */
 function Avatar(props: { initials: string }) {
   return (
-    <Badge variant="secondary" class="size-8 self-center rounded-full px-0 py-0">
+    <Badge variant="secondary" class="size-8 rounded-full px-0 py-0">
       <Text>{props.initials}</Text>
     </Badge>
   );
@@ -245,7 +245,7 @@ export function InviteCard(props: { class?: string } = {}) {
                 <Text class="truncate text-sm font-medium">{m.name}</Text>
                 <Muted xs>{m.email}</Muted>
               </View>
-              <Badge variant={m.variant} class="self-center">
+              <Badge variant={m.variant}>
                 <Text>{m.role}</Text>
               </Badge>
               <Button
@@ -293,7 +293,7 @@ export function ActivityCard(props: { class?: string } = {}) {
             <Text class="text-sm">Olivia deployed acme-web</Text>
             <Muted xs>2 minutes ago · main</Muted>
           </View>
-          <Badge variant="secondary" class="self-center">
+          <Badge variant="secondary">
             <Text>Ready</Text>
           </Badge>
         </View>
