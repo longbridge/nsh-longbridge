@@ -158,7 +158,7 @@ Panel, overlay and motion: `Dialog`'s (dialog.md "Look" and "Motion"), except:
 |---|---|---|
 | panel, `md` | `max-w-[calc(100%-2rem)] … sm:max-w-lg` | As `Dialog`: up to `dialog-max-width` (512) |
 | panel, `sm` | `data-[size=sm]:max-w-xs` | Up to `alert-dialog-max-width-sm` (320) at every window width |
-| `AlertDialogHeader` | `grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center`, from `sm` (size default) `place-items-start text-left`; with media `grid-rows-[auto_auto_1fr] gap-x-6`, from `sm` the media spans two rows on the left | A grid of one column, row gap `alert-dialog-header-gap` (6). Centered (text, and the media by its auto margins) while the window is narrower than 640 or the size is `sm`; otherwise start-aligned. With an `AlertDialogMedia`: centered, the media is a row above the title; start-aligned, the columns are `auto minmax(0, 1fr)` and the rows `auto minmax(0, 1fr)` (see NSH gaps 2), the media spans both rows on the left and the title and description start at column 2, `spacing × 6` (24) from it |
+| `AlertDialogHeader` | `grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center`, from `sm` (size default) `place-items-start text-left`; with media `grid-rows-[auto_auto_1fr] gap-x-6`, from `sm` the media spans two rows on the left | A grid of one column, row gap `alert-dialog-header-gap` (8, `dialog-header-gap`: a `DialogHeader`'s gap, not `gap-1.5`'s off-scale 6). Centered (text, and the media by its auto margins) while the window is narrower than 640 or the size is `sm`; otherwise start-aligned. With an `AlertDialogMedia`: centered, the media is a row above the title; start-aligned, the columns are `auto minmax(0, 1fr)` and the rows `auto minmax(0, 1fr)` (see NSH gaps 2), the media spans both rows on the left and the title and description start at column 2, `spacing × 6` (24) from it |
 | `AlertDialogMedia` | `mb-2 inline-flex size-16 items-center justify-center rounded-md bg-muted *:[svg]:size-8` | A square `alert-dialog-media-size` (64), content centered, corners `radius-md`, fill `alert-dialog-media` (`muted`); bottom margin 8 while centered above the title; icons `alert-dialog-media-icon-size` (32) |
 | `AlertDialogTitle` | `text-lg font-semibold` | Size `dialog-title-font-size` (18), line height from foundation (28: no `leading-none`, unlike `DialogTitle`), `font-weight-semibold` |
 | `AlertDialogDescription` | `text-sm text-muted-foreground` | As `DialogDescription` |
@@ -198,7 +198,7 @@ It reads every `dialog-*` token (dialog.md "Tokens"). Its own, generated from th
 | Token | Type | Derived default | Value |
 |---|---|---|---|
 | `alert-dialog-max-width-sm` | length | `spacing × 80` | 320 |
-| `alert-dialog-header-gap` | length | `spacing × 1.5` | 6 |
+| `alert-dialog-header-gap` | length | `dialog-header-gap` | 8 |
 | `alert-dialog-media` | color | `muted` |  |
 | `alert-dialog-media-size` | length | `spacing × 16` | 64 |
 | `alert-dialog-media-icon-size` | length | `spacing × 8` | 32 |
