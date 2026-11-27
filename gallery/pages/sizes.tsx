@@ -8,10 +8,11 @@ import { Page, Section } from "../ui/layout";
 import { Glyph, Search } from "../ui/icons";
 
 const radii = [
-  { name: "radius-sm", derived: "radius − 4", for: "Checkboxes, small parts" },
-  { name: "radius-md", derived: "radius − 2", for: "Buttons, fields, badges" },
-  { name: "radius-lg", derived: "radius", for: "Popovers, menus" },
-  { name: "radius-xl", derived: "radius + 4", for: "Cards, dialogs" },
+  { name: "radius-xs", derived: "radius − 8, at least 0", for: "A dialog's close button" },
+  { name: "radius-sm", derived: "radius − 4", for: "Checkboxes, keys" },
+  { name: "radius-md", derived: "radius − 2", for: "Buttons, fields, popovers, menus" },
+  { name: "radius-lg", derived: "radius", for: "Dialogs, tabs, toasts" },
+  { name: "radius-xl", derived: "radius + 4", for: "Cards" },
 ];
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
@@ -33,7 +34,7 @@ export function SizesPage() {
       title="Radius and sizes"
       description="The radius, control-height, control-height-touch, spacing and font-size seeds, and what derives from them. The values are this theme's; change a seed on the Customize page and they follow."
     >
-      <Section title="Radii" description="Four radii from one seed, shadcn v4's. Nested surfaces step down a radius, so their corners stay concentric.">
+      <Section title="Radii" description="Five radii from one seed, shadcn v4's and Tailwind's rounded-xs. Badges and switches are pills whatever the seed. Nested surfaces step down a radius, so their corners stay concentric.">
         <View class="flex-row flex-wrap gap-4">
           {radii.map((r) => (
             <View class="flex-1 min-w-40 gap-3">

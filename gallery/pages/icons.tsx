@@ -7,13 +7,25 @@ import { Demo, Demos, Page, Section } from "../ui/layout";
 import { columnWidth, contentWidth } from "../ui/screen";
 
 const icons: { name: IconName; for: string }[] = [
-  { name: "check", for: "Checkbox, Badge" },
+  { name: "check", for: "Checkbox, checked items" },
   { name: "minus", for: "Checkbox, indeterminate" },
+  { name: "chevron-down", for: "Select, opening a menu" },
+  { name: "chevron-right", for: "Submenus, a next page" },
+  { name: "chevron-left", for: "A sheet's back row" },
+  { name: "x", for: "Closing a dialog or toast" },
+  { name: "circle-check", for: "Toast, success" },
+  { name: "info", for: "Toast, information" },
+  { name: "triangle-alert", for: "Toast, warning" },
+  { name: "octagon-x", for: "Toast, error" },
+  { name: "loader-circle", for: "Spinner, loading" },
+  { name: "ellipsis", for: "An overflow menu" },
   { name: "plus", for: "Adding" },
   { name: "arrow-right", for: "Going on" },
-  { name: "chevron-down", for: "Opening a menu" },
   { name: "trash-2", for: "Deleting" },
-  { name: "loader-circle", for: "Spinner, loading" },
+  { name: "settings", for: "Settings" },
+  { name: "log-out", for: "Signing out" },
+  { name: "layout-dashboard", for: "A dashboard" },
+  { name: "activity", for: "Activity" },
 ];
 
 const sizes: Size[] = ["xs", "sm", "md", "lg"];
@@ -28,9 +40,9 @@ export function IconsPage() {
     <Page
       eyebrow="Foundation"
       title="Icons"
-      description="The few icons the library's components draw, from Lucide, sized by the control they are in and colored as its text. An app brings its own set through nsh-icon, as this gallery does."
+      description="The few icons the library ships, from Lucide, sized by the control they are in and colored as its text. An app brings its own set through nsh-icon, as this gallery does."
     >
-      <Section title="The set">
+      <Section title="The set" description="Each icon the library ships and what it is for. Any of them goes in an Icon, or in a Button's icon or iconEnd.">
         <View class="flex-row flex-wrap gap-4">
           {icons.map((i) => (
             <View class="items-center gap-4 rounded-xl border border-border px-3 py-6" style={{ width: tileWidth() }}>
@@ -46,12 +58,12 @@ export function IconsPage() {
         </View>
       </Section>
 
-      <Section title="Sizes" description="icon-size-xs to lg: 12, 14, 16 and 16 points with the default font-size seed.">
+      <Section title="Sizes" description="The icon-size-xs to lg tokens: 12, 14, 16 and 16 points with the default font-size seed.">
         <View class="rounded-xl border border-border">
           {sizes.map((size, i) => (
-            <View class={`h-14 flex-row items-center gap-6 px-5 ${i > 0 ? "border-t border-border" : ""}`}>
+            <View class={`min-h-14 flex-row items-center gap-6 px-5 ${i > 0 ? "border-t border-border" : ""}`}>
               <Text class="w-8 font-mono text-xs text-muted-foreground">{size}</Text>
-              <View class="flex-1 flex-row items-center gap-6">
+              <View class="flex-1 flex-row flex-wrap items-center gap-x-6 gap-y-3 py-3">
                 {icons.map((ic) => (
                   <Icon name={ic.name} size={size} class="text-foreground" />
                 ))}

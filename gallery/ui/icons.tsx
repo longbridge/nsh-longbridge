@@ -7,7 +7,6 @@ export {
   ArrowUpRight,
   Bell,
   Check,
-  ChevronRight,
   Copy,
   CreditCard,
   FileText,

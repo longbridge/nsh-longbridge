@@ -35,6 +35,8 @@ function rangeOf(name: string): { min: number; max: number; step: number; format
   if (/animate/.test(name)) return { min: 0, max: 1, step: 1, format: (v) => (v ? "on" : "off") };
   if (/weight/.test(name)) return { min: 100, max: 900, step: 100 };
   if (/max-width/.test(name)) return { min: 120, max: 640, step: 20 };
+  // An offset may pull a popup back over its trigger (`menu-sub-offset`: −5).
+  if (/offset/.test(name)) return { min: -24, max: 24, step: 1 };
   if (/thickness|border-width|ring-width/.test(name)) return { min: 0, max: 6, step: 0.5 };
   // A popup's or the toast stack's width.
   if (/^(popover|toast)-width$/.test(name)) return { min: 160, max: 480, step: 4 };
@@ -58,7 +60,7 @@ function NumberEdit(props: { name: string }) {
   return (
     <Stepper
       name={props.name}
-      value={() => Number(numberOf(props.name).toFixed(2))}
+      value={() => (kind === "ms" ? Math.round(numberOf(props.name)) : Number(numberOf(props.name).toFixed(2)))}
       min={range.min}
       max={range.max}
       step={range.step}
@@ -66,6 +68,14 @@ function NumberEdit(props: { name: string }) {
       onChange={write}
     />
   );
+}
+
+/** A token's derived default; a shadow tier by its name, as its value shows. */
+function derivedText(name: string): string {
+  const d = derived(name, scheme());
+  const tiers = ["none", "xs", "sm", "md", "lg"];
+  if (kindOf(name) === "tier" && d !== undefined && /^\d$/.test(d.trim())) return tiers[Number(d.trim())] ?? d;
+  return formatDerived(d);
 }
 
 function TokenRow(props: { name: string; last: boolean }) {
@@ -84,11 +94,11 @@ function TokenRow(props: { name: string; last: boolean }) {
           </If>
         </View>
         <If when={compact()}>
-          <Text class="font-mono text-xs text-muted-foreground">{formatDerived(derived(props.name, scheme()))}</Text>
+          <Text class="font-mono text-xs text-muted-foreground">{derivedText(props.name)}</Text>
         </If>
       </View>
       <If when={!compact()}>
-        <Text class="w-56 font-mono text-xs text-muted-foreground">{formatDerived(derived(props.name, scheme()))}</Text>
+        <Text class="w-56 font-mono text-xs text-muted-foreground">{derivedText(props.name)}</Text>
       </If>
       <View class="w-44 flex-row items-center justify-end gap-2">
         {kind === "color" ? (

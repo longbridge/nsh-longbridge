@@ -231,7 +231,8 @@ export function formatValue(name: string, s: Scheme = scheme()): string {
   if (kind === "color") return colorOf(name, s) ? toHex(colorOf(name, s)!) : "—";
   const n = numberOf(name, s);
   const r = String(Number(n.toFixed(2)));
-  if (kind === "ms") return `${r} ms`;
+  // A derived duration (`duration × 1.3333`) is whole milliseconds.
+  if (kind === "ms") return `${Math.round(n)} ms`;
   if (kind === "tier") return ["none", "xs", "sm", "md", "lg"][Math.round(n)] ?? r;
   return r;
 }

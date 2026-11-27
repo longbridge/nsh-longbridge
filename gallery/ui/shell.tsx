@@ -20,7 +20,7 @@ import {
 import { Segmented, Select } from "./controls";
 import { GalleryToaster } from "./toaster";
 import { compact, narrow, pagePadding } from "./screen";
-import { ChevronRight, GitHub, Glyph, Menu, Monitor, Moon, Search, Sun } from "./icons";
+import { GitHub, Glyph, Menu, Monitor, Moon, Search, Sun } from "./icons";
 
 export const REPOSITORY = "https://github.com/longbridge/nsh-longbridge";
 
@@ -201,19 +201,15 @@ function Pager(props: { id: string }) {
     <View class="mt-20 flex-row items-center justify-between gap-4 border-t border-border pt-6">
       <View>
         <If when={prev()}>
-          <Button variant="ghost" size="sm" onPress={() => navigate(prev()!.id)}>
-            <View style={{ transform: [{ rotate: "180deg" }] }}>
-              <Glyph icon={ChevronRight} size={14} />
-            </View>
+          <Button variant="ghost" size="sm" icon="chevron-left" onPress={() => navigate(prev()!.id)}>
             <Text>{prev()!.label}</Text>
           </Button>
         </If>
       </View>
       <View>
         <If when={next()}>
-          <Button variant="ghost" size="sm" onPress={() => navigate(next()!.id)}>
+          <Button variant="ghost" size="sm" iconEnd="chevron-right" onPress={() => navigate(next()!.id)}>
             <Text>{next()!.label}</Text>
-            <Glyph icon={ChevronRight} size={14} />
           </Button>
         </If>
       </View>
