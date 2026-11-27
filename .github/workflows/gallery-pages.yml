@@ -1,6 +1,7 @@
 # Builds the website (the Astro home page around the gallery's live demos, and
 # the gallery's web build for every component page) and publishes it on GitHub
-# Pages. Pull requests only build it; pushes to main also deploy.
+# Pages from main. Pull requests don't build it: the merge would build the same
+# site again right after.
 name: Gallery Pages
 
 on:
@@ -14,33 +15,24 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/gallery-pages.yml"
-  pull_request:
-    paths:
-      - "src/**"
-      - "themes/**"
-      - "gallery/**"
-      - "website/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - ".github/workflows/gallery-pages.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# A newer push to a pull request replaces its build; a deploy runs to the end.
+# A newer push to main replaces a run that hasn't finished: only the latest
+# site is worth deploying.
 concurrency:
-  group: gallery-pages-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: gallery-pages
+  cancel-in-progress: true
 
 env:
   NSH_VERSION: v0.7.2
 
 jobs:
   build:
-    # The organization's `public` runners, as nsh's workflows use them; a pull
-    # request from a fork runs on GitHub's own.
-    runs-on: ${{ (github.event.pull_request && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-24.04' || fromJSON('["public", "Linux", "X64"]') }}
+    # The organization's `public` runners, as nsh's workflows use them.
+    runs-on: [public, Linux, X64]
     steps:
       - uses: actions/checkout@v4
 
@@ -84,7 +76,7 @@ jobs:
           path: ${{ runner.temp }}/site
 
   deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: [public, Linux, X64]
     permissions:
