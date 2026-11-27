@@ -323,7 +323,7 @@ Settled in review.
 
 1. **`src` and `name` on `Avatar`**, not `AvatarImage` / `AvatarFallback` children (Why the image and the fallback
    are props): `nsh/base` decides which shows natively.
-2. **The initials come from `name`** (`nsh/base`'s rule, gpui-component's), so one prop gives both the screen
+2. **The initials come from `name`** (`nsh/base`'s rule), so one prop gives both the screen
    readers' name and the fallback; `fallback` replaces them.
 3. **Four sizes**, the usual three and `xs`, at the usual sides (not stepped down: an avatar is not a control).
 4. **`size` is optional on `Avatar`** (Rust `Option<Size>`), so an avatar follows its group; elsewhere unset is `md`.
