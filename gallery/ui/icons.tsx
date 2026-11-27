@@ -1,19 +1,34 @@
 // The gallery's own icons: Lucide's through `nsh-icon` for the chrome
-// (search, appearance, menu, copy), and GitHub's mark. The library's `Icon`
-// draws only the few icons its components need; these are the gallery's.
+// (search, appearance, menu, copy) and the scenes, and GitHub's mark. The
+// library's `Icon` draws only the few icons its components need; these are
+// the gallery's.
 
 import { Icon } from "nsh-icon";
 export {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  Bookmark,
+  Calendar,
   Check,
   Copy,
   FileText,
+  Heart,
   Info,
+  Italic,
+  LayoutGrid,
+  LayoutList,
   Menu,
   Monitor,
   Moon,
   RotateCcw,
   Search,
+  Star,
+  Strikethrough,
   Sun,
+  Underline,
+  Volume2,
 } from "nsh-icon-lucide";
 
 /** GitHub's mark (a filled path, in the text color). */

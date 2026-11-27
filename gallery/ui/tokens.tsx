@@ -142,10 +142,19 @@ function TokenTable(props: { title: string; names: string[] }) {
 
 /**
  * The Tokens section of component `prefix` (`button`, `radio-group`).
- * `component` names it in the text; `note` says what it shares.
+ * `component` names it in the text; `note` says what it shares; `exclude`
+ * leaves out another component's tokens under the same prefix.
  */
-export function TokensSection(props: { prefix: string; component: string; note?: string; extra?: string[] }) {
-  const names = [...componentTokens(props.prefix), ...(props.extra ?? [])];
+export function TokensSection(props: {
+  prefix: string;
+  component: string;
+  note?: string;
+  extra?: string[];
+  /** Prefixes of other components' tokens that start with `prefix` (`toggle-group` on Toggle's page). */
+  exclude?: string[];
+}) {
+  const excluded = (n: string) => (props.exclude ?? []).some((p) => n === p || n.startsWith(`${p}-`));
+  const names = [...componentTokens(props.prefix).filter((n) => !excluded(n)), ...(props.extra ?? [])];
   const colors = names.filter((n) => kindOf(n) === "color");
   const others = names.filter((n) => kindOf(n) !== "color");
   const edited = () => names.filter(isEdited);

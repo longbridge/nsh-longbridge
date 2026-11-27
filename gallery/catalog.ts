@@ -9,11 +9,13 @@ import { CalendarPage } from "./pages/calendar";
 import { CardPage } from "./pages/card";
 import { CheckboxPage } from "./pages/checkbox";
 import { ColorsPage } from "./pages/colors";
+import { ComboboxPage } from "./pages/combobox";
 import { CustomizePage } from "./pages/customize";
 import { DataTablePage } from "./pages/data-table";
 import { DatePickerPage } from "./pages/date-picker";
 import { DialogPage } from "./pages/dialog";
 import { DropdownMenuPage } from "./pages/dropdown-menu";
+import { FieldPage } from "./pages/field";
 import { HomePage } from "./pages/home";
 import { IconsPage } from "./pages/icons";
 import { InputPage } from "./pages/input";
@@ -27,12 +29,15 @@ import { SelectPage } from "./pages/select";
 import { SeparatorPage } from "./pages/separator";
 import { SizesPage } from "./pages/sizes";
 import { SkeletonPage } from "./pages/skeleton";
+import { SliderPage } from "./pages/slider";
 import { SpinnerPage } from "./pages/spinner";
 import { SwitchPage } from "./pages/switch";
 import { TablePage } from "./pages/table";
 import { TabsPage } from "./pages/tabs";
 import { TextareaPage } from "./pages/textarea";
 import { ToastPage } from "./pages/toast";
+import { TogglePage } from "./pages/toggle";
+import { ToggleGroupPage } from "./pages/toggle-group";
 import { TooltipPage } from "./pages/tooltip";
 import { TypographyPage } from "./pages/typography";
 
@@ -67,10 +72,12 @@ export const catalog: PageGroup[] = [
       { id: "calendar", label: "Calendar", page: CalendarPage },
       { id: "card", label: "Card", page: CardPage },
       { id: "checkbox", label: "Checkbox", page: CheckboxPage },
+      { id: "combobox", label: "Combobox", page: ComboboxPage },
       { id: "data-table", label: "Data Table", page: DataTablePage },
       { id: "date-picker", label: "Date Picker", page: DatePickerPage },
       { id: "dialog", label: "Dialog", page: DialogPage },
       { id: "dropdown-menu", label: "Dropdown Menu", page: DropdownMenuPage },
+      { id: "field", label: "Field", page: FieldPage },
       { id: "input", label: "Input", page: InputPage },
       { id: "kbd", label: "Kbd", page: KbdPage },
       { id: "label", label: "Label", page: LabelPage },
@@ -81,12 +88,15 @@ export const catalog: PageGroup[] = [
       { id: "select", label: "Select", page: SelectPage },
       { id: "separator", label: "Separator", page: SeparatorPage },
       { id: "skeleton", label: "Skeleton", page: SkeletonPage },
+      { id: "slider", label: "Slider", page: SliderPage },
       { id: "spinner", label: "Spinner", page: SpinnerPage },
       { id: "switch", label: "Switch", page: SwitchPage },
       { id: "table", label: "Table", page: TablePage },
       { id: "tabs", label: "Tabs", page: TabsPage },
       { id: "textarea", label: "Textarea", page: TextareaPage },
       { id: "toast", label: "Toast", page: ToastPage },
+      { id: "toggle", label: "Toggle", page: TogglePage },
+      { id: "toggle-group", label: "Toggle Group", page: ToggleGroupPage },
       { id: "tooltip", label: "Tooltip", page: TooltipPage },
     ],
   },
