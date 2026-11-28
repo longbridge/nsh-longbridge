@@ -39,13 +39,7 @@ export function SwitchPage() {
       </Demo>
 
       <Section title="States" description="Disabled dims the track and its label together. Tab shows the ring on the track.">
-        <Demo row class="gap-x-10 gap-y-4">
-          {states.map((s) => (
-            <Switch checked={s.checked} disabled={s.disabled}>
-              <Text>{s.label}</Text>
-            </Switch>
-          ))}
-        </Demo>
+        <StatesDemo />
       </Section>
 
       <Section
@@ -60,18 +54,7 @@ export function SwitchPage() {
       </Section>
 
       <Section title="Parts" description="The trackClass prop styles the track, thumbClass the thumb, labelClass the label; class styles the row.">
-        <Demos>
-          <Demo row label="A muted label, a raised thumb">
-            <Switch checked labelClass="font-normal text-muted-foreground" thumbClass="shadow-md">
-              <Text>Quiet hours</Text>
-            </Switch>
-          </Demo>
-          <Demo row label="The label first: class reverses the row">
-            <Switch checked class="flex-row-reverse">
-              <Text>Wi-Fi</Text>
-            </Switch>
-          </Demo>
-        </Demos>
+        <PartsDemo />
       </Section>
 
       <TokensSection prefix="switch" component="Switch" />
@@ -112,8 +95,26 @@ function SettingsDemo() {
   );
 }
 
+function StatesDemo() {
+  const on = signal(states.filter((s) => s.checked).map((s) => s.label));
+  return (
+    <Demo row class="gap-x-10 gap-y-4">
+      {states.map((s) => (
+        <Switch
+          checked={on().includes(s.label)}
+          disabled={s.disabled}
+          onChange={(e) => on.set(e.checked ? [...on(), s.label] : on().filter((x) => x !== s.label))}
+        >
+          <Text>{s.label}</Text>
+        </Switch>
+      ))}
+    </Demo>
+  );
+}
+
 function SizesDemo() {
   const on = signal(true);
+  const bluetooth = signal(false);
   return (
     <Demo class="items-stretch">
       {sizes.map((size) => (
@@ -122,13 +123,37 @@ function SizesDemo() {
             <Switch size={size} checked={on()} onChange={(e) => on.set(e.checked)}>
               <Text>Airplane mode</Text>
             </Switch>
-            <Switch size={size}>
+            <Switch size={size} checked={bluetooth()} onChange={(e) => bluetooth.set(e.checked)}>
               <Text>Bluetooth</Text>
             </Switch>
           </View>
         </Row>
       ))}
     </Demo>
+  );
+}
+
+function PartsDemo() {
+  const quiet = signal(true);
+  const wifi = signal(true);
+  return (
+    <Demos>
+      <Demo row label="A muted label, a raised thumb">
+        <Switch
+          checked={quiet()}
+          onChange={(e) => quiet.set(e.checked)}
+          labelClass="font-normal text-muted-foreground"
+          thumbClass="shadow-md"
+        >
+          <Text>Quiet hours</Text>
+        </Switch>
+      </Demo>
+      <Demo row label="The label first: class reverses the row">
+        <Switch checked={wifi()} onChange={(e) => wifi.set(e.checked)} class="flex-row-reverse">
+          <Text>Wi-Fi</Text>
+        </Switch>
+      </Demo>
+    </Demos>
   );
 }
 

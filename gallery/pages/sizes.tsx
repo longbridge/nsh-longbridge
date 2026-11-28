@@ -1,7 +1,7 @@
 // The Radius and sizes page: the radii, the control heights per size with a
 // pointer and on touch screens, icon sizes, spacing, lines and focus.
 
-import { Text, View } from "nsh";
+import { signal, Text, View } from "nsh";
 import { Button, Checkbox, Input, type Size, Switch } from "nsh-longbridge";
 import { formatValue, numberOf } from "../theme";
 import { Page, Section } from "../ui/layout";
@@ -29,6 +29,9 @@ const lines = [
 ];
 
 export function SizesPage() {
+  // The checkboxes of all sizes share one value, and so do the switches.
+  const checked = signal(true);
+  const on = signal(true);
   return (
     <Page
       eyebrow="Foundation"
@@ -80,8 +83,8 @@ export function SizesPage() {
                 <View class="w-32">
                   <Input size={size} placeholder="Search" accessibilityLabel={`Search, ${size}`} />
                 </View>
-                <Checkbox size={size} checked accessibilityLabel={`Checkbox, ${size}`} />
-                <Switch size={size} checked accessibilityLabel={`Switch, ${size}`} />
+                <Checkbox size={size} checked={checked()} onChange={(e) => checked.set(e.checked)} accessibilityLabel={`Checkbox, ${size}`} />
+                <Switch size={size} checked={on()} onChange={(e) => on.set(e.checked)} accessibilityLabel={`Switch, ${size}`} />
               </View>
             </View>
           ))}

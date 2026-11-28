@@ -55,37 +55,14 @@ export function CheckboxPage() {
         title="States"
         description="Invalid marks the edge of an unchecked box and its focus ring. Disabled dims the box and its label together. Tab shows the ring on the box."
       >
-        <Demo class="items-stretch">
-          <View class="flex-row flex-wrap gap-x-10 gap-y-4 self-center">
-            {states.map((s) => (
-              <View class="w-44">
-                <Checkbox checked={s.checked} indeterminate={s.indeterminate} invalid={s.invalid} disabled={s.disabled}>
-                  <Text>{s.label}</Text>
-                </Checkbox>
-              </View>
-            ))}
-          </View>
-        </Demo>
+        <StatesDemo />
       </Section>
 
       <Section
         title="Sizes"
         description="The box is half the control height of its size (12, 14, 16, 18; larger on touch screens), and the label's text follows."
       >
-        <Demo class="items-stretch">
-          {sizes.map((size) => (
-            <Row label={size}>
-              <View class="flex-row items-center gap-8">
-                <Checkbox size={size} checked>
-                  <Text>Email me a copy</Text>
-                </Checkbox>
-                <Checkbox size={size} indeterminate>
-                  <Text>Some files</Text>
-                </Checkbox>
-              </View>
-            </Row>
-          ))}
-        </Demo>
+        <SizesDemo />
       </Section>
 
       <Section title="A box alone" description="In a table row it names itself to screen readers; on touch screens it takes presses up to 44 points around it.">
@@ -121,6 +98,55 @@ function HeroDemo() {
           <Text>Share usage data (managed by your organization)</Text>
         </Checkbox>
       </View>
+    </Demo>
+  );
+}
+
+function StatesDemo() {
+  const checked = signal(states.filter((s) => s.checked).map((s) => s.label));
+  const indeterminate = signal(states.filter((s) => s.indeterminate).map((s) => s.label));
+  return (
+    <Demo class="items-stretch">
+      <View class="flex-row flex-wrap gap-x-10 gap-y-4 self-center">
+        {states.map((s) => (
+          <View class="w-44">
+            <Checkbox
+              checked={checked().includes(s.label)}
+              indeterminate={indeterminate().includes(s.label)}
+              invalid={s.invalid}
+              disabled={s.disabled}
+              onChange={(e) => {
+                indeterminate.set(indeterminate().filter((x) => x !== s.label));
+                checked.set(e.checked ? [...checked(), s.label] : checked().filter((x) => x !== s.label));
+              }}
+            >
+              <Text>{s.label}</Text>
+            </Checkbox>
+          </View>
+        ))}
+      </View>
+    </Demo>
+  );
+}
+
+function SizesDemo() {
+  // The boxes of all sizes share their values; "Some files" starts indeterminate.
+  const copy = signal(true);
+  const files = signal<boolean | "some">("some");
+  return (
+    <Demo class="items-stretch">
+      {sizes.map((size) => (
+        <Row label={size}>
+          <View class="flex-row items-center gap-8">
+            <Checkbox size={size} checked={copy()} onChange={(e) => copy.set(e.checked)}>
+              <Text>Email me a copy</Text>
+            </Checkbox>
+            <Checkbox size={size} checked={files() === true} indeterminate={files() === "some"} onChange={(e) => files.set(e.checked)}>
+              <Text>Some files</Text>
+            </Checkbox>
+          </View>
+        </Row>
+      ))}
     </Demo>
   );
 }

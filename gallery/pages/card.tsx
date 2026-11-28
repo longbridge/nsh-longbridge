@@ -1,6 +1,6 @@
 // The Card page: the full structure, a stat, dividers, a scoped dense card.
 
-import { Text, View } from "nsh";
+import { signal, Text, View } from "nsh";
 import {
   Badge,
   Button,
@@ -33,6 +33,7 @@ const projects = [
 ];
 
 export function CardPage() {
+  const push = signal(false);
   return (
     <Page
       eyebrow="Components"
@@ -87,7 +88,7 @@ export function CardPage() {
                   <Text class="text-sm font-medium text-card-foreground">Push notifications</Text>
                   <Text class="text-sm text-muted-foreground">Send notifications to this device.</Text>
                 </View>
-                <Switch accessibilityLabel="Push notifications" />
+                <Switch checked={push()} onChange={(e) => push.set(e.checked)} accessibilityLabel="Push notifications" />
               </View>
               {messages.map((m) => (
                 <View class="flex-row items-start gap-3">
