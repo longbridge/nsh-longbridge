@@ -27,7 +27,7 @@ use nsh_longbridge::{
         },
         popup::POPOVER_RADIUS,
     },
-    theme::semantic::{BORDER_WIDTH, POPOVER},
+    theme::semantic::{BORDER_WIDTH, POPOVER, POPOVER_FOREGROUND},
     theme_scope, tooltip,
 };
 use nsh_testing::Headless;
@@ -73,7 +73,11 @@ fn Account() -> impl IntoElement {
                 .child(dropdown_menu_separator())
                 .child(
                     dropdown_menu_sub()
-                        .trigger(dropdown_menu_sub_trigger().child("Invite users"))
+                        .trigger(
+                            dropdown_menu_sub_trigger()
+                                .icon(IconName::User)
+                                .child("Invite users"),
+                        )
                         .child(
                             dropdown_menu_item()
                                 .on_select(move || note("email".into()))
@@ -346,6 +350,18 @@ fn chevron(app: &Headless, selector: &str) -> NodeId {
         .id
 }
 
+/// The icon at the start of the row `selector` names: its first view.
+fn leading_icon(app: &Headless, selector: &str) -> NodeId {
+    let screen = app.screen();
+    let row = screen.id(selector).unwrap();
+    screen
+        .layout_nodes()
+        .into_iter()
+        .find(|n| n.parent == row)
+        .unwrap()
+        .id
+}
+
 /// The submenu's trigger row takes the highlight, its chevron in the
 /// highlight's text color, while the keys focus it and while its submenu
 /// is open with the highlight on one of the submenu's rows. From TSX.
@@ -390,6 +406,58 @@ fn from_tsx_a_sub_trigger_is_lit_while_focused_and_while_its_submenu_is_open() {
         chevron_color(&app),
         common::dark(MENU_ITEM_FOCUS_FOREGROUND)
     );
+}
+
+/// From Rust, where the app makes `dropdown_menu_sub_trigger()` outside
+/// its `DropdownMenuSub` (no context of the submenu reaches it): the
+/// trigger row's fill, label, icon and chevron take the highlight while
+/// its submenu is open, with the highlight on one of the submenu's rows
+/// and with the pointer gone from both menus.
+#[test]
+fn from_rust_a_sub_trigger_is_lit_while_its_submenu_is_open() {
+    let (mut app, strokes) = common::start_dark::<Account>();
+    let stroke =
+        |app: &Headless, node: NodeId| common::stroke(app, &strokes, &format!("view:{node}"));
+    let label = |app: &Headless| app.screen().span_style("text:Invite users").unwrap().color;
+    let (rest, icon_rest) = (
+        common::dark(POPOVER_FOREGROUND),
+        common::dark(MENU_ITEM_ICON_FOREGROUND),
+    );
+    let (lit, lit_text) = (
+        Some(common::dark(MENU_ITEM_FOCUS).0),
+        common::dark(MENU_ITEM_FOCUS_FOREGROUND),
+    );
+    open(&mut app);
+    assert_eq!(common::fill(&app, SUB_TRIGGER), None, "at rest");
+    assert_eq!(label(&app), rest, "at rest");
+    assert_eq!(
+        stroke(&app, leading_icon(&app, SUB_TRIGGER)),
+        icon_rest,
+        "at rest"
+    );
+    assert_eq!(
+        stroke(&app, chevron(&app, SUB_TRIGGER)),
+        icon_rest,
+        "at rest"
+    );
+    app.press(SUB_SLOT).unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    app.hover("role:menuitem[Email]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(common::fill(&app, "role:menuitem[Email]"), lit);
+    for at in ["the pointer in the submenu", "the pointer away"] {
+        assert!(app.shows("Email"), "{at}: the submenu is open");
+        assert_eq!(common::fill(&app, SUB_TRIGGER), lit, "{at}");
+        assert_eq!(label(&app), lit_text, "{at}");
+        assert_eq!(
+            stroke(&app, leading_icon(&app, SUB_TRIGGER)),
+            lit_text,
+            "{at}"
+        );
+        assert_eq!(stroke(&app, chevron(&app, SUB_TRIGGER)), lit_text, "{at}");
+        app.hover("away").unwrap();
+        app.run_for(Duration::from_millis(300)).unwrap();
+    }
 }
 
 /// A menu in a dark scope that also changes `popover`.
