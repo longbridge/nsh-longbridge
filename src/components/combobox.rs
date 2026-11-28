@@ -29,7 +29,8 @@ use crate::{
         class::Classes,
         field::{
             self, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, Kind, field_button_frame,
-            field_button_hover, field_button_radius, field_button_side, field_focus, field_rest,
+            field_button_hover, field_button_radius, field_button_side, field_rest,
+            popup_field_focus,
         },
         icon::{IconName, icon_size_token, icon_view, provide_text_color},
         labels::{self, Label},
@@ -428,8 +429,10 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
                 1.0
             }
         });
-    // The field look, its focus while the input inside has it.
-    root = field_rest(root, t, invalid).focus_within(move |s| field_focus(s, t, invalid));
+    // The field look, its focus while the input inside has it: the edge,
+    // and the ring only while the list is closed (`popup_field_focus`).
+    root = field_rest(root, t, invalid)
+        .focus_within(move |s| popup_field_focus(s, t, invalid, is_open));
     root = crate::foundation::motion::transition_all(root, t);
     if props.show_trigger.get_untracked() {
         root = root.trigger_button(

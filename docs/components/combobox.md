@@ -80,8 +80,8 @@ filter, highlight and typeahead run over the titles; a component cannot read its
   itself, its own signal following first).
 - **The field**: `nsh/base`'s root view (a row: the prefix, the input, the clear button, the chevron button) is drawn
   with the field look on its root element: edge, fill, shadow and invalid edge from `foundation::field`'s
-  `field_rest`, and the focus edge and ring (`field_focus`, the edge only on touch screens) under `focus-within:`,
-  while the input inside has the focus. `field_look` is these two with `focus-visible:`; the split is an addition to
+  `field_rest`, and the focus edge and ring (`popup_field_focus`, the edge only on touch screens; no ring while the
+  list is open, Select's Decisions 2) under `focus-within:`, while the input inside has the focus. `field_look` is these two with `focus-visible:`; the split is an addition to
   foundation. `nsh/base`'s root has no disabled state, so the disabled opacity is a binding. Height (`min-h`)
   `input-height-<size>`.
 - **The input**: `nsh/base`'s part. Its look is a style binding set on the part's `inputStyle` prop (the builder's
@@ -272,7 +272,7 @@ The field takes the field look's states (Input's table), its focus on the input 
 | Input focused (touch) | The edge only |
 | Invalid | Edge `input-border-invalid`; focused, ring `input-ring-invalid` |
 | Disabled | `opacity-disabled` over the field, no presses, the arrow cursor |
-| Open | The input keeps the focus: the focused look |
+| Open | The input keeps the focus: the focus edge without the ring, so the 4 points to the list stay clear (Select's Decisions 2); the ring comes back when the list closes |
 | Placeholder | Input's placeholder color |
 | Button hover (pointer) | `button-ghost-hover` fill |
 | Row highlighted, chosen, disabled, pressed on touch | Select's rows |

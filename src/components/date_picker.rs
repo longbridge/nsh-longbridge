@@ -43,7 +43,7 @@ use crate::{
         field::{
             self, INPUT_BACKGROUND, INPUT_BORDER, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID,
             INPUT_BORDER_WIDTH, INPUT_FOREGROUND, INPUT_PLACEHOLDER_FOREGROUND, INPUT_RADIUS,
-            INPUT_RING, INPUT_RING_WIDTH, INPUT_SHADOW, Joined, Kind, field_look,
+            INPUT_RING, INPUT_RING_WIDTH, INPUT_SHADOW, Joined, Kind, popup_field_look,
         },
         field_ref::FieldRef,
         icon::{IconName, icon_size_token, icon_view, provide_icon_size, provide_text_color},
@@ -523,6 +523,7 @@ pub fn DatePicker(props: DatePickerProps, cx: Scope<DatePickerEvent>) -> impl In
             format,
             trigger_ref,
             joined,
+            is_open,
         ))
     };
     root = root
@@ -733,6 +734,7 @@ fn field_trigger(
     format: Memo<String>,
     trigger_ref: ElementRef,
     joined: Joined,
+    open: impl Fn() -> bool + Copy + 'static,
 ) -> View {
     let size = move || props.size.get();
     let height = move || t.length(input::height_token(size()));
@@ -765,7 +767,8 @@ fn field_trigger(
             ..AccessibilityState::default()
         })
         .hover(move |s| s.bg(move || t.color(DATE_PICKER_TRIGGER_HOVER)))
-        // Open, it keeps the focus edge (no ring).
+        // Open, it keeps the focus edge, and its focus no ring
+        // (`popup_field_look`).
         .expanded(move |s| {
             s.border_color(move || {
                 if invalid() {
@@ -795,7 +798,7 @@ fn field_trigger(
     .text_color(color)
     .app_class(props.value_class)
     .inline_style(move || Style::from(props.value_style.get()));
-    field_look(el, t, invalid)
+    popup_field_look(el, t, invalid, open)
         .app_class(props.trigger_class)
         .inline_style(move || props.trigger_style.get())
         .child(icon)
@@ -1485,7 +1488,8 @@ fn confirmed(
             current,
             format,
             trigger_ref,
-            joined
+            joined,
+            is_open
         ))
         .into_element()
     };

@@ -111,8 +111,21 @@ pub fn field_look<E: Styled + Interactive>(
     t: Theme,
     invalid: impl Fn() -> bool + Copy + 'static,
 ) -> E {
+    popup_field_look(el, t, invalid, || false)
+}
+
+/// [`field_look`] for a field that opens a popup under it (a select's, a
+/// date picker's trigger): while `open`, its focus keeps the edge but
+/// draws no ring, which would fill 3 of the 4 points between the field and
+/// the popup ([`popup_field_focus`]).
+pub(crate) fn popup_field_look<E: Styled + Interactive>(
+    el: E,
+    t: Theme,
+    invalid: impl Fn() -> bool + Copy + 'static,
+    open: impl Fn() -> bool + Copy + 'static,
+) -> E {
     let el = field_rest(el, t, invalid)
-        .focus_visible(move |s| field_focus(s, t, invalid))
+        .focus_visible(move |s| popup_field_focus(s, t, invalid, open))
         .disabled_style(move |s| s.opacity(move || t.number(OPACITY_DISABLED)));
     motion::transition_all(el, t)
 }
@@ -147,11 +160,26 @@ pub fn field_focus(
     t: Theme,
     invalid: impl Fn() -> bool + Copy + 'static,
 ) -> StyleRefinement {
+    popup_field_focus(s, t, invalid, || false)
+}
+
+/// [`field_focus`] for a field whose popup opens under it: while `open`,
+/// the focus edge without the ring (transparent, so it fades out and back
+/// in as the popup opens and closes), so the gap between the field and the
+/// popup stays a clean 4 points for every popup.
+pub(crate) fn popup_field_focus(
+    s: StyleRefinement,
+    t: Theme,
+    invalid: impl Fn() -> bool + Copy + 'static,
+    open: impl Fn() -> bool + Copy + 'static,
+) -> StyleRefinement {
     focus::focus_ring(
         s,
         t,
         move || {
-            if invalid() {
+            if open() {
+                AdaptiveColor::TRANSPARENT
+            } else if invalid() {
                 t.color(INPUT_RING_INVALID)
             } else {
                 t.color(INPUT_RING)

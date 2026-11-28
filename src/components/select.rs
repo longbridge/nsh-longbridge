@@ -27,7 +27,7 @@ use crate::{
         field::{
             self, INPUT_BACKGROUND, INPUT_BORDER_FOCUS, INPUT_BORDER_INVALID, INPUT_FOREGROUND,
             INPUT_PLACEHOLDER_FOREGROUND, Joined, Kind, field_button_frame, field_button_hover,
-            field_look,
+            popup_field_look,
         },
         field_ref::FieldRef,
         icon::{IconName, icon_size_token, icon_view, provide_text_color},
@@ -344,6 +344,7 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
         trigger_ref,
         joined,
         clear_shown,
+        is_open,
     ));
     // Delete and Backspace on the focused trigger clear the value: the
     // keyboard's way to the clear button, which is no stop of Tab
@@ -525,6 +526,7 @@ fn trigger(
     trigger_ref: ElementRef,
     joined: Joined,
     clear_shown: impl Fn() -> bool + Copy + 'static,
+    open: impl Fn() -> bool + Copy + 'static,
 ) -> impl IntoElement {
     let size = move || props.size.get();
     let height = move || t.length(input::height_token(size()));
@@ -560,7 +562,8 @@ fn trigger(
             ..AccessibilityState::default()
         })
         .hover(move |s| s.bg(move || t.color(SELECT_TRIGGER_HOVER)))
-        // Open, it keeps the focus edge (no ring).
+        // Open, it keeps the focus edge, and its focus no ring
+        // (`popup_field_look`).
         .expanded(move |s| {
             s.border_color(move || {
                 if invalid() {
@@ -599,7 +602,7 @@ fn trigger(
     .opacity(move || if clear_shown() { 0.0_f32 } else { 1.0 })
     .app_class(props.icon_class)
     .inline_style(move || props.icon_style.get());
-    field_look(el, t, invalid)
+    popup_field_look(el, t, invalid, open)
         .app_class(props.trigger_class)
         .inline_style(move || props.trigger_style.get())
         .child(value)
