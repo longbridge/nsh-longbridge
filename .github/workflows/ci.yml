@@ -38,6 +38,12 @@ env:
   # The self-hosted runners are shared: the toolchain below is installed
   # without becoming the machine's default, and this picks it.
   RUSTUP_TOOLCHAIN: stable
+  # Each test file links its own binary with the engine in it (some 40 of
+  # them): without debug info and incremental state they fit the runner's
+  # disk.
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
 
 jobs:
   check:
@@ -70,3 +76,7 @@ jobs:
 
       - name: Test
         run: cargo test --locked
+
+      - name: Disk
+        if: always()
+        run: df -h . && du -sh target 2>/dev/null || true
