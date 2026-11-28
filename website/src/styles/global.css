@@ -187,6 +187,11 @@ html.dark .swatch__fill { background-color: var(--sw-dark); box-shadow: inset 0 
 .demo__poster { transition: opacity .35s var(--ease); }
 .demo.is-live .demo__frame { opacity: 1; }
 .demo.is-live .demo__poster { position: absolute; inset: 0 0 auto; opacity: 0; pointer-events: none; }
+/* The hero's poster is drawn to the pixel of the demo's first frame, so the
+   two swap in one frame: a crossfade would show both at once, half each, and
+   where they are translucent (the controls' glass, the shadows) that reads as
+   a flash. */
+.demo[data-swap] .demo__frame, .demo[data-swap] .demo__poster { transition: none; }
 @media (prefers-reduced-motion: reduce) {
   .demo__frame, .demo__poster { transition: none; }
 }
@@ -305,6 +310,25 @@ html.dark .swatch__fill { background-color: var(--sw-dark); box-shadow: inset 0 
 }
 @keyframes enter { from { opacity: 0; transform: translateY(14px); } }
 
+/* The hero's stage assembles itself once, at the first paint: the sheet, then
+   the cards around it in reading order, then the controls, each rising 14px
+   and growing from .97 as it fades in, 140 ms apart, from when the stage
+   itself (`.enter`) is mostly in. It plays on the poster,
+   which `client.ts` keeps in front until the last one is in, and the live
+   demo takes over from that state. `--n` is each one's place in the order:
+   where the stage hides a card, the controls come next. */
+@media (prefers-reduced-motion: no-preference) {
+  .p-hero__sheet, .p-float, .p-controls { animation: stage-in .45s cubic-bezier(0.22, 1, 0.36, 1) backwards; animation-delay: calc(540ms + var(--n) * 140ms); }
+}
+.p-hero__sheet { --n: 0; }
+.p-float--presence { --n: 1; }
+.p-float--amounts { --n: 2; }
+.p-float--collected { --n: 3; }
+.p-controls { --n: 4; }
+@container stage (max-width: 1099px) { .p-controls { --n: 3; } }
+@container stage (max-width: 899px) { .p-controls { --n: 1; } }
+@keyframes stage-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+
 /* ---------------------------------------------------------------- the library's look, for the posters */
 
 .lb { --r: var(--lb-radius); --h: var(--lb-control-height); --f: var(--lb-font-size); --sp: var(--lb-spacing);
@@ -312,8 +336,8 @@ html.dark .swatch__fill { background-color: var(--sw-dark); box-shadow: inset 0 
 .lb-card { box-sizing: border-box; display: flex; flex-direction: column; gap: calc(var(--sp) * 6); padding: calc(var(--sp) * 6) 0; border: 1px solid var(--lb-border); border-radius: calc(var(--r) + 4px); background: var(--lb-card); box-shadow: 0 1px 3px #0000001a, 0 1px 2px -1px #0000001a; }
 .lb-card--lifted { box-shadow: 0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a; }
 .lb-card__header, .lb-card__content, .lb-card__footer { padding: 0 calc(var(--sp) * 6); }
-.lb-card__header { display: grid; gap: 6px; }
-.lb-card__title { font-size: 16px; font-weight: 600; line-height: 18px; }
+.lb-card__header { display: grid; gap: 8px; }
+.lb-card__title { font-size: 16px; font-weight: 600; line-height: 16px; }
 .lb-card__desc { font-size: 14px; line-height: 20px; color: var(--lb-muted-foreground); }
 .lb-card__content { display: flex; flex-direction: column; }
 .lb-card__footer { display: flex; justify-content: flex-end; gap: 8px; }
@@ -330,9 +354,9 @@ html.dark .lb-input { background: color-mix(in oklab, var(--lb-input) 30%, trans
 .lb-placeholder { color: var(--lb-muted-foreground); }
 .lb-slider-row { height: 32px; display: flex; align-items: center; }
 .lb-slider { position: relative; flex: 1; height: 6px; border-radius: 99px; background: var(--lb-muted); }
-.lb-slider i { position: absolute; inset: 0 auto 0 0; width: var(--at); border-radius: 99px; background: var(--lb-primary); }
-.lb-slider b { position: absolute; top: 50%; left: var(--at); width: 16px; height: 16px; box-sizing: border-box; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--lb-background); border: 1px solid var(--lb-primary); box-shadow: 0 1px 3px #0000001a; }
-.lb-switch { box-sizing: border-box; width: 32px; height: 18.4px; padding: 1px; border-radius: 99px; background: var(--lb-input); display: flex; flex: none; }
+.lb-slider i { position: absolute; inset: 0 auto 0 0; width: round(var(--at), 1px); border-radius: 99px; background: var(--lb-primary); }
+.lb-slider b { position: absolute; top: 50%; left: round(var(--at), 1px); width: 16px; height: 16px; box-sizing: border-box; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--lb-background); border: 1px solid var(--lb-primary); box-shadow: 0 1px 3px #0000001a; }
+.lb-switch { box-sizing: border-box; width: 32px; height: 18px; padding: 1px; border-radius: 99px; background: var(--lb-input); display: flex; flex: none; }
 .lb-switch.is-on { background: var(--lb-primary); justify-content: flex-end; }
 .lb-switch i { width: 16px; height: 16px; border-radius: 50%; background: var(--lb-background); }
 html.dark .lb-switch.is-on i { background: var(--lb-primary-foreground); }
@@ -355,7 +379,7 @@ html.dark .p-hero__sheet { box-shadow: 0 0 0 1px #ffffff1a, 0 1px 1px #0000000a,
 .lb-picker { gap: 8px; }
 .p-controls { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 12px; border-radius: 99px; background: #ffffff14; box-shadow: inset 0 0 0 1px #ffffff1f; color: #fff; }
 .p-controls__swatches { display: flex; gap: 8px; }
-.p-swatch { padding: 2.5px; border: 1.5px solid transparent; border-radius: 99px; }
+.p-swatch { display: block; box-sizing: border-box; width: 26px; height: 26px; padding: 2.5px; border: 1.5px solid transparent; border-radius: 99px; }
 .p-swatch[data-on="true"] { border-color: #fff; }
 .p-swatch i { display: block; width: 18px; height: 18px; border-radius: 50%; background: var(--sw-light); background-image: linear-gradient(180deg, #ffffff2e, #ffffff00 55%); box-shadow: inset 0 0 0 1px #ffffff40; }
 html.dark .p-swatch i { background-color: var(--sw-dark); }
@@ -377,8 +401,9 @@ html.dark .p-swatch i { background-color: var(--sw-dark); }
 @container stage (min-width: 1100px) { .p-float--collected { display: block; } }
 .p-card { padding: 16px; gap: 0; box-shadow: 0 1px 2px #0000000d, 0 4px 8px -2px #00000014, 0 16px 32px -8px #00000029, 0 32px 64px -16px #00000033; }
 .p-lines { display: grid; gap: 2px; }
-.p-card b { font-size: 14px; line-height: 20px; font-weight: 600; }
-.p-card small { font-size: 12px; line-height: 16px; color: var(--lb-muted-foreground); }
+/* As the demo's cards: a title in a 16px line, its description in a 20px one. */
+.p-card b { font-size: 14px; line-height: 16px; font-weight: 600; }
+.p-card small { font-size: 12px; line-height: 20px; color: var(--lb-muted-foreground); }
 .p-presence { flex-direction: row; align-items: center; gap: 12px; padding: 10px 16px 10px 10px; white-space: nowrap; }
 .p-avatars { display: flex; }
 .p-avatars img { flex: none; max-width: none; width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 2px var(--lb-background); }
@@ -386,11 +411,14 @@ html.dark .p-swatch i { background-color: var(--sw-dark); }
 .p-amounts { width: min(260px, calc((100cqw - 440px) / 2 - 8px)); gap: 16px; }
 @container stage (min-width: 1100px) { .p-amounts { width: 280px; } }
 .p-histogram { position: relative; }
-.p-bars { height: 40px; display: flex; align-items: flex-end; gap: 2px; }
-.p-bars i { flex: 1; border-radius: 2px 2px 0 0; background: color-mix(in oklab, var(--lb-muted-foreground) 30%, transparent); }
+/* The bars on whole pixels, as the demo lays them out: bar `--k` of 30 in its
+   column (from the nearest pixel to k/30 of the width to the next), a pixel in
+   from either side. */
+.p-bars { position: relative; height: 40px; }
+.p-bars i { position: absolute; bottom: 0; left: calc(round(var(--k) * 100% / 30, 1px) + 1px); width: calc(round((var(--k) + 1) * 100% / 30, 1px) - round(var(--k) * 100% / 30, 1px) - 2px); border-radius: 2px 2px 0 0; background: color-mix(in oklab, var(--lb-muted-foreground) 30%, transparent); }
 .p-bars i.is-in { background: var(--lb-primary); }
 .p-histogram__track { height: 16px; }
-.p-bubble { position: absolute; bottom: 24px; transform: translateX(-50%); padding: 2px 8px; border-radius: 6px; background: var(--lb-foreground); color: var(--lb-background); font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; }
+.p-bubble { position: absolute; bottom: 24px; transform: translateX(-50%); padding: 4px 8px; border-radius: 6px; background: var(--lb-foreground); color: var(--lb-background); font-size: 12px; line-height: 16px; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .p-collected { width: 256px; gap: 12px; }
 .p-progress { display: block; height: 8px; border-radius: 99px; background: color-mix(in oklab, var(--lb-primary) 20%, transparent); overflow: hidden; }
 .p-progress i { display: block; height: 100%; background: var(--lb-primary); }
