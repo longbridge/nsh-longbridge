@@ -134,7 +134,8 @@ In classes (the list's `h-9` is `lg`):
   vertical `w-full justify-start`; selected `bg-background text-foreground shadow-sm`, dark `border-input
   bg-input/30 text-foreground`; dark rest `text-muted-foreground`. `line`: selected has no fill, border or shadow, and
   an underline (`after:`) `bg-foreground h-0.5` at `bottom-[-3px]`, on the list's bottom edge, fading in; vertical: no
-  underline, the selected trigger filled `bg-accent text-accent-foreground` (Decisions 6). `gap-1` at `xs` and `sm`.
+  underline, the selected trigger filled `bg-accent` with a selected tab's text (`tabs-trigger-selected-foreground`, so a
+  hovered tab, `foreground`, is never darker than the selected one) (Decisions 6). `gap-1` at `xs` and `sm`.
 - Content: `flex-1 outline-none`.
 
 ### Variants
@@ -237,7 +238,7 @@ Values are those of `nsh/base`'s default theme.
 | `tabs-line-indicator` | color | `foreground` |  |
 | `tabs-line-indicator-width` | length | `2` | 2 |
 | `tabs-line-selected` | color | `accent` |  |
-| `tabs-line-selected-foreground` | color | `accent-foreground` |  |
+| `tabs-line-selected-foreground` | color | `tabs-trigger-selected-foreground` |  |
 <!-- /tokens -->
 
 - `selected` is the trigger's form, so it goes where a variant goes (`tabs-trigger-selected-border`), as Checkbox's
