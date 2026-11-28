@@ -68,13 +68,13 @@ function ProfileFields(props: { name?: Signal<InputRef | undefined> }) {
   const username = signal<InputRef>();
   return (
     <View class="gap-4">
-      <View class="gap-3">
+      <View class="gap-2">
         <Label htmlFor={name()}>
           <Text>Name</Text>
         </Label>
         <Input ref={name} defaultValue="Pedro Duarte" />
       </View>
-      <View class="gap-3">
+      <View class="gap-2">
         <Label htmlFor={username()}>
           <Text>Username</Text>
         </Label>

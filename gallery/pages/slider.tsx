@@ -339,7 +339,7 @@ function PriceFilterDemo() {
         accessibilityLabel="Maximum price"
       />
       <View class="flex-row items-end gap-3">
-        <View class="flex-1 gap-1.5">
+        <View class="flex-1 gap-2">
           <Label>
             <Text>Minimum ($)</Text>
           </Label>
@@ -356,7 +356,7 @@ function PriceFilterDemo() {
           />
         </View>
         <Text class="pb-2 text-muted-foreground">–</Text>
-        <View class="flex-1 gap-1.5">
+        <View class="flex-1 gap-2">
           <Label>
             <Text>Maximum ($)</Text>
           </Label>
