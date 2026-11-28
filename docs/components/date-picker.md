@@ -260,7 +260,7 @@ and the open state:
 | Surface | The popup surface (`popover`, `popover-border`, `popover-radius`, shadow tier `popover-shadow` 3), no padding; at least the field's width, otherwise the calendar's |
 | Distance | `popover-offset` (4) from the field, `popover-margin` (4) from the safe area |
 | Calendar | The calendar look at the picker's `size`, transparent, padding `calendar-padding` (12) |
-| Presets (desktops) | A column before the calendar, a menu's list: padding `menu-padding` (4), the presets touching, at least `menu-min-width` (128) wide, an edge of `border-width` in `border` between it and the calendar; each preset a row `button-height-sm` tall with a menu row's corners (`menu-item-radius`, so the first one is concentric with the popup's corner) and padding (`menu-item-padding-x`, 8), text 13 start-aligned, hover `button-ghost-hover`. Beside the calendar is `nsh/base`'s place (a desktop range picker's habit) |
+| Presets (desktops) | A column before the calendar, a menu's list: padding `menu-padding` (4), the presets touching, at least `menu-min-width` (128) wide, an edge of `border-width` in `border` between it and the calendar; each preset a row `button-height-sm` tall with a menu row's corners (`menu-item-radius`, so the first one is concentric with the popup's corner) and padding (`menu-item-padding-x`, 8), text 13 start-aligned in `popover-foreground`, hover a menu row's highlight (`menu-item-focus`, `menu-item-focus-foreground`), so it matches Select's and DropdownMenu's rows in both appearances. Beside the calendar is `nsh/base`'s place (a desktop range picker's habit) |
 | Time row | Under the calendar: an edge of `border-width` in `border` above, padding `calendar-padding`, a row with "Time" at the start (`text-sm` / 20, `font-weight-medium`, as `Label`) and the time field at the end, gap 8 |
 | Time field | The field look (as Input) at the picker's `size`, as wide as its segments plus `input-padding-x-<size>`; its edge color is a generated class (`focus-within:` changes it, which an inline color would override), the focus edge and (with a pointer) ring on `focus-within:` while the native field inside has the focus |
 | Segments | Padding 2 at the sides, corners `radius-xs`, text `input-font-size-<size>` with tabular figures; the edited one (`focus:`) `date-picker-segment-focus` / `-foreground`; `:` between them in `input-placeholder-foreground` |
@@ -269,7 +269,7 @@ With `confirm`, the popup's parts are the same, and:
 
 | Part | Look |
 |---|---|
-| Presets (desktops) | The same column and buttons, each two lines when it has a value: the label, and under it its dates in the field's format (`dateFormat`, a range's ends joined by `value-range`'s ` – `, a range of one day as that day) at `font-size-xs` in `date-picker-preset-description`; the button grows to fit (padding 6 above and below, at least `button-height-sm`). The column is as wide as its widest preset, each line cut with an ellipsis if the app narrows it. The preset whose value is the pending one is lit: the ghost hover fill and its text, `selected` for screen readers |
+| Presets (desktops) | The same column and buttons, each two lines when it has a value: the label, and under it its dates in the field's format (`dateFormat`, a range's ends joined by `value-range`'s ` – `, a range of one day as that day) at `font-size-xs` in `date-picker-preset-description`; the button grows to fit (padding 6 above and below, at least `button-height-sm`). The column is as wide as its widest preset, each line cut with an ellipsis if the app narrows it. The preset whose value is the pending one is lit: a menu row's highlight (`menu-item-focus` and its text), `selected` for screen readers |
 | Fields (desktops) | A row above the calendar, padding `calendar-padding` and none under it (the calendar's follows), gap 8; each field a column: its name ("Start date", "End date"; "Date") at `text-sm` / 20 medium, as `Label`, gap 6, then an [Input](input.md) at the picker's `size`, the two sharing the row |
 | Footer (desktops) | Under the calendar (and the time row): an edge of `border-width` in `border` above, padding `calendar-padding`, Cancel (`outline`) and Apply (`default`) at the end, `sm`, gap 8 |
 | Footer (sheet) | The sheet's `footer`: an edge above, padding `calendar-padding` and the bottom safe area; the pending value at the start in `text-sm`, muted while there is none ("Pick a date"), then Cancel and Apply sharing the width, `md` (40 tall on touch) |
@@ -306,7 +306,7 @@ The field takes the field look's states (Input's table): rest, focus-visible (`i
 | Placeholder shown | Text and icon in `input-placeholder-foreground` |
 | Open (`expanded:`) | Edge `input-border-focus`, no ring (Select's Decisions 2) |
 | A half range | The calendar shows its start and the preview (Calendar's states); closing drops it, the value unchanged |
-| Preset hover / press | Ghost hover fill (outline hover in the sheet); touch: the press as hover |
+| Preset hover / press | A menu row's highlight, `menu-item-focus` (outline hover in the sheet); touch: the press as hover |
 | Segment edited | `date-picker-segment-focus` fill and its foreground |
 | Pending (`confirm`) | The calendar, the fields and the lit preset show the pending value; the field still shows the committed one |
 | Nothing to apply (`confirm`) | Apply disabled (`opacity-disabled`): no date, a range without its end, or a field shown invalid |
@@ -349,9 +349,9 @@ field shows it (`value-range`).
 ## Tokens
 
 The field reads the `input-*` tokens ([Input](input.md#tokens)), the popup the `popover-*` tokens
-([Popover](popover.md#tokens)), the sheet and the presets' row geometry the `menu-*` tokens
+([Popover](popover.md#tokens)), the sheet and the presets' rows (geometry and highlight) the `menu-*` tokens
 ([DropdownMenu](dropdown-menu.md#tokens)), the calendar the `calendar-*` tokens ([Calendar](calendar.md#tokens)), the
-presets Button's ghost and outline tokens. Its own tokens are what the picker alone has. This table is generated
+sheet's presets Button's outline tokens. Its own tokens are what the picker alone has. This table is generated
 (`<!-- tokens:date-picker -->`).
 
 <!-- tokens:date-picker -->

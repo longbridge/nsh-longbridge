@@ -29,7 +29,6 @@ pub use nsh_base::{
 use crate::{
     components::{
         button::{
-            BUTTON_GHOST_FOREGROUND, BUTTON_GHOST_HOVER, BUTTON_GHOST_HOVER_FOREGROUND,
             BUTTON_HEIGHT_SM, BUTTON_OUTLINE, BUTTON_OUTLINE_BORDER, BUTTON_OUTLINE_FOREGROUND,
             BUTTON_OUTLINE_HOVER, BUTTON_OUTLINE_HOVER_FOREGROUND, BUTTON_PADDING_X_SM,
             BUTTON_RADIUS, ButtonVariant, button,
@@ -639,7 +638,7 @@ fn presets_look(t: Theme, sheet: bool) -> StyleRefinement {
     }
 }
 
-/// A preset button's look but its height: ghost beside the calendar,
+/// A preset button's look but its height: a menu row beside the calendar,
 /// outline (`sheet`) in the sheet's row.
 fn preset_look(t: Theme, sheet: bool) -> StyleRefinement {
     let font_size = t.length(font_size_token(Size::Sm));
@@ -812,9 +811,10 @@ impl From<ComponentRef<DatePicker>> for FieldRef {
 
 nsh_core::static_reactive!(FieldRef: ComponentRef<DatePicker>);
 
-/// The presets' classes: the hover (and the press, for a finger), ghost
-/// beside the calendar and outline in the sheet, from the tokens, which an
-/// inline style cannot take; then the app's.
+/// The presets' classes: the hover (and the press, for a finger), a menu
+/// row's highlight beside the calendar (the column is a menu's list) and
+/// outline in the sheet, from the tokens, which an inline style cannot
+/// take; then the app's.
 fn preset_class(t: Theme, app: Option<SharedString>) -> SharedString {
     let mut class = Classes::new();
     let (rest, rest_text, fill, text) = if list_as_sheet() {
@@ -827,9 +827,9 @@ fn preset_class(t: Theme, app: Option<SharedString>) -> SharedString {
     } else {
         (
             None,
-            t.color(BUTTON_GHOST_FOREGROUND),
-            t.color(BUTTON_GHOST_HOVER),
-            t.color(BUTTON_GHOST_HOVER_FOREGROUND),
+            t.color(POPOVER_FOREGROUND),
+            t.color(MENU_ITEM_FOCUS),
+            t.color(MENU_ITEM_FOCUS_FOREGROUND),
         )
     };
     if let Some(rest) = rest {
