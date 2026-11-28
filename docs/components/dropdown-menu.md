@@ -311,7 +311,7 @@ The motion is [Popover](popover.md)'s, shared by every popup; the menu defines n
 | Destructive item | Text and icon `menu-item-destructive-foreground`; highlighted fill `menu-item-destructive-focus`, text unchanged | `text-destructive focus:bg-destructive/10 dark:…/20` |
 | Disabled item | `opacity-disabled`, no highlight; cursor stays the arrow | `data-[disabled]:opacity-50` |
 | Checked (checkbox, radio) | The check or dot shown; the row as at rest | — |
-| Sub trigger, focused or submenu open | As highlighted, while the focus is on it or in its submenu and while the submenu is open: `nsh/base` gives the focus and `expanded` to the slot around the item, so `DropdownMenuSub` tracks them (its focus-within and open state) and lights its trigger through a context | `data-[state=open]:bg-accent` |
+| Sub trigger, focused or submenu open | As highlighted, while the focus is on it or in its submenu and while the submenu is open: `nsh/base` gives the focus and `expanded` to the slot around the item, so `DropdownMenuSub` tracks them (its focus-within and open state) and shows the item hovered while lit, through the slot (NSH gaps 11); the item lights while hovered, its icons with it | `data-[state=open]:bg-accent` |
 | Trigger, menu open (`expanded:`) | The library's `Button` keeps its hover fill while its popup is open ([Button](button.md)'s States; Decisions 3) | none |
 
 No focus ring on items: the highlight is the focus (`outline-hidden`). The cursor is the arrow everywhere
@@ -533,6 +533,15 @@ dropdown_menu()
    `popover-margin`. A `margin` on `Submenu` (or the menu's passed down) would close it.
 10. **A menu outlives its trigger scrolling away** (Popover's NSH gap 8): an open menu whose trigger scrolls out of
     the window stays clamped at the window's edge; only submenus are hidden.
+11. **A submenu's trigger item cannot see its submenu's state.** `nsh/base` gives the focus and `expanded` to the
+    slot around the item, so the item's own `focus:` and `expanded:` never match; the item is slot content the app
+    makes, so no context of `DropdownMenuSub` reaches it from Rust ([conventions](../conventions.md)); and the typed
+    styles have no `group-aria-expanded`. Workaround: `DropdownMenuSub` projects a hover onto the slot while the item
+    is lit (the projected states go to the app's element in the slot), and `DropdownMenuSubTrigger` lights on
+    `hover:`, its icons on the row's `group-hover`. A host that reports the pointer over the item may light it too
+    (a disabled submenu's trigger under the pointer, or the trigger the pointer rests on after the keys moved the
+    focus away); the headless engine does not, so this is unchecked. Headless tests guard the lit look from Rust and
+    from TSX. A context that reaches slot content, or a typed `group_expanded`, would remove the workaround.
 
 ## Decisions
 

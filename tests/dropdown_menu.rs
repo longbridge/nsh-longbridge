@@ -110,6 +110,13 @@ fn Account() -> impl IntoElement {
         .child(text(move || format!("log:{}", log.get().join(","))))
 }
 
+/// The submenu's trigger row, inside the slot `nsh/base` gives the focus
+/// and the expanded state (both are menu items).
+const SUB_TRIGGER: &str = "role:menuitem[Invite users] >> role:menuitem[Invite users]";
+
+/// That slot: what opens the submenu when pressed.
+const SUB_SLOT: &str = "role:menuitem[Invite users] >> nth=0";
+
 fn open(app: &mut Headless) {
     app.press("role:button[Open]").unwrap();
     app.run_for(Duration::from_millis(300)).unwrap();
@@ -205,11 +212,11 @@ fn a_submenu_opens_beside_its_trigger() {
     let mut app = start::<Account>(true);
     open(&mut app);
     assert!(!app.shows("Email"));
-    app.press("role:menuitem[Invite users]").unwrap();
+    app.press(SUB_SLOT).unwrap();
     app.run_for(Duration::from_millis(300)).unwrap();
     // Its first item is level with its trigger (`menu-sub-offset`), beside
     // the menu.
-    let trigger = common::bounds(&app, "role:menuitem[Invite users]");
+    let trigger = common::bounds(&app, SUB_TRIGGER);
     let email = common::bounds(&app, "role:menuitem[Email]");
     assert_eq!(email.origin.y, trigger.origin.y);
     assert!(email.origin.x > trigger.origin.x + trigger.size.width);
@@ -320,10 +327,11 @@ fn the_rows_corners_are_concentric_in_the_popups() {
     assert_eq!(outer, length(POPOVER_RADIUS));
     let expected = outer - length(MENU_PADDING) - length(BORDER_WIDTH);
     assert_eq!(expected, 3.0);
-    for row in ["Profile ⇧⌘P", "Settings", "Invite users", "Log out"] {
+    for row in ["Profile ⇧⌘P", "Settings", "Log out"] {
         let row = format!("role:menuitem[{row}]");
         assert_eq!(radius(&app, &styles, &row), expected, "{row}");
     }
+    assert_eq!(radius(&app, &styles, SUB_TRIGGER), expected);
 }
 
 /// The chevron at the end of the row `selector` names: its last view.
@@ -340,17 +348,11 @@ fn chevron(app: &Headless, selector: &str) -> NodeId {
 
 /// The submenu's trigger row takes the highlight, its chevron in the
 /// highlight's text color, while the keys focus it and while its submenu
-/// is open with the highlight on one of the submenu's rows. From TSX: a
-/// Rust app's `dropdown_menu_sub_trigger()` is built outside its
-/// `DropdownMenuSub` and is never lit by it (the headless engine lays the
-/// trigger's slot out as the row, so the row's own focused and expanded
-/// looks still light its fill there).
+/// is open with the highlight on one of the submenu's rows. From TSX.
 #[test]
 fn from_tsx_a_sub_trigger_is_lit_while_focused_and_while_its_submenu_is_open() {
     let (mut app, strokes) = common::start_tsx_dark("tests/tsx/dropdown_menu_sub.tsx");
-    // The row, inside the slot `nsh/base` gives the focus and the expanded
-    // state (both are menu items).
-    let trigger = "role:menuitem[Invite users] >> role:menuitem[Invite users]";
+    let trigger = SUB_TRIGGER;
     let lit = Some(common::dark(MENU_ITEM_FOCUS).0);
     let chevron_color = |app: &Headless| {
         let chevron = format!("view:{}", chevron(app, trigger));
@@ -376,7 +378,7 @@ fn from_tsx_a_sub_trigger_is_lit_while_focused_and_while_its_submenu_is_open() {
     app.run_for(Duration::from_millis(400)).unwrap();
     app.press("role:button[Open]").unwrap();
     app.run_for(Duration::from_millis(300)).unwrap();
-    app.press("role:menuitem[Invite users] >> nth=0").unwrap();
+    app.press(SUB_SLOT).unwrap();
     app.run_for(Duration::from_millis(300)).unwrap();
     // The pointer on a row of the submenu takes the highlight there; the
     // trigger stays lit.

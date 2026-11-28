@@ -251,8 +251,8 @@ fn row<B: ComponentBuilder + Styled>(
 }
 
 /// A row's leading part: its icon (`menu-item-icon-foreground`, the
-/// highlight's text color while `lit`), else a blank of the icon's side
-/// for an `inset` row, else nothing.
+/// highlight's text color while a `sub_trigger` row is lit), else a blank
+/// of the icon's side for an `inset` row, else nothing.
 #[allow(clippy::too_many_arguments)]
 fn leading(
     t: Theme,
@@ -262,15 +262,13 @@ fn leading(
     class: Prop<Option<SharedString>>,
     style: Prop<Style>,
     destructive: impl Fn() -> bool + Copy + 'static,
-    lit: impl Fn() -> bool + Copy + 'static,
+    sub_trigger: bool,
 ) -> AnyElement {
     let side = move || t.length(icon_size_token(size.get()));
     dynamic(move || match icon.get() {
         Some(name) => Some(
             row_icon_color(icon_view(t, move || name, side), t, destructive)
-                .style_when(lit, move |s| {
-                    s.text_color(move || t.color(MENU_ITEM_FOCUS_FOREGROUND))
-                })
+                .when(sub_trigger, |el| lit_by_sub(el, t))
                 .app_class(class)
                 .inline_style(move || style.get())
                 .into_element(),
@@ -373,7 +371,7 @@ pub fn DropdownMenuItem(
         props.icon_class,
         props.icon_style,
         destructive,
-        || false,
+        false,
     ));
     labels_of(el, props.children, props.label_class, props.label_style)
 }
@@ -753,24 +751,25 @@ pub fn DropdownMenuSub(
             .truncate(),
         );
     // Its trigger item is lit while the focus is on it or inside the
-    // submenu, and while the submenu is open: `nsh/base` gives the focus
+    // submenu, and while the submenu is open. `nsh/base` gives the focus
     // and the expanded state to the slot around the item, which the item's
-    // own `focus:` and `expanded:` looks do not see.
+    // own `focus:` and `expanded:` looks do not see; the item is the app's
+    // slot content, which no context of this component reaches. So the
+    // slot shows the item hovered while lit (a projected state, which goes
+    // to the app's element in the slot), and the item lights while hovered.
     let own_open = signal(false);
     let within = signal(false);
     let root = element_ref();
     root.on_focus_in(move || within.set(true));
     root.on_focus_out(move || within.set(false));
     let open = props.open;
-    provide_context(SubTriggerLit(computed(move || {
-        within.get() || open.get().unwrap_or_else(|| own_open.get())
-    })));
+    let lit = computed(move || within.get() || open.get().unwrap_or_else(|| own_open.get()));
     base_submenu()
         .element_ref(&root)
         .open(props.open)
         .disabled(props.disabled)
         .offset(move || t.length(MENU_SUB_OFFSET))
-        .trigger(props.trigger.place(|slot| slot))
+        .trigger(props.trigger.place(move |slot| slot.project_hovered(lit)))
         .back(back)
         .on_open_change(move |e: &BaseSubmenuEvent| {
             let BaseSubmenuEvent::OpenChange(open, reason) = e;
@@ -782,10 +781,14 @@ pub fn DropdownMenuSub(
         .child(props.children)
 }
 
-/// What a [`DropdownMenuSub`] gives its trigger item: whether it is lit
-/// (the focus on it or in the submenu, or the submenu open).
-#[derive(Clone, Copy)]
-struct SubTriggerLit(Memo<bool>);
+/// A part of a submenu's trigger item on `el` in the highlight's text
+/// color while the item is hovered: the submenu shows it hovered while it
+/// is lit (the focus on it or in the submenu, or the submenu open).
+fn lit_by_sub<E: Styled>(el: E, t: Theme) -> E {
+    el.group_hover_named(ROW_GROUP, move |s| {
+        s.text_color(move || t.color(MENU_ITEM_FOCUS_FOREGROUND))
+    })
+}
 
 /// The props of [`DropdownMenuSubTrigger`].
 #[derive(Debug, Clone, PartialEq, Props)]
@@ -823,14 +826,13 @@ pub fn DropdownMenuSubTrigger(
     let size = menu_size();
     provide_icon_size(move || size.get());
     let side = move || t.length(icon_size_token(size.get()));
-    // Lit by its submenu (the slot `nsh/base` focuses is around it).
-    let lit = use_context::<SubTriggerLit>().map(|l| l.0);
-    let lit = move || lit.is_some_and(|l| l.get());
+    // Lit while hovered: its `DropdownMenuSub` shows it hovered while the
+    // focus is on it or in the submenu, and while the submenu is open.
     let el = base_item()
         .close_on_select(false)
         .accessibility_label(props.accessibility_label);
     let el = row(el, t, size, || false)
-        .style_when(lit, move |s| highlight(s, t, || false))
+        .hover(move |s| highlight(s, t, || false))
         .child(leading(
             t,
             size,
@@ -839,17 +841,17 @@ pub fn DropdownMenuSubTrigger(
             props.icon_class,
             props.icon_style,
             || false,
-            lit,
+            true,
         ));
     let el = labels_of(el, props.children, props.label_class, props.label_style);
     if is_terminal() {
         return el;
     }
     el.child(
-        row_icon_color(icon_view(t, || IconName::ChevronRight, side), t, || false)
-            .style_when(lit, move |s| {
-                s.text_color(move || t.color(MENU_ITEM_FOCUS_FOREGROUND))
-            })
-            .ml(auto()),
+        lit_by_sub(
+            row_icon_color(icon_view(t, || IconName::ChevronRight, side), t, || false),
+            t,
+        )
+        .ml(auto()),
     )
 }
