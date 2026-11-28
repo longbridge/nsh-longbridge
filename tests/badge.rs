@@ -1,5 +1,5 @@
-//! `Badge` in a headless engine: its size on both kinds of screens, its
-//! variants' fills, an icon's size inside it, what screen readers get, and
+//! `Badge` in a headless engine: its size on both kinds of screens, a
+//! one-character badge's circle, its variants' fills, an icon's size inside it, what screen readers get, and
 //! a scope's tokens reaching its look.
 
 mod common;
@@ -54,6 +54,12 @@ fn Badges() -> impl IntoElement {
                 .w(px(60.0))
                 .child(badge().test_id("long").child("A very long badge")),
         )
+        .child(
+            badge()
+                .test_id("count")
+                .app_class(Some("px-1".into()))
+                .child("3"),
+        )
 }
 
 /// Badges in a column that stretches its children, beside a two-line name
@@ -90,6 +96,16 @@ fn a_badge_is_22_high_on_every_screen() {
                 "{id}, desktop {desktop}"
             );
         }
+    }
+}
+
+/// A count (one character, a tight padding as counts take) makes a
+/// circle, not a pill narrower than it is tall.
+#[test]
+fn a_one_character_badge_is_as_wide_as_it_is_tall() {
+    for desktop in [true, false] {
+        let app = start::<Badges>(desktop);
+        assert_eq!(size(&app, "id:count"), (22.0, 22.0), "desktop {desktop}");
     }
 }
 
