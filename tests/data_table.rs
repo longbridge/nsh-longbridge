@@ -4,14 +4,14 @@
 //! line under the pointer, and the checkbox column (a box's press reports
 //! the app's data row, the boxes follow `checkedRows` through a sort, the
 //! "select all" box, column indexes as the app counts them), the empty
-//! state centered under the titles.
+//! state centered under the titles, figures of one width.
 
 mod common;
 
 use std::sync::Mutex;
 
 use common::{bounds, fill, light, start};
-use nsh_core::{Checked, NodeId, prelude::*};
+use nsh_core::{Checked, FontVariant, NodeId, prelude::*};
 use nsh_longbridge::{
     DataTableClasses, DataTableColumn, DataTableEvent, DataTablePress, DataTableRows,
     DataTableSelection, DataTableSort, DataTableSortDirection, ScopeTokens, ThemeAppearance,
@@ -298,4 +298,22 @@ fn the_empty_state_is_centered_under_the_titles() {
         (center - (below + bottom) / 2.0).abs() <= 1.0,
         "the empty text's center {center} is not between {below} and {bottom}"
     );
+}
+
+/// Numbers line up in their column: every cell's figures are one width
+/// (tabular), set once on the table and inherited.
+#[test]
+fn numbers_take_tabular_figures() {
+    let app = start::<Payments>(true);
+    for cell in [
+        "role:grid[Payments] >> text:250",
+        "role:grid[Plain] >> text:Ben",
+    ] {
+        let style = app.screen().span_style(cell).unwrap();
+        assert_ne!(
+            style.font_variant.0 & FontVariant::TABULAR_NUMS,
+            0,
+            "{cell}: {style:?}"
+        );
+    }
 }

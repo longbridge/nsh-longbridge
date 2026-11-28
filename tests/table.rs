@@ -2,14 +2,15 @@
 //! on a pointer and on a touch screen, the selected and lit rows, the
 //! body's last row without its edge, a cell holding a `Checkbox` without
 //! its end padding, a `Skeleton` and a `Progress` as wide as their cells, a
-//! label that wraps, and a scope's tokens reaching the look.
+//! label that wraps, figures of one width, and a scope's tokens reaching
+//! the look.
 
 mod common;
 
 use std::time::Duration;
 
 use common::{bounds, fill, light, start};
-use nsh_core::prelude::*;
+use nsh_core::{FontVariant, prelude::*};
 use nsh_longbridge::{
     ButtonVariant, ScopeTokens, Size, button, checkbox,
     components::table::{TABLE_ROW_HOVER, TABLE_ROW_SELECTED, TABLE_STICKY_HEADER},
@@ -383,4 +384,19 @@ fn from_tsx_a_row_holding_an_open_menu_stays_lit() {
     let text = bounds(&app, "id:amount >> text:$250.00");
     let end = |b: nsh_core::geometry::Bounds<Points>| b.origin.x.0 + b.size.width.0;
     assert_eq!(end(amount) - end(text), 8.0);
+}
+
+/// Numbers line up in their column: every cell's figures are one width
+/// (tabular), set once on the table and inherited.
+#[test]
+fn numbers_take_tabular_figures() {
+    let app = start::<Invoices>(true);
+    for cell in ["text:$150.00", "text:INV001", "text:Amount"] {
+        let style = app.screen().span_style(cell).unwrap();
+        assert_ne!(
+            style.font_variant.0 & FontVariant::TABULAR_NUMS,
+            0,
+            "{cell}: {style:?}"
+        );
+    }
 }
