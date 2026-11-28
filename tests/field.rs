@@ -17,10 +17,10 @@ use common::{bounds, fill, light, size, start, start_tsx};
 use nsh_core::{Checked, Command, MountItem, NodeId, Size as Viewport, platform::Os, prelude::*};
 use nsh_engine::EngineConfig;
 use nsh_longbridge::{
-    FieldErrors, FieldLegendVariant, FieldOrientation, checkbox,
+    FieldErrors, FieldLegendVariant, FieldOrientation, SelectItem, checkbox, combobox,
     components::field::{FIELD_CHOICE_CARD_CHECKED, FIELD_LABEL_FOREGROUND_INVALID},
     field, field_content, field_description, field_error, field_group, field_label, field_legend,
-    field_separator, field_set, field_title, input, radio_group, radio_group_item, switch,
+    field_separator, field_set, field_title, input, radio_group, radio_group_item, select, switch,
 };
 use nsh_testing::Headless;
 
@@ -287,6 +287,63 @@ fn horizontal_fields_line_up_in_columns() {
         "{name:?} {message:?}"
     );
     assert!(name.size.width > px(240.0), "{name:?}");
+}
+
+/// A select and a combobox beside their labels.
+#[component]
+fn Pickers() -> impl IntoElement {
+    let items = || {
+        vec![
+            SelectItem::new("nl", "Netherlands"),
+            SelectItem::new("jp", "Japan"),
+        ]
+    };
+    fn row(name: &'static str, control: impl IntoElement) -> impl IntoElement {
+        field()
+            .orientation(FieldOrientation::Horizontal)
+            .child(
+                field_content()
+                    .child(field_label().child(text(name)))
+                    .child(field_description().child(text("Where it is."))),
+            )
+            .child(control)
+    }
+    view().p(px(20.0)).w(px(480.0)).child(
+        field_group()
+            .child(row(
+                "Country",
+                select()
+                    .items(items())
+                    .placeholder("Pick one")
+                    .accessibility_label("Country picker"),
+            ))
+            .child(row(
+                "Region",
+                combobox()
+                    .items(items())
+                    .placeholder("Search")
+                    .accessibility_label("Region picker"),
+            )),
+    )
+}
+
+#[test]
+fn a_horizontal_fields_text_is_level_with_a_select_or_a_combobox() {
+    let app = start::<Pickers>(true);
+    for (label, control) in [
+        ("text:Country", "role:combobox[Country picker]"),
+        ("text:Region", "role:combobox[Region picker]"),
+    ] {
+        let label = bounds(&app, label);
+        let control = bounds(&app, control);
+        // The label's line on the control's one line of text: the same
+        // middle.
+        let middle = |b: Bounds<Points>| b.origin.y + b.size.height / 2.0;
+        assert!(
+            (middle(label) - middle(control)).0.abs() < 0.01,
+            "{label:?} {control:?}"
+        );
+    }
 }
 
 /// `FieldError`s: none, one message, several (one repeated, one empty),
