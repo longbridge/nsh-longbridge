@@ -2,10 +2,10 @@
 // preset's hue under a pane of frosted glass. Two passes:
 //
 // - the liquid (`liquid.ts`): a small fluid simulation whose dye holds the
-//   preset's tones over a deep ink, lit by its own slope, drawn small (half
-//   the stage's size, at most 1.5 times the screen's density). Where the GPU
-//   cannot render to half floats, the silk instead: domain-warped noise in
-//   the same tones, soft and low in detail;
+//   preset's tones over a deep ink, drawn as glossy liquids meeting at clean
+//   edges, at the stage's size (at most 1.5 pixels a point). Where the GPU
+//   cannot render to half floats, the silk instead (at half that size):
+//   domain-warped noise in the same tones, soft and low in detail;
 // - the glass, at the screen's own pixels (up to 2 per point): the silk
 //   stretched and softened, a faint white sheen from the top, a diffuse
 //   light, and a still grain on each pixel, a little stronger in the darks,
@@ -259,10 +259,13 @@ export async function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: num
   const size = () => {
     const r = stage.getBoundingClientRect();
     const dpr = devicePixelRatio || 1;
-    const sw = Math.max(1, Math.round(r.width * Math.min(dpr, 1.5) * 0.5));
-    const sh = Math.max(1, Math.round(r.height * Math.min(dpr, 1.5) * 0.5));
     width = Math.max(1, Math.round(r.width * Math.min(dpr, 2)));
     height = Math.max(1, Math.round(r.height * Math.min(dpr, 2)));
+    // At most 1.5 pixels a point: the liquid at the stage's full size (its
+    // edges and highlights are fine lines), the silk at half.
+    const scale = Math.min(dpr, 1.5) * (fluid ? 1 : 0.5);
+    const sw = Math.max(1, Math.round(r.width * scale));
+    const sh = Math.max(1, Math.round(r.height * scale));
     fluid?.fit(r.width / Math.max(1, r.height));
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
@@ -372,8 +375,8 @@ export async function startBackdrop(stage: HTMLElement, onPointer?: (p: { x: num
         for (let i = 1; i <= n; i++) {
           const x = trail.x + (dx * i) / n;
           const y = trail.y + (dy * i) / n;
-          velocity.push({ x, y, radius: 0.0045, value: [vx, vy, 0], amount: 1 / n });
-          dye.push({ x, y, radius: 0.003, value: [0.15, 0.85, 0.75], amount: ink });
+          velocity.push({ x, y, radius: 0.01, value: [vx, vy, 0], amount: 1 / n });
+          dye.push({ x, y, radius: 0.006, value: [0.15, 0.85, 0.75], amount: ink });
         }
       }
     }

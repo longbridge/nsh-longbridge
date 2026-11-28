@@ -123,7 +123,9 @@ html.dark .swatch__fill { background-color: var(--sw-dark); box-shadow: inset 0 
 
 .hero { background: linear-gradient(180deg, var(--s-hero-top), var(--s-hero-bottom)); padding-top: 56px; }
 .hero__column { display: flex; flex-direction: column; align-items: center; }
-.hero__title { --size: 58px; margin: 0; max-width: calc(var(--size) * 13); text-align: center; font: 650 var(--size) / 1.06 var(--display); letter-spacing: -0.032em; color: var(--s-ink); text-wrap: balance; }
+/* The title's lines on whole pixels, so the stage under it is too: the hero's
+   frame draws on whole pixels, and its poster must land on the same ones. */
+.hero__title { --size: 58px; margin: 0; max-width: calc(var(--size) * 13); text-align: center; font: 650 var(--size) / 1.06 var(--display); line-height: round(var(--size) * 1.06, 1px); letter-spacing: -0.032em; color: var(--s-ink); text-wrap: balance; }
 .hero__lead { margin: 18px 0 0; max-width: 560px; text-align: center; font-size: 18px; line-height: 28px; color: var(--s-muted); }
 .hero__actions { margin-top: 28px; display: flex; align-items: center; gap: 12px; }
 .site-button { height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border-radius: 10px; border: 1px solid var(--s-solid); background: var(--s-solid); color: var(--s-on-solid); font-size: 14.5px; font-weight: 550; letter-spacing: -0.1px; box-shadow: inset 0 1px 0 #ffffff1f, 0 1px 2px #0000001f; transition: background-color .15s; white-space: nowrap; }
@@ -331,39 +333,54 @@ html.dark .swatch__fill { background-color: var(--sw-dark); box-shadow: inset 0 
 
 /* ---------------------------------------------------------------- the library's look, for the posters */
 
+/* A device pixel: the demos place the slider and the histogram's bars on
+   whole device pixels, so the posters round theirs to the same step. */
+:root { --dpx: 1px; }
+@media (resolution >= 1.5x) { :root { --dpx: calc(1px / 1.5); } }
+@media (resolution >= 2x) { :root { --dpx: .5px; } }
+@media (resolution >= 3x) { :root { --dpx: calc(1px / 3); } }
+
+/* The demos set each line of text in a box about 1.2 times its size (17 for
+   14px, 15 for 12px, 18 for 16px), centred in the height it takes; the posters
+   do the same (the margins keep that height), so their glyphs land on the same
+   pixels and the hero's poster can swap for its demo without a jump. */
 .lb { --r: var(--lb-radius); --h: var(--lb-control-height); --f: var(--lb-font-size); --sp: var(--lb-spacing);
   font-family: var(--sans); font-size: var(--f); line-height: 1.43; color: var(--lb-card-foreground); text-align: left; }
 .lb-card { box-sizing: border-box; display: flex; flex-direction: column; gap: calc(var(--sp) * 6); padding: calc(var(--sp) * 6) 0; border: 1px solid var(--lb-border); border-radius: calc(var(--r) + 4px); background: var(--lb-card); box-shadow: 0 1px 3px #0000001a, 0 1px 2px -1px #0000001a; }
 .lb-card--lifted { box-shadow: 0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a; }
 .lb-card__header, .lb-card__content, .lb-card__footer { padding: 0 calc(var(--sp) * 6); }
 .lb-card__header { display: grid; gap: 8px; }
-.lb-card__title { font-size: 16px; font-weight: 600; line-height: 16px; }
-.lb-card__desc { font-size: 14px; line-height: 20px; color: var(--lb-muted-foreground); }
+.lb-card__title { font-size: 16px; font-weight: 600; line-height: 18px; margin-block: -1px; }
+.lb-card__desc { font-size: 14px; line-height: 17px; margin-block: 1.5px; color: var(--lb-muted-foreground); }
 .lb-card__content { display: flex; flex-direction: column; }
 .lb-card__footer { display: flex; justify-content: flex-end; gap: 8px; }
 .p-gap-5 { gap: 20px; } .p-gap-2 { gap: 8px; }
 .lb-field { display: grid; gap: 8px; min-width: 0; }
-.lb-label { font-size: var(--f); font-weight: 500; line-height: 1; }
+.lb-label { font-size: var(--f); font-weight: 500; line-height: 17px; margin-block: -1.5px; }
 .lb-between { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .lb-row { display: flex; align-items: center; gap: 8px; }
 .tabular { font-variant-numeric: tabular-nums; }
 .lb-muted { color: var(--lb-muted-foreground); }
-.lb-input { box-sizing: border-box; height: var(--h); display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--lb-input); border-radius: calc(var(--r) - 2px); background: transparent; box-shadow: 0 1px 2px #0000000d; font-size: var(--f); white-space: nowrap; overflow: hidden; }
+.lb-input { box-sizing: border-box; height: var(--h); display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--lb-input); border-radius: calc(var(--r) - 2px); background: transparent; box-shadow: 0 1px 2px #0000000d; font-size: var(--f); line-height: 17px; white-space: nowrap; overflow: hidden; }
 html.dark .lb-input { background: color-mix(in oklab, var(--lb-input) 30%, transparent); }
 .lb-input--icon { justify-content: space-between; }
 .lb-placeholder { color: var(--lb-muted-foreground); }
 .lb-slider-row { height: 32px; display: flex; align-items: center; }
 .lb-slider { position: relative; flex: 1; height: 6px; border-radius: 99px; background: var(--lb-muted); }
-.lb-slider i { position: absolute; inset: 0 auto 0 0; width: round(var(--at), 1px); border-radius: 99px; background: var(--lb-primary); }
-.lb-slider b { position: absolute; top: 50%; left: round(var(--at), 1px); width: 16px; height: 16px; box-sizing: border-box; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--lb-background); border: 1px solid var(--lb-primary); box-shadow: 0 1px 3px #0000001a; }
+.lb-slider i { position: absolute; inset: 0 auto 0 0; width: round(var(--at), var(--dpx)); border-radius: 99px; background: var(--lb-primary); }
+.lb-slider b { position: absolute; top: 50%; left: round(var(--at), var(--dpx)); width: 16px; height: 16px; box-sizing: border-box; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--lb-background); border: 1px solid var(--lb-primary); box-shadow: 0 1px 3px #0000001a; }
 .lb-switch { box-sizing: border-box; width: 32px; height: 18px; padding: 1px; border-radius: 99px; background: var(--lb-input); display: flex; flex: none; }
 .lb-switch.is-on { background: var(--lb-primary); justify-content: flex-end; }
 .lb-switch i { width: 16px; height: 16px; border-radius: 50%; background: var(--lb-background); }
 html.dark .lb-switch.is-on i { background: var(--lb-primary-foreground); }
-.lb-button { box-sizing: border-box; height: var(--h); display: inline-flex; align-items: center; padding: 0 16px; border-radius: calc(var(--r) - 2px); font-size: var(--f); font-weight: 500; background: var(--lb-primary); color: var(--lb-primary-foreground); white-space: nowrap; }
+.lb-button { box-sizing: border-box; height: var(--h); display: inline-flex; align-items: center; padding: 0 16px; border-radius: calc(var(--r) - 2px); font-size: var(--f); font-weight: 500; line-height: 17px; background: var(--lb-primary); color: var(--lb-primary-foreground); white-space: nowrap; }
 .lb-button--outline { background: var(--lb-background); color: var(--lb-foreground); border: 1px solid var(--lb-border); box-shadow: 0 1px 2px #0000000d; }
 html.dark .lb-button--outline { background: color-mix(in oklab, var(--lb-input) 30%, transparent); border-color: var(--lb-input); }
 .lb-button.is-disabled { opacity: .5; }
+/* The demos round a line of text's width up to a whole pixel, and what holds
+   it grows with it (a button, the presence card, the bubble): so do these,
+   where the browser can (calc-size). */
+.lb-button, .p-lines, .p-bubble { width: calc-size(max-content, round(up, size, 1px)); }
 .lb-tabs { box-sizing: border-box; height: var(--h); display: inline-flex; align-self: flex-start; padding: 3px; border-radius: var(--r); background: var(--lb-muted); color: var(--lb-muted-foreground); }
 .lb-tabs span { display: flex; align-items: center; padding: 0 9px; border-radius: calc(var(--r) - 3px); font-weight: 500; }
 .lb-tabs span.is-on { background: var(--lb-background); color: var(--lb-foreground); box-shadow: 0 1px 3px #0000001a; }
@@ -377,7 +394,10 @@ html.dark .p-hero__sheet { box-shadow: 0 0 0 1px #ffffff1a, 0 1px 1px #0000000a,
 .p-hero__row { display: flex; gap: 16px; }
 .p-hero__row > * { flex: 1; }
 .lb-picker { gap: 8px; }
-.p-controls { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 12px; border-radius: 99px; background: #ffffff14; box-shadow: inset 0 0 0 1px #ffffff1f; color: #fff; }
+/* Frosted like the demo's bar (which blurs what is behind it); without it the
+   pill shows the backdrop sharp and Chrome paints the swatches some 10% darker
+   than the demo, which reads as a flash at the swap. */
+.p-controls { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 12px; border-radius: 99px; background: #ffffff14; box-shadow: inset 0 0 0 1px #ffffff1f; color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 .p-controls__swatches { display: flex; gap: 8px; }
 .p-swatch { display: block; box-sizing: border-box; width: 26px; height: 26px; padding: 2.5px; border: 1.5px solid transparent; border-radius: 99px; }
 .p-swatch[data-on="true"] { border-color: #fff; }
@@ -387,7 +407,10 @@ html.dark .p-swatch i { background-color: var(--sw-dark); }
 .p-glass-group { display: flex; gap: 2px; }
 .p-glass { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; }
 .p-glass.is-on, html.light .p-glass--light, html.dark .p-glass--dark { background: #ffffff2e; }
-.p-corner { width: 13px; height: 13px; box-sizing: border-box; border: 1.5px solid #fff; }
+/* The border on a layer of its own, as the demo draws a view's border:
+   on the box itself Chrome paints it a pixel to the right of the demo's. */
+.p-corner { position: relative; width: 13px; height: 13px; }
+.p-corner::before { content: ""; position: absolute; inset: 0; border: 1.5px solid #fff; border-radius: inherit; }
 .p-divider { width: 1px; height: 18px; background: #ffffff26; }
 /* The cards around the sheet (`hero-cards.tsx`): over its edges by 16, all three
    from a stage of 1100, the presence and the amounts from 900, none below. */
@@ -401,9 +424,9 @@ html.dark .p-swatch i { background-color: var(--sw-dark); }
 @container stage (min-width: 1100px) { .p-float--collected { display: block; } }
 .p-card { padding: 16px; gap: 0; box-shadow: 0 1px 2px #0000000d, 0 4px 8px -2px #00000014, 0 16px 32px -8px #00000029, 0 32px 64px -16px #00000033; }
 .p-lines { display: grid; gap: 2px; }
-/* As the demo's cards: a title in a 16px line, its description in a 20px one. */
-.p-card b { font-size: 14px; line-height: 16px; font-weight: 600; }
-.p-card small { font-size: 12px; line-height: 20px; color: var(--lb-muted-foreground); }
+/* As the demo's cards: a title taking 16px, its description 20. */
+:is(.p-card .p-lines, .p-collected .lb-between) > b { font-size: 14px; line-height: 17px; margin-block: -0.5px; font-weight: 600; }
+:is(.p-card .p-lines, .p-collected) > small { font-size: 12px; line-height: 15px; margin-block: 2.5px; color: var(--lb-muted-foreground); }
 .p-presence { flex-direction: row; align-items: center; gap: 12px; padding: 10px 16px 10px 10px; white-space: nowrap; }
 .p-avatars { display: flex; }
 .p-avatars img { flex: none; max-width: none; width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 2px var(--lb-background); }
@@ -411,14 +434,14 @@ html.dark .p-swatch i { background-color: var(--sw-dark); }
 .p-amounts { width: min(260px, calc((100cqw - 440px) / 2 - 8px)); gap: 16px; }
 @container stage (min-width: 1100px) { .p-amounts { width: 280px; } }
 .p-histogram { position: relative; }
-/* The bars on whole pixels, as the demo lays them out: bar `--k` of 30 in its
-   column (from the nearest pixel to k/30 of the width to the next), a pixel in
-   from either side. */
+/* The bars on device pixels, as the demo lays them out: bar `--k` of 30 in its
+   column (from the nearest device pixel to k/30 of the width to the next), a
+   pixel in from either side, `--bar` high (of 40). */
 .p-bars { position: relative; height: 40px; }
-.p-bars i { position: absolute; bottom: 0; left: calc(round(var(--k) * 100% / 30, 1px) + 1px); width: calc(round((var(--k) + 1) * 100% / 30, 1px) - round(var(--k) * 100% / 30, 1px) - 2px); border-radius: 2px 2px 0 0; background: color-mix(in oklab, var(--lb-muted-foreground) 30%, transparent); }
+.p-bars i { position: absolute; bottom: 0; left: calc(round(var(--k) * 100% / 30, var(--dpx)) + 1px); width: calc(round((var(--k) + 1) * 100% / 30, var(--dpx)) - round(var(--k) * 100% / 30, var(--dpx)) - 2px); height: max(2px, 40px - round(40px - var(--bar) * 1px, var(--dpx))); border-radius: 2px 2px 0 0; background: color-mix(in oklab, var(--lb-muted-foreground) 30%, transparent); }
 .p-bars i.is-in { background: var(--lb-primary); }
 .p-histogram__track { height: 16px; }
-.p-bubble { position: absolute; bottom: 24px; transform: translateX(-50%); padding: 4px 8px; border-radius: 6px; background: var(--lb-foreground); color: var(--lb-background); font-size: 12px; line-height: 16px; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.p-bubble { position: absolute; bottom: 24px; transform: translateX(-50%); padding: 4.5px 8px; border-radius: 6px; background: var(--lb-foreground); color: var(--lb-background); font-size: 12px; line-height: 15px; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .p-collected { width: 256px; gap: 12px; }
 .p-progress { display: block; height: 8px; border-radius: 99px; background: color-mix(in oklab, var(--lb-primary) 20%, transparent); overflow: hidden; }
 .p-progress i { display: block; height: 100%; background: var(--lb-primary); }

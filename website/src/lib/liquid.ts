@@ -6,9 +6,12 @@
 //
 // The dye is not a color: its three channels are how much of each of the
 // preset's tones (low, high, sheen) lies there, over the ink. The colors are
-// applied as it is drawn, so a change of preset crossfades the whole liquid,
-// and the surface is lit from a normal taken from the dye's slope: a slow,
-// thick sheen, not flat color.
+// applied as it is drawn, so a change of preset crossfades the whole liquid.
+// It is drawn as liquids, not smoke: at each point the one with the most
+// there shows, with a clean edge where two meet, and the surface (the top
+// liquid's depth) is glossy: a long studio light and a sky reflected in it,
+// the colors a little displaced through it. The dye is moved with MacCormack's
+// correction, so the edges stay sharp as it folds.
 //
 // Its fields are half floats, which it renders to; without that (no
 // `EXT_color_buffer_float` nor `EXT_color_buffer_half_float`, or a format that
@@ -75,6 +78,30 @@ uniform float uDissipation;
 void main() {
   vec2 coord = vUv - uDt * texture(uVelocity, vUv).xy * uTexel;
   color = texture(uSource, coord) / (1.0 + uDissipation * uDt);
+}`;
+
+/**
+ * MacCormack's step: the plain step forward (`uForward`) corrected by half
+ * what a step back from it misses (`uBack`), kept within the four cells it
+ * came from so it never rings, then faded.
+ */
+const MACCORMACK = `${HEAD}
+uniform sampler2D uVelocity;
+uniform sampler2D uSource;
+uniform sampler2D uForward;
+uniform sampler2D uBack;
+uniform vec2 uTexel;
+uniform vec2 uSourceTexel;
+uniform float uDt;
+uniform float uDissipation;
+void main() {
+  vec2 coord = vUv - uDt * texture(uVelocity, vUv).xy * uTexel;
+  vec4 v = texture(uForward, vUv) + 0.5 * (texture(uSource, vUv) - texture(uBack, vUv));
+  vec2 i = (floor(coord / uSourceTexel - 0.5) + 0.5) * uSourceTexel;
+  vec4 a = texture(uSource, i), b = texture(uSource, i + vec2(uSourceTexel.x, 0.0));
+  vec4 c = texture(uSource, i + vec2(0.0, uSourceTexel.y)), d = texture(uSource, i + uSourceTexel);
+  v = clamp(v, min(min(a, b), min(c, d)), max(max(a, b), max(c, d)));
+  color = v / (1.0 + uDissipation * uDt);
 }`;
 
 const CURL = `${HEAD}
@@ -193,14 +220,43 @@ void main() {
   color = c;
 }`;
 
+/** The ink's level: a tone shows where it rises above it. */
+const INK = '0.48';
+
 /**
- * The liquid as it is seen: the tones over the ink by the dye, lit from the
- * upper left by a normal from the dye's slope (a soft diffuse light and a
- * narrow sheen where it folds), quieter toward the middle and the floor, where
+ * The surface, at the dye's size: the tones a little smoothed (a 3 by 3
+ * tent, so an edge never steps from cell to cell), and the top liquid's
+ * depth, its creases rounded (a smooth maximum), eased so a pool rises
+ * steeply at its edge and lies flat on top. The shading reads it smoothly.
+ */
+const SURFACE = `${HEAD}
+uniform sampler2D uDye;
+uniform vec2 uTexel;
+vec3 at(vec2 o) { return clamp(texture(uDye, vUv + o * uTexel).rgb, 0.0, 1.0); }
+void main() {
+  vec3 w = (4.0 * at(vec2(0.0)) + 2.0 * (at(vec2(1.0, 0.0)) + at(vec2(-1.0, 0.0)) + at(vec2(0.0, 1.0)) + at(vec2(0.0, -1.0)))
+    + at(vec2(1.0)) + at(vec2(-1.0)) + at(vec2(1.0, -1.0)) + at(vec2(-1.0, 1.0))) / 16.0;
+  vec3 t = w * vec3(1.0, 1.04, 1.1);
+  float m = max(t.x, max(t.y, t.z));
+  vec3 e = exp((t - m) * 8.0);
+  // How far the top tone rises above the ink (softly from zero: the ink lies flat).
+  float rise = m + log(e.x + e.y + e.z) / 8.0 - ${INK};
+  float depth = log(1.0 + exp(rise * 40.0)) / 40.0;
+  color = vec4(w, 1.0 - exp(-depth * 12.0));
+}`;
+
+/**
+ * The liquid as it is seen. At each point the liquid with the most there (the
+ * ink, which the tones must rise above, or one of the three) shows, the edge
+ * where two meet antialiased over a pixel or two, each a little deeper in
+ * color toward its edge. The surface (`SURFACE`) reflects a soft studio: a
+ * long key light up to the left, a small warm fill low to the right, and a
+ * sky brighter toward the top, the more at a slant; the colors are seen a
+ * little displaced through it. Quieter toward the middle and the floor, where
  * the sheet and the controls are, with the pointer's soft light last.
  */
 const SHADE = `${HEAD}
-uniform sampler2D uDye;
+uniform sampler2D uSurface;
 uniform vec2 uDyeTexel;
 uniform float uAspect;
 uniform vec2 uPointer;
@@ -211,34 +267,44 @@ uniform vec3 uHigh;
 uniform vec3 uSheen;
 uniform float uRelief;
 
-float height(vec2 uv) {
-  vec3 w = clamp(texture(uDye, uv).rgb, 0.0, 1.0);
-  return dot(w, vec3(0.7, 1.0, 0.6));
-}
+float height(vec2 uv) { return texture(uSurface, uv).a; }
 
 void main() {
   vec2 uv = vUv;
-  vec3 w = clamp(texture(uDye, uv).rgb, 0.0, 1.0);
-  vec3 k = w * w * (3.0 - 2.0 * w);
-  vec3 c = mix(uInk, uLow, k.r * 0.95);
-  c = mix(c, uHigh, k.g * 0.85);
-  c = mix(c, mix(uHigh, uSheen, 0.4), k.b * 0.5);
-
-  // The surface: its slope over about three cells, the straight and the
-  // diagonal pairs together (a Sobel), smooth enough to light.
-  vec2 o = uDyeTexel * 2.5;
-  float tl = height(uv + vec2(-o.x, o.y)), tr = height(uv + o), bl = height(uv - o), br = height(uv + vec2(o.x, -o.y));
-  float hx = 0.25 * (2.0 * (height(uv + vec2(o.x, 0.0)) - height(uv - vec2(o.x, 0.0))) + tr - tl + br - bl);
-  float hy = 0.25 * (2.0 * (height(uv + vec2(0.0, o.y)) - height(uv - vec2(0.0, o.y))) + tl - bl + tr - br);
+  vec2 o = uDyeTexel * 1.5;
+  float hx = height(uv + vec2(o.x, 0.0)) - height(uv - vec2(o.x, 0.0));
+  float hy = height(uv + vec2(0.0, o.y)) - height(uv - vec2(0.0, o.y));
   vec3 n = normalize(vec3(-hx * uRelief, -hy * uRelief, 1.0));
+
+  // The colors under the surface, displaced by its slope; the top liquid
+  // wins, over about a pixel and a half where two meet.
+  vec3 w = texture(uSurface, uv - n.xy * 0.008).rgb;
+  vec4 t = vec4(${INK}, w.r, w.g * 1.04, w.b * 1.1);
+  float m = max(max(t.x, t.y), max(t.z, t.w));
+  vec4 fw = fwidth(t);
+  float sharp = 1.5 / max(max(fw.y, max(fw.z, fw.w)), 0.001);
+  vec4 e = exp((t - m) * sharp);
+  e /= e.x + e.y + e.z + e.w;
+  vec3 c = e.x * uInk + e.y * uLow + e.z * mix(uLow, uHigh, 0.85) + e.w * mix(uHigh, uSheen, 0.4);
+  // Deeper toward a pool's edge, and a touch of the ink in all, so they read as bodies, calmly.
+  c = mix(uInk, c, mix(0.55, 0.88, smoothstep(0.0, 0.25, m - ${INK})));
+
+  // Lit from the upper left, a little.
   vec3 light = normalize(vec3(-0.45, 0.6, 0.66));
-  float diffuse = dot(n, light) - light.z;
-  vec3 half_ = normalize(light + vec3(0.0, 0.0, 1.0));
-  float facing = max(dot(n, half_), 0.0);
-  float sheen = pow(facing, 60.0);
-  float broad = pow(facing, 12.0);
-  c *= clamp(1.0 + diffuse * 1.4, 0.45, 1.6);
-  c += uSheen * (sheen * 0.28 + broad * 0.06) * (0.45 + 0.55 * max(k.g, k.b));
+  c *= clamp(1.0 + (dot(n, light) - light.z) * 1.1, 0.55, 1.45);
+
+  // The studio, reflected.
+  vec2 q = reflect(vec3(0.0, 0.0, -1.0), n).xy;
+  vec2 kq = mat2(0.92, 0.39, -0.39, 0.92) * (q - vec2(-0.3, 0.36));
+  float key = 1.0 - smoothstep(0.0, 0.08, max(abs(kq.x) - 0.24, abs(kq.y) - 0.04));
+  vec2 fq = q - vec2(0.36, -0.28);
+  float fill = exp(-dot(fq, fq) * 24.0);
+  float sky = smoothstep(-0.5, 0.8, q.y);
+  float fresnel = 0.04 + 0.96 * pow(1.0 - clamp(n.z, 0.0, 1.0), 2.5);
+  vec3 white = mix(vec3(1.0), uSheen, 0.25);
+  c += white * key * 0.36;
+  c += mix(uSheen, vec3(1.0, 0.85, 0.7), 0.3) * fill * 0.12;
+  c += white * sky * fresnel * 0.45;
 
   // Quieter toward the middle and the floor (less while hovered).
   float centre = smoothstep(0.0, 0.55, length((uv - vec2(0.5, 0.48)) * vec2(1.0, 1.25)));
@@ -249,7 +315,7 @@ void main() {
   vec2 d = (uv - uPointer) * vec2(uAspect, 1.0) * 0.7;
   float r2 = dot(d, d);
   vec3 glow = mix(uHigh, uSheen, 0.35);
-  c += glow * exp(-r2 * 8.0) * uHover * 0.22 + mix(glow, uSheen, 0.6) * exp(-r2 * 28.0) * uHover * 0.12;
+  c += glow * exp(-r2 * 8.0) * uHover * 0.16 + mix(glow, uSheen, 0.6) * exp(-r2 * 28.0) * uHover * 0.08;
   color = vec4(c, 1.0);
 }`;
 
@@ -285,17 +351,17 @@ export interface Liquid {
   draw(target: WebGLFramebuffer | null, width: number, height: number, look: Look): void;
 }
 
-/** The liquid's feel: thick and slow, its color lingering and folding. */
+/** The liquid's feel: thick and slow, few small swirls, its color lingering and folding. */
 const SIM = 160;
-const DYE = 256;
-const VELOCITY_DISSIPATION = 0.35;
-const DYE_DISSIPATION = 0.018;
+const DYE = 384;
+const VELOCITY_DISSIPATION = 0.25;
+const DYE_DISSIPATION = 0.008;
 const PRESSURE_KEEP = 0.8;
 const PRESSURE_ITERATIONS = 18;
-const CURL_AMOUNT = 2.5;
-const VISCOSITY_AMOUNT = 0.35;
-/** How steep the dye's surface reads (its slope's scale, for the light). */
-const RELIEF = 9;
+const CURL_AMOUNT = 0.9;
+const VISCOSITY_AMOUNT = 0.6;
+/** How steep the surface reads (its slope's scale, for the light). */
+const RELIEF = 6;
 
 interface Target {
   tex: WebGLTexture;
@@ -385,7 +451,7 @@ export async function makeLiquid(gl: WebGL2RenderingContext): Promise<Liquid | n
   if (!probe(formats.rg)) formats.rg = formats.rgba;
   if (!probe(formats.r)) formats.r = formats.rgba;
 
-  const sources = { seed: SEED, advect: ADVECT, curl: CURL, vorticity: VORTICITY, viscosity: VISCOSITY, divergence: DIVERGENCE, scale: SCALE, pressure: PRESSURE, gradient: GRADIENT, splat: SPLAT, shade: SHADE };
+  const sources = { seed: SEED, advect: ADVECT, maccormack: MACCORMACK, surface: SURFACE, curl: CURL, vorticity: VORTICITY, viscosity: VISCOSITY, divergence: DIVERGENCE, scale: SCALE, pressure: PRESSURE, gradient: GRADIENT, splat: SPLAT, shade: SHADE };
   const names = Object.keys(sources) as (keyof typeof sources)[];
   const linked = await linkPrograms(gl, names.map((n) => [VERTEX, sources[n]]));
   if (linked.some((pr) => !pr)) return null;
@@ -422,6 +488,11 @@ export async function makeLiquid(gl: WebGL2RenderingContext): Promise<Liquid | n
   let aspect = 0;
   let velocity: Pair | null = null;
   let dye: Pair | null = null;
+  // The dye's step back, and where its corrected step is written.
+  let dyeBack: Target | null = null;
+  let dyeNext: Target | null = null;
+  // The surface the shading reads (`SURFACE`).
+  let surface: Target | null = null;
   let pressure: Pair | null = null;
   let divergence: Target | null = null;
   let curl: Target | null = null;
@@ -466,11 +537,14 @@ export async function makeLiquid(gl: WebGL2RenderingContext): Promise<Liquid | n
     const sim = grid(SIM);
     const dyeGrid = grid(DYE);
     if (velocity && sim[0] === simSize[0] && sim[1] === simSize[1] && dyeGrid[0] === dyeSize[0] && dyeGrid[1] === dyeSize[1]) return;
-    for (const t of [velocity?.read, velocity?.write, dye?.read, dye?.write, pressure?.read, pressure?.write, divergence, curl]) if (t) free(t);
+    for (const t of [velocity?.read, velocity?.write, dye?.read, dye?.write, dyeBack, dyeNext, surface, pressure?.read, pressure?.write, divergence, curl]) if (t) free(t);
     simSize = sim;
     dyeSize = dyeGrid;
     velocity = pair(sim[0], sim[1], formats.rg, gl.LINEAR);
     dye = pair(dyeGrid[0], dyeGrid[1], formats.rgba, gl.LINEAR);
+    dyeBack = target(dyeGrid[0], dyeGrid[1], formats.rgba, gl.LINEAR);
+    dyeNext = target(dyeGrid[0], dyeGrid[1], formats.rgba, gl.LINEAR);
+    surface = target(dyeGrid[0], dyeGrid[1], formats.rgba, gl.LINEAR);
     pressure = pair(sim[0], sim[1], formats.r, gl.NEAREST);
     divergence = target(sim[0], sim[1], formats.r, gl.NEAREST);
     curl = target(sim[0], sim[1], formats.r, gl.NEAREST);
@@ -495,7 +569,7 @@ export async function makeLiquid(gl: WebGL2RenderingContext): Promise<Liquid | n
   };
 
   const step = (dt: number, velocitySplats: Splat[], dyeSplats: Splat[]) => {
-    if (!velocity || !dye || !pressure || !divergence || !curl) return;
+    if (!velocity || !dye || !dyeBack || !dyeNext || !pressure || !divergence || !curl) return;
     gl.disable(gl.BLEND);
     if (velocitySplats.length) splat(velocity, velocitySplats, false);
     if (dyeSplats.length) splat(dye, dyeSplats, true);
@@ -559,17 +633,36 @@ export async function makeLiquid(gl: WebGL2RenderingContext): Promise<Liquid | n
     blit(velocity.write);
     velocity.swap();
 
+    // The dye: a step forward, a step back from there, then the corrected step.
     bind(s, 'uVelocity', 0, velocity.read);
     bind(s, 'uSource', 1, dye.read);
-    gl.uniform1f(s.u('uDissipation'), DYE_DISSIPATION);
+    gl.uniform1f(s.u('uDissipation'), 0);
     blit(dye.write);
-    dye.swap();
+    bind(s, 'uSource', 1, dye.write);
+    gl.uniform1f(s.u('uDt'), -dt);
+    blit(dyeBack);
+
+    s = use(p.maccormack);
+    gl.uniform2f(s.u('uTexel'), ...texel);
+    gl.uniform2f(s.u('uSourceTexel'), 1 / dyeSize[0], 1 / dyeSize[1]);
+    gl.uniform1f(s.u('uDt'), dt);
+    gl.uniform1f(s.u('uDissipation'), DYE_DISSIPATION);
+    bind(s, 'uVelocity', 0, velocity.read);
+    bind(s, 'uSource', 1, dye.read);
+    bind(s, 'uForward', 2, dye.write);
+    bind(s, 'uBack', 3, dyeBack);
+    blit(dyeNext);
+    [dye.read, dyeNext] = [dyeNext, dye.read];
   };
 
   const draw = (out: WebGLFramebuffer | null, width: number, height: number, look: Look) => {
-    if (!dye) return;
-    const s = use(p.shade);
+    if (!dye || !surface) return;
+    let s = use(p.surface);
     bind(s, 'uDye', 0, dye.read);
+    gl.uniform2f(s.u('uTexel'), 1 / dyeSize[0], 1 / dyeSize[1]);
+    blit(surface);
+    s = use(p.shade);
+    bind(s, 'uSurface', 0, surface);
     gl.uniform2f(s.u('uDyeTexel'), 1 / dyeSize[0], 1 / dyeSize[1]);
     gl.uniform1f(s.u('uAspect'), aspect);
     gl.uniform2f(s.u('uPointer'), look.pointer.x, look.pointer.y);
