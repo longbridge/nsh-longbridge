@@ -1,17 +1,25 @@
 //! `Tabs` in a headless engine: presses and the arrow keys selecting tabs
 //! and reporting values, controlled and uncontrolled, the selected panel
 //! alone made, disabled tabs, what screen readers get, pointer and touch
-//! sizes, the variants' looks, and a scope's tokens reaching them.
+//! sizes, the variants' looks (the selected segment concentric in the
+//! list, a `line` tab underlined in a row and filled in a column), and a
+//! scope's tokens reaching them.
 
 mod common;
 
-use common::{bounds, css, fill, light, size, start};
-use nsh_core::{geometry::Axis, prelude::*};
+use std::time::Duration;
+
+use common::{bounds, css, fill, length, light, radius, size, start, start_styled};
+use nsh_core::{NodeId, geometry::Axis, prelude::*};
 use nsh_longbridge::{
     ScopeTokens, Size, TabsVariant,
-    components::tabs::{TABS_LIST, TABS_TRIGGER_SELECTED},
+    components::tabs::{
+        TABS_LINE_INDICATOR, TABS_LINE_SELECTED, TABS_LIST, TABS_LIST_PADDING, TABS_LIST_RADIUS,
+        TABS_TRIGGER_SELECTED,
+    },
     tabs, tabs_content, tabs_list, tabs_trigger, theme_scope,
 };
+use nsh_testing::Headless;
 
 /// Controlled tabs (the last one disabled) with a change counter, and
 /// uncontrolled ones.
@@ -218,6 +226,88 @@ fn the_segmented_list_raises_the_selected_tab() {
     assert_eq!(fill(&app, "role:tablist[Segmented]"), light(TABS_LIST));
     assert_eq!(fill(&app, "role:tab[Alpha]"), light(TABS_TRIGGER_SELECTED));
     assert_eq!(fill(&app, "role:tab[Beta]"), None);
+}
+
+/// The selected segment sits `tabs-list-padding` (2) inside the list on
+/// every side, its corners `tabs-list-radius` less that (8 in 10).
+#[test]
+fn the_selected_segment_is_concentric_in_the_list() {
+    let (app, styles) = start_styled::<Sizes>(true);
+    let padding = length(TABS_LIST_PADDING);
+    assert_eq!(padding, 2.0);
+    for name in ["Medium", "Small"] {
+        let list = bounds(&app, &format!("role:tablist[{name}]"));
+        let tab = bounds(&app, &format!("role:tab[{name}]"));
+        let insets = (
+            (tab.origin.x - list.origin.x).0,
+            (tab.origin.y - list.origin.y).0,
+            (list.origin.x + list.size.width - tab.origin.x - tab.size.width).0,
+            (list.origin.y + list.size.height - tab.origin.y - tab.size.height).0,
+        );
+        assert_eq!(insets, (padding, padding, padding, padding), "{name}");
+        let corners = radius(&app, &styles, &format!("role:tab[{name}]"));
+        assert_eq!(corners, length(TABS_LIST_RADIUS) - padding, "{name}");
+        assert_eq!(corners, 8.0, "{name}");
+    }
+}
+
+/// A `line` list in a row and one in a column.
+#[component]
+fn Lines() -> impl IntoElement {
+    let list = |name: &'static str, a: &'static str, b: &'static str| {
+        tabs_list()
+            .variant(TabsVariant::Line)
+            .accessibility_label(name)
+            .child(tabs_trigger().value(a).child(a))
+            .child(tabs_trigger().value(b).child(b))
+    };
+    view()
+        .items_start()
+        .child(
+            tabs()
+                .default_value(Some(SharedString::from("Overview")))
+                .child(list("Row", "Overview", "Activity")),
+        )
+        .child(
+            tabs()
+                .orientation(Axis::Vertical)
+                .default_value(Some(SharedString::from("General")))
+                .child(list("Column", "General", "Security"))
+                .child(tabs_content().value("General").child("General panel")),
+        )
+}
+
+/// The underline shown in the tab `selector` names: a view in it with the
+/// indicator's fill, not faded out.
+fn underline(app: &Headless, selector: &str) -> Option<NodeId> {
+    let screen = app.screen();
+    let tab = screen.id(selector).unwrap();
+    screen
+        .layout_nodes()
+        .into_iter()
+        .filter(|n| n.parent == tab)
+        .find(|n| {
+            let style = screen
+                .view_style(&format!("view:{}", n.id))
+                .unwrap()
+                .unwrap();
+            style.background_color == light(TABS_LINE_INDICATOR) && style.opacity > 0.0
+        })
+        .map(|n| n.id)
+}
+
+/// In a row the selected `line` tab is underlined on no fill; in a column
+/// it takes the `tabs-line-selected` fill and no underline.
+#[test]
+fn a_line_tab_is_underlined_in_a_row_and_filled_in_a_column() {
+    let mut app = start::<Lines>(true);
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(fill(&app, "role:tab[Overview]"), None);
+    assert!(underline(&app, "role:tab[Overview]").is_some());
+    assert!(underline(&app, "role:tab[Activity]").is_none());
+    assert_eq!(fill(&app, "role:tab[General]"), light(TABS_LINE_SELECTED));
+    assert!(underline(&app, "role:tab[General]").is_none());
+    assert_eq!(fill(&app, "role:tab[Security]"), None);
 }
 
 /// Labels of different lengths in a list as wide as its triggers.
