@@ -20,7 +20,7 @@ import {
 } from "nsh-longbridge";
 import { ArrowRight, ArrowUpRight, ChevronDown, ChevronsUpDown } from "nsh-icon-lucide";
 import { catalog, type PageEntry, pageById, pages } from "../catalog";
-import { navigate, route } from "../router";
+import { navigate, route, solo } from "../router";
 import { appearance, type Appearance, colorPreset, cssColor } from "../theme";
 import { Brand, Logo, PRODUCT } from "./brand";
 import { GalleryToaster } from "./toaster";
@@ -444,7 +444,9 @@ function Content() {
               style={{ paddingHorizontal: pagePadding(), paddingTop: compact() ? 32 : 48, paddingBottom: 48 }}
             >
               <Current />
-              <Pager id={entry.id} />
+              <If when={!solo()}>
+                <Pager id={entry.id} />
+              </If>
             </View>
           </Scroll>
         );
@@ -457,14 +459,16 @@ export function Shell(): JSX.Element {
   const menu = signal(false);
   return (
     <View class="flex-1 bg-background" onKeyDown={() => keyboardUsed.set(true)}>
-      <Header onMenu={() => menu.set(true)} />
+      <If when={!solo()}>
+        <Header onMenu={() => menu.set(true)} />
+      </If>
       <View class="flex-1 flex-row">
-        <If when={!compact() && !fullBleed(route())}>
+        <If when={!solo() && !compact() && !fullBleed(route())}>
           <Sidebar class="border-r border-border" />
         </If>
         <Content />
       </View>
-      <If when={compact()}>
+      <If when={!solo() && compact()}>
         <Sheet
           side="left"
           open={menu()}
