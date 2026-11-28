@@ -109,7 +109,7 @@ form; this is the full one.
 | NSH element | `nsh/base`'s `Dialog` (the core's `Modal`), with the library's own motion and closing, as `nsh/base`'s `Sheet` | The core's overlay, through the `nsh/base` component (`Popover`, `Menu`, `Select`, `Tooltip`), whose presence (`popupStartingClass` / `popupEndingClass`) runs the motion |
 | Blocks the page | Yes: the overlay dims it and takes its presses; focus and screen readers stay inside | No: Tab goes on past it (its content follows its trigger in the Tab order); on the desktops a press outside closes it and goes on to what is under the pointer |
 | Surface | `dialog` fill (`background`), `border`, `radius-lg`, shadow 4 (`lg`) | `popover` fill, `border`, `radius-md`, shadow 3 (`md`); owned by `Popover`'s tokens (see [popover.md](popover.md)) |
-| Motion | Overlay fades; panel fades and zooms from 95%; `dialog-duration` (200) | Fades and zooms from 95%, slides 8 from the trigger's side; `duration` (150) |
+| Motion | Overlay fades; panel fades and zooms from 95%, out of the point pressed when a pointer opened it; `dialog-duration` (200) | Fades and zooms from 95%, slides 8 from the trigger's side; `duration` (150) |
 
 **Stacking**, bottom to top, each layer above the ones opened before it:
 
@@ -278,6 +278,7 @@ The builder setters follow the props; `trigger` takes any element, as `nsh/base`
 |---|---|
 | Overlay | Opacity 0 → 1 / 1 → 0 over `dialog-duration` |
 | Panel | Opacity 0 → 1 and scale 0.95 → 1, back on exit, over `dialog-duration` (200), from the panel's center |
+| Panel, pressed open | Grows out of the point the pointer pressed on the trigger: its center starts there at `dialog-from-press-scale` (0.2) and moves to its place as it grows to 1; on exit it goes back into that point |
 | Reduced motion | No motion: shown and gone at once |
 
 One duration for both (150 for the overlay and 200 for the panel could not be told apart, and one value is simpler to
@@ -286,6 +287,16 @@ tune). The values are animated values (the core's `animated_value`, bound with `
 `foundation::motion`'s curve. Closing: the modal stays mounted (taking no presses: the overlay and the panel turn
 `pointer-events: none`) until the exit's animation ends, then goes, and `onClose` follows. Opened again on its way out,
 it animates back from where it is, and neither `onClose` nor `onOpen` fires. `dialog-animate: 0` turns the motion off.
+
+**Growing from the press.** When a pointer (the mouse, a finger, a pen) presses the trigger open, the panel comes out
+of the point it pressed, as a window grows out of what opened it, so the eye follows it from there. The trigger slot's
+view hears the pointer go down on it or inside it (`onTouch`, which desktops report the mouse through, so a library
+`Button` there, which takes the press itself, counts too) and keeps where, in the window; the press that opens the
+dialog within a second takes it. The panel then moves by that point less its place (the middle of the window above a
+software keyboard, where the layer centers it) times `1 − fade`, before it is scaled, so its center runs straight from
+the point to its place while it grows. Opened from the keyboard, by an assistive technology or by the app (`open`),
+there is no point and it zooms from 95% in place, as does every dialog with `dialog-from-press: 0`. The point is
+taken as the panel is made: it closes back into the same point, even if the window changed since.
 
 ## States
 
@@ -352,6 +363,8 @@ Values are those of `nsh/base`'s default theme.
 | `dialog-close-opacity` | number | `0.7` | 0.7 |
 | `dialog-duration` | number | `duration × 4 / 3` | 200 |
 | `dialog-animate` | number | `1` | 1 |
+| `dialog-from-press` | number | `1` | 1 |
+| `dialog-from-press-scale` | number | `0.2` | 0.2 |
 <!-- /tokens -->
 - `dialog` is not a semantic token, so the panel's fill is the component's (`background`, `bg-background`)
   and the text on it `dialog-foreground`. A dialog the color of cards sets `"dialog": "var(--card)"`.

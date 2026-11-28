@@ -3,14 +3,23 @@
 //! by its title and described by its description; a scope around it
 //! reaches its panel; Escape closes a popover inside it before it; the
 //! panel's width and its layout on narrow and wide windows; a controlled
-//! dialog waits for its app; `dialog-animate: 0`.
+//! dialog waits for its app; `dialog-animate: 0`; pressed open, the panel
+//! grows out of the point pressed.
 
 mod common;
 
-use std::time::Duration;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use common::{bounds, light, start};
-use nsh_core::prelude::*;
+use nsh_core::{
+    MountItem, NodeId, TransformKind, ViewStyle,
+    animation::{AnimationOp, AnimationProp, Output},
+    prelude::*,
+};
 use nsh_longbridge::{
     ButtonVariant, DialogEvent, ScopeTokens, ThemeAppearance, button, components::dialog::DIALOG,
     dialog, dialog_close, dialog_content, dialog_description, dialog_footer, dialog_header,
@@ -400,4 +409,142 @@ fn from_tsx_a_button_trigger_opens_it() {
         app.press("role:button[Cancel]").unwrap();
         gone(&mut app);
     }
+}
+
+/// What the commits said about the animation graph: each view's last
+/// style and bindings, and each interpolation's outputs.
+#[derive(Default)]
+struct Graph {
+    styles: HashMap<NodeId, ViewStyle>,
+    bindings: HashMap<NodeId, Vec<(AnimationProp, nsh_core::animation::NodeId)>>,
+    outputs: HashMap<nsh_core::animation::NodeId, Vec<f32>>,
+}
+
+impl Graph {
+    /// The outputs of the interpolations bound to `view`'s transform
+    /// entries of `kind`.
+    fn transform(&self, view: NodeId, kind: TransformKind) -> Vec<Vec<f32>> {
+        let ops = self.styles[&view].transform;
+        self.bindings
+            .get(&view)
+            .into_iter()
+            .flatten()
+            .filter_map(|(prop, node)| match prop {
+                AnimationProp::Transform(n) if ops.ops()[*n as usize].kind == kind => {
+                    self.outputs.get(node).cloned()
+                }
+                _ => None,
+            })
+            .collect()
+    }
+}
+
+fn watch_graph(app: &mut Headless) -> Arc<Mutex<Graph>> {
+    let graph = Arc::new(Mutex::new(Graph::default()));
+    let seen = graph.clone();
+    app.observe(move |_, batch| {
+        let mut g = seen.lock().unwrap();
+        for item in &batch.items {
+            match item {
+                MountItem::ViewStyle { id, style } => {
+                    g.styles.insert(*id, (**style).clone());
+                }
+                MountItem::AnimationBindings { id, bindings } => {
+                    g.bindings.insert(*id, bindings.clone());
+                }
+                MountItem::Animation(AnimationOp::CreateInterpolate {
+                    node,
+                    output: Output::Numbers(numbers),
+                    ..
+                }) => {
+                    g.outputs.insert(*node, numbers.clone());
+                }
+                _ => {}
+            }
+        }
+    });
+    graph
+}
+
+/// Pressed open, the panel's center starts at the point pressed (in an
+/// 800 × 600 window whose middle is its place) at
+/// `dialog-from-press-scale` (0.2), and moves to its place as it grows.
+#[test]
+fn pressed_open_it_grows_out_of_the_point_pressed() {
+    let mut app = start::<Basic>(true);
+    let graph = watch_graph(&mut app);
+    let trigger = bounds(&app, "role:button[Edit profile]");
+    // Toward its end, off its center.
+    let at = point(px(trigger.size.width.0 - 6.0), px(5.0));
+    app.press_at("role:button[Edit profile]", at).unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    let panel = app.screen().id(&panel_selector(&app)).unwrap();
+    let g = graph.lock().unwrap();
+    let dx = trigger.origin.x.0 + at.x.0 - 400.0;
+    let dy = trigger.origin.y.0 + at.y.0 - 300.0;
+    assert_eq!(
+        g.transform(panel, TransformKind::TranslateX),
+        [vec![dx, 0.0]]
+    );
+    assert_eq!(
+        g.transform(panel, TransformKind::TranslateY),
+        [vec![dy, 0.0]]
+    );
+    assert_eq!(g.transform(panel, TransformKind::Scale), [vec![0.2, 1.0]]);
+    // Moved before it is scaled: the move is in the window's points.
+    let kinds: Vec<_> = g.styles[&panel]
+        .transform
+        .ops()
+        .iter()
+        .map(|op| op.kind)
+        .collect();
+    let at = |kind| kinds.iter().position(|k| *k == kind).unwrap();
+    assert!(
+        at(TransformKind::TranslateX) < at(TransformKind::Scale),
+        "{kinds:?}"
+    );
+}
+
+/// Opened from the keyboard, or with `dialog-from-press: 0`, it zooms from
+/// 95% in place.
+#[test]
+fn opened_from_the_keyboard_it_zooms_in_place() {
+    let mut app = start::<Basic>(true);
+    let graph = watch_graph(&mut app);
+    app.press_key("Tab").unwrap();
+    app.press_key("Enter").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(app.shows("Make changes to your profile here."));
+    let panel = app.screen().id(&panel_selector(&app)).unwrap();
+    let g = graph.lock().unwrap();
+    assert!(g.transform(panel, TransformKind::TranslateX).is_empty());
+    assert_eq!(g.transform(panel, TransformKind::Scale), [vec![0.95, 1.0]]);
+}
+
+/// `dialog-from-press: 0`: pressed open, it zooms from 95% in place.
+#[component]
+fn InPlace() -> impl IntoElement {
+    theme_scope()
+        .tokens(ScopeTokens::new().set("dialog-from-press", 0))
+        .child(
+            dialog().trigger(button().child("Open")).child(
+                dialog_content().child(
+                    dialog_header()
+                        .test_id("header")
+                        .child(dialog_title().child("In place")),
+                ),
+            ),
+        )
+}
+
+#[test]
+fn without_from_press_it_zooms_in_place() {
+    let mut app = start::<InPlace>(true);
+    let graph = watch_graph(&mut app);
+    app.press("role:button[Open]").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    let panel = app.screen().id(&panel_selector(&app)).unwrap();
+    let g = graph.lock().unwrap();
+    assert!(g.transform(panel, TransformKind::TranslateX).is_empty());
+    assert_eq!(g.transform(panel, TransformKind::Scale), [vec![0.95, 1.0]]);
 }

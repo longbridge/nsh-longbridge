@@ -145,6 +145,8 @@
       "dialog-close-opacity": "0.7",
       "dialog-duration": "calc(var(--duration) * 4 / 3)",
       "dialog-animate": "1",
+      "dialog-from-press": "1",
+      "dialog-from-press-scale": "0.2",
       "alert-dialog-max-width-sm": "calc(var(--spacing) * 80)",
       "alert-dialog-header-gap": "calc(var(--dialog-header-gap))",
       "alert-dialog-media-size": "calc(var(--spacing) * 16)",
