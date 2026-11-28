@@ -9,12 +9,14 @@ export interface Props {
   label: string;
   /** Load the demo with the page (the hero), not as it nears the view. */
   eager?: boolean;
+  /** The poster matches the demo's first frame to the pixel: they swap in one frame, without a crossfade. */
+  swap?: boolean;
   class?: string;
 }
-const { name, label, eager = false, class: cls = '' } = Astro.props;
+const { name, label, eager = false, swap = false, class: cls = '' } = Astro.props;
 ---
 
-<div class={`demo ${cls}`} data-demo={name} data-label={label} data-eager={eager ? '1' : undefined}>
+<div class={`demo ${cls}`} data-demo={name} data-label={label} data-eager={eager ? '1' : undefined} data-swap={swap ? '1' : undefined}>
   <div class="demo__poster" aria-hidden="true" inert>
     <slot />
   </div>

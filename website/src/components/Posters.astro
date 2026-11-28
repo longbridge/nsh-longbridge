@@ -64,7 +64,7 @@ const who = presence(2);
         <span class="p-lines"><b>Against this quarter</b><small>186 invoices, most near $2,000</small></span>
         <div class="p-histogram" style={`--at:${at * 100}%`}>
           <div class="p-bars">
-            {amounts.map((n, i) => <i class={(i + 1) / amounts.length <= at ? 'is-in' : ''} style={`height:${Math.max(2, (n / most) * 40)}px`}></i>)}
+            {amounts.map((n, i) => <i class={(i + 1) / amounts.length <= at ? 'is-in' : ''} style={`--k:${i};--bar:${+((n / most) * 40).toFixed(3)}`}></i>)}
           </div>
           <div class="lb-slider-row p-histogram__track"><div class="lb-slider" style={`--at:${at * 100}%`}><i></i><b></b></div></div>
           <span class="p-bubble" style={`left:${at * 100}%`}>{money(START_AMOUNT)}</span>

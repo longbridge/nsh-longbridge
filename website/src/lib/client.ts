@@ -216,8 +216,23 @@ function watchDemos() {
       d.height = m.height;
       if (d.ready) d.el.style.height = `${m.height}px`;
     }
-    if (m.t === 'ready') showDemo(d);
+    if (m.t === 'ready') entered(d.el).then(() => showDemo(d));
   });
+}
+
+/**
+ * When the stage's entrance (the poster's cards rising in one after another,
+ * `stage-in` in the stylesheet) has played: the live demo is held behind the
+ * poster until then, so the entrance plays once, whole, however soon the demo
+ * is ready, and the demo takes over from the state it ends in. At once where
+ * nothing plays (less motion, another demo).
+ */
+function entered(el: HTMLElement): Promise<unknown> {
+  const poster = el.querySelector<HTMLElement>('.demo__poster');
+  const playing = (poster?.getAnimations({ subtree: true }) ?? []).filter((a) => (a as CSSAnimation).animationName === 'stage-in');
+  if (!playing.length) return Promise.resolve();
+  // A cancelled one (the stage resized past a card's breakpoint) counts as played; two seconds at most.
+  return Promise.race([Promise.all(playing.map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 2000))]);
 }
 
 // The keyboard rule: a key pressed anywhere stops the hero's loop for good,
@@ -306,7 +321,7 @@ function watchStage() {
   if (!stage) return;
   let pending: { x: number; y: number } | null | undefined;
   let queued = false;
-  const backdrop = startBackdrop(stage, (p) => {
+  startBackdrop(stage, (p) => {
     pending = p;
     if (queued) return;
     queued = true;
@@ -314,8 +329,7 @@ function watchStage() {
       queued = false;
       send({ t: 'pointer', demo: 'hero', at: pending ?? null });
     });
-  });
-  (window as unknown as { __silk?: unknown }).__silk = backdrop;
+  }).then((backdrop) => ((window as unknown as { __silk?: unknown }).__silk = backdrop));
 }
 
 export function start() {

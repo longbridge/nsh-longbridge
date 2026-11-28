@@ -15,7 +15,13 @@
 // `--eval <js>`... (run in the page after the clicks), `--after <js>`... (after the shots), `--scroll y` and
 // `--report` (bytes over the wire, the layout shift and the time to `load`), `--gl` (WebGL2 in software),
 // `--moves "x,y …"` with `--probe <js>` (the pointer moved through points, the page probed at each) and
-// `--sweep x1,y1,x2,y2` (with `--times`: the pointer crossing from one point to the other).
+// `--sweep x1,y1,x2,y2` (with `--times`: the pointer crossing from one point to the other), `--warm <url>`
+// (that address loaded first, for `--warm-wait` ms (4000): the same page leaves its files in the cache, any page
+// leaves the browser's GPU process started, which in software takes seconds) and `--stamp <js>` (with `--times`:
+// run and printed just before each shot), `--rate x` (the page's CSS animations and transitions played at x
+// times their speed: slow ones shot frame by frame where shots are slow), `--cast ms` (the screen recorded
+// from the start of the load for that long, every frame Chrome paints: `<out>-cast-<n>.png`, each listed with
+// its time from the start, in ms).
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -77,8 +83,29 @@ if (throttle) {
 if (flag("--no-js")) await send("Emulation.setScriptExecutionDisabled", { value: true });
 await send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__cls=0;try{new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:'layout-shift',buffered:true})}catch{}` });
 for (const pre of all("--pre")) await send("Page.addScriptToEvaluateOnNewDocument", { source: pre });
+const warm = opt("--warm");
+if (warm) { await send("Page.navigate", { url: warm }); await sleep(Number(opt("--warm-wait", "4000"))); }
+const rate = opt("--rate");
+if (rate) { await send("Animation.enable"); await send("Animation.setPlaybackRate", { playbackRate: Number(rate) }); }
+const cast = Number(opt("--cast", "0"));
+const castFrames = [];
+if (cast) {
+  ws.addEventListener("message", (e) => {
+    const m = JSON.parse(e.data);
+    if (m.method !== "Page.screencastFrame") return;
+    castFrames.push({ at: m.params.metadata.timestamp * 1000, data: m.params.data });
+    ws.send(JSON.stringify({ id: ++id, method: "Page.screencastFrameAck", params: { sessionId: m.params.sessionId } }));
+  });
+  await send("Page.startScreencast", { format: "png", everyNthFrame: 1 });
+}
 const started = Date.now();
 await send("Page.navigate", { url });
+if (cast) {
+  await sleep(Math.max(0, started + cast - Date.now()));
+  await send("Page.stopScreencast");
+  const stem = out.replace(/\.png$/, "");
+  castFrames.forEach((f, i) => { writeFileSync(`${stem}-cast-${i}.png`, Buffer.from(f.data, "base64")); console.log(`cast ${i} ${Math.round(f.at - started)} abs ${Math.round(f.at)}`); });
+}
 await sleep(wait);
 const evaluate = async (expression) => (await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
 for (const c of all("--click")) {
@@ -132,6 +159,7 @@ if (times) {
         await sleep(Math.min(25, Math.max(0, from + t - Date.now())));
       }
     } else await sleep(Math.max(0, from + t - Date.now()));
+    for (const js of all("--stamp")) console.log(`stamp ${t} ${await evaluate(js)}`);
     await capture(`${stem}-${t}.png`);
   }
 } else if (frames > 0) {

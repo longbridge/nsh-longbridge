@@ -10,7 +10,7 @@
 // - the demo says `ready` once it has drawn, and its `size` (the height it
 //   takes at the frame's width) whenever that changes, so the frame fits it;
 // - the page says when the frame is in `view` (the hero's loop plays only
-//   then), when a `key` was pressed (the hero's loop stops for good, as on
+//   then; the first one comes as the page shows the demo over its poster), when a `key` was pressed (the hero's loop stops for good, as on
 //   the gallery), the token demo's `tokens` as its sliders move, and the
 //   `pointer` over the hero's stage (its cards lean from it).
 
@@ -52,7 +52,9 @@ const startTokens = () => Object.fromEntries(knobs.map((k) => [k.name, `${k.star
 
 /** The demo `name`, filling the frame's width; `page`: the embedding page's id. */
 export function Embed(props: { name: EmbedName; page: string }) {
-  const inView = signal(true);
+  // Not until the page says so: it shows the demo (`view`) once its poster's
+  // entrance has played, and the hero's loop starts from the top then.
+  const inView = signal(false);
   const pointer = signal<{ x: number; y: number } | null>(null);
   const tokens = signal<Record<string, string>>(startTokens());
   const send = (m: Record<string, unknown>) => channel?.postMessage({ ...m, page: props.page, demo: props.name });
