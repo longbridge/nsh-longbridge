@@ -4,7 +4,9 @@
 //! group headers and disabled items, the popup surface, the trigger's
 //! states, pointer and touch sizes (a sheet), the app's `renderItem`, the
 //! search field (filtering, its keys, the empty state, a list of thousands)
-//! and the clear button (its place, Delete and Backspace, disabled).
+//! and the clear button (its place, Delete and Backspace, disabled), the
+//! list's width against its titles and the trigger, and no focus ring while
+//! the list is open.
 
 mod common;
 
@@ -14,7 +16,7 @@ use std::{
     time::Duration,
 };
 
-use common::{bounds, css, light, size, start};
+use common::{bounds, css, light, size, start, start_styled};
 use nsh_core::{MountItem, NodeId, prelude::*};
 use nsh_longbridge::{
     ScopeTokens, SelectEntry, SelectEvent, SelectItem, Size, ThemeAppearance,
@@ -837,4 +839,102 @@ fn tsx_gets_the_search_and_clear_props() {
     ] {
         assert!(ts.contains(wanted), "{wanted} in:\n{ts}");
     }
+}
+
+const LONG: &str = "Every hour (Enterprise plan only)";
+
+/// A narrow select with a title longer than it, a wide one with short
+/// titles, and the long title alone at a row's size, as wide as it reads.
+#[component]
+fn Widths() -> impl IntoElement {
+    view()
+        .pt(px(40.0))
+        .pl(px(40.0))
+        .items_start()
+        .gap(px(8.0))
+        .child(
+            text(LONG)
+                .test_id("ruler")
+                .text_size(px(14.0))
+                .line_height(px(20.0))
+                .whitespace_nowrap(),
+        )
+        .child(
+            select()
+                .items(vec![
+                    SelectItem::new("hourly", "Hourly"),
+                    SelectItem::new("enterprise", LONG),
+                ])
+                .accessibility_label("Narrow")
+                .app_class(Some("w-[120px]".into())),
+        )
+        .child(
+            select()
+                .items(vec![SelectItem::new("a", "A"), SelectItem::new("b", "B")])
+                .accessibility_label("Wide")
+                .app_class(Some("w-[240px]".into())),
+        )
+}
+
+/// The list grows past a narrow trigger to show its longest title whole,
+/// its start edge still on the trigger's; with short titles it is as wide
+/// as the trigger, never narrower.
+#[test]
+fn the_list_fits_its_longest_title_and_is_never_narrower_than_the_trigger() {
+    let mut app = start::<Widths>(true);
+    open(&mut app, "Narrow");
+    let trigger = bounds(&app, "role:combobox[Narrow]");
+    let popup = bounds(
+        &app,
+        &format!("view:{}", popup_of(&app, "role:option[Hourly]")),
+    );
+    assert_eq!(
+        popup.origin.x, trigger.origin.x,
+        "on the trigger's start edge"
+    );
+    assert!(popup.size.width > trigger.size.width, "{popup:?}");
+    // The title is not cut: at least as wide as it reads alone.
+    let title = bounds(&app, &format!("role:option[{LONG}] >> text:{LONG}"));
+    let whole = bounds(&app, "id:ruler");
+    assert!(
+        title.size.width >= whole.size.width,
+        "{title:?}, whole {whole:?}"
+    );
+    app.press_key("Escape").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    open(&mut app, "Wide");
+    let trigger = bounds(&app, "role:combobox[Wide]");
+    let popup = bounds(&app, &format!("view:{}", popup_of(&app, "role:option[A]")));
+    assert_eq!(popup.origin.x, trigger.origin.x);
+    assert_eq!(popup.size.width, trigger.size.width);
+}
+
+/// Opened from the keys, the trigger keeps the focus edge but draws no
+/// ring, which would fill the 4 points to the list; closed with the focus
+/// kept, the ring is back.
+#[test]
+fn no_focus_ring_is_drawn_while_the_list_is_open() {
+    let (mut app, styles) = start_styled::<Fruit>(true);
+    let ring = |s: &nsh_core::ViewStyle| {
+        s.effects
+            .as_ref()
+            .and_then(|e| e.box_shadows.iter().find(|b| b.spread > px(0.0)))
+            .map(|b| b.color.0 & 0xff)
+    };
+    let trigger = |app: &Headless| common::style(app, &styles, "role:combobox[Fruit]");
+    app.press_key("Tab").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    let focused = trigger(&app);
+    assert!(ring(&focused).is_some_and(|alpha| alpha > 0), "{focused:?}");
+    app.press_key("ArrowDown").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(app.screen().matches("role:listbox").unwrap());
+    let open = trigger(&app);
+    assert_eq!(Some(open.borders.colors[0].0), light(INPUT_BORDER_FOCUS));
+    assert_eq!(ring(&open).unwrap_or(0), 0, "{open:?}");
+    app.press_key("Escape").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.screen().matches("role:listbox").unwrap());
+    let closed = trigger(&app);
+    assert!(ring(&closed).is_some_and(|alpha| alpha > 0), "{closed:?}");
 }

@@ -4,7 +4,7 @@
 //! field's sizes on pointer and touch screens (a sheet on touch screens);
 //! joining a `Field`; a token changed while the popup is open reaching the
 //! popup, a day and a segment; the time field's focus edge and ring; the
-//! time label's color.
+//! time label's color; the presets' rows drawn as a menu's.
 
 mod common;
 
@@ -14,7 +14,7 @@ use std::{
     time::Duration,
 };
 
-use common::{bounds, css, dark, light, size, start, start_dark};
+use common::{bounds, css, dark, length, light, radius, size, start, start_dark, start_styled};
 use nsh_core::{Command, MountItem, NodeId, prelude::*};
 use nsh_longbridge::{
     DatePicker, DatePickerEvent, DateRangePreset, DateTime, HourCycle, PickedDate, ScopeTokens,
@@ -22,7 +22,10 @@ use nsh_longbridge::{
     chrono::NaiveDate,
     components::{calendar::CALENDAR_SELECTED, date_picker::DATE_PICKER_SEGMENT_FOCUS},
     date_picker, field, field_label,
-    foundation::field::{INPUT_BORDER, INPUT_BORDER_FOCUS, INPUT_PLACEHOLDER_FOREGROUND},
+    foundation::{
+        field::{INPUT_BORDER, INPUT_BORDER_FOCUS, INPUT_PLACEHOLDER_FOREGROUND},
+        menu::{MENU_ITEM_FOCUS, MENU_ITEM_RADIUS},
+    },
     label,
     theme::semantic::{POPOVER, POPOVER_FOREGROUND},
     theme_scope,
@@ -922,4 +925,42 @@ fn tsx_gets_confirm_and_its_parts() {
     ] {
         assert!(ts.contains(wanted), "{wanted}");
     }
+}
+
+/// Beside the calendar the presets' column is a menu's list: its rows take
+/// a menu row's corners and, under the pointer or pending (`confirm`), its
+/// highlight, `menu-item-focus` (in the dark appearance, where a ghost
+/// button's differs).
+#[test]
+fn the_presets_rows_take_a_menu_rows_corners_and_highlight() {
+    let (mut app, styles) = start_styled::<Pickers>(true);
+    open(&mut app, "Stay");
+    for preset in ["Launch", "Holidays"] {
+        let row = format!("role:button[{preset}]");
+        assert_eq!(
+            radius(&app, &styles, &row),
+            length(MENU_ITEM_RADIUS),
+            "{preset}"
+        );
+    }
+    let lit = Some(dark(MENU_ITEM_FOCUS).0);
+    let (mut app, _) = start_dark::<Pickers>();
+    open(&mut app, "Stay");
+    assert_eq!(common::fill(&app, "role:button[Launch]"), None);
+    app.hover("role:button[Launch]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(common::fill(&app, "role:button[Launch]"), lit, "hovered");
+    let (mut app, _) = start_dark::<Confirmed>();
+    open(&mut app, "Period");
+    app.press("role:button[Holidays]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    app.hover(&day("2026-12-10")).unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    let preset = app
+        .screen()
+        .accessibility(Some("role:button[Holidays]"))
+        .unwrap()
+        .unwrap();
+    assert!(preset.selected);
+    assert_eq!(common::fill(&app, "role:button[Holidays]"), lit, "selected");
 }

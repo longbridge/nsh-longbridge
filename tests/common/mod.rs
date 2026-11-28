@@ -1,6 +1,6 @@
 //! What the component tests share: a headless engine on a desktop or a
-//! phone, reading a view's size and fill, and the color a drawing strokes
-//! in the dark appearance.
+//! phone, reading a view's size, fill and corner radius, a token's value,
+//! and the color a drawing strokes in the dark appearance.
 
 #![allow(dead_code, unreachable_pub)]
 
@@ -10,7 +10,7 @@ use std::{
 };
 
 use nsh_core::{
-    Color, MountItem, NodeId, Size as Viewport,
+    Color, MountItem, NodeId, Size as Viewport, ViewStyle,
     canvas::{CanvasOp, Paint},
     platform::{ColorScheme, Os},
     prelude::*,
@@ -83,6 +83,62 @@ pub fn light(token: Token<kind::Color>) -> Option<u32> {
     Some(nsh_core::Color::from(c.light).0).filter(|c| c & 0xff != 0)
 }
 
+/// What `token` resolves to with `nsh/base`'s default theme, with a
+/// pointer.
+pub fn length(token: Token<kind::Length>) -> f32 {
+    let tokens = nsh_base::Theme::default().into_tokens();
+    nsh_longbridge::theme::resolve_number_in(&tokens, &[], true, token)
+}
+
+/// Every view's style as the host last got it, by node.
+pub type Styles = Arc<Mutex<HashMap<NodeId, ViewStyle>>>;
+
+/// Keeps every style `app` sends from now on (call it before the first
+/// render to have them all).
+pub fn watch_styles(app: &mut Headless) -> Styles {
+    let styles = Styles::default();
+    let seen = styles.clone();
+    app.observe(move |_, batch| {
+        for item in &batch.items {
+            if let MountItem::ViewStyle { id, style } = item {
+                seen.lock().unwrap().insert(*id, (**style).clone());
+            }
+        }
+    });
+    styles
+}
+
+/// `C` as [`start`] makes it, with every style it sends kept from the
+/// first frame.
+pub fn start_styled<C: Component<Props = ()>>(desktop: bool) -> (Headless, Styles) {
+    let mut config = EngineConfig {
+        viewport: Viewport::new(px(800.0), px(600.0)),
+        clock: nsh_engine::Clock::manual(std::time::SystemTime::now()),
+        ..EngineConfig::new(nsh_testing::windowed_root::<C>())
+    };
+    config.environment.os = if desktop { Os::MacOs } else { Os::Ios };
+    let mut app = Headless::start(config).unwrap();
+    let styles = watch_styles(&mut app);
+    app.first_render().unwrap();
+    (app, styles)
+}
+
+/// The style the host last got for `selector`.
+pub fn style(app: &Headless, styles: &Styles, selector: &str) -> ViewStyle {
+    let id = app.screen().id(selector).unwrap();
+    styles
+        .lock()
+        .unwrap()
+        .get(&id)
+        .cloned()
+        .unwrap_or_else(|| panic!("no style for {selector}"))
+}
+
+/// The corner radius the host last got for `selector`.
+pub fn radius(app: &Headless, styles: &Styles, selector: &str) -> f32 {
+    style(app, styles, selector).border_radius.0
+}
+
 /// A CSS color as a fill reads.
 pub fn css(color: &str) -> Option<u32> {
     Some(nsh_core::Color::parse(color).unwrap().0)
@@ -103,6 +159,33 @@ pub fn start_dark<C: Component<Props = ()>>() -> (Headless, Strokes) {
     config.environment.os = Os::MacOs;
     config.environment.color_scheme = ColorScheme::Dark;
     let mut app = Headless::start(config).unwrap();
+    let strokes = watch_strokes(&mut app);
+    app.first_render().unwrap();
+    (app, strokes)
+}
+
+/// The TSX app at `entry` as [`start_tsx`] makes it on a desktop, in the
+/// dark appearance, with the color each drawing strokes in.
+pub fn start_tsx_dark(entry: &str) -> (Headless, Strokes) {
+    let sets = vec![nsh_base::registry(), nsh_longbridge::registry()];
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(entry);
+    let bundle = nsh_testing::compile_tsx(&path, &sets).unwrap();
+    let mut config = EngineConfig {
+        viewport: Viewport::new(px(800.0), px(600.0)),
+        clock: nsh_engine::Clock::manual(std::time::SystemTime::now()),
+        ui_sets: sets,
+        ..EngineConfig::new(bundle)
+    };
+    config.environment.os = Os::MacOs;
+    config.environment.color_scheme = ColorScheme::Dark;
+    let mut app = Headless::start(config).unwrap();
+    let strokes = watch_strokes(&mut app);
+    app.first_render().unwrap();
+    (app, strokes)
+}
+
+/// Keeps the color each drawing `app` sends from now on strokes in.
+pub fn watch_strokes(app: &mut Headless) -> Strokes {
     let strokes = Strokes::default();
     let seen = strokes.clone();
     app.observe(move |_, batch| {
@@ -116,8 +199,7 @@ pub fn start_dark<C: Component<Props = ()>>() -> (Headless, Strokes) {
             }
         }
     });
-    app.first_render().unwrap();
-    (app, strokes)
+    strokes
 }
 
 /// The color the drawing at `selector` strokes in.

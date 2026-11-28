@@ -5,7 +5,7 @@
 //! it shows above an open dialog, in the `Toaster`'s theme scope; reduced
 //! motion skips the entrance; the remaining-time bar runs, stands still
 //! while the stack is expanded, starts over by `id` and runs out as the
-//! toast goes.
+//! toast goes; the gaps between its icon, message and buttons.
 
 mod common;
 
@@ -751,4 +751,75 @@ fn at_the_top_the_bar_is_on_the_top_edge() {
         .unwrap()
         .bounds;
     assert_eq!(b.origin.y.0, alert.origin.y.0 + 1.0);
+}
+
+fn make_failed(_: u32) -> nsh_longbridge::ToastBuilder {
+    toast("Upload failed")
+        .description("The file is too large")
+        .kind(ToastKind::Error)
+        .cancel("later", "Later")
+        .action("retry", "Retry")
+        .duration(None)
+}
+
+#[component]
+fn Failed() -> impl IntoElement {
+    app(make_failed, toaster().into_element())
+}
+
+/// The start and end of `node`, across and down.
+fn spans(app: &Headless, node: NodeId) -> ((f32, f32), (f32, f32)) {
+    let b = bounds(app, &format!("view:{node}"));
+    (
+        (b.origin.x.0, (b.origin.x + b.size.width).0),
+        (b.origin.y.0, (b.origin.y + b.size.height).0),
+    )
+}
+
+/// The icon, the message and the buttons are three groups `toast-gap`
+/// (12) apart; the title and the description, parts of one message, 4; the
+/// two buttons, closely related, 8.
+#[test]
+fn the_icon_message_and_buttons_are_spaced_on_the_scale() {
+    let mut app = start::<Failed>(true);
+    show(&mut app);
+    let screen = app.screen();
+    let nodes = screen.layout_nodes();
+    let parent = |id: NodeId| nodes.iter().find(|n| n.id == id).unwrap().parent;
+    let title = screen.id("text:Upload failed").unwrap();
+    let description = screen.id("text:The file is too large").unwrap();
+    let message = parent(title);
+    let toast = parent(message);
+    let parts: Vec<NodeId> = nodes
+        .iter()
+        .filter(|n| n.parent == toast)
+        .map(|n| n.id)
+        .collect();
+    let at = parts.iter().position(|&p| p == message).unwrap();
+    let (icon, buttons) = (parts[at - 1], parts[at + 1]);
+    assert_eq!(
+        spans(&app, icon).0.1 - spans(&app, icon).0.0,
+        16.0,
+        "the icon"
+    );
+    let later = screen.id("role:button[Later]").unwrap();
+    let retry = screen.id("role:button[Retry]").unwrap();
+    assert_eq!(parent(later), buttons);
+    let (icon, message, buttons) = (
+        spans(&app, icon),
+        spans(&app, message),
+        spans(&app, buttons),
+    );
+    assert_eq!(message.0.0 - icon.0.1, 12.0, "icon to message");
+    assert_eq!(buttons.0.0 - message.0.1, 12.0, "message to buttons");
+    assert_eq!(
+        spans(&app, description).1.0 - spans(&app, title).1.1,
+        4.0,
+        "title to description"
+    );
+    assert_eq!(
+        spans(&app, retry).0.0 - spans(&app, later).0.1,
+        8.0,
+        "between the buttons"
+    );
 }

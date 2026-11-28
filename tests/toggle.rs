@@ -1,7 +1,8 @@
 //! `Toggle` in a headless engine: a press reports the next value and the
 //! toggle shows the one passed back, disabled, what screen readers get,
 //! pointer and touch sizes, the pressed and hover fills from the tokens,
-//! the outline edge and shadow, and a scoped token reaching the look.
+//! the outline edge and shadow, an icon alone in a square in both variants,
+//! and a scoped token reaching the look.
 
 mod common;
 
@@ -14,9 +15,9 @@ use std::{
 use common::{fill, light, size, start};
 use nsh_core::{Checked, MountItem, NodeId, ViewStyle, prelude::*};
 use nsh_longbridge::{
-    ScopeTokens, Size, ToggleVariant,
+    IconName, ScopeTokens, Size, ToggleVariant,
     components::toggle::{TOGGLE_HOVER, TOGGLE_PRESSED},
-    theme_scope, toggle,
+    icon, theme_scope, toggle,
 };
 use nsh_testing::Headless;
 
@@ -177,6 +178,40 @@ fn the_outline_variant_has_an_edge_and_a_shadow() {
         .map(|e| e.box_shadows.len())
         .unwrap_or(0);
     assert_eq!(shadows, 1, "{style:?}");
+}
+
+/// An icon alone in a toggle of each variant, at `md` and `lg`. The
+/// headless engine does not measure a view inside a text (the label holding
+/// the icon), so the label is given the icon's width (16).
+#[component]
+fn IconToggles() -> impl IntoElement {
+    let one = |variant: ToggleVariant, size: Size, label: &'static str| {
+        toggle()
+            .variant(variant)
+            .size(size)
+            .accessibility_label(label)
+            .label_class(Some("w-4".into()))
+            .child(icon().name(IconName::Plus))
+    };
+    view()
+        .flex_col()
+        .items_start()
+        .gap(px(8.0))
+        .child(one(ToggleVariant::Default, Size::Md, "Default md"))
+        .child(one(ToggleVariant::Outline, Size::Md, "Outline md"))
+        .child(one(ToggleVariant::Default, Size::Lg, "Default lg"))
+        .child(one(ToggleVariant::Outline, Size::Lg, "Outline lg"))
+}
+
+/// The edge of an outline toggle counts in its padding, so an icon alone
+/// is as square as in the default variant.
+#[test]
+fn an_icon_only_outline_toggle_is_a_square_at_md_and_lg() {
+    let app = start::<IconToggles>(true);
+    assert_eq!(size(&app, "role:button[Default md]"), (32.0, 32.0));
+    assert_eq!(size(&app, "role:button[Outline md]"), (32.0, 32.0));
+    assert_eq!(size(&app, "role:button[Default lg]"), (36.0, 36.0));
+    assert_eq!(size(&app, "role:button[Outline lg]"), (36.0, 36.0));
 }
 
 /// A pressed toggle outside and inside a scope that changes

@@ -1,16 +1,17 @@
 //! `Pagination` in a headless engine: the landmark and the items' names
 //! and states, a press reporting the page, the current page's outline and
 //! the others' ghost look (in a forced appearance too), the ends dimmed,
-//! item heights on a pointer and on a touch screen.
+//! item heights on a pointer and on a touch screen, and Previous's and
+//! Next's padding and gap as a Button's with an icon at each size.
 
 mod common;
 
 use std::time::Duration;
 
 use common::{bounds, fill, light, start};
-use nsh_core::prelude::*;
+use nsh_core::{NodeId, prelude::*};
 use nsh_longbridge::{
-    ScopeTokens, ThemeAppearance, components::button::BUTTON_OUTLINE, pagination, theme_scope,
+    ScopeTokens, Size, ThemeAppearance, components::button::BUTTON_OUTLINE, pagination, theme_scope,
 };
 use nsh_testing::Headless;
 
@@ -114,4 +115,68 @@ fn items_are_the_button_height() {
     assert_eq!(bounds(&desktop, page).size.width.0, 32.0);
     let touch = start::<Pages>(false);
     assert_eq!(bounds(&touch, page).size.height.0, 40.0);
+}
+
+/// A pager of each size.
+#[component]
+fn Sizes() -> impl IntoElement {
+    let one = |size: Size, name: &'static str| {
+        pagination()
+            .page(2)
+            .total_pages(3)
+            .size(size)
+            .accessibility_label(name)
+    };
+    view()
+        .child(one(Size::Xs, "xs"))
+        .child(one(Size::Sm, "sm"))
+        .child(one(Size::Md, "md"))
+        .child(one(Size::Lg, "lg"))
+}
+
+/// The start and end of `node`.
+fn span(app: &Headless, node: NodeId) -> (f32, f32) {
+    let b = bounds(app, &format!("view:{node}"));
+    (b.origin.x.0, b.origin.x.0 + b.size.width.0)
+}
+
+/// The row holding the word `word` in the pager `name`, and the views in
+/// it in order (the chevron and the word).
+fn step(app: &Headless, name: &str, word: &str) -> (NodeId, Vec<NodeId>) {
+    let screen = app.screen();
+    let word = screen
+        .id(&format!("role:navigation[{name}] >> text:{word}"))
+        .unwrap();
+    let nodes = screen.layout_nodes();
+    let row = nodes.iter().find(|n| n.id == word).unwrap().parent;
+    let parts = nodes
+        .iter()
+        .filter(|n| n.parent == row)
+        .map(|n| n.id)
+        .collect();
+    (row, parts)
+}
+
+/// Previous and Next are drawn as a ghost Button with an icon of their
+/// size: its padding (6 / 10 / 12 / 16) and its gap (4 / 4 / 8 / 8).
+#[test]
+fn previous_and_next_take_a_button_with_an_icons_padding_and_gap() {
+    let app = start::<Sizes>(true);
+    for (name, padding, gap) in [
+        ("xs", 6.0, 4.0),
+        ("sm", 10.0, 4.0),
+        ("md", 12.0, 8.0),
+        ("lg", 16.0, 8.0),
+    ] {
+        let (row, parts) = step(&app, name, "Previous");
+        let (row, chevron, word) = (span(&app, row), span(&app, parts[0]), span(&app, parts[1]));
+        assert_eq!(chevron.0 - row.0, padding, "{name}: Previous's padding");
+        assert_eq!(word.0 - chevron.1, gap, "{name}: Previous's gap");
+        assert_eq!(row.1 - word.1, padding, "{name}: Previous's end padding");
+        let (row, parts) = step(&app, name, "Next");
+        let (row, word, chevron) = (span(&app, row), span(&app, parts[0]), span(&app, parts[1]));
+        assert_eq!(word.0 - row.0, padding, "{name}: Next's padding");
+        assert_eq!(chevron.0 - word.1, gap, "{name}: Next's gap");
+        assert_eq!(row.1 - chevron.1, padding, "{name}: Next's end padding");
+    }
 }

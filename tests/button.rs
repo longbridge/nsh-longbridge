@@ -1,8 +1,8 @@
 //! `Button` in a headless engine: presses, the disabled and loading states,
-//! what screen readers get, pointer and touch sizes, and a scope's tokens
-//! reaching its look.
+//! what screen readers get, pointer and touch sizes, the gap between an
+//! icon and its label at each size, and a scope's tokens reaching its look.
 
-use nsh_core::{Color, Size as Viewport, platform::Os, prelude::*};
+use nsh_core::{Color, NodeId, Size as Viewport, platform::Os, prelude::*};
 use nsh_engine::EngineConfig;
 use nsh_longbridge::{ButtonVariant, IconName, ScopeTokens, Size, button, theme_scope};
 use nsh_testing::Headless;
@@ -131,6 +131,56 @@ fn touch_screens_get_taller_buttons() {
     let touch = start::<Sizes>(false);
     assert_eq!(height(&touch, "role:button[Medium]"), 40.0);
     assert_eq!(height(&touch, "role:button[Small]"), 32.0);
+}
+
+/// A button with an icon and a label at each size.
+#[component]
+fn IconSizes() -> impl IntoElement {
+    let one = |size: Size, name: &'static str| {
+        button()
+            .size(size)
+            .icon(IconName::Plus)
+            .accessibility_label(name)
+            .child("New file")
+    };
+    view()
+        .items_start()
+        .child(one(Size::Xs, "xs"))
+        .child(one(Size::Sm, "sm"))
+        .child(one(Size::Md, "md"))
+        .child(one(Size::Lg, "lg"))
+}
+
+/// The views directly in the one `selector` names, in order.
+fn parts(app: &Headless, selector: &str) -> Vec<NodeId> {
+    let screen = app.screen();
+    let of = screen.id(selector).unwrap();
+    screen
+        .layout_nodes()
+        .iter()
+        .filter(|n| n.parent == of)
+        .map(|n| n.id)
+        .collect()
+}
+
+#[test]
+fn the_icon_label_gap_is_4_at_xs_and_sm_and_8_at_md_and_lg() {
+    let app = start::<IconSizes>(true);
+    for (size, gap) in [("xs", 4.0), ("sm", 4.0), ("md", 8.0), ("lg", 8.0)] {
+        let parts = parts(&app, &format!("role:button[{size}]"));
+        assert_eq!(parts.len(), 2, "{size}: the icon and the label");
+        let edge = |node: NodeId| {
+            let b = app
+                .screen()
+                .layout(&format!("view:{node}"))
+                .unwrap()
+                .unwrap()
+                .bounds;
+            (b.origin.x.0, b.origin.x.0 + b.size.width.0)
+        };
+        let (icon, label) = (edge(parts[0]), edge(parts[1]));
+        assert_eq!(label.0 - icon.1, gap, "{size}");
+    }
 }
 
 /// The same button outside and inside a scope that changes `primary`.
