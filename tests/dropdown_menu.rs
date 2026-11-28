@@ -531,6 +531,45 @@ fn the_pointer_lights_a_sub_trigger_only_while_it_has_the_focus() {
     assert!(app.shows("Email"), "a press on the row opens it");
 }
 
+/// A disabled submenu's trigger is dimmed like a disabled item and says
+/// so to screen readers; the keys pass it over, and neither a press, the
+/// pointer nor the keys open it.
+#[test]
+fn a_disabled_submenus_trigger_is_dimmed_skipped_and_never_opens() {
+    let mut app = start::<Subs>(true);
+    open(&mut app);
+    let screen = app.screen();
+    let opacity = |selector: &str| screen.view_style(selector).unwrap().unwrap().opacity;
+    // `opacity-disabled`, a disabled item's.
+    assert_eq!(opacity(&sub_row("Export")), 0.5);
+    assert_eq!(opacity(&sub_row("Share")), 1.0);
+    for item in [sub_row("Export"), "role:menuitem[Export] >> nth=0".into()] {
+        assert!(
+            screen.accessibility_state(&item).unwrap().disabled,
+            "{item}"
+        );
+    }
+    let pressed = app.press(&sub_row("Export"));
+    assert!(pressed.is_err_and(|e| e.contains("is disabled")));
+    app.hover(&sub_row("Export")).unwrap();
+    app.run_for(Duration::from_millis(500)).unwrap();
+    assert!(!app.shows("PDF"), "the pointer does not open it");
+    // The keys go from Share to Log out and back, past Export.
+    app.hover("role:menuitem[Profile]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    let lit = common::light(MENU_ITEM_FOCUS);
+    for (key, row) in [
+        ("ArrowDown", sub_row("Share")),
+        ("ArrowDown", "role:menuitem[Log out]".into()),
+        ("ArrowUp", sub_row("Share")),
+    ] {
+        app.press_key(key).unwrap();
+        app.run_for(Duration::from_millis(300)).unwrap();
+        assert_eq!(common::fill(&app, &row), lit, "{key} to {row}");
+    }
+    assert!(!app.shows("PDF"));
+}
+
 /// A menu in a dark scope that also changes `popover`.
 #[component]
 fn Scoped() -> impl IntoElement {

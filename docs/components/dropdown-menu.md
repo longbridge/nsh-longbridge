@@ -336,6 +336,8 @@ All of it is `nsh/base`'s:
 
 - The trigger is `expanded` while open and `hasPopup`; the popup is a `menu`; items are `menuitem`, checkbox items
   `menuitemcheckbox` and radio items `menuitemradio` with `checked`; disabled items are dimmed and skipped.
+- A disabled submenu does not open and its trigger is skipped (`nsh/base`'s); the library dims the trigger
+  (`opacity-disabled`) and makes it `disabled` for screen readers, which `nsh/base` does not.
 - The keys and focus return are under [Built on](#built-on). Typeahead matches each item's `accessibilityLabel`, else
   its text.
 - The shortcut is part of the item's text for screen readers. Icons and indicators are hidden from them.

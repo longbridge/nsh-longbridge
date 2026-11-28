@@ -762,7 +762,8 @@ pub fn DropdownMenuSub(
     // pointer, as a data table's over its rows: a real hover never reaches
     // the item (a disabled one would light), and the pointer's presses and
     // moves reach the view `nsh/base` opens the submenu from (an item's
-    // press would stop at the item).
+    // press would stop at the item). That view also says whether it is
+    // disabled; the item is dimmed.
     let own_open = signal(false);
     let within = signal(false);
     let root = element_ref();
@@ -775,12 +776,14 @@ pub fn DropdownMenuSub(
     let item = props.trigger.place(move |slot| {
         slot.pointer_events(PointerEvents::None)
             .project_hovered(lit)
+            .disabled(disabled)
     });
     let trigger = if is_terminal() {
         item
     } else {
         view()
             .relative()
+            .disabled(disabled)
             .child(item)
             .child(
                 view()
