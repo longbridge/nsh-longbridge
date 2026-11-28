@@ -159,6 +159,33 @@ pub fn start_dark<C: Component<Props = ()>>() -> (Headless, Strokes) {
     config.environment.os = Os::MacOs;
     config.environment.color_scheme = ColorScheme::Dark;
     let mut app = Headless::start(config).unwrap();
+    let strokes = watch_strokes(&mut app);
+    app.first_render().unwrap();
+    (app, strokes)
+}
+
+/// The TSX app at `entry` as [`start_tsx`] makes it on a desktop, in the
+/// dark appearance, with the color each drawing strokes in.
+pub fn start_tsx_dark(entry: &str) -> (Headless, Strokes) {
+    let sets = vec![nsh_base::registry(), nsh_longbridge::registry()];
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(entry);
+    let bundle = nsh_testing::compile_tsx(&path, &sets).unwrap();
+    let mut config = EngineConfig {
+        viewport: Viewport::new(px(800.0), px(600.0)),
+        clock: nsh_engine::Clock::manual(std::time::SystemTime::now()),
+        ui_sets: sets,
+        ..EngineConfig::new(bundle)
+    };
+    config.environment.os = Os::MacOs;
+    config.environment.color_scheme = ColorScheme::Dark;
+    let mut app = Headless::start(config).unwrap();
+    let strokes = watch_strokes(&mut app);
+    app.first_render().unwrap();
+    (app, strokes)
+}
+
+/// Keeps the color each drawing `app` sends from now on strokes in.
+pub fn watch_strokes(app: &mut Headless) -> Strokes {
     let strokes = Strokes::default();
     let seen = strokes.clone();
     app.observe(move |_, batch| {
@@ -172,8 +199,7 @@ pub fn start_dark<C: Component<Props = ()>>() -> (Headless, Strokes) {
             }
         }
     });
-    app.first_render().unwrap();
-    (app, strokes)
+    strokes
 }
 
 /// The color the drawing at `selector` strokes in.
