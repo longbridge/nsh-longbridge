@@ -518,6 +518,7 @@ pub fn Combobox(props: ComboboxProps, cx: Scope<ComboboxEvent>) -> impl IntoElem
         items,
         title_weight: Some(MENU_ITEM_MATCH_FONT_WEIGHT),
         max_height: Some(COMBOBOX_LIST_MAX_HEIGHT),
+        keep_check_room: multiple,
         content_class: props.content_class,
         content_style: props.content_style,
         item_class: props.item_class,
