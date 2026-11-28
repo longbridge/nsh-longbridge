@@ -254,6 +254,26 @@ fn the_field_shows_the_focus_while_the_input_has_it() {
     assert_eq!(Some(focused.borders.colors[0].0), light(INPUT_BORDER_FOCUS));
     // The ring joins the shadow.
     assert_eq!(shadows(&focused), 2, "{focused:?}");
+    // Open, the focus edge stays and the ring goes (transparent), so the 4
+    // points to the list stay clear; closed, with the focus kept, it comes
+    // back.
+    let ring = |s: &ViewStyle| {
+        s.effects
+            .as_ref()
+            .and_then(|e| e.box_shadows.iter().find(|b| b.spread > px(0.0)))
+            .map(|b| b.color.0 & 0xff)
+    };
+    assert!(ring(&focused).is_some_and(|alpha| alpha > 0), "{focused:?}");
+    open(&mut app, "Framework");
+    assert!(app.screen().matches("role:listbox").unwrap());
+    let open = styles.lock().unwrap().get(&field).cloned().unwrap();
+    assert_eq!(Some(open.borders.colors[0].0), light(INPUT_BORDER_FOCUS));
+    assert_eq!(ring(&open).unwrap_or(0), 0, "{open:?}");
+    app.press_key("Escape").unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    assert!(!app.screen().matches("role:listbox").unwrap());
+    let closed = styles.lock().unwrap().get(&field).cloned().unwrap();
+    assert!(ring(&closed).is_some_and(|alpha| alpha > 0), "{closed:?}");
 }
 
 /// The popup around the row `selector` names: its first ancestor with a

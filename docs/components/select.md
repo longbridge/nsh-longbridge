@@ -279,7 +279,7 @@ The trigger takes the field look's states (Input's table): rest, focus-visible (
 |---|---|---|
 | Hover (pointer) | Fill `select-trigger-hover` (dark only: `input` at 50%; light unchanged) | `dark:hover:bg-input/50` |
 | Placeholder shown | Value text in `input-placeholder-foreground` | `data-[placeholder]:text-muted-foreground` |
-| Open (`expanded:`) | Edge `input-border-focus`, no ring (Decisions 2) | none |
+| Open (`expanded:`) | Edge `input-border-focus`, no ring, even while focus-visible (Decisions 2) | none |
 | Row highlighted (`focus:`) | Fill `menu-item-focus`, text `menu-item-focus-foreground` | `focus:bg-accent focus:text-accent-foreground` |
 | Row chosen (`selected:`) | The check shown; otherwise as at rest | `ItemIndicator` |
 | Row disabled | `opacity-disabled`, never highlighted | `data-[disabled]:opacity-50` |
@@ -526,7 +526,10 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
    typeahead and highlight over titles (see the time-zone example). The name `SelectItem` is the data type (`nsh/base`'s), not a component.
 2. **The open trigger keeps the focus edge** (`input-border-focus` while `expanded`): gpui-kit's Design Guides ask for
    persistent feedback while an attached popup is open. The library-wide decision (DropdownMenu's
-   3: a `Button` trigger keeps its hover fill).
+   3: a `Button` trigger keeps its hover fill). It draws **no focus ring while open**, even focused from the keyboard:
+   the 3-point ring would fill 3 of the 4 points between the trigger and the list, so the gap would read differently
+   from every other popup's. The ring fades back in when the list closes and the focus stays (`popup_field_look`, as
+   DatePicker's trigger and Combobox's field).
 3. **macOS opens the list over the trigger, other desktops below it** (`nsh/base`'s default, `cover`): the
    platforms' own habit wins.
 4. **Searchable Select beside Combobox**: both filter one list by title. A searchable select keeps a trigger that is a

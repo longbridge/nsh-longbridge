@@ -304,7 +304,7 @@ The field takes the field look's states (Input's table): rest, focus-visible (`i
 |---|---|
 | Hover (pointer) | Fill `date-picker-trigger-hover` (dark only: `input` at 50%; light unchanged), as Select's trigger |
 | Placeholder shown | Text and icon in `input-placeholder-foreground` |
-| Open (`expanded:`) | Edge `input-border-focus`, no ring (Select's Decisions 2) |
+| Open (`expanded:`) | Edge `input-border-focus`, no ring, even while focus-visible (Select's Decisions 2) |
 | A half range | The calendar shows its start and the preview (Calendar's states); closing drops it, the value unchanged |
 | Preset hover / press | A menu row's highlight, `menu-item-focus` (outline hover in the sheet); touch: the press as hover |
 | Segment edited | `date-picker-segment-focus` fill and its foreground |
