@@ -33,18 +33,22 @@ need around them: the value (`Tabs`, controlled or not), the panels (`TabsConten
 | States | `selected:` and `disabled:` on each tab; `focus-visible:` for keyboard focus |
 | Terminal | Tabs in a row two Cells apart, the selected one bold on a band; this library's look does not apply there |
 
-`nsh/base`'s indicator (a view that travels to the selected tab with a spring) is **not used**: see Decisions 2.
+`nsh/base`'s indicator is **not used**; the list draws its own, which travels to the selected tab the same way: see
+Decisions 2.
 
 ### Implementation
 
 - **`Tabs`** (the root) is a view of this library's. It holds the value (the app's `value`, else its own signal from
   `defaultValue`) and provides a `TabsContext` (the value, the setter that reports `onChange`, the orientation).
 - **`TabsList`** is `nsh_base::tabs()`, with `orientation` from the root's context (read when made, as `nsh/base`
-  reads it) and `accessibilityLabel`; it provides the `variant` and `size` to its triggers.
+  reads it) and `accessibilityLabel`; it provides the `variant` and `size` to its triggers. Its first child is the
+  indicator, a view of this library's behind the triggers that follows the selected trigger (`View::follow`): along
+  the list it spans the trigger, placed natively after each layout, and travels to the next one with a spring;
+  across the list its style places it.
 - **`TabsTrigger`** is `nsh_base::tab()` with `selected = context.value == value` and `onPress` setting the value
-  (reported only when it changes). Its look is set on its root element with bindings; the `line` variant's underline is
-  a view of this library's inside it. A trigger outside a `Tabs` renders unselected and logs a warning in development
-  builds.
+  (reported only when it changes). Its look is set on its root element with bindings; while selected it gives the list
+  its element for the indicator to follow, and draws no fill, edge or shadow of its own. A trigger outside a `Tabs`
+  renders unselected and logs a warning in development builds.
 - **`TabsContent`** is a view of this library's, made only while its value is the selected one (a hidden panel
   holds nothing), with the `tabpanel` role.
 
@@ -145,7 +149,7 @@ In classes (the list's `h-9` is `lg`):
 | List | Fill `tabs-list`, corners `tabs-list-radius` (10), padding `tabs-list-padding` (2) | No fill, square, the same padding, triggers `spacing` (4) apart |
 | Trigger at rest | No fill, a 1 pt edge in transparent, text `tabs-trigger-foreground` | Same |
 | Trigger hovered | Text `tabs-trigger-hover-foreground` | Same |
-| Trigger selected | Fill `tabs-trigger-selected`, edge `tabs-trigger-selected-border`, shadow tier `tabs-trigger-selected-shadow` (2, `sm`), text `tabs-trigger-selected-foreground` | Text `tabs-trigger-selected-foreground`; an underline `tabs-line-indicator-width` (2) thick in `tabs-line-indicator`, as long as the trigger, its bottom edge on the list's, at opacity 1 (0 otherwise); a column: fill `tabs-line-selected`, text `tabs-line-selected-foreground`, no underline |
+| Trigger selected | Text `tabs-trigger-selected-foreground`, on the indicator: fill `tabs-trigger-selected`, edge `tabs-trigger-selected-border`, shadow tier `tabs-trigger-selected-shadow` (2, `sm`), the trigger's corners | Text `tabs-trigger-selected-foreground`; the indicator an underline `tabs-line-indicator-width` (2) thick in `tabs-line-indicator`, as long as the trigger, its bottom edge on the list's; a column: the indicator a fill `tabs-line-selected` with the trigger's corners, text `tabs-line-selected-foreground` |
 | Dark | Rest text `muted-foreground`; selected fill `input` at 30%, edge `input` | Rest text `muted-foreground`; no selected edge |
 
 ### Sizes
@@ -182,8 +186,10 @@ In classes (the list's `h-9` is `lg`):
 | Focus-visible | Edge `tabs-trigger-border-focus` and a `ring-width` (3) ring in `tabs-trigger-ring` outside the trigger, taking no layout (`focus-visible:border-ring ring-[3px] ring-ring/50`; an extra `outline-1 outline-ring` would be the same edge drawn again and is not added). Touch: the edge only |
 | Disabled | `opacity-disabled`, no hover; the arrow cursor |
 
-Colors, the edge, the fill and the shadow transition over `duration` (`transition-all`), none with reduced
-motion; the `line` underline fades over `duration`. The cursor is the arrow (a tab is not a link). The list's ring needs
+The indicator travels to the newly selected tab on a spring (a 280 ms response, a damping ratio of 0.85: `nsh/base`'s),
+at once with reduced motion; a layout that moves or resizes the selected tab moves it in the same frame. It is hidden
+while no tab is selected, and dimmed (`opacity-disabled`) while the selected tab is disabled. Colors transition over
+`duration` (`transition-all`), none with reduced motion. The cursor is the arrow (a tab is not a link). The list's ring needs
 `ring-width` of room around it: a `TabsList` against the edge of an `overflow-hidden` container gets its ring clipped
 (as Input says).
 
@@ -207,7 +213,7 @@ The same look on every platform; a phone app that wants the system's segmented c
 - `TabsContent` has the `tabpanel` role. NSH has no labelledby or controls link between elements a component does
   not own (Input's G1), so a panel is not named by its tab; give the panel an `accessibilityLabel` when its first
   heading does not name it.
-- Icons and the underline are hidden from screen readers. An icon-only trigger needs `accessibilityLabel`.
+- Icons and the indicator are hidden from screen readers. An icon-only trigger needs `accessibilityLabel`.
 
 ## Tokens
 
@@ -319,10 +325,10 @@ tabs()
 
 ## NSH gaps
 
-1. **`nsh/base`'s indicator takes a fixed style in Rust and its class loses to its style.** `Tabs`' `indicatorStyle`
-   setter builds a style once (bound values inside stay bound, a shadow's layers do not), and the library's look
-   there would win over the app's `indicatorClass`. Workaround: no `nsh/base` indicator; each trigger draws its own
-   selected look (Decisions 2). A reactive `indicatorStyle` would let a sliding segment be offered.
+1. **`nsh/base`'s indicator is styled through a class and a `Style` only.** The library's look given as its
+   `indicatorStyle` would win over the app's `indicatorClass`, and a `Style` takes no token bindings the way an
+   element's builder does. Workaround: the list draws its own indicator with `View::follow`, the native placement and
+   spring `nsh/base`'s uses (Decisions 2).
 2. **No link between a tab and its panel** (the web's `aria-controls` / `aria-labelledby`): NSH has no labelledby
    between elements (Input's G1). Workaround: the panel's own `accessibilityLabel` when needed.
 3. **String children** (Button's G0): the gallery wraps them in `<Text>` until NSH's fix is released.
@@ -339,10 +345,11 @@ tabs()
 
 1. **The value lives in this library's `Tabs`** (controlled or not), with `TabsContent` panels; `nsh/base`
    keeps tabs stateless and its `Tab` / `Tabs` are used for the keys and accessibility only.
-2. **The selected look is drawn on each trigger, not `nsh/base`'s travelling indicator**: the look exactly (the
-   selected trigger's fill and shadow; `line`'s underline fading), drawn by the library so its tokens stay bound and the
-   app's classes win (conventions: a part the app must restyle is drawn by the library). `nsh/base`'s spring-moving
-   segment (gpui-kit's) is the better motion; offer it once its style takes bindings (gap 1).
+2. **The selected look is one indicator that travels between the tabs**, not a look drawn on each trigger: a
+   selection that slides from the old tab to the new one (gpui-kit's spring-moving segment) reads as one control,
+   where a fill fading out on one tab and in on another looks abrupt. It is a view of this library's, not
+   `nsh/base`'s indicator, so its tokens stay bound (gap 1); it follows the selected trigger natively, with no
+   layout event or JS per frame.
 3. **`line` is supported**: `nsh/base`'s tabs need nothing more for it.
 4. **No `forceMount`**: inactive panels are released.
 

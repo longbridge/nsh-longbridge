@@ -2,12 +2,14 @@
 //! `nsh/base`'s `Tabs` and `Tab` (one stop of the keyboard focus, the
 //! arrows, Home and End, the tablist and tab roles and their states for
 //! screen readers). `nsh/base` holds no value and no content: `Tabs` holds
-//! the value, `TabsContent` the panels, and each trigger draws its own
-//! selected look. API: `docs/components/tabs.md`.
+//! the value, `TabsContent` the panels, and the list an indicator that
+//! travels to the selected trigger. API: `docs/components/tabs.md`.
+
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use nsh_base::{tab as base_tab, tabs as base_tabs, terminal::is_terminal};
 use nsh_core::{
-    element::{Style, TextPartStyle},
+    element::{LayoutTransition, Spring, Style, TextPartStyle},
     geometry::Axis,
     prelude::*,
 };
@@ -130,6 +132,25 @@ impl TabsContext {
 struct ListContext {
     variant: Prop<TabsVariant>,
     size: Prop<Size>,
+    /// The selected trigger, which the list's indicator follows.
+    active: Signal<Option<ActiveTab>>,
+}
+
+/// The selected trigger of a list, as its indicator needs it.
+#[derive(Clone, Copy)]
+struct ActiveTab {
+    /// The trigger's own number: a trigger clears only its own entry.
+    id: u64,
+    /// The trigger's element, which the indicator follows.
+    target: ElementRef,
+    /// Whether the trigger is disabled: the indicator dims with it.
+    disabled: Prop<bool>,
+}
+
+/// The indicator's travel to another tab: `nsh/base`'s (a 280 ms
+/// response, a damping ratio of 0.85), a little springy.
+fn indicator_motion() -> LayoutTransition {
+    LayoutTransition::spring(Spring::new(280.0).damping_ratio(0.85))
 }
 
 /// The props of [`Tabs`].
@@ -208,9 +229,11 @@ pub fn TabsList(props: TabsListProps, _cx: Scope<NoEvent>) -> impl IntoElement {
     let tabs = use_context::<TabsContext>();
     let orientation = tabs.map_or(Axis::Horizontal, |c| c.orientation);
     let horizontal = orientation == Axis::Horizontal;
+    let active = signal_with(None, SignalEquals::Never);
     provide_context(ListContext {
         variant: props.variant,
         size: props.size,
+        active,
     });
     let line = move || props.variant.get() == TabsVariant::Line;
     let root = base_tabs()
@@ -253,7 +276,110 @@ pub fn TabsList(props: TabsListProps, _cx: Scope<NoEvent>) -> impl IntoElement {
                 t.color(TABS_LIST)
             }
         })
+        // Behind the triggers: drawn before them.
+        .child(indicator(t, active, props.variant, props.size, horizontal))
         .child(props.children)
+}
+
+/// The view that marks the selected trigger, behind the triggers: the
+/// raised segment (`default`), the underline on the list's edge (a `line`
+/// row) or the fill (a `line` column). Along the list it spans the selected
+/// trigger, natively placed after each layout, and travels to the next one
+/// with a spring (at once with reduced motion); across it, its style
+/// places it. Hidden while no trigger is selected, dimmed while the
+/// selected one is disabled, and hidden from screen readers.
+fn indicator(
+    t: crate::theme::Theme,
+    active: Signal<Option<ActiveTab>>,
+    variant: Prop<TabsVariant>,
+    size: Prop<Size>,
+    horizontal: bool,
+) -> View {
+    let line = move || variant.get() == TabsVariant::Line;
+    // A row's `line` list underlines; every other list has a segment
+    // (raised, or a `line` column's fill) where the trigger is.
+    let underline = move || line() && horizontal;
+    let raised = move || !line();
+    let padding = move || t.length(TABS_LIST_PADDING);
+    // The trigger's height (as `TabsTrigger`'s): the segment's corners are
+    // the trigger's.
+    let height = move || t.length(list_height_token(size.get())) - padding() * 2.0;
+    let indicator = view()
+        .absolute()
+        .pointer_events(PointerEvents::None)
+        .accessibility_elements_hidden(true)
+        .follow(move || active.with(|a| a.as_ref().map(|a| a.target)))
+        .follow_transition(move || (!reduce_motion()).then_some(indicator_motion()))
+        .style_when(move || active.with(Option::is_none), |s| s.hidden());
+    // Across the list: inside its padding (a segment), or on its bottom
+    // edge (an underline).
+    let indicator = if horizontal {
+        indicator
+            .top(move || {
+                if underline() {
+                    Length::Auto
+                } else {
+                    padding().into()
+                }
+            })
+            .bottom(move || if underline() { px(0.0) } else { padding() })
+            .h(move || {
+                if underline() {
+                    t.length(TABS_LINE_INDICATOR_WIDTH).into()
+                } else {
+                    Length::Auto
+                }
+            })
+    } else {
+        indicator.left(padding).right(padding)
+    };
+    let indicator = indicator
+        .rounded(move || {
+            if underline() {
+                px(0.0)
+            } else {
+                t.length(TABS_TRIGGER_RADIUS).clamp(px(0.0), height() / 2.0)
+            }
+        })
+        .border(move || {
+            if raised() {
+                t.length(BORDER_WIDTH)
+            } else {
+                px(0.0)
+            }
+        })
+        .border_color(move || {
+            if raised() {
+                t.color(TABS_TRIGGER_SELECTED_BORDER)
+            } else {
+                AdaptiveColor::TRANSPARENT
+            }
+        })
+        .bg(move || {
+            if underline() {
+                t.color(TABS_LINE_INDICATOR)
+            } else if line() {
+                t.color(TABS_LINE_SELECTED)
+            } else {
+                t.color(TABS_TRIGGER_SELECTED)
+            }
+        })
+        .inline_style(move || {
+            let level = if raised() {
+                shadow::level(t.number(TABS_TRIGGER_SELECTED_SHADOW))
+            } else {
+                0
+            };
+            shadow::shadow(t, level)
+        })
+        .opacity(move || {
+            if active.with(|a| a.as_ref().is_some_and(|a| a.disabled.get())) {
+                t.number(OPACITY_DISABLED)
+            } else {
+                1.0
+            }
+        });
+    motion::transition_all(indicator, t)
 }
 
 /// The props of [`TabsTrigger`].
@@ -313,9 +439,8 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
     let height = move || t.length(list_height_token(size())) - t.length(TABS_LIST_PADDING) * 2.0;
     let font_size = move || t.length(font_size_token(size()));
     let icon_side = move || t.length(icon_size_token(size()));
-    let raised = move || selected() && !line();
-    // A vertical `line` list marks the selected trigger with a fill; a row
-    // underlines it.
+    // A vertical `line` list marks the selected trigger with a fill (the
+    // list's indicator), whose text is a selected tab's.
     let filled = move || selected() && line() && !horizontal;
     let foreground = move || {
         if filled() {
@@ -327,6 +452,34 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
         }
     };
     provide_icon_size(size);
+
+    // The list's indicator follows the selected trigger: this one while it
+    // is selected.
+    let target = element_ref();
+    if let Some(l) = list {
+        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
+        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+        let mine = move || {
+            l.active
+                .with_untracked(|a| a.as_ref().is_some_and(|a| a.id == id))
+        };
+        effect(move || {
+            if selected() {
+                l.active.set(Some(ActiveTab {
+                    id,
+                    target,
+                    disabled: props.disabled,
+                }));
+            } else if mine() {
+                l.active.set(None);
+            }
+        });
+        cleanup(move || {
+            if mine() {
+                l.active.set(None);
+            }
+        });
+    }
 
     let root = base_tab()
         .selected(selected)
@@ -344,6 +497,7 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
         return root.children_each(props.children, |child, _| text("").child(child));
     }
     let root = root
+        .element_ref(&target)
         .flex_row()
         .items_center()
         // Grows from its content (`flex: 1 1 auto`): a plain `flex-1` relies
@@ -356,36 +510,15 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
         .h(height)
         .px(move || t.length(TABS_TRIGGER_PADDING_X))
         .rounded(move || t.length(TABS_TRIGGER_RADIUS).clamp(px(0.0), height() / 2.0))
+        // An edge of no color, for the focus ring's: the selected look is
+        // the list's indicator, behind the trigger.
         .border(move || t.length(BORDER_WIDTH))
-        .border_color(move || {
-            if raised() {
-                t.color(TABS_TRIGGER_SELECTED_BORDER)
-            } else {
-                AdaptiveColor::TRANSPARENT
-            }
-        })
-        .bg(move || {
-            if raised() {
-                t.color(TABS_TRIGGER_SELECTED)
-            } else if filled() {
-                t.color(TABS_LINE_SELECTED)
-            } else {
-                AdaptiveColor::TRANSPARENT
-            }
-        })
+        .border_color(AdaptiveColor::TRANSPARENT)
         .text_color(foreground)
         .text_size(font_size)
         .line_height(move || line_height(font_size()))
         .font_weight(medium(t))
         .whitespace_nowrap()
-        .inline_style(move || {
-            let level = if raised() {
-                shadow::level(t.number(TABS_TRIGGER_SELECTED_SHADOW))
-            } else {
-                0
-            };
-            shadow::shadow(t, level)
-        })
         .hover(move |s| {
             s.text_color(move || {
                 if disabled() || selected() {
@@ -406,43 +539,19 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
         .disabled_style(move |s| s.opacity(move || t.number(OPACITY_DISABLED)));
     let root = motion::transition_all(root, t).cursor(Cursor::Default);
 
-    // The `line` variant's underline under the trigger in a row, faded in
-    // while selected (a column fills the selected trigger instead).
-    let underline = move || {
-        (line() && horizontal).then(|| {
-            let thickness = move || t.length(TABS_LINE_INDICATOR_WIDTH);
-            let indicator = view()
-                .absolute()
-                .pointer_events(PointerEvents::None)
-                .accessibility_elements_hidden(true)
-                .bg(move || t.color(TABS_LINE_INDICATOR))
-                .opacity(move || if selected() { 1.0_f32 } else { 0.0 })
-                .transition_opacity();
-            // On the list's edge: past the trigger's own edge (the offsets
-            // count from inside it) and the list's padding.
-            let beyond = move || -(t.length(TABS_LIST_PADDING) + t.length(BORDER_WIDTH));
-            let indicator = indicator
-                .left(px(0.0))
-                .right(px(0.0))
-                .h(thickness)
-                .bottom(beyond);
-            motion::timing(indicator, t)
+    root.child(dynamic(move || {
+        props.icon.get().map(|name| {
+            icon_view(t, move || name, icon_side)
+                .app_class(props.icon_class)
+                .inline_style(move || props.icon_style.get())
         })
-    };
-    root.child(dynamic(underline))
-        .child(dynamic(move || {
-            props.icon.get().map(|name| {
-                icon_view(t, move || name, icon_side)
-                    .app_class(props.icon_class)
-                    .inline_style(move || props.icon_style.get())
-            })
-        }))
-        .children_each(props.children, move |child, _| {
-            text("")
-                .app_class(props.label_class)
-                .inline_style(move || Style::from(props.label_style.get()))
-                .child(child)
-        })
+    }))
+    .children_each(props.children, move |child, _| {
+        text("")
+            .app_class(props.label_class)
+            .inline_style(move || Style::from(props.label_style.get()))
+            .child(child)
+    })
 }
 
 /// The props of [`TabsContent`].
