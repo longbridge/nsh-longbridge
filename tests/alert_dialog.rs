@@ -2,7 +2,8 @@
 //! opened with the focus on Cancel (else its action); the overlay does not
 //! close it; Cancel, the action and Escape close it with their reasons;
 //! size `sm` is 320 wide with two equal buttons; the media sits above the
-//! title or beside it, its icon 32 square.
+//! title or beside it, its icon 32 square; the description 8 below the
+//! title.
 
 mod common;
 
@@ -229,6 +230,24 @@ fn a_default_alert_is_a_dialogs_width() {
     let action = bounds(&app, "role:button[Continue]");
     assert_eq!(cancel.origin.y, action.origin.y);
     assert!(cancel.size.width.0 < 200.0, "content-sized: {cancel:?}");
+}
+
+/// The description sits `alert-dialog-header-gap` (8, a dialog header's)
+/// below the title, start-aligned, centered and beside the media.
+#[test]
+fn the_description_is_8_below_the_title() {
+    for (app, name) in [
+        (start::<Basic>(true), "md"),
+        (start::<Small>(true), "sm"),
+        (start::<WithMedia>(true), "beside the media"),
+    ] {
+        let mut app = app;
+        open(&mut app);
+        let title = bounds(&app, "id:title");
+        let description = bounds(&app, "id:description");
+        let gap = (description.origin.y - title.origin.y - title.size.height).0;
+        assert_eq!(gap, 8.0, "{name}");
+    }
 }
 
 /// `sm`: 320 wide, the header centered, two equal buttons side by side,
