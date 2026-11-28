@@ -25,8 +25,8 @@ use crate::{
         TRANSPARENT, Token, kind,
         seeds::SPACING,
         semantic::{
-            ACCENT, ACCENT_FOREGROUND, BACKGROUND, BORDER_WIDTH, CONTROL_HEIGHT_LG,
-            CONTROL_HEIGHT_MD, CONTROL_HEIGHT_SM, CONTROL_HEIGHT_TOUCH_LG, CONTROL_HEIGHT_TOUCH_MD,
+            ACCENT, BACKGROUND, BORDER_WIDTH, CONTROL_HEIGHT_LG, CONTROL_HEIGHT_MD,
+            CONTROL_HEIGHT_SM, CONTROL_HEIGHT_TOUCH_LG, CONTROL_HEIGHT_TOUCH_MD,
             CONTROL_HEIGHT_TOUCH_SM, CONTROL_HEIGHT_TOUCH_XS, CONTROL_HEIGHT_XS, FOREGROUND, INPUT,
             MUTED, MUTED_FOREGROUND, OPACITY_DISABLED, RADIUS_LG, RING, RING_OPACITY,
         },
@@ -85,8 +85,10 @@ tokens! {
     /// The selected trigger's fill in a vertical `line` list, which marks
     /// it by its own surface (as a sidebar's row) rather than an edge bar.
     TABS_LINE_SELECTED: Color = "tabs-line-selected" => |t| t.color(ACCENT),
-    /// The selected trigger's text and icon in a vertical `line` list.
-    TABS_LINE_SELECTED_FOREGROUND: Color = "tabs-line-selected-foreground" => |t| t.color(ACCENT_FOREGROUND),
+    /// The selected trigger's text and icon in a vertical `line` list: a
+    /// selected tab's, so a hovered tab (`foreground`) is never darker than
+    /// the selected one.
+    TABS_LINE_SELECTED_FOREGROUND: Color = "tabs-line-selected-foreground" => |t| t.color(TABS_TRIGGER_SELECTED_FOREGROUND),
 }
 
 /// A tab list's look.
