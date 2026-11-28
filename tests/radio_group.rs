@@ -1,8 +1,8 @@
 //! `RadioGroup` and `RadioGroupItem` in a headless engine: the group's
 //! value checking its items, presses and the arrow keys reporting values,
 //! the group's disabled state, what screen readers get, pointer and touch
-//! sizes, the keyboard focus reaching the circle, and a scope's tokens
-//! reaching its look.
+//! sizes, the dot on whole points at every size, the keyboard focus
+//! reaching the circle, and a scope's tokens reaching its look.
 
 use nsh_core::{Checked, Color, NodeId, Size as Viewport, platform::Os, prelude::*};
 use nsh_engine::EngineConfig;
@@ -221,6 +221,53 @@ fn touch_screens_get_larger_circles() {
         bounds(&touch, circle(&touch, "role:radio[Small]")),
         (16.0, 16.0)
     );
+}
+
+/// A checked item of each size.
+#[component]
+fn Dots() -> impl IntoElement {
+    let one = |size: Size, name: &'static str| {
+        radio_group()
+            .size(size)
+            .value(Some(SharedString::from(name)))
+            .child(radio_group_item().value(name).child(name))
+    };
+    view()
+        .items_start()
+        .child(one(Size::Xs, "xs"))
+        .child(one(Size::Sm, "sm"))
+        .child(one(Size::Md, "md"))
+        .child(one(Size::Lg, "lg"))
+}
+
+/// The dot is centered in the circle on whole points, at every size (a
+/// half circle's side would put the odd ones on half points), with a
+/// pointer and on touch screens.
+#[test]
+fn the_dot_sits_on_whole_points_at_every_size() {
+    for desktop in [true, false] {
+        let app = start::<Dots>(desktop);
+        for name in ["xs", "sm", "md", "lg"] {
+            let circle = circle(&app, &format!("role:radio[{name}]"));
+            let dot = children(&app, circle)[0];
+            let at = |id: NodeId| {
+                app.screen()
+                    .layout(&format!("view:{id}"))
+                    .unwrap()
+                    .unwrap()
+                    .bounds
+            };
+            let (circle, dot) = (at(circle), at(dot));
+            let start = (dot.origin.x - circle.origin.x).0;
+            let top = (dot.origin.y - circle.origin.y).0;
+            let end = (circle.origin.x + circle.size.width - dot.origin.x - dot.size.width).0;
+            let what = format!("{name}, desktop {desktop}: {dot:?} in {circle:?}");
+            assert_eq!(start.fract(), 0.0, "{what}");
+            assert_eq!(top.fract(), 0.0, "{what}");
+            assert_eq!(start, end, "centered: {what}");
+            assert_eq!(start, top, "centered: {what}");
+        }
+    }
 }
 
 /// An item whose circle turns blue while the item's keyboard focus shows,
