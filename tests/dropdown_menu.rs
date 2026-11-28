@@ -460,6 +460,77 @@ fn from_rust_a_sub_trigger_is_lit_while_its_submenu_is_open() {
     }
 }
 
+/// A menu with a submenu and a disabled one.
+#[component]
+fn Subs() -> impl IntoElement {
+    view().pt(px(40.0)).pl(px(40.0)).items_start().child(
+        dropdown_menu()
+            .trigger(button().child("Open"))
+            .child(dropdown_menu_item().child("Profile"))
+            .child(
+                dropdown_menu_sub()
+                    .trigger(dropdown_menu_sub_trigger().child("Share"))
+                    .child(dropdown_menu_item().child("Email")),
+            )
+            .child(
+                dropdown_menu_sub()
+                    .disabled(true)
+                    .trigger(dropdown_menu_sub_trigger().child("Export"))
+                    .child(dropdown_menu_item().child("PDF")),
+            )
+            .child(dropdown_menu_item().child("Log out")),
+    )
+}
+
+/// The trigger row of the submenu `label` opens.
+fn sub_row(label: &str) -> String {
+    format!("role:menuitem[{label}] >> role:menuitem[{label}]")
+}
+
+/// The pointer lights a submenu's trigger as it does any row (it takes
+/// the focus there and opens the submenu), and the light goes with the
+/// focus as the pointer moves on to another row; a press anywhere on the
+/// trigger row opens the submenu. A disabled submenu's trigger never
+/// lights under the pointer.
+#[test]
+fn the_pointer_lights_a_sub_trigger_only_while_it_has_the_focus() {
+    let (mut app, strokes) = common::start_dark::<Subs>();
+    open(&mut app);
+    let lit = Some(common::dark(MENU_ITEM_FOCUS).0);
+    let chevron_color = |app: &Headless, label: &str| {
+        let chevron = format!("view:{}", chevron(app, &sub_row(label)));
+        common::stroke(app, &strokes, &chevron)
+    };
+    app.hover(&sub_row("Export")).unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert_eq!(common::fill(&app, &sub_row("Export")), None);
+    assert_eq!(
+        chevron_color(&app, "Export"),
+        common::dark(MENU_ITEM_ICON_FOREGROUND)
+    );
+    assert!(!app.shows("PDF"));
+    app.hover(&sub_row("Share")).unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(app.shows("Email"), "the pointer opens it");
+    assert_eq!(common::fill(&app, &sub_row("Share")), lit);
+    assert_eq!(
+        chevron_color(&app, "Share"),
+        common::dark(MENU_ITEM_FOCUS_FOREGROUND)
+    );
+    app.hover("role:menuitem[Profile]").unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(!app.shows("Email"), "another row closes it");
+    assert_eq!(common::fill(&app, "role:menuitem[Profile]"), lit);
+    assert_eq!(common::fill(&app, &sub_row("Share")), None);
+    assert_eq!(
+        chevron_color(&app, "Share"),
+        common::dark(MENU_ITEM_ICON_FOREGROUND)
+    );
+    app.press(&sub_row("Share")).unwrap();
+    app.run_for(Duration::from_millis(300)).unwrap();
+    assert!(app.shows("Email"), "a press on the row opens it");
+}
+
 /// A menu in a dark scope that also changes `popover`.
 #[component]
 fn Scoped() -> impl IntoElement {
