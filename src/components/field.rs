@@ -12,6 +12,7 @@ use nsh_core::{
 
 use crate::{
     components::{
+        dialog::DIALOG_HEADER_GAP,
         label::{LABEL_FONT_SIZE, LABEL_FONT_WEIGHT, LABEL_FOREGROUND, LABEL_GAP},
         separator::separator,
     },
@@ -47,8 +48,13 @@ tokens! {
     /// The space between the fields of a `FieldGroup` directly in another.
     FIELD_GROUP_NESTED_GAP: Length = "field-group-nested-gap" => |t| t.length(SPACING) * 3.0,
     /// The space between a `FieldSet`'s parts: its legend (with its
-    /// description) and its fields, closer than the fields to each other.
-    FIELD_SET_GAP: Length = "field-set-gap" => |t| t.length(SPACING) * 3.0,
+    /// description) and its fields, as far as a group's fields are from
+    /// each other, so the heading is never closer to the first field than
+    /// one field is to the next.
+    FIELD_SET_GAP: Length = "field-set-gap" => |t| t.length(FIELD_GROUP_GAP),
+    /// The space between a `FieldLegend` and the `FieldDescription` under
+    /// it: the set's heading, spaced as a dialog's title and description.
+    FIELD_SET_HEADER_GAP: Length = "field-set-header-gap" => |t| t.length(DIALOG_HEADER_GAP),
     /// The `FieldGroup` width from which `responsive` fields are horizontal.
     FIELD_RESPONSIVE_WIDTH: Length = "field-responsive-width" => |t| t.px(448.0),
     /// Extra space under a `FieldLegend`, over the set's gap (none: the
@@ -446,24 +452,24 @@ pub fn FieldDescription(props: FieldDescriptionProps, _cx: Scope<NoEvent>) -> im
         .text_size(font_size)
         .line_height(move || line_height(font_size()))
         .text_color(move || t.color(FIELD_DESCRIPTION_FOREGROUND))
-        // `field-content-gap` under what is above it (a label, a legend, a
-        // control): the parent's gap less the pull. First, nothing to pull
-        // to.
+        // `field-content-gap` under what is above it in a field (a label, a
+        // control), `field-set-header-gap` under a set's legend: the
+        // parent's gap less the pull. First, nothing to pull to.
         .app_class(move || Some(pull_class(t, in_set)))
         .child(props.children)
 }
 
-/// The class that pulls a description or an error up to
-/// `field-content-gap` under the part above it: its parent's gap (a
-/// field's, or a set's) less `field-content-gap`, as a negative top margin;
-/// none as its parent's first part.
+/// The class that pulls a description or an error up under the part above
+/// it, as a negative top margin: in a field, to `field-content-gap` (its
+/// gap less that); in a set, under its legend, to `field-set-header-gap`
+/// (the set's gap less that). None as its parent's first part.
 fn pull_class(t: Theme, in_set: bool) -> SharedString {
-    let gap = if in_set {
-        t.length(FIELD_SET_GAP)
+    let pull = if in_set {
+        t.length(FIELD_SET_GAP) - t.length(FIELD_SET_HEADER_GAP)
     } else {
-        t.length(FIELD_GAP)
-    };
-    let pull = (gap - t.length(FIELD_CONTENT_GAP)).max(px(0.0));
+        t.length(FIELD_GAP) - t.length(FIELD_CONTENT_GAP)
+    }
+    .max(px(0.0));
     Classes::new()
         .length("", "-mt", pull)
         .length("first", "mt", px(0.0))
@@ -666,7 +672,7 @@ pub struct FieldSetProps {
     pub children: Prop<Children>,
 }
 
-/// A set of related fields under a legend, 12 apart. Its `disabled`
+/// A set of related fields under a legend, 16 from it. Its `disabled`
 /// disables every control inside it.
 #[component]
 pub fn FieldSet(props: FieldSetProps, _cx: Scope<NoEvent>) -> impl IntoElement {

@@ -522,10 +522,17 @@ fn a_set_disables_its_fields_and_spaces_its_parts() {
     assert!(!app.screen().enabled("label:Card box").unwrap());
     let legend = bounds(&app, "text:Payment");
     let description = bounds(&app, "text:Secure.");
-    // The legend's line (24), then `field-content-gap` (4): the set's gap
-    // (12) less the description's pull (8).
+    let card = bounds(&app, "text:Card");
+    // The legend's line (24), then `field-set-header-gap` (8): the set's
+    // gap (16) less the description's pull (8).
     assert_eq!(legend.size.height, px(24.0));
-    assert_eq!(description.origin.y - legend.origin.y, px(24.0 + 4.0));
+    assert_eq!(description.origin.y - legend.origin.y, px(24.0 + 8.0));
+    // The heading to the first field: the set's gap, as far as one field
+    // is from the next (`field-group-gap`).
+    assert_eq!(
+        card.origin.y - (description.origin.y + description.size.height),
+        px(16.0)
+    );
     assert_eq!(size(&app, "text:Small legend").1, 20.0);
 }
 
