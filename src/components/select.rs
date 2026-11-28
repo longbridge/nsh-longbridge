@@ -418,6 +418,7 @@ pub fn Select(props: SelectProps, cx: Scope<SelectEvent>) -> impl IntoElement {
             items: computed(move || props.items.get()),
             title_weight: None,
             max_height: None,
+            keep_check_room: false,
             content_class: props.content_class,
             content_style: props.content_style,
             item_class: props.item_class,

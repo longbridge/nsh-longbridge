@@ -296,6 +296,11 @@ pub(crate) struct ListLook {
     pub title_weight: Option<Token<kind::Number>>,
     /// The longest the list of rows gets, if capped.
     pub max_height: Option<Token<kind::Length>>,
+    /// Every row keeps the check's room, chosen or not: a list that stays
+    /// open while values are chosen (`Combobox`'s `multiple`), whose
+    /// titles must not move as the checks come and go. Otherwise only the
+    /// chosen row makes room for its check.
+    pub keep_check_room: bool,
     /// The app's classes and style of the popup (or sheet).
     pub content_class: Prop<Option<SharedString>>,
     /// See `content_class`.
@@ -371,8 +376,10 @@ pub(crate) fn list_surface(t: Theme, app: Style, fit: Points) -> Style {
 
 /// How wide a list's surface must be for its widest title and group
 /// heading to show whole (read in a binding): the edges, `menu-padding`
-/// and `menu-item-padding-x` on both sides, and a title's room beside the
-/// check (`menu-item-gap` and the icon). The titles are measured by the
+/// and `menu-item-padding-x` on both sides, and beside a title the check's
+/// room (`menu-item-gap` and the icon) where its row makes it
+/// ([`ListLook::keep_check_room`]: the chosen row only, unless every row
+/// keeps it). The titles are measured by the
 /// platform in the system font at the rows' size (in `title_weight` when
 /// set), rounded up; nothing while the app draws the rows (`renderItem`,
 /// whose width the library cannot know) or on touch screens, whose sheet
@@ -392,11 +399,19 @@ pub(crate) fn fit_width(t: Theme, look: ListLook) -> impl Fn() -> Points + 'stat
             t.length(item_font_size_token(size)).0
         );
         let heading_font = format!("400 {}px system-ui", t.length(MENU_LABEL_FONT_SIZE).0);
+        let check = t.length(MENU_ITEM_GAP) + t.length(icon_size_token(size));
         let (title, heading) = look.items.with(|items| {
             let mut groups = Vec::<&SharedString>::new();
             let title = items
                 .iter()
-                .map(|i| measure_text(&title_font, &i.title))
+                .map(|i| {
+                    let title = measure_text(&title_font, &i.title);
+                    if look.keep_check_room || (look.chosen)(&i.value) {
+                        title + check
+                    } else {
+                        title
+                    }
+                })
                 .fold(Points::ZERO, Points::max);
             for group in items.iter().filter_map(|i| i.group.as_ref()) {
                 if !groups.contains(&group) {
@@ -409,10 +424,9 @@ pub(crate) fn fit_width(t: Theme, look: ListLook) -> impl Fn() -> Points + 'stat
                 .fold(Points::ZERO, Points::max);
             (title, heading)
         });
-        let check = t.length(MENU_ITEM_GAP) + t.length(icon_size_token(size));
         let sides =
             (t.length(BORDER_WIDTH) + t.length(MENU_PADDING) + t.length(MENU_ITEM_PADDING_X)) * 2.0;
-        px((title + check).max(heading).0.ceil()) + sides
+        px(title.max(heading).0.ceil()) + sides
     }
 }
 
@@ -487,8 +501,11 @@ pub(crate) fn list_item_class(t: Theme, app: Option<SharedString>) -> SharedStri
         .then(app)
 }
 
-/// A list row's content: the title (or the app's `renderItem`), then a box
-/// holding the check while the item is chosen.
+/// A list row's content: the title (or the app's `renderItem`), then the
+/// check while the item is chosen. A row not chosen gives the check's room
+/// to its title (unless every row keeps it:
+/// [`ListLook::keep_check_room`]), so a list is no wider than its trigger
+/// for a long title beside an empty check column ([`fit_width`]).
 pub(crate) fn list_row(t: Theme, look: ListLook) -> impl Fn(&SelectEntry) -> View + 'static {
     list_row_with(t, look, |entry: &SelectEntry| {
         title_text(text(entry.title.clone()))
@@ -504,10 +521,19 @@ pub(crate) fn list_row_with(
     title: impl Fn(&SelectEntry) -> AnyElement + 'static,
 ) -> impl Fn(&SelectEntry) -> View + 'static {
     let size = look.size;
-    let side = move || t.length(icon_size_token(size.get()));
+    let keep = look.keep_check_room;
     move |entry: &SelectEntry| {
         let value = entry.value.clone();
         let chosen = look.chosen.clone();
+        let chosen = computed(move || chosen(&value));
+        let room = move || keep || chosen.get();
+        let side = move || {
+            if room() {
+                t.length(icon_size_token(size.get()))
+            } else {
+                Points::ZERO
+            }
+        };
         let label = match look.render_item.get() {
             Some(render) => render
                 .render(format!("item:{}", entry.index), entry.clone())
@@ -517,11 +543,17 @@ pub(crate) fn list_row_with(
             None => title(entry),
         };
         let check = icon_view(t, || IconName::Check, side)
-            .opacity(move || if chosen(&value) { 1.0_f32 } else { 0.0 });
+            .opacity(move || if chosen.get() { 1.0_f32 } else { 0.0 });
         view()
             .flex_row()
             .items_center()
-            .gap(move || t.length(MENU_ITEM_GAP))
+            .gap(move || {
+                if room() {
+                    t.length(MENU_ITEM_GAP)
+                } else {
+                    Points::ZERO
+                }
+            })
             .when(entry.disabled, |v| {
                 v.opacity(move || t.number(OPACITY_DISABLED))
             })

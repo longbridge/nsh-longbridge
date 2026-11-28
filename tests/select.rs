@@ -17,7 +17,7 @@ use std::{
 };
 
 use common::{bounds, css, light, size, start, start_styled};
-use nsh_core::{MountItem, NodeId, prelude::*};
+use nsh_core::{MountItem, NodeId, ViewKind, prelude::*};
 use nsh_longbridge::{
     ScopeTokens, SelectEntry, SelectEvent, SelectItem, Size, ThemeAppearance,
     foundation::{field::INPUT_BORDER_FOCUS, menu::MENU_ITEM_FOCUS},
@@ -142,23 +142,30 @@ fn screen_readers_get_the_roles_and_states() {
     assert!(screen.matches("role:header[Vegetables]").unwrap());
 }
 
-/// The check's view on the row `name`: the row's last svg.
+/// How much of the check shows on the row `name`: the opacity of the row's
+/// last svg, none when it has no room (a row not chosen gives it to the
+/// title).
 fn check_opacity(app: &Headless, name: &str) -> f32 {
     let screen = app.screen();
     let nodes = screen.layout_nodes();
     let row = screen.id(&format!("role:option[{name}]")).unwrap();
     // The row's deepest last descendant is the check.
     let mut at = row;
-    let mut opacity = 1.0;
-    loop {
-        let Some(last) = nodes.iter().rfind(|n| n.parent == at) else {
-            return opacity;
-        };
-        if let Some(style) = screen.view_style(&format!("view:{}", last.id)).unwrap() {
-            opacity = style.opacity;
-        }
+    let mut found = None;
+    while let Some(last) = nodes.iter().rfind(|n| n.parent == at) {
+        found = Some(last);
         at = last.id;
     }
+    let Some(check) = found.filter(|n| n.kind != ViewKind::Text) else {
+        return 0.0;
+    };
+    if check.bounds.size.width <= px(0.0) {
+        return 0.0;
+    }
+    screen
+        .view_style(&format!("view:{}", check.id))
+        .unwrap()
+        .map_or(1.0, |s| s.opacity)
 }
 
 #[test]
@@ -907,6 +914,38 @@ fn the_list_fits_its_longest_title_and_is_never_narrower_than_the_trigger() {
     let popup = bounds(&app, &format!("view:{}", popup_of(&app, "role:option[A]")));
     assert_eq!(popup.origin.x, trigger.origin.x);
     assert_eq!(popup.size.width, trigger.size.width);
+}
+
+/// Only the chosen row makes room for its check: a long title on a row
+/// not chosen takes the check's room, so the list is narrower by it than
+/// while that row is chosen, and its title is whole either way.
+#[test]
+fn only_the_chosen_row_makes_room_for_the_check() {
+    let mut app = start::<Widths>(true);
+    let popup_width = |app: &Headless| {
+        bounds(
+            app,
+            &format!("view:{}", popup_of(app, "role:option[Hourly]")),
+        )
+        .size
+        .width
+    };
+    let whole = bounds(&app, "id:ruler").size.width;
+    let title = |app: &Headless| {
+        bounds(app, &format!("role:option[{LONG}] >> text:{LONG}"))
+            .size
+            .width
+    };
+    open(&mut app, "Narrow");
+    let unchosen = popup_width(&app);
+    assert!(title(&app) >= whole);
+    app.press(&format!("role:option[{LONG}]")).unwrap();
+    app.run_for(Duration::from_millis(400)).unwrap();
+    open(&mut app, "Narrow");
+    let chosen = popup_width(&app);
+    assert!(title(&app) >= whole);
+    // `menu-item-gap` and the check's side (`md`): 8 + 16.
+    assert_eq!(chosen.0 - unchosen.0, 24.0, "{unchosen:?} → {chosen:?}");
 }
 
 /// Opened from the keys, the trigger keeps the focus edge but draws no

@@ -85,7 +85,8 @@ component cannot read its children's props. So:
   the app's `itemClass` appended (NSH gaps 1). Its content is the library's `renderItem`: the title (or the app's
   `renderItem`, which it calls) and the check, shown while the row's value is the current value (a binding on the
   value, so moving the highlight or choosing draws nothing again, as `nsh/base` intends). The row lays its one child
-  across its width (a column), and the content lays out the title and the check; a disabled item's content is at
+  across its width (a column), and the content lays out the title and the check, which takes room only on the chosen
+  row (a row not chosen gives it to its title, Decisions 15); a disabled item's content is at
   `opacity-disabled` (a disabled row is never highlighted, so the row itself needs no state).
 - **The headers**: `nsh/base`'s (the group's title), drawn through a bound `groupStyle` (the app's `labelStyle` merged
   after it) and `groupClass` (the app's `labelClass`).
@@ -231,8 +232,8 @@ The menu look (DropdownMenu's "The menu look"), with a select's own parts:
 
 | Part | Layout | Classes |
 |---|---|---|
-| Surface | The popup surface (`foundation::popup::surface`: `popover`, `popover-border`, `popover-radius`, `popover-shadow` 3, `md`); padding `menu-padding` (4) inside the scrolling list; at least as wide as the trigger, as `menu-min-width` (128) and as its widest title (with the check's room) and group heading (Decisions 14) | `rounded-md border bg-popover shadow-md min-w-[8rem]`, viewport `p-1`, at least the trigger's width |
-| Row | Height `menu-item-height-<size>`; padding `menu-item-padding-x` (8) at the start; the title (one line, ellipsis) `flex: 1`; then a box `icon-size-<size>` wide holding the `check` while chosen, `menu-item-gap` (8) after the title and `menu-item-padding-x` before the end (32 at `md`, `pr-8`); corners `menu-item-radius`; text `menu-item-font-size-<size>` | `py-1.5 pr-8 pl-2 text-sm rounded-sm`, the check `absolute right-2 size-3.5`, `CheckIcon size-4` |
+| Surface | The popup surface (`foundation::popup::surface`: `popover`, `popover-border`, `popover-radius`, `popover-shadow` 3, `md`); padding `menu-padding` (4) inside the scrolling list; at least as wide as the trigger, as `menu-min-width` (128) and as its widest title (with the check's room on the chosen row) and group heading (Decisions 14, 15) | `rounded-md border bg-popover shadow-md min-w-[8rem]`, viewport `p-1`, at least the trigger's width |
+| Row | Height `menu-item-height-<size>`; padding `menu-item-padding-x` (8) at the start; the title (one line, ellipsis) `flex: 1`; then, on the chosen row only, the `check` (`icon-size-<size>`), `menu-item-gap` (8) after the title (a row not chosen gives that room to the title, Decisions 15); and `menu-item-padding-x` before the end (32 with the check at `md`, `pr-8`); corners `menu-item-radius`; text `menu-item-font-size-<size>` | `py-1.5 pr-8 pl-2 text-sm rounded-sm`, the check `absolute right-2 size-3.5`, `CheckIcon size-4` |
 | Check | `icon-size-<size>`, the row's text color | — |
 | Group header | Height `menu-item-height-<size>`, padding `menu-item-padding-x` at the sides, `menu-label-font-size` (12), `menu-label-foreground` (the menu family's) | `px-2 py-1.5 text-xs text-muted-foreground` |
 | Distance | `popover-offset` (4) from the trigger when on a side; none over it | `popper`: `translate-y-1` |
@@ -574,6 +575,13 @@ same interfaces as `nsh/base`'s), so a TSX app imports them from `nsh-longbridge
     the check's room, `menu-padding` and the edges, and gives that as the surface's least width: a popup style over
     `nsh/base`'s trigger width. An app font other than the system's is measured in the system's; `renderItem` rows are
     not measured (NSH gaps 5). Combobox's list does the same.
+15. **Only the chosen row makes room for its check**: every row used to keep the check's 24 points (`md`) beside its
+    title, so a long title on a row not chosen (the gallery's disabled "Every hour (Enterprise)") pushed the list a few
+    points past a trigger it would otherwise fit, which reads as misaligned. A row not chosen now gives that room to
+    its title, and the list is measured with the check beside the chosen title only, so nothing is cut and the list
+    grows only when a title needs it. The list's width may differ by the check's room between openings (with a long
+    title chosen or not); a select closes on a choice, so no title moves under the pointer. Combobox's `multiple`
+    list, which stays open while rows are checked, keeps the room on every row. No API changes.
 
 ## Later
 

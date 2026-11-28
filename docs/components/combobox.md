@@ -42,7 +42,7 @@ matched part of each title emphasized), the create row (`creatable`) and `size` 
 | Opening | Typing, Down or Up (Down on the first enabled item when none is chosen, Up on the last), a press on the input (not in a browser: NSH gaps 12) or on the chevron button opens it; desktops: Tab into the input does not; touch screens: the tap that focuses the input opens it once |
 | List keys | Up / Down (around the ends), Home / End, Page Up / Down, Return chooses, Escape, back and a press outside close (`"cancel"`, `"pressOutside"`), Tab or Shift+Tab close (`"focus"`) and move on; a new query highlights its first enabled match |
 | Focus | The input keeps the keyboard focus while the list is open (the highlighted row is its active descendant); the clear and chevron buttons are no Tab stops |
-| Presentation | Desktops: a popup below the field (`placement`, `align`), at least as wide as it and as its longest title, never taller than the room on its side. Touch screens: a sheet at the bottom over a backdrop |
+| Presentation | Desktops: a popup below the field (`placement`, `align`), at least as wide as it and as its longest title (the check's room counted on the chosen rows only, every row with `multiple`: Select's Decisions 15), never taller than the room on its side. Touch screens: a sheet at the bottom over a backdrop |
 | Rows | Virtualized: thousands of items make only the rows in view; sections from the items' `group`; `focus:` (highlighted), `selected:`, `disabled:` on each row |
 | Clear button | With `cleanable`, while a value is set: a press clears it (`onChange({ value: [] })`) and gives the focus back to the input |
 | Control | `open` / `defaultOpen` / `onOpenChange({ open, reason })`, `onOpen`, `onClose`, `onCancel` |
