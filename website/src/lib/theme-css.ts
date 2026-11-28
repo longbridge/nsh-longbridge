@@ -6,9 +6,10 @@
 //   appearance (`html.dark`);
 // - the library's tokens the posters use (`themes/default.json`, then each
 //   preset's file) as `--lb-*`, per appearance and preset
-//   (`html[data-preset="…"]`);
-// - the stage behind the hero for each preset (`gallery/ui/stage-colors.ts`)
-//   as `--stage-*`, and its flowing backdrop's colors as `--silk-*`.
+//   (`html[data-preset="…"]`).
+// - the nebula behind the hero (`backdrop.ts`), per preset
+//   (`nebula-colors.ts`) as `--nebula-0` to `--nebula-4`, the same in both
+//   appearances.
 
 import defaults from '../../../themes/default.json';
 import amber from '../../../themes/amber.json';
@@ -19,7 +20,7 @@ import rose from '../../../themes/rose.json';
 import compact from '../../../themes/compact.json';
 import { parseColor } from '../../../gallery/ui/color';
 import { sites } from '../../../gallery/ui/site-colors';
-import { silkPalette, stagePalette } from '../../../gallery/ui/stage-colors';
+import { nebulaColors } from './nebula-colors';
 
 type Vars = Record<string, string>;
 interface ThemeFile {
@@ -74,14 +75,9 @@ function libraryVars(scheme: 'light' | 'dark', file: ThemeFile | null): Vars {
   return out;
 }
 
-function stageVars(scheme: 'light' | 'dark', file: ThemeFile | null): Vars {
-  const primary = file?.cssVars[scheme]?.primary ?? base.cssVars[scheme]?.primary ?? '';
-  const p = stagePalette(parseColor(primary), scheme);
-  const silk = silkPalette(parseColor(primary), scheme);
-  return {
-    '--stage-base': p.base, '--stage-glow': p.glow, '--stage-floor': p.floor, '--stage-line': p.line,
-    '--silk-ink': silk.ink, '--silk-low': silk.low, '--silk-high': silk.high, '--silk-sheen': silk.sheen,
-  };
+function nebulaVars(id: string, file: ThemeFile | null): Vars {
+  const primary = file?.cssVars.light?.primary ?? base.cssVars.light?.primary ?? '';
+  return Object.fromEntries(nebulaColors(id, parseColor(primary)).map((c, i) => [`--nebula-${i}`, c]));
 }
 
 /** The stylesheet: the site's colors, then each preset's in each appearance. */
@@ -94,8 +90,8 @@ export function themeCss(): string {
   for (const p of presets) {
     const sel = p.id === 'neutral' ? ':root' : `html[data-preset="${p.id}"]`;
     const darkSel = p.id === 'neutral' ? 'html.dark' : `html.dark[data-preset="${p.id}"]`;
-    rules.push(block(sel, { ...libraryVars('light', p.file), ...stageVars('light', p.file) }));
-    rules.push(block(darkSel, { ...libraryVars('dark', p.file), ...stageVars('dark', p.file) }));
+    rules.push(block(sel, { ...libraryVars('light', p.file), ...nebulaVars(p.id, p.file) }));
+    rules.push(block(darkSel, libraryVars('dark', p.file)));
   }
   for (const d of densities) {
     if (!d.file) continue;
