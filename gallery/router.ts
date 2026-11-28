@@ -17,14 +17,14 @@ function parse(url: string) {
   return { origin: m?.[1] ?? "", path: m?.[2] || "/", query: m?.[3] ?? "", hash: m?.[4] ?? "" };
 }
 
-/** `?a=1&b=2` (or `a=1&b=2`) as its pairs. */
+/** `?a=1&b=2` (or `a=1&b=2`) as its pairs; a bare name (`?solo`) is the name with "". */
 const paramsOf = (query: string): Record<string, string> =>
   Object.fromEntries(
     query
       .replace(/^\?/, "")
       .split("&")
-      .filter((kv) => kv.includes("="))
-      .map((kv) => kv.split("=").map(decodeURIComponent) as [string, string]),
+      .filter(Boolean)
+      .map((kv) => [...kv.split("=").map(decodeURIComponent), ""].slice(0, 2) as [string, string]),
   );
 
 /** The page and the query an old address's hash names (`#/button?preset=blue`), or null. */
@@ -48,6 +48,12 @@ const urlOf = (id: string, query = "") => `${origin}${base}${id === "home" ? "" 
 
 /** The options the address gave at launch (`?preset=blue&appearance=dark`; an old `#/home?…` too). Set by `startRouter`. */
 export const launchParams: Record<string, string> = {};
+
+/**
+ * Whether the address asked for the page alone (`?solo`): no header, sidebar or pager around it, to look at one
+ * component (or shoot it) without the gallery's frame. Read once, at launch, like the other options.
+ */
+export const solo = () => "solo" in launchParams && launchParams.solo !== "0";
 
 export const route = signal<string>("home");
 
