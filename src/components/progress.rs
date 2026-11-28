@@ -8,8 +8,8 @@ use std::time::Duration;
 
 use nsh_base::progress as base_progress;
 use nsh_core::{
-    element::{Style, StyleRefinement},
     element::layout_rtl,
+    element::{Style, StyleRefinement},
     prelude::*,
 };
 
