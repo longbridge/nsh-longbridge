@@ -51,7 +51,7 @@ jobs:
     # own use them.
     runs-on: [public, Linux, X64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # QuickJS (in nsh's engine, which the tests run) is C; bindgen needs
       # libclang.
