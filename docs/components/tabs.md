@@ -133,8 +133,8 @@ In classes (the list's `h-9` is `lg`):
   py-1 text-sm font-medium whitespace-nowrap text-foreground/60 hover:text-foreground transition-all`, icons `size-4`;
   vertical `w-full justify-start`; selected `bg-background text-foreground shadow-sm`, dark `border-input
   bg-input/30 text-foreground`; dark rest `text-muted-foreground`. `line`: selected has no fill, border or shadow, and
-  an underline (`after:`) `bg-foreground h-0.5` at `bottom-[-3px]`, on the list's bottom edge (vertical: `w-0.5` at `-right-[3px]`),
-  fading in. `gap-1` at `xs` and `sm`.
+  an underline (`after:`) `bg-foreground h-0.5` at `bottom-[-3px]`, on the list's bottom edge, fading in; vertical: no
+  underline, the selected trigger filled `bg-accent text-accent-foreground` (Decisions 6). `gap-1` at `xs` and `sm`.
 - Content: `flex-1 outline-none`.
 
 ### Variants
@@ -144,7 +144,7 @@ In classes (the list's `h-9` is `lg`):
 | List | Fill `tabs-list`, corners `tabs-list-radius` (10), padding `tabs-list-padding` (2) | No fill, square, the same padding, triggers `spacing` (4) apart |
 | Trigger at rest | No fill, a 1 pt edge in transparent, text `tabs-trigger-foreground` | Same |
 | Trigger hovered | Text `tabs-trigger-hover-foreground` | Same |
-| Trigger selected | Fill `tabs-trigger-selected`, edge `tabs-trigger-selected-border`, shadow tier `tabs-trigger-selected-shadow` (2, `sm`), text `tabs-trigger-selected-foreground` | Text `tabs-trigger-selected-foreground`; an underline `tabs-line-indicator-width` (2) thick in `tabs-line-indicator`, as long as the trigger, its bottom edge on the list's (a column: a bar along the trigger's height, its right edge on the list's), at opacity 1 (0 otherwise) |
+| Trigger selected | Fill `tabs-trigger-selected`, edge `tabs-trigger-selected-border`, shadow tier `tabs-trigger-selected-shadow` (2, `sm`), text `tabs-trigger-selected-foreground` | Text `tabs-trigger-selected-foreground`; an underline `tabs-line-indicator-width` (2) thick in `tabs-line-indicator`, as long as the trigger, its bottom edge on the list's, at opacity 1 (0 otherwise); a column: fill `tabs-line-selected`, text `tabs-line-selected-foreground`, no underline |
 | Dark | Rest text `muted-foreground`; selected fill `input` at 30%, edge `input` | Rest text `muted-foreground`; no selected edge |
 
 ### Sizes
@@ -236,6 +236,8 @@ Values are those of `nsh/base`'s default theme.
 | `tabs-trigger-ring` | color | `ring × ring-opacity` |  |
 | `tabs-line-indicator` | color | `foreground` |  |
 | `tabs-line-indicator-width` | length | `2` | 2 |
+| `tabs-line-selected` | color | `accent` |  |
+| `tabs-line-selected-foreground` | color | `accent-foreground` |  |
 <!-- /tokens -->
 
 - `selected` is the trigger's form, so it goes where a variant goes (`tabs-trigger-selected-border`), as Checkbox's
@@ -346,3 +348,7 @@ tabs()
 5. **The list is as long as its triggers through `w-fit` / `h-fit`, not `align-self: flex-start`**: an `align-self` of
    its own would override the cross-axis alignment of a row it sits in (a toolbar), putting it at the top instead of
    the middle (as `Badge`'s decision 3).
+6. **A vertical `line` list fills the selected trigger instead of drawing a bar along its edge.** A row of section
+   tabs is underlined, as most apps do; a column of them reads as a sidebar's section list, which apps mark with the
+   row's own fill. An edge bar breaks the trigger's rounded shape and adds a second edge to a column that already
+   aligns on its text (gpui-kit's Design Guides, interaction states).
