@@ -1,13 +1,13 @@
 //! `Progress` in a headless engine: what screen readers get, the track's
 //! size, the indicator's width (moved, not resized), the moving segment
-//! and its still form with reduced motion, the app's classes and a scope's
-//! tokens reaching the look.
+//! and its still form with reduced motion, the indicator's corners, the
+//! app's classes and a scope's tokens reaching the look.
 
 mod common;
 
 use std::time::Duration;
 
-use common::{bounds, light, start};
+use common::{bounds, light, radius, start, start_styled};
 use nsh_core::{NodeId, Size as Viewport, platform::Os, prelude::*};
 use nsh_engine::EngineConfig;
 use nsh_longbridge::{
@@ -96,6 +96,20 @@ fn the_indicator_spans_the_track_and_is_moved() {
     app.press("id:more").unwrap();
     app.run_for(Duration::from_millis(300)).unwrap();
     assert_eq!(width_height(&app, indicator), (400.0, 8.0));
+}
+
+/// The indicator sits in the track with no gap, so its end is as round as
+/// the track's: the same corner radius, the moving segment's too.
+#[test]
+fn the_indicators_corners_are_the_tracks() {
+    let (app, styles) = start_styled::<Bars>(true);
+    for label in ["Upload", "Connecting"] {
+        let (track, indicator) = parts(&app, label);
+        let track = radius(&app, &styles, &format!("view:{track}"));
+        assert_eq!(track, 4.0, "{label}: half the track's height");
+        let indicator = radius(&app, &styles, &format!("view:{indicator}"));
+        assert_eq!(indicator, track, "{label}");
+    }
 }
 
 #[test]
