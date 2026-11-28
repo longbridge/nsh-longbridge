@@ -329,7 +329,7 @@ function watchStage() {
       queued = false;
       send({ t: 'pointer', demo: 'hero', at: pending ?? null });
     });
-  }).then((backdrop) => ((window as unknown as { __silk?: unknown }).__silk = backdrop));
+  }).then((backdrop) => ((window as unknown as { __backdrop?: unknown }).__backdrop = backdrop));
 }
 
 export function start() {

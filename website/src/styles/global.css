@@ -148,36 +148,25 @@ html.dark .swatch__fill { background-color: var(--sw-dark); box-shadow: inset 0 
   .install__text { font-size: 11.5px; letter-spacing: -0.3px; }
 }
 
-/* The stage: a deep tint of the preset's hue, a light from the top and a
-   faint grid; a slow light drifts across it in the hue. */
+/* The stage: the nebula (`backdrop.ts`, WebGL2) in the preset's colors
+   (`--nebula-*`, dark in both appearances). Before it fades in, and without
+   WebGL2, its likeness in CSS: clouds of its tones on its near black. Over
+   both, a pane's edge: a lit inner line along the top, a hairline all round
+   and a soft inner shadow. */
 .stage { position: relative; width: 100%; margin-top: 44px; border-radius: 28px; overflow: hidden; isolation: isolate; container: stage / inline-size;
-  background-color: var(--stage-base);
+  background-color: var(--nebula-0);
   background-image:
-    radial-gradient(90% 70% at 50% 0%, var(--stage-glow) 0%, transparent 70%),
-    linear-gradient(180deg, transparent 55%, var(--stage-floor) 100%),
-    repeating-linear-gradient(90deg, var(--stage-line) 0 1px, transparent 1px 40px),
-    repeating-linear-gradient(0deg, var(--stage-line) 0 1px, transparent 1px 40px);
+    radial-gradient(30% 34% at 34% 74%, var(--nebula-3) 0%, color-mix(in oklab, var(--nebula-2) 80%, transparent) 40%, transparent 100%),
+    radial-gradient(26% 36% at 70% 32%, color-mix(in oklab, var(--nebula-2) 75%, transparent) 0%, color-mix(in oklab, var(--nebula-1) 60%, transparent) 55%, transparent 100%),
+    radial-gradient(40% 50% at 16% 26%, color-mix(in oklab, var(--nebula-1) 80%, transparent) 0%, transparent 100%),
+    radial-gradient(42% 52% at 50% 46%, color-mix(in oklab, var(--nebula-1) 55%, transparent) 0%, transparent 100%),
+    radial-gradient(36% 46% at 88% 84%, color-mix(in oklab, var(--nebula-1) 70%, transparent) 0%, color-mix(in oklab, var(--nebula-2) 20%, transparent) 30%, transparent 100%);
   transition: background-color .5s var(--ease); }
-.stage__light { position: absolute; z-index: -1; width: 70%; aspect-ratio: 1; left: 15%; top: -45%; border-radius: 50%;
-  background: radial-gradient(closest-side, var(--stage-glow), transparent); opacity: .55; filter: blur(20px); pointer-events: none; }
-@media (prefers-reduced-motion: no-preference) {
-  .stage__light { animation: drift 24s ease-in-out infinite alternate; }
-}
-@keyframes drift {
-  0% { transform: translate(-28%, 0) scale(1); }
-  50% { transform: translate(6%, 8%) scale(1.15); }
-  100% { transform: translate(30%, -2%) scale(.95); }
-}
-/* The flowing backdrop (`backdrop.ts`, WebGL2: a silk under frosted glass,
-   with its grain) over that gradient; it fades in over the gradient, which
-   stays without WebGL2. Over both, the glass pane's edge: a lit inner line
-   along the top, a hairline all round and a soft inner shadow. */
-.stage__silk { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .8s var(--ease); pointer-events: none; }
-.stage.is-silk .stage__silk { opacity: 1; }
-.stage.is-silk .stage__light { display: none; }
+.stage__nebula { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .8s var(--ease); pointer-events: none; }
+.stage.is-nebula .stage__nebula { opacity: 1; }
 .stage::after { content: ""; position: absolute; z-index: -1; inset: 0; border-radius: inherit; pointer-events: none;
   box-shadow: inset 0 1px 0 #ffffff26, inset 0 0 0 1px #ffffff12, inset 0 -48px 64px -48px #00000066, inset 0 0 48px #00000038; }
-@media (prefers-reduced-motion: reduce) { .stage__silk { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .stage__nebula { transition: none; } }
 @media (max-width: 631px) {
   .hero__column > .stage { margin-top: 32px; border-radius: 20px; }
 }

@@ -1,6 +1,5 @@
-// The stage's colors from a preset's primary, as plain math (no NSH), so the
-// website draws the same stage behind its demos' posters as the gallery does
-// (`site.ts`'s `stageColors`, `website/src/lib/presets.ts`).
+// The stage's colors from a preset's primary, as plain math (no NSH), for the
+// gallery's own stage (`site.ts`'s `stageColors`).
 
 import { type Lab, toHex } from "./color";
 
@@ -73,40 +72,5 @@ export function stagePalette(primary: Lab | null, s: "light" | "dark") {
     floor: toHex(lab(l - 0.07, 0.03 * k, hue)),
     line: "#ffffff0d",
     mark: "#ffffff59",
-  };
-}
-
-/**
- * The colors of the stage's flowing backdrop (the website's shader, behind
- * the hero), from the preset's primary: a deep ink of the hue, two tones
- * turned to either side of it and a pale sheen for the folds of the silk.
- * As the stage, they keep every hue equally quiet (`tintScale`) and dark
- * enough under the white sheet; a gray primary (Neutral) gives graphite and
- * silver.
- */
-export function silkPalette(primary: Lab | null, s: "light" | "dark") {
-  const p = primary ?? { l: 0.2, a: 0, b: 0, alpha: 1 };
-  const hue = Math.atan2(p.b, p.a);
-  // The light appearance's a touch lighter and airier; the dark one deeper.
-  const lift = s === "light" ? 0.035 : 0;
-  if (Math.hypot(p.a, p.b) < 0.03) {
-    const h = -1.45;
-    return {
-      ink: toHex(lab(0.14 + lift, 0.008, h)),
-      low: toHex(lab(0.3 + lift, 0.01, h)),
-      high: toHex(lab(0.5 + lift, 0.012, h + 0.4)),
-      sheen: toHex(lab(0.82, 0.008, h)),
-    };
-  }
-  const k = tintScale((hue * 180) / Math.PI);
-  const turn = (deg: number) => hue + (deg * Math.PI) / 180;
-  // Ambers and yellows turned further up go olive: both tones turn toward orange instead.
-  const degrees = (((hue * 180) / Math.PI) % 360 + 360) % 360;
-  const warm = degrees > 40 && degrees < 130;
-  return {
-    ink: toHex(lab(0.145 + lift, 0.03 * k, hue)),
-    low: toHex(lab(0.32 + lift, 0.095 * k, turn(warm ? -38 : -32))),
-    high: toHex(lab(0.5 + lift, 0.11 * k, turn(warm ? -12 : 26))),
-    sheen: toHex(lab(0.82, 0.045 * k, turn(40))),
   };
 }
