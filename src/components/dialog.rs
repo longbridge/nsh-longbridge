@@ -5,12 +5,14 @@
 //! `Sheet` does on the same modal. `AlertDialog` is drawn by the same
 //! parts. API: `docs/components/dialog.md`.
 
-use std::rc::Rc;
+use std::{rc::Rc, time::Duration};
 
 use nsh_base::{OpenChangeReason, dialog as base_modal};
 use nsh_core::{
+    TouchEvent, TouchPhase,
     element::{Style, TextPartStyle},
     prelude::*,
+    time::Instant,
 };
 
 use super::button::{ButtonEvent, ButtonProps, ButtonVariant, draw as draw_button};
@@ -79,6 +81,13 @@ tokens! {
     /// Whether dialogs fade and zoom in and out (1) or show and go in one
     /// frame (0).
     DIALOG_ANIMATE: Number = "dialog-animate" => |t| t.value(1.0),
+    /// Whether a dialog that a pointer press on its trigger opens grows out
+    /// of the point pressed and goes back into it (1), or zooms from its
+    /// center as any other (0).
+    DIALOG_FROM_PRESS: Number = "dialog-from-press" => |t| t.value(1.0),
+    /// The panel's scale at the point pressed, as it starts to grow from
+    /// there (`dialog-from-press`).
+    DIALOG_FROM_PRESS_SCALE: Number = "dialog-from-press-scale" => |t| t.value(0.2),
 }
 
 /// The window width from which a dialog's header is start-aligned and its
@@ -92,6 +101,40 @@ pub(crate) fn wide() -> bool {
 
 /// The easing of a dialog's motion (Tailwind's, as `foundation::motion`).
 const EASE: Easing = Easing::Bezier(0.4, 0.0, 0.2, 1.0);
+
+/// The panel's scale as it starts to come from its center (`zoom-in-95`).
+const ZOOM_FROM: f32 = 0.95;
+
+/// How long after a pointer went down on the trigger a press on it is
+/// that pointer's (a press from the keyboard later is not).
+const POINTER_PRESS: Duration = Duration::from_millis(1000);
+
+/// Where the pointer last went down on a trigger, in the window, and when.
+#[derive(Clone, Copy)]
+struct PointerDown(Stored<Option<(Point<Points>, Instant)>>);
+
+impl PointerDown {
+    fn new() -> Self {
+        Self(stored(None))
+    }
+
+    /// Hears a pointer (the mouse, a finger, a pen) go down.
+    fn hear(self, e: &TouchEvent) {
+        if e.phase != TouchPhase::Start {
+            return;
+        }
+        if let Some(point) = e.points.iter().find(|p| p.changed) {
+            self.0.replace(Some((point.page, nsh_core::time::now())));
+        }
+    }
+
+    /// Where the pointer that makes the press now went down: none when the
+    /// press is from the keyboard or an assistive technology.
+    fn take(self) -> Option<Point<Points>> {
+        let (point, at) = self.0.replace(None)?;
+        (nsh_core::time::now().saturating_duration_since(at) < POINTER_PRESS).then_some(point)
+    }
+}
 
 // The open state, controlled or not, as `nsh/base`'s popups keep it.
 
@@ -302,6 +345,9 @@ pub(crate) struct DialogContext {
     /// The buttons an `AlertDialog` focuses as it opens: its cancel
     /// (`true`), else its first action.
     pub(crate) answers: Signal<Vec<(ElementRef, bool)>>,
+    /// Where the pointer pressed the trigger that asked to open it, until
+    /// the panel takes it as it is made (it grows from there).
+    pub(crate) pressed: Stored<Option<Point<Points>>>,
 }
 
 /// The dialog the current component is in.
@@ -351,6 +397,7 @@ pub(crate) fn root(
     let title = signal(None::<ElementRef>);
     let description = signal(None::<ElementRef>);
     let answers = signal(Vec::<(ElementRef, bool)>::new());
+    let pressed = stored(None::<Point<Points>>);
     // The title's text, read once the content is there.
     let title_text = signal(None::<SharedString>);
     {
@@ -423,13 +470,24 @@ pub(crate) fn root(
         title,
         description,
         answers,
+        pressed,
     });
     // A library `Button` as the trigger takes the press itself.
     let one = trigger::OnePress::new();
     let toggle = change.clone();
+    // A press that asks to open it leaves where the pointer went down on
+    // the trigger, for the panel to grow from.
+    let down = PointerDown::new();
+    let press = move || {
+        let at = down.take();
+        if !open.get_untracked() {
+            pressed.replace(at);
+        }
+    };
     trigger::provide(
         move || {
             if one.first() {
+                press();
                 toggle(!open.get_untracked(), OpenChangeReason::TriggerPress)
             }
         },
@@ -450,8 +508,12 @@ pub(crate) fn root(
                     has_popup: true,
                     ..AccessibilityState::default()
                 })
+                // Pointers going down on the trigger or inside it (a
+                // `Button` there takes the press itself).
+                .on_touch(move |e: &TouchEvent| down.hear(e))
                 .on_press(move || {
                     if one.first() {
+                        press();
                         change(!open.get_untracked(), OpenChangeReason::TriggerPress)
                     }
                 })
@@ -669,7 +731,7 @@ pub(crate) fn content(
         .app_class(parts.overlay_class)
         .inline_style(move || parts.overlay_style.get())
         .on_press(move || backdrop());
-    let scale = fade.interpolate(&[0.0, 1.0], &[0.95, 1.0]);
+    let (scale, shift) = growth(t, fade, d.pressed.replace(None));
     let cancel = d.cancel.clone();
     let layer = overlay()
         .inset_0()
@@ -680,7 +742,7 @@ pub(crate) fn content(
         .pb(keyboard_height)
         .pointer_events(PointerEvents::BoxNone)
         .child(
-            panel(t, parts, max_width)
+            shift(panel(t, parts, max_width))
                 .bind_opacity(&fade)
                 .bind_scale(&scale)
                 .pointer_events(takes)
@@ -690,6 +752,36 @@ pub(crate) fn content(
                 )),
         );
     view().child(overlay_part).child(layer).into_element()
+}
+
+/// How the panel grows as `fade` runs 0 → 1: its scale, and what moves
+/// it. Pressed open at `pressed` (`dialog-from-press`), its center starts
+/// there at `dialog-from-press-scale` and moves to its place as it grows,
+/// so it comes out of what was pressed and goes back into it; else it
+/// zooms from 95% in place. Its place is the middle of the window above a
+/// software keyboard, where the layer centers it.
+fn growth(
+    t: Theme,
+    fade: AnimatedValue,
+    pressed: Option<Point<Points>>,
+) -> (AnimatedNode, Box<dyn FnOnce(View) -> View>) {
+    let from = pressed.filter(|_| t.number(DIALOG_FROM_PRESS) != 0.0);
+    let Some(from) = from else {
+        let scale = fade.interpolate(&[0.0, 1.0], &[ZOOM_FROM, 1.0]);
+        return (scale, Box::new(|panel| panel));
+    };
+    let (size, keyboard) = untracked(|| (window(), keyboard_height()));
+    let dx = from.x.0 - size.width.0 / 2.0;
+    let dy = from.y.0 - (size.height.0 - keyboard.0) / 2.0;
+    let start = t.number(DIALOG_FROM_PRESS_SCALE).clamp(0.0, 1.0);
+    let scale = fade.interpolate(&[0.0, 1.0], &[start, 1.0]);
+    let x = fade.interpolate(&[0.0, 1.0], &[dx, 0.0]);
+    let y = fade.interpolate(&[0.0, 1.0], &[dy, 0.0]);
+    // Moved before it is scaled, so the move is in the window's points.
+    (
+        scale,
+        Box::new(move |panel| panel.bind_translate_x(&x).bind_translate_y(&y)),
+    )
 }
 
 /// The panel: its look, then the app's classes and style.
