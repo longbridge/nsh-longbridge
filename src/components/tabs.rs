@@ -25,7 +25,7 @@ use crate::{
         TRANSPARENT, Token, kind,
         seeds::SPACING,
         semantic::{
-            BACKGROUND, BORDER_WIDTH, CONTROL_HEIGHT_LG, CONTROL_HEIGHT_MD, CONTROL_HEIGHT_SM,
+            ACCENT, ACCENT_FOREGROUND, BACKGROUND, BORDER_WIDTH, CONTROL_HEIGHT_LG, CONTROL_HEIGHT_MD, CONTROL_HEIGHT_SM,
             CONTROL_HEIGHT_TOUCH_LG, CONTROL_HEIGHT_TOUCH_MD, CONTROL_HEIGHT_TOUCH_SM,
             CONTROL_HEIGHT_TOUCH_XS, CONTROL_HEIGHT_XS, FOREGROUND, INPUT, MUTED, MUTED_FOREGROUND,
             OPACITY_DISABLED, RADIUS_LG, RING, RING_OPACITY,
@@ -82,6 +82,11 @@ tokens! {
     TABS_LINE_INDICATOR: Color = "tabs-line-indicator" => |t| t.color(FOREGROUND),
     /// The `line` variant's underline thickness.
     TABS_LINE_INDICATOR_WIDTH: Length = "tabs-line-indicator-width" => |t| t.px(2.0),
+    /// The selected trigger's fill in a vertical `line` list, which marks
+    /// it by its own surface (as a sidebar's row) rather than an edge bar.
+    TABS_LINE_SELECTED: Color = "tabs-line-selected" => |t| t.color(ACCENT),
+    /// The selected trigger's text and icon in a vertical `line` list.
+    TABS_LINE_SELECTED_FOREGROUND: Color = "tabs-line-selected-foreground" => |t| t.color(ACCENT_FOREGROUND),
 }
 
 /// A tab list's look.
@@ -307,8 +312,13 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
     let font_size = move || t.length(font_size_token(size()));
     let icon_side = move || t.length(icon_size_token(size()));
     let raised = move || selected() && !line();
+    // A vertical `line` list marks the selected trigger with a fill; a row
+    // underlines it.
+    let filled = move || selected() && line() && !horizontal;
     let foreground = move || {
-        if selected() {
+        if filled() {
+            t.color(TABS_LINE_SELECTED_FOREGROUND)
+        } else if selected() {
             t.color(TABS_TRIGGER_SELECTED_FOREGROUND)
         } else {
             t.color(TABS_TRIGGER_FOREGROUND)
@@ -355,6 +365,8 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
         .bg(move || {
             if raised() {
                 t.color(TABS_TRIGGER_SELECTED)
+            } else if filled() {
+                t.color(TABS_LINE_SELECTED)
             } else {
                 AdaptiveColor::TRANSPARENT
             }
@@ -392,10 +404,10 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
         .disabled_style(move |s| s.opacity(move || t.number(OPACITY_DISABLED)));
     let root = motion::transition_all(root, t).cursor(Cursor::Default);
 
-    // The `line` variant's underline: under the trigger in a row, along its
-    // end in a column, faded in while selected.
+    // The `line` variant's underline under the trigger in a row, faded in
+    // while selected (a column fills the selected trigger instead).
     let underline = move || {
-        line().then(|| {
+        (line() && horizontal).then(|| {
             let thickness = move || t.length(TABS_LINE_INDICATOR_WIDTH);
             let indicator = view()
                 .absolute()
@@ -407,19 +419,11 @@ pub fn TabsTrigger(props: TabsTriggerProps, _cx: Scope<NoEvent>) -> impl IntoEle
             // On the list's edge: past the trigger's own edge (the offsets
             // count from inside it) and the list's padding.
             let beyond = move || -(t.length(TABS_LIST_PADDING) + t.length(BORDER_WIDTH));
-            let indicator = if horizontal {
-                indicator
-                    .left(px(0.0))
-                    .right(px(0.0))
-                    .h(thickness)
-                    .bottom(beyond)
-            } else {
-                indicator
-                    .top(px(0.0))
-                    .bottom(px(0.0))
-                    .w(thickness)
-                    .right(beyond)
-            };
+            let indicator = indicator
+                .left(px(0.0))
+                .right(px(0.0))
+                .h(thickness)
+                .bottom(beyond);
             motion::timing(indicator, t)
         })
     };

@@ -46,7 +46,7 @@ export function TabsPage() {
 
       <Section
         title="Variants"
-        description={`The default look puts the chosen tab on a raised pill; variant="line" underlines it, for a page's sections.`}
+        description={`The default look puts the chosen tab on a raised pill; variant="line" underlines it in a row and fills it in a column, for a page's sections.`}
       >
         <Demos>
           {variants.map((variant) => (
@@ -230,9 +230,9 @@ function ProjectTabs() {
 /** Settings in a side column. */
 function SettingsDemo() {
   return (
-    <Demo label={`orientation="vertical"`} class="items-stretch justify-start">
+    <Demo label={`orientation="vertical" variant="line"`} class="items-stretch justify-start">
       <Tabs defaultValue="general" orientation="vertical" class="gap-6">
-        <TabsList accessibilityLabel="Settings sections">
+        <TabsList variant="line" accessibilityLabel="Settings sections">
           <TabsTrigger value="general">
             <Text>General</Text>
           </TabsTrigger>
