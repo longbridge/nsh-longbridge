@@ -3,7 +3,9 @@
 //! buttons remove them, the clear button, the empty list's words, the
 //! list's height capped (the popup shrinking with it), the field look's
 //! focus around the input, sizes, disabled, the matched part of each
-//! title, the create row, the query's resets, and what TSX apps get.
+//! title, the create row, the query's resets, what TSX apps get, the end
+//! button's inset and the chips' corners, and the list's width against its
+//! titles and the field.
 
 mod common;
 
@@ -13,13 +15,13 @@ use std::{
     time::Duration,
 };
 
-use common::{light, size, start};
+use common::{bounds, length, light, radius, size, start};
 use nsh_core::{MountItem, NodeId, Size as Viewport, ViewStyle, platform::Os, prelude::*};
 use nsh_engine::EngineConfig;
 use nsh_longbridge::{
     SelectItem, combobox,
     components::combobox::{COMBOBOX_CHIP, COMBOBOX_EMPTY_FOREGROUND},
-    foundation::field::INPUT_BORDER_FOCUS,
+    foundation::field::{INPUT_BORDER_FOCUS, INPUT_RADIUS},
 };
 use nsh_testing::Headless;
 
@@ -542,4 +544,105 @@ fn the_query_going_back_is_reported() {
     // Opened again, every item shows.
     open(&mut app, "Watched");
     assert_eq!(app.screen().count("role:option").unwrap(), 5);
+}
+
+/// The square button at the end of the field `name` names: the shown
+/// child of the field `side` points square.
+fn end_button(app: &Headless, name: &str, side: f32) -> nsh_core::geometry::Bounds<Points> {
+    let field = field_id(app, name);
+    app.screen()
+        .layout_nodes()
+        .into_iter()
+        .filter(|n| n.parent == field && !n.hidden)
+        .map(|n| n.bounds)
+        .rfind(|b| b.size.width.0 == side && b.size.height.0 == side)
+        .unwrap_or_else(|| panic!("no {side} button in {name}"))
+}
+
+/// The chevron sits 4 from the field's outer edge on top, bottom and end
+/// (its edge counted in), at every size.
+#[test]
+fn the_end_button_is_4_from_the_fields_outer_edge() {
+    let app = start::<Boxes>(true);
+    for (name, side) in [("Framework", 24.0), ("Small", 20.0)] {
+        let field = bounds(&app, &field_of(&app, name));
+        let button = end_button(&app, name, side);
+        let top = (button.origin.y - field.origin.y).0;
+        let bottom = (field.origin.y + field.size.height - button.origin.y - button.size.height).0;
+        let end = (field.origin.x + field.size.width - button.origin.x - button.size.width).0;
+        assert_eq!((top, bottom, end), (4.0, 4.0, 4.0), "{name}");
+    }
+}
+
+/// A chip sits 4 inside the field's corners, as its buttons do: its
+/// corners are `input-radius` less 4.
+#[test]
+fn a_chips_radius_is_the_input_radius_less_4() {
+    let (app, styles) = start_watched();
+    let nodes = app.screen().layout_nodes();
+    let title = app.screen().id("text:Astro").unwrap();
+    let chip = nodes.iter().find(|n| n.id == title).unwrap().parent;
+    let corners = radius(&app, &styles, &format!("view:{chip}"));
+    assert_eq!(corners, length(INPUT_RADIUS) - 4.0);
+    assert_eq!(corners, 4.0);
+}
+
+const LONG: &str = "Every hour (Enterprise plan only)";
+
+/// A narrow combobox with a title longer than it, and the title alone at a
+/// row's size, as wide as it reads.
+#[component]
+fn Narrow() -> impl IntoElement {
+    view()
+        .p(px(20.0))
+        .items_start()
+        .gap(px(8.0))
+        .child(
+            combobox()
+                .items(vec![
+                    SelectItem::new("hourly", "Hourly"),
+                    SelectItem::new("enterprise", LONG),
+                ])
+                .app_class(Some("w-[120px]".into()))
+                .accessibility_label("Narrow"),
+        )
+        .child(
+            text(LONG)
+                .test_id("ruler")
+                .text_size(px(14.0))
+                .line_height(px(20.0))
+                .whitespace_nowrap(),
+        )
+}
+
+/// The list grows past a narrow field to show its longest title whole,
+/// its start edge still on the field's; with short titles it is as wide as
+/// the field, never narrower.
+#[test]
+fn the_list_fits_its_longest_title_and_is_never_narrower_than_the_field() {
+    let mut app = start::<Narrow>(true);
+    open(&mut app, "Narrow");
+    let field = bounds(&app, &field_of(&app, "Narrow"));
+    let popup = bounds(
+        &app,
+        &format!("view:{}", popup_of(&app, "role:option[Hourly]")),
+    );
+    assert_eq!(popup.origin.x, field.origin.x, "on the field's start edge");
+    assert!(popup.size.width > field.size.width, "{popup:?}");
+    // The title is not cut: at least as wide as it reads alone.
+    let title = bounds(&app, &format!("role:option[{LONG}] >> text:{LONG}"));
+    let whole = bounds(&app, "id:ruler");
+    assert!(
+        title.size.width >= whole.size.width,
+        "{title:?}, whole {whole:?}"
+    );
+    let mut app = start::<Boxes>(true);
+    open(&mut app, "Framework");
+    let field = bounds(&app, &field_of(&app, "Framework"));
+    let popup = bounds(
+        &app,
+        &format!("view:{}", popup_of(&app, "role:option[Remix]")),
+    );
+    assert_eq!(popup.origin.x, field.origin.x);
+    assert_eq!(popup.size.width, field.size.width);
 }
