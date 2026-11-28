@@ -13,6 +13,7 @@ use nsh_base::{
     submenu as base_submenu, terminal::is_terminal,
 };
 use nsh_core::{
+    PointerEvents,
     element::{ImageSrc, Slot, Style, StyleRefinement, TextPartStyle, safe_area},
     prelude::*,
 };
@@ -751,25 +752,56 @@ pub fn DropdownMenuSub(
             .truncate(),
         );
     // Its trigger item is lit while the focus is on it or inside the
-    // submenu, and while the submenu is open. `nsh/base` gives the focus
-    // and the expanded state to the slot around the item, which the item's
-    // own `focus:` and `expanded:` looks do not see; the item is the app's
-    // slot content, which no context of this component reaches. So the
-    // slot shows the item hovered while lit (a projected state, which goes
-    // to the app's element in the slot), and the item lights while hovered.
+    // submenu, and while the submenu is open, never while disabled.
+    // `nsh/base` gives the focus and the expanded state to the slot around
+    // the item, which the item's own `focus:` and `expanded:` looks do not
+    // see, and the item is the app's slot content, which no context of
+    // this component reaches. So the slot shows the item hovered while lit
+    // (a projected state, which goes to the app's element in the slot), and
+    // the item lights while hovered. A layer over the item takes the
+    // pointer, as a data table's over its rows: a real hover never reaches
+    // the item (a disabled one would light), and the pointer's presses and
+    // moves reach the view `nsh/base` opens the submenu from (an item's
+    // press would stop at the item). That view also says whether it is
+    // disabled; the item is dimmed.
     let own_open = signal(false);
     let within = signal(false);
     let root = element_ref();
     root.on_focus_in(move || within.set(true));
     root.on_focus_out(move || within.set(false));
-    let open = props.open;
-    let lit = computed(move || within.get() || open.get().unwrap_or_else(|| own_open.get()));
+    let (open, disabled) = (props.open, props.disabled);
+    let lit = computed(move || {
+        !disabled.get() && (within.get() || open.get().unwrap_or_else(|| own_open.get()))
+    });
+    let item = props.trigger.place(move |slot| {
+        slot.pointer_events(PointerEvents::None)
+            .project_hovered(lit)
+            .disabled(disabled)
+    });
+    let trigger = if is_terminal() {
+        item
+    } else {
+        view()
+            .relative()
+            .disabled(disabled)
+            .child(item)
+            .child(
+                view()
+                    .absolute()
+                    .top(px(0.0))
+                    .right(px(0.0))
+                    .bottom(px(0.0))
+                    .left(px(0.0))
+                    .accessibility_elements_hidden(true),
+            )
+            .into_element()
+    };
     base_submenu()
         .element_ref(&root)
         .open(props.open)
         .disabled(props.disabled)
         .offset(move || t.length(MENU_SUB_OFFSET))
-        .trigger(props.trigger.place(move |slot| slot.project_hovered(lit)))
+        .trigger(trigger)
         .back(back)
         .on_open_change(move |e: &BaseSubmenuEvent| {
             let BaseSubmenuEvent::OpenChange(open, reason) = e;
@@ -827,7 +859,9 @@ pub fn DropdownMenuSubTrigger(
     provide_icon_size(move || size.get());
     let side = move || t.length(icon_size_token(size.get()));
     // Lit while hovered: its `DropdownMenuSub` shows it hovered while the
-    // focus is on it or in the submenu, and while the submenu is open.
+    // focus is on it or in the submenu, and while the submenu is open (a
+    // layer the submenu lays over it takes the pointer, so a real hover
+    // never does).
     let el = base_item()
         .close_on_select(false)
         .accessibility_label(props.accessibility_label);

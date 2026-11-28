@@ -71,7 +71,7 @@ Every other part is a child component in its place: `DropdownMenuItem`, `Dropdow
 
 - **Structure**: `DropdownMenu` is a `#[component]` whose root is `nsh_base::menu()` with `open`, `defaultOpen`,
   `placement`, `align`, `trigger` and the children passed through; `offset` is `popover-offset`, `margin`
-  `popover-margin` (4) from the safe area's edges, as Popover's (submenus: [NSH gaps](#nsh-gaps) 9). It provides a `MenuLook` context (the `size`, the presentation) that every part reads. Each item kind is
+  `popover-margin` (4) from the safe area's edges, as Popover's (submenus: [NSH gaps](#nsh-gaps) 9). It provides a `MenuLook` context (the `size`, the presentation) that every part reads, except a `DropdownMenuSubTrigger` a Rust app makes ([NSH gaps](#nsh-gaps) 12). Each item kind is
   a component whose root is `nsh_base::menu_item()` (`menu_separator()`, `submenu()`), styled on its root element with
   bindings, the app's `class` / `style` merged last (as Checkbox's root).
 - **The popup surface** is `foundation::popup::surface(t)`, the one every popup shares (fill, edge, corners, shadow
@@ -336,6 +336,8 @@ All of it is `nsh/base`'s:
 
 - The trigger is `expanded` while open and `hasPopup`; the popup is a `menu`; items are `menuitem`, checkbox items
   `menuitemcheckbox` and radio items `menuitemradio` with `checked`; disabled items are dimmed and skipped.
+- A disabled submenu does not open and its trigger is skipped (`nsh/base`'s); the library dims the trigger
+  (`opacity-disabled`) and makes it `disabled` for screen readers, which `nsh/base` does not.
 - The keys and focus return are under [Built on](#built-on). Typeahead matches each item's `accessibilityLabel`, else
   its text.
 - The shortcut is part of the item's text for screen readers. Icons and indicators are hidden from them.
@@ -537,11 +539,17 @@ dropdown_menu()
     slot around the item, so the item's own `focus:` and `expanded:` never match; the item is slot content the app
     makes, so no context of `DropdownMenuSub` reaches it from Rust ([conventions](../conventions.md)); and the typed
     styles have no `group-aria-expanded`. Workaround: `DropdownMenuSub` projects a hover onto the slot while the item
-    is lit (the projected states go to the app's element in the slot), and `DropdownMenuSubTrigger` lights on
-    `hover:`, its icons on the row's `group-hover`. A host that reports the pointer over the item may light it too
-    (a disabled submenu's trigger under the pointer, or the trigger the pointer rests on after the keys moved the
-    focus away); the headless engine does not, so this is unchecked. Headless tests guard the lit look from Rust and
-    from TSX. A context that reaches slot content, or a typed `group_expanded`, would remove the workaround.
+    is lit and enabled (the projected states go to the app's element in the slot), and `DropdownMenuSubTrigger`
+    lights on `hover:`, its icons on the row's `group-hover`. So that a real hover never lights it (a group's hover
+    is not cleared by its `disabled`), the submenu lays a layer over the item that takes the pointer, as a data
+    table's hit layer does, and the item takes none: the pointer's presses and moves go to the view `nsh/base`
+    opens the submenu from. Headless tests guard it from Rust and from TSX. A context that reaches slot content, or
+    a typed `group_expanded`, would remove the workaround.
+12. **A `DropdownMenuSubTrigger` a Rust app makes takes `md` sizes.** Slot content a Rust app passes is made under
+    the app's component, so the menu's `MenuLook` (its `size`) never reaches it, while the items (children) and a
+    TSX app's trigger get it: in a `sm` menu its row, text, icon and chevron stay `md`. A layer drawn by
+    `DropdownMenuSub` could take the row's height, text and chevron, but not the item's own `icon`. Rust slot
+    content made under the component that places the slot, as children and TSX slot content are, would remove it.
 
 ## Decisions
 
