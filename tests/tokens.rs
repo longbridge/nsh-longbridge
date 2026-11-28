@@ -660,4 +660,3 @@ fn the_selection_bar_token_table_is_current() {
         &token_table(nsh_longbridge::components::selection_bar::TOKENS),
     );
 }
-

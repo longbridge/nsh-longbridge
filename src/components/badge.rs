@@ -109,7 +109,12 @@ pub fn Badge(props: BadgeProps, _cx: Scope<NoEvent>) -> impl IntoElement {
             let height = line_height(font_size())
                 + t.length(BADGE_PADDING_Y) * 2.0
                 + t.length(BORDER_WIDTH) * 2.0;
-            Some(Classes::new().push("w-fit").length("", "min-w", height).build())
+            Some(
+                Classes::new()
+                    .push("w-fit")
+                    .length("", "min-w", height)
+                    .build(),
+            )
         })
         .flex_shrink_0()
         // A long badge is cut to its parent's width with an ellipsis.
