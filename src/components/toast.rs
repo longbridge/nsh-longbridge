@@ -43,7 +43,7 @@ use crate::{
         seeds::SPACING,
         semantic::{
             ACCENT, BORDER, BORDER_WIDTH, MUTED_FOREGROUND, POPOVER, POPOVER_FOREGROUND, PRIMARY,
-            RADIUS_LG,
+            RADIUS_LG, RADIUS_SM,
         },
         theme,
     },
@@ -979,9 +979,6 @@ fn boxed(
         move || countdown.with(Option::is_some),
         move || vec![timer(t, props, behind, countdown).into_element()],
     ))
-    .child(when(close_shown, move || {
-        vec![close(t, props, close_id.clone(), behind).into_element()]
-    }))
     .child(when(
         move || kind().icon().is_some(),
         move || {
@@ -1089,6 +1086,10 @@ fn boxed(
             ]
         },
     ))
+    // Last in the row: the "×" at the top-end corner.
+    .child(when(close_shown, move || {
+        vec![close(t, props, close_id.clone(), behind, font_size).into_element()]
+    }))
 }
 
 /// What a toast's remaining-time bar shows.
@@ -1205,31 +1206,40 @@ fn timer(
         .child(bar)
 }
 
-/// A toast's "×": a circle on its top-start corner, moved out by 35%.
-fn close(t: Theme, props: ToasterProps, id: SharedString, behind: Memo<bool>) -> impl IntoElement {
+/// A toast's "×": a borderless icon button, last in the row at its
+/// top-end corner, centered on the first line of the text; pulled `spacing`
+/// into the padding so the glyph, not its hover fill, lines up with the
+/// text's edge.
+fn close(
+    t: Theme,
+    props: ToasterProps,
+    id: SharedString,
+    behind: Memo<bool>,
+    font_size: impl Fn() -> Points + Copy + 'static,
+) -> impl IntoElement {
     let side = move || t.length(TOAST_CLOSE_SIZE);
-    let out = move || side() * -0.35;
     let el = nsh_base::button()
         .accessibility_label(move || Some(labels::text(Label::Close)))
-        .absolute()
-        .top(out)
-        .left(out)
+        .flex_shrink_0()
+        .self_start()
+        .mt(move || (line_height(font_size()) - side()) / 2.0)
+        .me(move || -t.length(SPACING))
         .w(side)
         .h(side)
         .items_center()
         .justify_center()
-        .rounded_full()
-        .border(move || t.length(BORDER_WIDTH))
-        .border_color(move || t.color(TOAST_BORDER))
-        .bg(move || t.color(TOAST))
-        .text_color(move || t.color(TOAST_FOREGROUND))
+        .rounded(move || t.length(RADIUS_SM))
+        .text_color(move || t.color(TOAST_DESCRIPTION_FOREGROUND))
         .hit_slop(move || hit_slop(t, side()))
         .cursor(Cursor::Default)
-        .hover(move |s| s.bg(move || t.color(ACCENT)))
+        .hover(move |s| {
+            s.bg(move || t.color(ACCENT))
+                .text_color(move || t.color(TOAST_FOREGROUND))
+        })
         .app_class(props.close_class)
         .inline_style(move || props.close_style.get())
         .on_press(move || dismiss_with(&id, None))
         .opacity(move || if behind.get() { 0.0_f32 } else { 1.0 })
-        .child(icon_view(t, || IconName::X, || px(12.0)));
+        .child(icon_view(t, || IconName::X, || px(14.0)));
     motion::transition_all(el, t)
 }

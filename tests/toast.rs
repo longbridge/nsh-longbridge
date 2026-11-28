@@ -208,8 +208,8 @@ fn on_a_phone_the_stack_spans_the_window() {
     assert_eq!(alert.origin.y.0, 16.0);
 }
 
-/// `closeButton`: the "×" on the top-start corner closes it, answering
-/// nothing.
+/// `closeButton`: the "×" at the top-end corner, inside the toast, closes
+/// it, answering nothing.
 #[test]
 fn the_close_button_dismisses_it() {
     let mut app = start::<TopCenter>(true);
@@ -217,9 +217,15 @@ fn the_close_button_dismisses_it() {
     let alert = bounds(&app, "role:alert[Event created. Sunday at 9:00]");
     let close = bounds(&app, "role:button[Close]");
     assert_eq!((close.size.width.0, close.size.height.0), (20.0, 20.0));
-    // Out by 35% (7) from inside the edge (1).
-    assert_eq!(close.origin.x.0, alert.origin.x.0 - 6.0, "out by 35%");
-    assert_eq!(close.origin.y.0, alert.origin.y.0 - 6.0);
+    // Inside: its end `spacing` (4) into the padding (16) past the border
+    // (1); centered on the title's first line (18 high).
+    let end = alert.origin.x.0 + alert.size.width.0;
+    assert_eq!(
+        close.origin.x.0 + close.size.width.0,
+        end - 13.0,
+        "top-end corner"
+    );
+    assert_eq!(close.origin.y.0, alert.origin.y.0 + 16.0);
     app.press("role:button[Close]").unwrap();
     app.run_for(Duration::from_millis(600)).unwrap();
     assert!(!app.shows("Event created"));

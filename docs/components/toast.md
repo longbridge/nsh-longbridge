@@ -182,11 +182,11 @@ Toaster
       └─ toast (nsh/base Toast)    a row; `toastClass` / `toastStyle`
          ├─ timer clip             absolute over the box, the box's inner corners, clipping; hidden from accessibility
          │  └─ timer               the remaining-time bar at the placement's edge (`timerClass`)
-         ├─ close                  the "×", at the top-start corner (`closeClass`)
          ├─ icon                   the kind's icon (`iconClass`)
          ├─ content                a column: title (`titleClass`), description (`descriptionClass`)
          ├─ cancel                 Button xs secondary (`cancelClass`)
-         └─ action                 Button xs default (`actionClass`)
+         ├─ action                 Button xs default (`actionClass`)
+         └─ close                  the "×", last in the row at the top-end corner (`closeClass`)
 ```
 
 ## Variants and sizes
@@ -207,7 +207,7 @@ A toast is a popup surface (`popover`, `popover-foreground`, `border`) with `rad
 | description | Regular, line height 18, color `toast-description-foreground` (`muted-foreground`: see Decisions 3) |
 | action | The library's `Button` `size="xs"` `variant="default"` (24 high, 8 padding, 12 / medium), pushed to the end (`ml-auto` when it is the first button) |
 | cancel | `Button` `size="xs"` `variant="secondary"`; the cancel and the action are a row of their own, `spacing × 2` (8) apart (Decisions 11) |
-| close | A 20 square circle (`toast-close-size`), border `toast-border`, fill `toast`, `x` icon 12, at the toast's top-start corner moved out by 35% of its size (7, from inside the toast's edge); opacity 1; under the pointer the fill turns `accent` |
+| close | A 20 square (`toast-close-size`), no border or fill, corners `radius-sm`, `x` icon 14 in `toast-description-foreground`; last in the row, `toast-gap` after the buttons, at the top-end corner: centered on the first line of the text, its end pulled `spacing` (4) into the padding so the glyph lines up with the padding's edge (Decisions 13); under the pointer the fill turns `accent` and the icon `toast-foreground` |
 | timer | A bar `toast-timer-height` (2) high along the toast's edge on the placement's side (the bottom edge of a bottom stack, the top edge of a top one), just inside the border, filled `toast-timer`; the full width when the time starts, shrinking toward the inline start (the left, the right in a right-to-left layout) at a constant pace to nothing as the time runs out. It is clipped by the toast's inner corners (`toast-radius` less `border-width`), so its ends follow the curve. No track: the toast's fill is what is left |
 
 The action and cancel are the library's buttons (corners `button-radius`, 8; colors `primary` / `secondary`), so a
@@ -247,7 +247,7 @@ Swipe direction: right for `*Right`, left for `*Left`, down for
 |---|---|
 | Entering / exiting / swiped | "Motion" |
 | Expanded stack | `nsh/base`'s layout; timeouts paused |
-| "×" hover | Fill `accent` (pointer only) |
+| "×" hover | Fill `accent`, icon `toast-foreground` (pointer only) |
 | Buttons | `Button`'s states |
 | Loading | The spinning icon; no timeout until changed to another kind, so no remaining-time bar |
 | Time running | The remaining-time bar shrinks (toasts with a button, or `timer`) |
@@ -460,3 +460,7 @@ Settled in review.
 12. **The stack's distances are tokens on the spacing scale.** `nsh/base`'s default motion keeps collapsed layers and
     expanded toasts 14 apart; the library passes `toast-stack-peek` and `toast-stack-gap` (12 each) instead, so the
     expanded list is spaced as one content group and a theme can change both.
+13. **The "×" sits inside the toast, at the top-end corner.** It used to be a bordered circle on the top-start
+    corner, moved out over the border by 35% of its size: it covered the border and the corner radius, stood away
+    from the title it closes and, on the start side, read before the message. Last in the row, it takes its own room,
+    so it never covers the text or the buttons, and it mirrors with the layout direction.
