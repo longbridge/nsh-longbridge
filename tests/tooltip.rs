@@ -1,14 +1,22 @@
 //! `Tooltip` in a headless engine: taken as the element's hint layer from
 //! Rust and from TSX (its delay, placement and look, not a core default
-//! around it), its colors, a scope reaching it, `Kbd` inside it, and the
-//! events passed through.
+//! around it), its colors and corners, a scope reaching it, `Kbd` inside
+//! it, and the events passed through.
+
+mod common;
 
 use std::time::Duration;
+
+use common::{length, radius, watch_styles};
 
 use nsh_core::{Size as Viewport, platform::Os, prelude::*};
 use nsh_engine::EngineConfig;
 use nsh_longbridge::{
-    ScopeTokens, ThemeAppearance, TooltipEvent, button, kbd, theme_scope, tooltip,
+    ScopeTokens, ThemeAppearance, TooltipEvent, button,
+    components::kbd::{KBD_RADIUS, KBD_TOOLTIP_RADIUS},
+    kbd,
+    theme::semantic::RADIUS_SM,
+    theme_scope, tooltip,
 };
 use nsh_testing::Headless;
 
@@ -157,6 +165,30 @@ fn from_rust_the_tooltip_is_the_hint_layer() {
 #[test]
 fn from_tsx_the_tooltip_is_the_hint_layer() {
     shows_as_the_hint_layer(start_tsx("tests/tsx/tooltip.tsx"));
+}
+
+/// The bubble takes `radius-sm`, under a capsule's; a `Kbd` inside it
+/// takes `kbd-tooltip-radius` (2), concentric in the bubble's padding, and
+/// one outside `kbd-radius`.
+#[test]
+fn the_bubble_and_a_kbd_inside_it_take_their_radii() {
+    let mut app = Headless::start(config(
+        true,
+        EngineConfig::new(nsh_testing::windowed_root::<Triggers>()),
+    ))
+    .unwrap();
+    let styles = watch_styles(&mut app);
+    app.first_render().unwrap();
+    app.hover("id:trigger").unwrap();
+    app.run_for(Duration::from_millis(600)).unwrap();
+    assert!(app.shows("Tip"));
+    let radius = |selector: &str| radius(&app, &styles, selector);
+    assert_eq!(radius("id:bubble"), length(RADIUS_SM));
+    assert_eq!(radius("id:bubble"), 6.0);
+    assert_eq!(radius("id:kbd"), length(KBD_TOOLTIP_RADIUS));
+    assert_eq!(radius("id:kbd"), 2.0);
+    assert_eq!(radius("id:outside"), length(KBD_RADIUS));
+    assert_eq!(radius("id:outside"), 6.0);
 }
 
 /// A button with a tooltip in a dark scope that also changes `foreground`,
